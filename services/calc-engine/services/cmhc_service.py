@@ -4,7 +4,7 @@ Used to refine the vacancy allowance for a specific postal code area.
 Falls back to the default 5% if CMHC data is unavailable.
 """
 
-from ..constants.rates import VACANCY_ALLOWANCE
+from constants.rates import VACANCY_ALLOWANCE
 
 
 async def get_vacancy_rate(postal_code: str) -> float:

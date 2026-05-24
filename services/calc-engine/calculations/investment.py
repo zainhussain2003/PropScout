@@ -3,7 +3,7 @@ Investment metric calculations: cap rate, CoC, DSCR, GRM, cash flow, NOI.
 Pure functions — no database, no API calls, fully testable.
 """
 
-from ..constants.rates import VACANCY_ALLOWANCE, MANAGEMENT_FEE, INSURANCE_RATE, get_maintenance_rate
+from constants.rates import VACANCY_ALLOWANCE, MANAGEMENT_FEE, INSURANCE_RATE
 
 
 def calculate_noi(
@@ -39,7 +39,9 @@ def calculate_noi(
     maintenance = property_value * maintenance_rate
     management = gross_annual_rent * MANAGEMENT_FEE if include_management else 0.0
 
-    total_expenses = annual_taxes + insurance + condo_fee_annual + maintenance + management
+    total_expenses = (
+        annual_taxes + insurance + condo_fee_annual + maintenance + management
+    )
     return effective_gross_income - total_expenses
 
 
@@ -131,7 +133,9 @@ def calculate_grm(purchase_price: float, annual_gross_rent: float) -> float:
     return purchase_price / annual_gross_rent
 
 
-def calculate_cash_on_cash(annual_cash_flow: float, total_cash_invested: float) -> float:
+def calculate_cash_on_cash(
+    annual_cash_flow: float, total_cash_invested: float
+) -> float:
     """
     Calculate Cash-on-Cash return.
 
@@ -165,7 +169,13 @@ def calculate_break_even_rent(
     maintenance_monthly = (property_value * maintenance_rate) / 12
     taxes_monthly = annual_taxes / 12
 
-    fixed_costs = mortgage_payment + taxes_monthly + insurance_monthly + condo_fee_monthly + maintenance_monthly
+    fixed_costs = (
+        mortgage_payment
+        + taxes_monthly
+        + insurance_monthly
+        + condo_fee_monthly
+        + maintenance_monthly
+    )
 
     if include_management:
         # Solve: rent × (1 - vacancy - management%) = fixed_costs
@@ -175,6 +185,6 @@ def calculate_break_even_rent(
         net_factor = 1 - VACANCY_ALLOWANCE
 
     if net_factor <= 0:
-        return float('inf')
+        return float("inf")
 
     return fixed_costs / net_factor

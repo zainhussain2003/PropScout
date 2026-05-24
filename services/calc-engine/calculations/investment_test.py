@@ -5,9 +5,8 @@ from .investment import (
     calculate_cap_rate,
     calculate_dscr,
     calculate_grm,
-    calculate_noi,
 )
-from ..constants.rates import get_maintenance_rate
+from constants.rates import get_maintenance_rate
 
 
 def test_calculate_cap_rate() -> None:

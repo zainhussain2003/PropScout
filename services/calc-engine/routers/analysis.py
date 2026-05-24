@@ -4,7 +4,7 @@ Route handlers call services and calculations. No business logic here.
 """
 
 from fastapi import APIRouter, HTTPException
-from ..models.schemas import PropertyInput, FinancingInput, RentalEstimate, AnalysisOutput
+from models.schemas import PropertyInput, FinancingInput, RentalEstimate, AnalysisOutput
 
 router = APIRouter()
 
@@ -25,4 +25,6 @@ async def run_analysis(
 
     TODO: Implement once all calculation modules are complete.
     """
-    raise HTTPException(status_code=501, detail="Analysis endpoint: not yet implemented")
+    raise HTTPException(
+        status_code=501, detail="Analysis endpoint: not yet implemented"
+    )

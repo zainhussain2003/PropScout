@@ -3,7 +3,7 @@ Closing cost calculations including Land Transfer Tax by province.
 Ontario LTT + Toronto MLTT supported at MVP.
 """
 
-from ..constants.provinces import ONTARIO_LTT_BRACKETS, TORONTO_MLTT_BRACKETS
+from constants.provinces import ONTARIO_LTT_BRACKETS, TORONTO_MLTT_BRACKETS
 
 
 def calculate_ltt(purchase_price: float, brackets: list[tuple[float, float]]) -> float:
@@ -81,13 +81,15 @@ def estimate_closing_costs(
     title_insurance = 300.0
     home_inspection = 600.0 if include_home_inspection else 0.0
 
-    total = ltt_provincial + ltt_municipal + legal_fees + title_insurance + home_inspection
+    total = (
+        ltt_provincial + ltt_municipal + legal_fees + title_insurance + home_inspection
+    )
 
     return {
-        'ltt_provincial': ltt_provincial,
-        'ltt_municipal': ltt_municipal,
-        'legal_fees': legal_fees,
-        'title_insurance': title_insurance,
-        'home_inspection': home_inspection,
-        'total': round(total, 2),
+        "ltt_provincial": ltt_provincial,
+        "ltt_municipal": ltt_municipal,
+        "legal_fees": legal_fees,
+        "title_insurance": title_insurance,
+        "home_inspection": home_inspection,
+        "total": round(total, 2),
     }

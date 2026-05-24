@@ -28,7 +28,9 @@ def calculate_deal_score(
     Returns:
         Dict with 'total' (float), 'verdict' (str), and 'breakdown' (dict).
     """
-    raise NotImplementedError("Deal score formula: see spec Section 10 — implement before use")
+    raise NotImplementedError(
+        "Deal score formula: see spec Section 10 — implement before use"
+    )
 
 
 def get_verdict(score: float) -> str:
@@ -41,21 +43,22 @@ def get_verdict(score: float) -> str:
     Returns:
         Verdict string matching DealVerdict type.
     """
-    from ..constants.thresholds import (
+    from constants.thresholds import (
         DEAL_SCORE_STRONG,
         DEAL_SCORE_GOOD,
         DEAL_SCORE_CAUTION,
         DEAL_SCORE_MARGINAL,
         DEAL_SCORE_DO_NOT_BUY,
     )
+
     if score >= DEAL_SCORE_STRONG:
-        return 'strong_buy'
+        return "strong_buy"
     if score >= DEAL_SCORE_GOOD:
-        return 'good_deal'
+        return "good_deal"
     if score >= DEAL_SCORE_CAUTION:
-        return 'caution'
+        return "caution"
     if score >= DEAL_SCORE_MARGINAL:
-        return 'marginal'
+        return "marginal"
     if score >= DEAL_SCORE_DO_NOT_BUY:
-        return 'do_not_buy'
-    return 'hard_pass'
+        return "do_not_buy"
+    return "hard_pass"
