@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master, main]
   pull_request:
-    branches: [main]
+    branches: [master, main]
 
 jobs:
 
@@ -42,7 +42,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm test --workspace=apps/web -- --watchAll=false
+      - run: npm test --workspace=apps/web
 
   test-api:
     name: Tests — api
