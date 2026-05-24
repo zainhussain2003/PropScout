@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PropScout — Paywall states · Design review</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #F1ECE2;
+    --bg-elev: #FBF7EE;
+    --surface: #FFFFFF;
+    --ink: #0E1320;
+    --ink-2: #3B3A35;
+    --muted: #76716A;
+    --line: rgba(14, 19, 32, 0.10);
+    --line-strong: rgba(14, 19, 32, 0.16);
+    --accent: #D97757;
+    --accent-ink: #FFFFFF;
+    --pass: #4F7A48;
+    --caution: #B98724;
+    --fail: #B14A37;
+    --chip-bg: rgba(14, 19, 32, 0.04);
+    --shadow-card: 0 1px 0 rgba(14,19,32,.04), 0 8px 28px -16px rgba(14,19,32,.18);
+    --shadow-pop: 0 24px 48px -24px rgba(14,19,32,.35), 0 4px 16px -8px rgba(14,19,32,.16);
+    --radius: 14px;
+    --radius-lg: 22px;
+    --maxw: 1280px;
+    --gutter: clamp(20px, 4vw, 56px);
+  }
+
+  [data-theme="dark"] {
+    --bg: #0A0D14;
+    --bg-elev: #11141C;
+    --surface: #161A24;
+    --ink: #F1ECE0;
+    --ink-2: #C6C1B5;
+    --muted: #807B71;
+    --line: rgba(241, 236, 224, 0.10);
+    --line-strong: rgba(241, 236, 224, 0.18);
+    --chip-bg: rgba(241, 236, 224, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    transition: background-color .35s ease, color .35s ease;
+  }
+  .serif { font-family: 'Instrument Serif', 'Times New Roman', serif; font-weight: 400; letter-spacing: -0.01em; }
+  .mono  { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  h1, h2, h3 { margin: 0; font-weight: 500; letter-spacing: -0.02em; padding-bottom: 0.05em; }
+  h1 { font-size: clamp(40px, 5vw, 64px); line-height: 0.98; letter-spacing: -0.035em; }
+  h2 { font-size: clamp(26px, 3vw, 40px); line-height: 1.06; letter-spacing: -0.03em; }
+  h3 { font-size: 22px; line-height: 1.2; }
+
+  .container { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+  .row { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; }
+  .grow { flex: 1; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px; border-radius: 999px;
+    font: 500 14px/1 'Geist', sans-serif;
+    border: 1px solid transparent; cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--ink); color: var(--bg); }
+  .btn-primary:hover { background: var(--accent); color: var(--accent-ink); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { color: var(--accent); border-color: var(--accent); }
+  .btn-accent { background: var(--accent); color: var(--accent-ink); }
+  .btn-accent:hover { filter: brightness(0.95); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--chip-bg); color: var(--ink-2);
+    font-size: 12px; font-weight: 500;
+    border: 1px solid var(--line);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  .divider { height: 1px; background: var(--line); width: 100%; }
+
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .section-tag::before {
+    content: ""; width: 22px; height: 1px; background: var(--ink); opacity: 0.5;
+  }
+
+  /* — Pro badge — */
+  .pro-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--accent); color: var(--accent-ink);
+    font: 600 10px/1 'Geist Mono', monospace;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+
+  /* — Locked overlay (uses backdrop-filter for blur underneath) — */
+  .locked-overlay {
+    position: absolute; inset: 0;
+    backdrop-filter: blur(8px) saturate(110%);
+    -webkit-backdrop-filter: blur(8px) saturate(110%);
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--surface) 20%, transparent) 0%,
+      color-mix(in oklab, var(--surface) 88%, transparent) 60%,
+      var(--surface) 100%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    pointer-events: auto;
+  }
+
+  /* Used to mute the content below the overlay */
+  .locked-base {
+    position: relative; overflow: hidden;
+    border-radius: 18px;
+  }
+
+  /* Photo placeholder reused */
+  .photo-ph {
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--ink) 8%, transparent), color-mix(in oklab, var(--accent) 12%, transparent)),
+      repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklab, var(--ink) 4%, transparent) 6px 7px);
+    color: var(--muted);
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+
+  @keyframes livePulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+  .live-dot { animation: livePulse 1.6s ease-in-out infinite; }
+
+  /* Demo-page label that appears above each scenario */
+  .scenario-label {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+    padding: 6px 14px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .scenario-label::before {
+    content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--accent);
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  /* Modal inner scroll — thin, inset */
+  .mm-scroll { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  .mm-scroll::-webkit-scrollbar { width: 8px; }
+  .mm-scroll::-webkit-scrollbar-track { background: transparent; margin: 12px 0; }
+  .mm-scroll::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 999px;
+    border: 2px solid var(--surface);
+    background-clip: content-box;
+  }
+  .mm-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; border: 2px solid var(--surface); }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="paywall-components.jsx"></script>
+  <script type="text/babel" src="paywall-states.jsx"></script>
+</body>
+</html>

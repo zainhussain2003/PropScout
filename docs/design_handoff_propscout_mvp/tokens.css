@@ -1,0 +1,76 @@
+/* PropScout · Design Tokens
+ *
+ * Import this once at the top of your global stylesheet:
+ *   @import './tokens.css';
+ *
+ * Or move the :root and [data-theme="dark"] blocks into your
+ * Tailwind / Vanilla Extract / Vanilla CSS-in-JS theme definition.
+ *
+ * Light mode is the default. Dark mode activates when
+ *   document.documentElement.setAttribute('data-theme', 'dark')
+ * is set (driven by your user-preference state).
+ */
+
+:root {
+  /* ── Surfaces ───────────────────────────────────────────── */
+  --bg:           #F1ECE2;   /* page background — warm cream */
+  --bg-elev:      #FBF7EE;   /* lifted cream — input fields, soft cards */
+  --surface:      #FFFFFF;   /* hard surface — primary cards */
+
+  /* ── Ink ─────────────────────────────────────────────────── */
+  --ink:          #0E1320;   /* near-black, cool tint — text + primary buttons */
+  --ink-2:        #3B3A35;   /* body copy */
+  --muted:        #76716A;   /* labels, hints, secondary text */
+
+  /* ── Lines & dividers ────────────────────────────────────── */
+  --line:         rgba(14, 19, 32, 0.10);
+  --line-strong:  rgba(14, 19, 32, 0.16);
+
+  /* ── Brand accent ────────────────────────────────────────── */
+  --accent:       #D97757;   /* terracotta — brand + Pro + CTA */
+  --accent-ink:   #FFFFFF;   /* foreground on accent backgrounds */
+
+  /* ── Data states ─────────────────────────────────────────── */
+  --pass:         #4F7A48;   /* sage — good deal, pass, positive */
+  --caution:      #B98724;   /* amber — caution, soft warning */
+  --fail:         #B14A37;   /* clay — hard pass, fail, negative */
+
+  /* ── Chip / soft background ──────────────────────────────── */
+  --chip-bg:      rgba(14, 19, 32, 0.04);
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-card:  0 1px 0 rgba(14, 19, 32, .04),
+                  0 8px 28px -16px rgba(14, 19, 32, .18);
+  --shadow-pop:   0 24px 48px -24px rgba(14, 19, 32, .35),
+                  0 4px 16px -8px rgba(14, 19, 32, .16);
+
+  /* ── Radii ───────────────────────────────────────────────── */
+  --radius-sm:    8px;
+  --radius:       14px;
+  --radius-lg:    22px;
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  --maxw:         1280px;
+  --gutter:       clamp(20px, 4vw, 56px);
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:           #0A0D14;
+  --bg-elev:      #11141C;
+  --surface:      #161A24;
+  --ink:          #F1ECE0;
+  --ink-2:        #C6C1B5;
+  --muted:        #807B71;
+  --line:         rgba(241, 236, 224, 0.10);
+  --line-strong:  rgba(241, 236, 224, 0.18);
+  --chip-bg:      rgba(241, 236, 224, 0.06);
+  --shadow-card:  0 1px 0 rgba(255, 255, 255, .02) inset,
+                  0 16px 40px -20px rgba(0, 0, 0, .6);
+  --shadow-pop:   0 24px 60px -20px rgba(0, 0, 0, .7);
+}
+
+/* ── Type scale (apply to your h1/h2/h3 in global styles) ── */
+:where(h1) { font-size: clamp(40px, 5vw, 72px); line-height: 0.98; letter-spacing: -0.035em; }
+:where(h2) { font-size: clamp(30px, 3.6vw, 48px); line-height: 1.06; letter-spacing: -0.03em; }
+:where(h3) { font-size: clamp(20px, 1.6vw, 24px); line-height: 1.2; }

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PropScout — Mode selection modal</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #F1ECE2;
+    --bg-elev: #FBF7EE;
+    --surface: #FFFFFF;
+    --ink: #0E1320;
+    --ink-2: #3B3A35;
+    --muted: #76716A;
+    --line: rgba(14, 19, 32, 0.10);
+    --line-strong: rgba(14, 19, 32, 0.16);
+    --accent: #D97757;
+    --accent-ink: #FFFFFF;
+    --pass: #4F7A48;
+    --caution: #B98724;
+    --fail: #B14A37;
+    --chip-bg: rgba(14, 19, 32, 0.04);
+    --shadow-card: 0 1px 0 rgba(14,19,32,.04), 0 8px 28px -16px rgba(14,19,32,.18);
+    --radius-sm: 8px;
+    --radius: 14px;
+    --radius-lg: 22px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0A0D14;
+    --bg-elev: #11141C;
+    --surface: #161A24;
+    --ink: #F1ECE0;
+    --ink-2: #C6C1B5;
+    --muted: #807B71;
+    --line: rgba(241, 236, 224, 0.10);
+    --line-strong: rgba(241, 236, 224, 0.18);
+    --chip-bg: rgba(241, 236, 224, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    transition: background-color .35s ease, color .35s ease;
+  }
+  .serif { font-family: 'Instrument Serif', 'Times New Roman', serif; font-weight: 400; letter-spacing: -0.01em; }
+  .mono  { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  h1, h2, h3, h4 { margin: 0; font-weight: 500; letter-spacing: -0.02em; padding-bottom: 0.05em; }
+  h1 { font-size: clamp(46px, 6vw, 84px); line-height: 0.98; letter-spacing: -0.035em; }
+  h2 { font-size: clamp(34px, 4vw, 52px); line-height: 1.06; letter-spacing: -0.03em; }
+
+  .container { max-width: 1320px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 56px); }
+
+  .row { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; } .gap-32 { gap: 32px; }
+  .grow { flex: 1; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--chip-bg); color: var(--ink-2);
+    font-size: 12px; font-weight: 500;
+    border: 1px solid var(--line);
+  }
+  .chip-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px; border-radius: 999px;
+    font: 500 14px/1 'Geist', sans-serif;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform .15s ease, background-color .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .btn-primary { background: var(--ink); color: var(--bg); }
+  .btn-primary:hover { background: var(--accent); color: var(--accent-ink); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { color: var(--accent); border-color: var(--accent); }
+
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .section-tag::before {
+    content: ""; width: 22px; height: 1px; background: var(--ink); opacity: 0.5;
+  }
+
+  .photo-ph {
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--ink) 8%, transparent), color-mix(in oklab, var(--accent) 12%, transparent)),
+      repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklab, var(--ink) 4%, transparent) 6px 7px);
+    color: var(--muted);
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .live-dot { animation: livePulse 1.6s ease-in-out infinite; }
+
+  /* Page background — dimmed hero behind the modal */
+  .ctx-stage {
+    position: relative;
+    min-height: 100vh;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .ctx-hero {
+    padding: 80px 0 60px;
+    filter: blur(2px) brightness(0.92);
+    opacity: 0.55;
+    transition: filter .3s ease, opacity .3s ease;
+    pointer-events: none;
+    user-select: none;
+  }
+  .ctx-stage.no-modal .ctx-hero { filter: none; opacity: 1; }
+
+  /* Caption shown in top-left corner — design context */
+  .caption {
+    position: fixed; top: 16px; left: 16px;
+    z-index: 5;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--surface) 86%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line);
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  /* Modal inner scroll — thin, inset, matches surface */
+  .mm-scroll { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  .mm-scroll::-webkit-scrollbar { width: 8px; }
+  .mm-scroll::-webkit-scrollbar-track { background: transparent; margin: 12px 0; }
+  .mm-scroll::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 999px;
+    border: 2px solid var(--surface);
+    background-clip: content-box;
+  }
+  .mm-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; border: 2px solid var(--surface); }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="mode-modal.jsx"></script>
+  <script type="text/babel">
+    const { useState: useStateApp, useEffect: useEffectApp } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "theme": "light",
+      "accent": "#D97757",
+      "listingType": "rent",
+      "state": "idle",
+      "modalOpen": false
+    }/*EDITMODE-END*/;
+
+    const ACCENT_OPTIONS = ['#D97757', '#1F8A5B', '#2A6FDB', '#B14A37', '#7A5AE0'];
+
+    // Two sample listings, one per type
+    const LISTINGS = {
+      rent: {
+        kind: 'rent',
+        address: 'Unit 3705 · 28 Charles St E, Toronto ON',
+        price: '$2,150/mo asking',
+        beds: '1+den · 1 bath',
+        sqft: '620 sqft',
+        extra: 'Heat & water incl.',
+      },
+      sale: {
+        kind: 'sale',
+        address: '146 East 19th Street, Hamilton ON',
+        price: '$849,000',
+        beds: 'Duplex · 4 bed',
+        sqft: '1,820 sqft',
+        extra: 'Built 1958',
+      },
+    };
+
+    function MockHero() {
+      // Just enough hero to set the context behind the modal.
+      return (
+        <div className="ctx-hero">
+          <div className="container col gap-32">
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <Wordmark height={24}/>
+              <div className="row gap-32" style={{ fontSize: 14, color: 'var(--ink-2)' }}>
+                <span>How it works</span>
+                <span>Reports</span>
+                <span>SunScout</span>
+                <span>Pricing</span>
+              </div>
+              <div className="row gap-12">
+                <span className="btn btn-ghost">Sign in</span>
+                <span className="btn btn-primary">Start free</span>
+              </div>
+            </div>
+
+            <div className="col" style={{ maxWidth: 1100, marginTop: 40 }}>
+              <div className="row gap-12" style={{ marginBottom: 24 }}>
+                <span className="chip">
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }} className="live-dot"/>
+                  Live in Ontario · 2,400 listings analyzed last week
+                </span>
+              </div>
+              <h1 className="serif" style={{ textWrap: 'balance', marginBottom: 22 }}>
+                Know what any Canadian listing
+                <br/>
+                is <em style={{ color: 'var(--accent)' }}>really</em> worth — before you sign.
+              </h1>
+              <p style={{ fontSize: 19, maxWidth: 720, color: 'var(--ink-2)', marginBottom: 28 }}>
+                Paste any listing. Whether you're renting, buying a home, hunting an investment, or pricing out your own unit — PropScout returns a full, plain-English report in under sixty seconds.
+              </p>
+
+              {/* Input bar */}
+              <div className="row gap-16" style={{ flexWrap: 'wrap', marginTop: 8 }}>
+                <div className="row" style={{
+                  flex: '1 1 480px',
+                  background: 'var(--bg-elev)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 14,
+                  padding: '14px 16px',
+                  gap: 12, minWidth: 0,
+                }}>
+                  <Icon name="link" size={18}/>
+                  <span style={{
+                    flex: 1, fontFamily: "'Geist Mono', monospace",
+                    fontSize: 13, color: 'var(--ink)', minWidth: 0,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>… / listing / 27905412 / unit-3705 · 28 charles st e · toronto</span>
+                </div>
+                <span className="btn btn-primary" style={{ padding: '14px 22px', fontSize: 15 }}>
+                  Analyze <Icon name="arrow" size={15}/>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [modalOpen, setModalOpen] = useStateApp(t.modalOpen);
+      const [completedKey, setCompletedKey] = useStateApp(null);
+
+      useEffectApp(() => {
+        document.documentElement.setAttribute('data-theme', t.theme);
+        document.documentElement.style.setProperty('--accent', t.accent);
+        document.documentElement.style.setProperty('--accent-ink', t.theme === 'dark' ? '#0A0D14' : '#FFFFFF');
+      }, [t]);
+
+      useEffectApp(() => { setModalOpen(t.modalOpen); }, [t.modalOpen]);
+
+      const listing = LISTINGS[t.listingType];
+
+      return (
+        <div className={`ctx-stage ${!modalOpen ? 'no-modal' : ''}`}>
+          <span className="caption">PropScout · Mode selection modal · Design preview</span>
+
+          <MockHero/>
+
+          <ModeModal
+            open={modalOpen}
+            listing={listing}
+            onClose={() => {
+              setModalOpen(false);
+              setTweak('modalOpen', false);
+            }}
+            onSelect={(k) => {
+              setCompletedKey(k);
+              setModalOpen(false);
+              setTweak('modalOpen', false);
+            }}
+            forceState={t.state}
+          />
+
+          {!modalOpen && (
+            <div style={{
+              position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 5,
+              background: 'var(--surface)', border: '1px solid var(--line)',
+              borderRadius: 999, padding: '8px 12px 8px 18px',
+              boxShadow: 'var(--shadow-card)',
+              display: 'flex', alignItems: 'center', gap: 14,
+              fontSize: 13,
+            }}>
+              {completedKey
+                ? <span>You selected <strong style={{ color: 'var(--accent)' }}>{completedKey}</strong> — report would open now.</span>
+                : <span>Modal closed.</span>}
+              <button
+                onClick={() => { setModalOpen(true); setTweak('modalOpen', true); setCompletedKey(null); }}
+                className="btn btn-primary"
+                style={{ padding: '8px 14px', fontSize: 12 }}
+              >Reopen modal</button>
+            </div>
+          )}
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Modal context"/>
+            <TweakRadio
+              label="Listing type"
+              value={t.listingType}
+              options={['rent', 'sale']}
+              onChange={(v) => setTweak('listingType', v)}
+            />
+            <TweakRadio
+              label="State"
+              value={t.state}
+              options={['idle', 'selected', 'loading']}
+              onChange={(v) => setTweak('state', v)}
+            />
+            <TweakToggle
+              label="Modal open"
+              value={t.modalOpen}
+              onChange={(v) => setTweak('modalOpen', v)}
+            />
+
+            <TweakSection label="Theme"/>
+            <TweakRadio
+              label="Mode"
+              value={t.theme}
+              options={['light', 'dark']}
+              onChange={(v) => setTweak('theme', v)}
+            />
+            <TweakColor
+              label="Accent"
+              value={t.accent}
+              options={ACCENT_OPTIONS}
+              onChange={(v) => setTweak('accent', v)}
+            />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
