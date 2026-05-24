@@ -1,0 +1,121 @@
+@import './tokens.css';
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  min-height: 100dvh;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+
+/*
+ * Font usage rules — never deviate:
+ *   Instrument Serif → display headings, section questions, italic accent nouns
+ *   Geist            → all body copy, UI labels, buttons, navigation
+ *   Geist Mono       → eyebrows, percentages, dollar amounts, codes, tags
+ */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--ink);
+  font-family: 'Geist', sans-serif;
+  font-weight: 600;
+}
+
+/* Display headings and section questions use Instrument Serif */
+.display,
+.section-question {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+}
+
+/* Italic brand accent — "Is the rent fair?" — apply to key nouns */
+em {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+}
+
+/* Mono — all data values */
+.mono,
+[data-mono] {
+  font-family: 'Geist Mono', 'Courier New', monospace;
+  font-feature-settings: 'tnum' 1, 'salt' 1;
+}
+
+p {
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+/* ── Interactive elements — standard timing ─────────────────── */
+
+/*
+ * Every interactive element follows this timing. Never deviate:
+ *   Hover:       0.15s ease → border + color → --accent
+ *   Modal open:  0.25s → backdrop fade + translate + scale
+ */
+
+button {
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: 'Geist', sans-serif;
+  font-size: 1rem;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* ── Utility ─────────────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

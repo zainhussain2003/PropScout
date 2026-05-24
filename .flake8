@@ -1,0 +1,9 @@
+[flake8]
+# Match black's default line length so the two tools don't conflict.
+max-line-length = 88
+exclude =
+    .venv,
+    __pycache__,
+    dist,
+    node_modules,
+    .git
