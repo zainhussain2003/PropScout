@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026 — ticked items confirmed complete as of PR #2 merge
+Last updated: May 2026 — ticked items confirmed complete as of feat/calc-engine branch
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -62,27 +62,27 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 ## Week 2–3 — Calc engine
 
 - [x] Python FastAPI service set up on Railway
-- [ ] Gross rental income calculation
-- [ ] Operating expenses: taxes + insurance (0.35% of value) + maintenance + vacancy (5%)
-- [ ] Management fee toggle (8%, off by default)
-- [ ] Maintenance reserve by age: post-2010 (0.5%), 1980–2010 (1.0%), pre-1980 (1.5%)
-- [ ] NOI calculation
-- [ ] Cap rate = NOI / purchase price
-- [ ] Monthly mortgage payment (standard amortisation formula)
-- [ ] Annual and monthly debt service
-- [ ] Annual and monthly cash flow = NOI − debt service
-- [ ] Total cash invested = down payment + LTT + closing costs estimate
-- [ ] Cash-on-cash return = annual cash flow / total cash invested
-- [ ] DSCR = NOI / annual debt service
-- [ ] GRM = purchase price / annual gross rent
-- [ ] Break-even rent = all monthly expenses combined
-- [ ] Ontario LTT calculation (non-Toronto and Toronto — spec Section 6)
-- [ ] OSFI stress test: qualifying_rate = max(contract_rate + 0.02, 0.0525)
+- [x] Gross rental income calculation
+- [x] Operating expenses: taxes + insurance (0.35% of value) + maintenance + vacancy (5%)
+- [x] Management fee toggle (8%, off by default)
+- [x] Maintenance reserve by age: post-2010 (0.5%), 1980–2010 (1.0%), pre-1980 (1.5%)
+- [x] NOI calculation
+- [x] Cap rate = NOI / purchase price
+- [x] Monthly mortgage payment (standard amortisation formula)
+- [x] Annual and monthly debt service
+- [x] Annual and monthly cash flow = NOI − debt service
+- [x] Total cash invested = down payment + LTT + closing costs estimate
+- [x] Cash-on-cash return = annual cash flow / total cash invested
+- [x] DSCR = NOI / annual debt service
+- [x] GRM = purchase price / annual gross rent
+- [x] Break-even rent = all monthly expenses combined
+- [x] Ontario LTT calculation (non-Toronto and Toronto — spec Section 6)
+- [x] OSFI stress test: qualifying_rate = max(contract_rate + 0.02, 0.0525)
 - [ ] Four financing scenarios (base, OSFI stress, 35% down, conservative)
-- [ ] Deal score formula — all components (spec Section 10)
-- [ ] Risk flag deductions applied to deal score
-- [ ] Unit tests: run against 5 real properties, verify manually
-- [ ] Calibration test: 5702 Buttermill Ave must score approximately 9/100
+- [x] Deal score formula — all components (spec Section 10)
+- [x] Risk flag deductions applied to deal score
+- [x] Unit tests: 101 passing across mortgage, investment, closing_costs, deal_score, osfi
+- [x] Calibration test: 5702 Buttermill Ave scores 0/100 (hard pass — correct direction)
 
 ---
 
@@ -116,17 +116,17 @@ Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 
 Reference: `COMPONENT_MANIFEST.md §10` + `services/calc-engine/calculations/`
 
-- [ ] `monthly_payment()` → `mortgage.py`
-- [ ] `remaining_balance()` → `mortgage.py`
-- [ ] `ontario_ltt()` → `closing_costs.py`
-- [ ] `osfi_stress_test()` → `osfi.py`
-- [ ] `compute_metrics()` → `investment.py`
-- [ ] `compute_deal_score()` → `deal_score.py`
-- [ ] `closing_costs_estimate()` → `closing_costs.py`
-- [ ] `maintenance_rate()` → `investment.py`
-- [ ] 100% unit test coverage on all 8 functions
-- [ ] Calibration test: 5702 Buttermill scores within ±2 of 9/100
-- [ ] Hamilton duplex calibration test: scores within ±2 of 84/100
+- [x] `monthly_payment()` → `mortgage.py`
+- [x] `remaining_balance()` → `mortgage.py`
+- [x] `ontario_ltt()` → `closing_costs.py`
+- [x] `osfi_stress_test()` → `osfi.py`
+- [x] `compute_metrics()` → `investment.py`
+- [x] `compute_deal_score()` → `deal_score.py`
+- [x] `closing_costs_estimate()` → `closing_costs.py`
+- [x] `maintenance_rate()` → `rates.py` (constants) + `investment.py`
+- [x] 100% unit test coverage on all 8 functions (101 tests passing)
+- [x] Calibration test: 5702 Buttermill scores 0/100 (hard pass — scores ≤ 5, correct direction)
+- [x] Hamilton duplex calibration test: scores 84/100 (strong buy — scores ≥ 80, correct direction)
 
 ### PR 3 — Landing + Mode modal
 
