@@ -1,7 +1,9 @@
 @import './tokens.css';
 
 /* ── Reset ─────────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -12,6 +14,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'ss01', 'cv11';
 }
 
 body {
@@ -19,8 +22,11 @@ body {
   color: var(--ink-2);
   font-family: 'Geist', system-ui, sans-serif;
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.5;
   min-height: 100dvh;
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
 }
 
 /* ── Typography ─────────────────────────────────────────────── */
@@ -32,10 +38,71 @@ body {
  *   Geist Mono       → eyebrows, percentages, dollar amounts, codes, tags
  */
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--ink);
   font-family: 'Geist', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(46px, 6.6vw, 96px);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  padding-bottom: 0.04em;
+}
+h2 {
+  font-size: clamp(34px, 4.4vw, 60px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  padding-bottom: 0.08em;
+}
+h3 {
+  font-size: clamp(20px, 1.6vw, 24px);
+  line-height: 1.2;
+}
+
+/* Instrument Serif — display headings, questions, italic accent nouns */
+.serif {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Mono — all data values, eyebrows, codes */
+.mono,
+[data-mono] {
+  font-family: 'Geist Mono', 'Courier New', monospace;
+  font-feature-settings:
+    'tnum' 1,
+    'salt' 1,
+    'ss01' 1;
+}
+
+/* Tabular numbers — dollar amounts, percentages */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Eyebrow — Geist Mono uppercase label */
+.eyebrow {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Accent color text */
+.accent {
+  color: var(--accent);
 }
 
 /* Display headings and section questions use Instrument Serif */
@@ -51,35 +118,16 @@ em {
   font-style: italic;
 }
 
-/* Mono — all data values */
-.mono,
-[data-mono] {
-  font-family: 'Geist Mono', 'Courier New', monospace;
-  font-feature-settings: 'tnum' 1, 'salt' 1;
-}
-
 p {
   color: var(--ink-2);
   line-height: 1.65;
+  margin: 0;
 }
 
 a {
-  color: var(--accent);
+  color: inherit;
   text-decoration: none;
-  transition: opacity 0.15s ease;
 }
-
-a:hover {
-  opacity: 0.8;
-}
-
-/* ── Interactive elements — standard timing ─────────────────── */
-
-/*
- * Every interactive element follows this timing. Never deviate:
- *   Hover:       0.15s ease → border + color → --accent
- *   Modal open:  0.25s → backdrop fade + translate + scale
- */
 
 button {
   cursor: pointer;
@@ -88,7 +136,9 @@ button {
   background: none;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: 'Geist', sans-serif;
   font-size: 1rem;
 }
@@ -106,7 +156,320 @@ img {
   padding: 0 var(--gutter);
 }
 
-/* ── Utility ─────────────────────────────────────────────────── */
+/* ── Flex utilities ──────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: center;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.grow {
+  flex: 1;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+.gap-12 {
+  gap: 12px;
+}
+.gap-16 {
+  gap: 16px;
+}
+.gap-24 {
+  gap: 24px;
+}
+.gap-32 {
+  gap: 32px;
+}
+.gap-40 {
+  gap: 40px;
+}
+.gap-48 {
+  gap: 48px;
+}
+
+/* ── Divider ────────────────────────────────────────────────── */
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  width: 100%;
+}
+
+/* ── Buttons ────────────────────────────────────────────────── */
+
+/*
+ * Interaction timing rules — never deviate:
+ *   Hover: 0.15s ease → border + color → --accent
+ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font:
+    500 14px/1 'Geist',
+    sans-serif;
+  letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+.btn-primary:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.btn-ghost:hover {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-accent:hover {
+  filter: brightness(0.95);
+}
+
+/* ── Chips ───────────────────────────────────────────────────── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+}
+
+.chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* ── Cards ───────────────────────────────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Navigation links ────────────────────────────────────────── */
+
+.nav-links a {
+  transition: color 0.15s ease;
+}
+.nav-links a:hover {
+  color: var(--accent);
+}
+
+footer a {
+  transition: color 0.15s ease;
+}
+footer a:hover {
+  color: var(--accent) !important;
+}
+
+/* ── Section tag / report section labels ─────────────────────── */
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-tag::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.5;
+}
+
+/* ── Report section layout ───────────────────────────────────── */
+
+.tr-section {
+  padding-top: clamp(56px, 7vw, 96px);
+}
+
+.tr-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+/* ── Verdict pill ────────────────────────────────────────────── */
+
+.verdict-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.verdict-pill::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.verdict-pill.pass {
+  color: var(--pass);
+  background: color-mix(in oklab, var(--pass) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--pass) 30%, transparent);
+}
+
+.verdict-pill.caution {
+  color: var(--caution);
+  background: color-mix(in oklab, var(--caution) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--caution) 30%, transparent);
+}
+
+.verdict-pill.fail {
+  color: var(--fail);
+  background: color-mix(in oklab, var(--fail) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--fail) 30%, transparent);
+}
+
+/* ── Image placeholder pattern ───────────────────────────────── */
+
+.photo-ph {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--ink) 8%, transparent),
+      color-mix(in oklab, var(--accent) 12%, transparent)
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 6px,
+      color-mix(in oklab, var(--ink) 4%, transparent) 6px 7px
+    );
+  color: var(--muted);
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 14px;
+}
+
+/* ── Comp marker hover (Mapbox) ──────────────────────────────── */
+
+.comp-marker:hover .comp-marker-dot {
+  background: var(--accent) !important;
+  transform: rotate(45deg) scale(1.18);
+}
+
+.comp-marker:hover .comp-marker-tip {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+/* ── Hero input ──────────────────────────────────────────────── */
+
+.hero-input-shell:hover {
+  border-color: var(--line-strong);
+}
+.hero-input-shell:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.live-dot {
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  gap: 56px;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+
+@keyframes sweep {
+  from {
+    stroke-dashoffset: var(--circ);
+  }
+  to {
+    stroke-dashoffset: var(--target);
+  }
+}
+
+/* ── Accessibility ───────────────────────────────────────────── */
 
 .sr-only {
   position: absolute;
@@ -118,4 +481,20 @@ img {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+
+body::-webkit-scrollbar {
+  width: 10px;
+}
+body::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
 }
