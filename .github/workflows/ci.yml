@@ -7,8 +7,57 @@ on:
     branches: [main]
 
 jobs:
+
+  typecheck-frontend:
+    name: Type check — web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck --workspace=apps/web
+
+  typecheck-api:
+    name: Type check — api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck --workspace=apps/api
+
+  test-frontend:
+    name: Tests — web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test --workspace=apps/web -- --watchAll=false
+
+  test-api:
+    name: Tests — api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test --workspace=apps/api
+
   test-python:
-    name: Python calc engine tests
+    name: Tests — calc engine
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,31 +72,26 @@ jobs:
         run: |
           cd services/calc-engine
           pytest . -v --ignore=tests/
-      - name: Golden dataset regression (95%+ gate)
-        run: |
-          cd services/calc-engine
-          pytest tests/golden_dataset/test_extraction.py -v
       - name: Calculation regression (100% gate)
         run: |
           cd services/calc-engine
           pytest tests/test_regression.py -v
 
-  test-typescript:
-    name: TypeScript tests
+  golden-dataset:
+    name: Golden dataset regression (95%+ gate)
     runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: '20'
-          cache: 'npm'
+          python-version: '3.11'
       - name: Install dependencies
-        run: npm ci
-      - name: Type check (web)
-        run: npm run typecheck --workspace=apps/web
-      - name: Type check (api)
-        run: npm run typecheck --workspace=apps/api
-      - name: Tests (web)
-        run: npm test --workspace=apps/web
-      - name: Tests (api)
-        run: npm test --workspace=apps/api
+        run: |
+          cd services/calc-engine
+          pip install -r requirements.txt
+      - name: Golden dataset extraction accuracy
+        run: |
+          cd services/calc-engine
+          pytest tests/golden_dataset/test_extraction.py -v

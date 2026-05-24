@@ -1,0 +1,32 @@
+[
+  {
+    "id": "gc-001",
+    "description": "Beautiful 2+1 condo in the heart of Vaughan. Currently tenanted at $2,700/month. Tenant would like to stay. Condo fee includes water and building insurance. One underground parking spot included.",
+    "expected_flags": {
+      "tenanted": true,
+      "parking_included": true,
+      "utilities_included": false
+    },
+    "notes": "Calibration case — tenant in place + parking"
+  },
+  {
+    "id": "gc-002",
+    "description": "Stunning detached home in North York. No pets please. Utilities extra. Newly renovated kitchen and bathrooms. Quick closing preferred.",
+    "expected_flags": {
+      "no_pets": true,
+      "utilities_extra": true,
+      "recently_renovated": true,
+      "tenanted": false
+    },
+    "notes": "Multi-flag case"
+  },
+  {
+    "id": "gc-003",
+    "description": "Sold as-is. Handyman special in need of TLC. Great bones. Investor opportunity. Short-term rental permitted in building.",
+    "expected_flags": {
+      "needs_work": true,
+      "str_history": true
+    },
+    "notes": "Fixer-upper + STR flag"
+  }
+]

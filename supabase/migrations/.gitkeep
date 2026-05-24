@@ -1,0 +1,7 @@
+# All database schema changes go here as dated SQL migration files.
+# Never alter the schema directly in the Supabase dashboard.
+#
+# Naming convention: YYYYMMDD_description.sql
+# Example: 20260524_initial_schema.sql
+#
+# Run migrations with: npx supabase db push
