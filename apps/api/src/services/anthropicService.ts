@@ -12,7 +12,9 @@ export interface NarrativeInput {
   capRate: number
   cashFlowMonthly: number
   dscr: number
-  dealVerdict: Analysis['dealScore'] extends null ? never : NonNullable<Analysis['dealScore']>['verdict']
+  dealVerdict: Analysis['dealScore'] extends null
+    ? never
+    : NonNullable<Analysis['dealScore']>['verdict']
   riskFlagSummary: string
   tier: 'free' | 'pro'
 }
@@ -26,7 +28,7 @@ export interface NarrativeInput {
  * Never call this function directly from a route handler.
  * Always call through this service file.
  */
-export async function generateNarrative(input: NarrativeInput): Promise<string> {
+export async function generateNarrative(_input: NarrativeInput): Promise<string> {
   // TODO: implement prompt — see spec Section 12 for gold-standard examples
   throw new Error('generateNarrative: not yet implemented')
 }
@@ -38,7 +40,7 @@ export async function generateNarrative(input: NarrativeInput): Promise<string> 
  * Never feed raw description text into deal score calculations.
  * All text must pass through this extraction pipeline first (spec Section 19).
  */
-export async function extractListingFlags(description: string): Promise<Record<string, unknown>> {
+export async function extractListingFlags(_description: string): Promise<Record<string, unknown>> {
   // TODO: implement extraction prompt — see spec Section 19
   throw new Error('extractListingFlags: not yet implemented')
 }
