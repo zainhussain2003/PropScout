@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026
+Last updated: May 2026 — ticked items confirmed complete as of PR #2 merge
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -11,6 +11,7 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 ## Week 1–2 — Data pipeline (nothing else works without this)
 
 ### Realtor.ca scraper
+
 - [ ] Extract listing ID from Realtor.ca URL
 - [ ] Call Realtor.ca internal JSON API with correct headers (spec Section 11.2)
 - [ ] Parse: address, price, beds, baths, sqft, property type
@@ -24,6 +25,7 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [ ] Rate limiting: 1 request per 4 seconds, rotate 3 proxy IPs
 
 ### Zillow.ca scraper
+
 - [ ] Playwright headless Chrome setup on Railway
 - [ ] Navigate to listing URL, wait for full page load
 - [ ] Extract same fields as Realtor.ca scraper
@@ -32,11 +34,13 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [ ] Handle scraper failure gracefully
 
 ### Listing type detection
+
 - [ ] Parse URL to detect for-sale vs for-rent (spec Section 3)
 - [ ] Fallback: detect from scraped price format (monthly = rental)
 - [ ] Ambiguous case: default to for-sale, show toggle
 
 ### Rental comps scraper (nightly job)
+
 - [ ] Playwright scraper for Rentals.ca
 - [ ] Playwright scraper for Kijiji (rental category)
 - [ ] Playwright scraper for PadMapper
@@ -48,6 +52,7 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [ ] Schedule as nightly Railway job at 2am ET
 
 ### Province detection
+
 - [ ] Parse postal code from scraped address
 - [ ] Ontario FSA check (starts with K, L, M, N, P)
 - [ ] Non-Ontario → return province code, block analysis, trigger waitlist flow
@@ -56,7 +61,7 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ## Week 2–3 — Calc engine
 
-- [ ] Python FastAPI service set up on Railway
+- [x] Python FastAPI service set up on Railway
 - [ ] Gross rental income calculation
 - [ ] Operating expenses: taxes + insurance (0.35% of value) + maintenance + vacancy (5%)
 - [ ] Management fee toggle (8%, off by default)
@@ -88,25 +93,27 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 > Use `OPENING_PROMPT.md` for the first Claude Code session.
 
 ### PR 1 — Foundation (shared components)
+
 Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 
-- [ ] Copy `tokens.css` into `apps/web/src/styles/` and import in global stylesheet
-- [ ] Add Google Fonts preconnect + link in `apps/web/index.html` (Instrument Serif + Geist + Geist Mono)
-- [ ] React + TypeScript project setup (Vite)
-- [ ] `<Wordmark height>` — "Prop*Scout*" wordmark with ScoutMark glyph
-- [ ] `<ScoutMark size color>` — standalone glyph (used as watermark on dark cards)
-- [ ] `<Icon name size stroke>` — full line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot)
-- [ ] `<Chip>` — inline pill tag
-- [ ] `<Button variant="primary|ghost|accent">` — all three variants, hover → terracotta 0.15s
-- [ ] `<Card>` — surface + line + shadow + radius-lg
-- [ ] `<SectionHead n topic question verdict tone>` — every report section header (shared across all 4 reports)
-- [ ] `<VerdictPill tone label>` — pass / caution / fail pill with dot prefix
-- [ ] `<Nav variant>` — landing, report, and account variants
-- [ ] `<Footer>` — shared footer
-- [ ] `<SignInModal open onClose>` — bottom-sheet sign-in / sign-up
-- [ ] Unit test + accessibility test every shared component before moving to PR 2
+- [x] Copy `tokens.css` into `apps/web/src/styles/` and import in global stylesheet
+- [x] Add Google Fonts preconnect + link in `apps/web/index.html` (Instrument Serif + Geist + Geist Mono)
+- [x] React + TypeScript project setup (Vite)
+- [x] `<Wordmark height>` — "Prop*Scout*" wordmark with ScoutMark glyph
+- [x] `<ScoutMark size color>` — standalone glyph (used as watermark on dark cards)
+- [x] `<Icon name size stroke>` — full line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot)
+- [x] `<Chip>` — inline pill tag
+- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → terracotta 0.15s
+- [x] `<Card>` — surface + line + shadow + radius-lg
+- [x] `<SectionHead n topic question verdict tone>` — every report section header (shared across all 4 reports)
+- [x] `<VerdictPill tone label>` — pass / caution / fail pill with dot prefix
+- [x] `<Nav variant>` — landing, report, and account variants
+- [x] `<Footer>` — shared footer
+- [x] `<SignInModal open onClose>` — bottom-sheet sign-in / sign-up
+- [x] Unit test + accessibility test every shared component before moving to PR 2
 
 ### PR 2 — Calc engine Python port
+
 Reference: `COMPONENT_MANIFEST.md §10` + `services/calc-engine/calculations/`
 
 - [ ] `monthly_payment()` → `mortgage.py`
@@ -122,6 +129,7 @@ Reference: `COMPONENT_MANIFEST.md §10` + `services/calc-engine/calculations/`
 - [ ] Hamilton duplex calibration test: scores within ±2 of 84/100
 
 ### PR 3 — Landing + Mode modal
+
 Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 
 - [ ] Landing page `/` — URL paste hero, embedded sample report, pricing section, FAQ
@@ -132,6 +140,7 @@ Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 - [ ] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
 
 ### PR 4 — Investor report end-to-end
+
 Reference: `Investor Report.html` + `investor-report.jsx` + `investor-sections.jsx` + `investor-sections-2.jsx`
 
 - [ ] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
@@ -152,6 +161,7 @@ Reference: `Investor Report.html` + `investor-report.jsx` + `investor-sections.j
 - [ ] Use Vaughan dataset from `investor-calc.jsx` until scraper is live
 
 ### PR 5 — Tenant report
+
 Reference: `Tenant Report.html` + `tenant-report.jsx` + `tenant-sections.jsx` + `tenant-sections-2.jsx` + `tenant-sections-3.jsx` + `tenant-schools.jsx`
 
 - [ ] `<FlagDeepRow flag>` — expandable risk flag with evidence quote + "Ask before signing"
@@ -166,6 +176,7 @@ Reference: `Tenant Report.html` + `tenant-report.jsx` + `tenant-sections.jsx` + 
 - [ ] All 12 tenant report sections rendered (spec Section 8)
 
 ### PR 6 — Personal buyer + Landlord reports
+
 Reference: `Personal Buyer Report.html` + `Landlord Report.html`
 
 - [ ] `<SchoolCard school>` + `<SchoolColumn>` — EQAO + Fraser + catchment badge
@@ -176,6 +187,7 @@ Reference: `Personal Buyer Report.html` + `Landlord Report.html`
 - [ ] Landlord report — all sections (reuses investor components heavily)
 
 ### PR 7 — Paywall, account, errors, auth
+
 Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth & Billing Stubs.html`
 
 - [ ] `<ProBadge tier>` — inline Pro marker with lock icon
@@ -194,6 +206,7 @@ Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth 
 - [ ] Wire all paywall components into every report
 
 ### PR 8 — Legal + 404 + mobile pass
+
 Reference: `Legal Pages.html` + `Mobile Pass.html`
 
 - [ ] Privacy policy `/privacy` with TOC sidebar
@@ -245,6 +258,7 @@ All tasks reference spec Section 19.
 - [ ] Accuracy at or above 95% before proceeding to Week 6
 
 ### SunScout
+
 - [ ] pvlib installed in Python calc engine
 - [ ] `window_sun_hours_by_month()` function (spec Section 17 — TEMPLATE)
 - [ ] `annual_light_score()` function (spec Section 17 — TEMPLATE)
@@ -259,6 +273,7 @@ All tasks reference spec Section 19.
 ## Week 6–7 — AI narratives and PDF
 
 ### Claude Sonnet narratives
+
 - [ ] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
 - [ ] Report A / D investment prompt — Pro tier (3 paragraphs, 150–320 words)
 - [ ] Report B personal prompt — free tier
@@ -270,6 +285,7 @@ All tasks reference spec Section 19.
 - [ ] Calibrate against gold-standard examples in spec Section 12
 
 ### PDF export
+
 - [ ] Puppeteer setup
 - [ ] Report A PDF — 8 pages (spec Section 14)
 - [ ] Report B PDF — 6 pages
@@ -306,6 +322,7 @@ All tasks reference spec Section 19.
 ## Week 8–10 — Testing, polish, deploy
 
 ### Testing
+
 - [ ] End-to-end test: paste 20 real Ontario listings, 1 of each property type
 - [ ] Verify calc engine output against manual spreadsheet for each
 - [ ] Verify rental comps pulling correctly for urban vs rural properties
@@ -318,7 +335,8 @@ All tasks reference spec Section 19.
 - [ ] Mobile test: scorecard and AI narrative on iOS and Android
 
 ### Deploy
-- [ ] Vercel project connected to GitHub repo (frontend auto-deploy on push)
+
+- [x] Vercel project connected to GitHub repo (frontend auto-deploy on push)
 - [ ] propscout.ca domain connected to Vercel (A record + CNAME in GoDaddy DNS)
 - [ ] Railway services deployed: Fastify API, Python calc engine, scraping workers
 - [ ] Environment variables set (Supabase URL/key, Stripe keys, Claude API key, Walk Score key, Mapbox token, Google Places key)
@@ -327,6 +345,7 @@ All tasks reference spec Section 19.
 - [ ] Error logging in place (Railway logs minimum — Sentry optional)
 
 ### Launch checklist
+
 - [ ] "Not financial or legal advice" disclaimer visible on all reports
 - [ ] Privacy policy page live at propscout.ca/privacy
 - [ ] Terms of service page live at propscout.ca/terms
