@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026 — ticked items confirmed complete as of feat/financing-scenarios branch
+Last updated: 2026-05-25 — ticked items confirmed complete as of feat/financing-scenarios branch
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -12,32 +12,32 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Realtor.ca scraper
 
-- [ ] Extract listing ID from Realtor.ca URL
-- [ ] Call Realtor.ca internal JSON API with correct headers (spec Section 11.2)
-- [ ] Parse: address, price, beds, baths, sqft, property type
-- [ ] Parse: annual taxes (taxes_known = true/false)
-- [ ] Parse: condo fee (condo_fee_known = true/false)
-- [ ] Parse: year built (year_built_known = true/false)
-- [ ] Parse: listing type (for_sale vs for_rent)
-- [ ] Parse: days on market, photo URLs, listing description
-- [ ] Store to `listings` table in Supabase
-- [ ] Handle scraper failure → return partial data for manual entry fallback
-- [ ] Rate limiting: 1 request per 4 seconds, rotate 3 proxy IPs
+- [x] Extract listing ID from Realtor.ca URL
+- [x] Fetch listing page and parse dataLayer.push() + element IDs (internal JSON API is Incapsula-blocked; HTML scraping via ScraperAPI is the confirmed approach — spec Section 11.2)
+- [x] Parse: address, price, beds, baths, sqft, property type
+- [x] Parse: annual taxes (taxes_known = true/false)
+- [x] Parse: condo fee (condo_fee_known = true/false)
+- [x] Parse: year built (year_built_known = true/false)
+- [x] Parse: listing type (for_sale vs for_rent)
+- [x] Parse: days on market, photo URLs, listing description
+- [x] Store to `listings` table in Supabase
+- [x] Handle scraper failure → return partial data for manual entry fallback
+- [x] Rate limiting: file-based 4 s global limiter + 3–7 s jitter; proxy rotation via PROXY_1/2/3 env vars
 
 ### Zillow.ca scraper
 
-- [ ] Playwright headless Chrome setup on Railway
-- [ ] Navigate to listing URL, wait for full page load
-- [ ] Extract same fields as Realtor.ca scraper
-- [ ] Detect listing type from page structure and price format
-- [ ] Detect if URL is a US property (block with error message)
-- [ ] Handle scraper failure gracefully
+- [x] Playwright headless Chrome setup on Railway
+- [x] Navigate to listing URL, wait for full page load
+- [x] Extract same fields as Realtor.ca scraper (Cloudflare bypass deferred to FUTURE.md until demand confirmed)
+- [x] Detect listing type from page structure and price format
+- [x] Detect if URL is a US property — postal code gate returns Ontario error for non-Canadian addresses
+- [x] Handle scraper failure gracefully
 
 ### Listing type detection
 
-- [ ] Parse URL to detect for-sale vs for-rent (spec Section 3)
-- [ ] Fallback: detect from scraped price format (monthly = rental)
-- [ ] Ambiguous case: default to for-sale, show toggle
+- [x] Parse URL to detect for-sale vs for-rent (spec Section 3)
+- [x] Fallback: detect from scraped price format (monthly = rental)
+- [ ] Ambiguous case: default to for-sale, show toggle (toggle is frontend — PR 3)
 
 ### Rental comps scraper (nightly job)
 
@@ -53,9 +53,9 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Province detection
 
-- [ ] Parse postal code from scraped address
-- [ ] Ontario FSA check (starts with K, L, M, N, P)
-- [ ] Non-Ontario → return province code, block analysis, trigger waitlist flow
+- [x] Parse postal code from scraped address
+- [x] Ontario FSA check (starts with K, L, M, N, P)
+- [x] Non-Ontario → return province code, block analysis, trigger waitlist flow
 
 ---
 
