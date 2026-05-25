@@ -597,11 +597,12 @@ def _extract_fields(  # noqa: C901
         "days_on_market": days_on_market,
         "listing_description": listing_description,
         "photo_urls": photo_urls,
-        # Extra fields stored in raw_json for debugging
-        "_mls_number": mls_number,
-        "_photo_count": photo_count,
     }
-    return fields, missing
+    # mls_number and photo_count are debug metadata — not DB columns.
+    # They are merged into raw_json in scrape_listing() so they are
+    # preserved for debugging without being sent as unknown columns.
+    extras = {"mls_number": mls_number, "photo_count": photo_count}
+    return fields, missing, extras
 
 
 # ── Main scraper function ──────────────────────────────────────────────────────
@@ -768,7 +769,7 @@ async def scrape_listing(url: str) -> dict[str, Any]:
 
     # ── Parse the response ─────────────────────────────────────────────────────
     try:
-        fields, missing = _extract_fields(html, url, listing_id)
+        fields, missing, extras = _extract_fields(html, url, listing_id)
     except Exception as exc:
         logger.error("_extract_fields failed for %s: %s", url, exc)
         await log_scrape(SOURCE, url, "failed", http_status, str(exc), duration_ms)
@@ -784,12 +785,14 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     missing_critical = critical_fields & set(missing)
     status = "partial" if missing_critical else ("partial" if missing else "success")
 
-    # Store a summary of the dataLayer data as raw_json (not full HTML)
+    # raw_json stores the datalayer dict plus debug extras (mls_number, photo_count).
+    # These are not DB columns — they live inside the jsonb raw_json column only.
     dl = _extract_datalayer_property(html)
+    raw_json = {**dl, **extras}
 
     record: dict[str, Any] = {
         **fields,
-        "raw_json": dl,
+        "raw_json": raw_json,
         "scrape_status": status,
         "missing_fields": missing,
     }

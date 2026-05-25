@@ -381,79 +381,79 @@ class TestExtractFields:
     # ── Detached house fixture ─────────────────────────────────────────────────
 
     def test_price_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["price"] == 729900.0
 
     def test_beds_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["beds"] == 3
 
     def test_baths_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["baths"] == 2.0
 
     def test_sqft_from_datalayer_m2(self) -> None:
         # 185.806 m² → ~2000 sqft
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         sqft = fields["sqft"]
         assert sqft is not None
         assert 1990 < sqft < 2010
 
     def test_annual_taxes_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["annual_taxes"] == 3326.0
         assert fields["taxes_known"] is True
 
     def test_condo_fee_zero_is_known(self) -> None:
         # Fee of $0.00 means no condo fee — but it IS known (not missing)
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["condo_fee"] == 0.0
         assert fields["condo_fee_known"] is True
 
     def test_year_built_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["year_built"] == 2005
         assert fields["year_built_known"] is True
 
     def test_days_on_market_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["days_on_market"] == 14
 
     def test_postal_code_extracted_from_title(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["postal_code"] == "L4K 5N2"
 
     def test_province_detected_as_ontario(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["province"] == "ON"
 
     def test_address_from_title(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         address = fields["address"]
         assert address is not None
         assert "BUTTERMILL" in address.upper() or "5702" in address
 
     def test_property_type_extracted(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["property_type"] == "Single Family"
 
     def test_listing_type_for_sale(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["listing_type"] == "for_sale"
 
     def test_listing_description_present(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         desc = fields["listing_description"]
         assert desc is not None
         assert len(desc) > 20
 
     def test_source_and_source_url(self) -> None:
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         assert fields["source"] == "realtor_ca"
         assert fields["source_url"] == _FIXTURE_URL
 
     def test_missing_fields_empty_for_complete_fixture(self) -> None:
-        _, missing = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        _, missing, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         # All critical fields should be present in the complete fixture
         assert "price" not in missing
         assert "beds" not in missing
@@ -464,7 +464,9 @@ class TestExtractFields:
 
     def test_condo_fee_nonzero(self) -> None:
         _condo_url = "https://www.realtor.ca/real-estate/29795861/5312-950-portage-pkwy"
-        fields, _ = _extract_fields(REALTOR_HTML_CONDO_FIXTURE, _condo_url, "29795861")
+        fields, _, _ = _extract_fields(
+            REALTOR_HTML_CONDO_FIXTURE, _condo_url, "29795861"
+        )
         assert fields["condo_fee"] is not None
         assert fields["condo_fee"] == pytest.approx(586.02, abs=0.01)
         assert fields["condo_fee_known"] is True
@@ -472,7 +474,9 @@ class TestExtractFields:
     def test_sqft_from_range_in_html(self) -> None:
         # 600-699 sqft range → midpoint 649; but dataLayer m² takes precedence
         _condo_url = "https://www.realtor.ca/real-estate/29795861/5312-950-portage-pkwy"
-        fields, _ = _extract_fields(REALTOR_HTML_CONDO_FIXTURE, _condo_url, "29795861")
+        fields, _, _ = _extract_fields(
+            REALTOR_HTML_CONDO_FIXTURE, _condo_url, "29795861"
+        )
         # dataLayer has 55.7414 m2 → ~600 sqft; range gives 649
         # Either is acceptable — just confirm sqft is populated
         assert fields["sqft"] is not None
@@ -480,13 +484,15 @@ class TestExtractFields:
 
     def test_annual_taxes_condo(self) -> None:
         _condo_url = "https://www.realtor.ca/real-estate/29795861/5312-950-portage-pkwy"
-        fields, _ = _extract_fields(REALTOR_HTML_CONDO_FIXTURE, _condo_url, "29795861")
+        fields, _, _ = _extract_fields(
+            REALTOR_HTML_CONDO_FIXTURE, _condo_url, "29795861"
+        )
         assert fields["annual_taxes"] == 2770.0
 
     # ── Empty fixture — missing fields ────────────────────────────────────────
 
     def test_empty_response_reports_missing_critical_fields(self) -> None:
-        fields, missing = _extract_fields(
+        fields, missing, _ = _extract_fields(
             REALTOR_HTML_EMPTY_FIXTURE, _FIXTURE_URL, "27000001"
         )
         assert fields["price"] is None
@@ -496,7 +502,7 @@ class TestExtractFields:
 
     def test_all_fields_present_in_output(self) -> None:
         """Every expected key must be present even if value is None."""
-        fields, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
+        fields, _, _ = _extract_fields(REALTOR_HTML_FIXTURE, _FIXTURE_URL, "27000001")
         required_keys = [
             "source_url",
             "source",
