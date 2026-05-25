@@ -18,6 +18,12 @@ Environment variables:
 import sys
 import os
 
+from dotenv import find_dotenv, load_dotenv
+
+# find_dotenv() walks up from CWD until it locates .env — works whether the
+# service is started from services/scrapers/ or the project root.
+load_dotenv(find_dotenv())
+
 # Ensure modules in this package can import each other
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
