@@ -146,8 +146,9 @@ export const BOOLEAN_ASSUMPTION_FIELDS: BooleanAssumptionField[] = [
     tooltip:
       'Check if you are not a Canadian citizen or permanent resident purchasing in Ontario. ' +
       'The Non-Resident Speculation Tax (NRST) adds 25% of the purchase price to your closing ' +
-      'costs. For a $700,000 property that is an additional $175,000. Exemptions may apply ' +
-      'for nominees, protected persons, and Canadian spouses — consult a lawyer.',
+      'costs. For a $700,000 property that is an additional $175,000. ' +
+      'Some non-residents qualify for NRST exemptions (e.g. certain work permit holders, ' +
+      'provincial nominees). Consult a real estate lawyer before assuming this applies.',
   },
 ]
 
