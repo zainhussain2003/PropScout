@@ -4,6 +4,8 @@ Pure functions — no database, no API calls, fully testable.
 """
 
 from constants.rates import VACANCY_ALLOWANCE, MANAGEMENT_FEE, INSURANCE_RATE
+from .mortgage import calculate_monthly_payment, calculate_osfi_stress_rate
+from .closing_costs import estimate_closing_costs
 
 
 def calculate_noi(
@@ -188,3 +190,155 @@ def calculate_break_even_rent(
         return float("inf")
 
     return fixed_costs / net_factor
+
+
+def calculate_financing_scenarios(
+    purchase_price: float,
+    monthly_rent: float,
+    annual_taxes: float,
+    condo_fee_monthly: float,
+    maintenance_rate: float,
+    base_down_pct: float,
+    base_rate: float,
+    amortization_years: int = 25,
+    is_toronto: bool = False,
+    include_management: bool = False,
+) -> list[dict[str, object]]:
+    """
+    Calculate all four standard financing scenarios for a property.
+
+    The four scenarios are:
+      1. Base       — user's inputs as-is
+      2. OSFI stress — same down, qualifying rate = max(contract + 2%, 5.25%)
+      3. Higher down — 35% down, same rate and amortization
+      4. Conservative — same down, rate + 2% (stress without the OSFI floor)
+
+    NOI and cap rate are the same across all scenarios (they depend on rent and
+    expenses, not financing). Monthly mortgage, cash flow, DSCR, CoC, and
+    break-even rent all vary.
+
+    Invariant: scenario 2 always has the highest monthly mortgage payment;
+    scenario 3 always has the lowest (larger down = smaller principal).
+
+    Args:
+        purchase_price: Total purchase price in dollars.
+        monthly_rent: Estimated monthly rent at full occupancy.
+        annual_taxes: Annual property tax in dollars.
+        condo_fee_monthly: Monthly condo / maintenance fee (0 if none).
+        maintenance_rate: Maintenance reserve as a decimal of property value.
+        base_down_pct: Base down payment as a decimal (e.g. 0.20 = 20%).
+        base_rate: Base mortgage rate as a decimal (e.g. 0.0479 = 4.79%).
+        amortization_years: Amortization period in years (default 25).
+        is_toronto: Whether the property is in Toronto (adds MLTT).
+        include_management: Whether to include an 8% management fee in expenses.
+
+    Returns:
+        List of 4 scenario dicts, each containing:
+            name (str): Human-readable scenario label.
+            down_pct (float): Down payment fraction used.
+            rate (float): Mortgage rate used.
+            amortization_years (int): Amortization period.
+            down_payment (float): Dollar amount of down payment.
+            principal (float): Mortgage principal.
+            total_cash_invested (float): Down + LTT + closing costs.
+            monthly_mortgage (float): Monthly P+I payment.
+            annual_debt_service (float): Annual mortgage cost.
+            noi (float): Net Operating Income (same across all scenarios).
+            cap_rate (float): Cap rate (same across all scenarios).
+            monthly_cash_flow (float): Monthly cash flow after all costs.
+            annual_cash_flow (float): Annual cash flow.
+            dscr (float): Debt service coverage ratio.
+            cash_on_cash (float): Annual cash flow / total cash invested.
+            break_even_rent (float): Minimum rent to break even per month.
+    """
+    gross_annual_rent = monthly_rent * 12
+
+    # NOI and cap rate are financing-independent — compute once
+    noi = calculate_noi(
+        gross_annual_rent=gross_annual_rent,
+        annual_taxes=annual_taxes,
+        insurance_value=purchase_price,
+        condo_fee_annual=condo_fee_monthly * 12,
+        maintenance_rate=maintenance_rate,
+        property_value=purchase_price,
+        include_management=include_management,
+    )
+    cap_rate = calculate_cap_rate(noi=noi, purchase_price=purchase_price)
+
+    # Closing costs are financing-independent (includes provincial + municipal LTT)
+    closing = estimate_closing_costs(
+        purchase_price=purchase_price,
+        is_toronto=is_toronto,
+    )
+
+    # Define the four scenarios as (name, down_pct, rate)
+    osfi_rate = calculate_osfi_stress_rate(base_rate)
+    scenarios_def = [
+        ("Base", base_down_pct, base_rate),
+        ("OSFI stress", base_down_pct, osfi_rate),
+        ("Higher down (35%)", 0.35, base_rate),
+        ("Conservative (+2%)", base_down_pct, base_rate + 0.02),
+    ]
+
+    results = []
+    for name, down_pct, rate in scenarios_def:
+        down_payment = purchase_price * down_pct
+        principal = purchase_price - down_payment
+        total_cash_invested = down_payment + closing["total"]
+
+        monthly_mortgage = calculate_monthly_payment(
+            principal=principal,
+            annual_rate=rate,
+            amortization_years=amortization_years,
+        )
+        annual_debt_service = monthly_mortgage * 12
+
+        monthly_cf = calculate_cash_flow_monthly(
+            monthly_rent=monthly_rent,
+            mortgage_payment=monthly_mortgage,
+            annual_taxes=annual_taxes,
+            insurance_value=purchase_price,
+            condo_fee_monthly=condo_fee_monthly,
+            maintenance_rate=maintenance_rate,
+            property_value=purchase_price,
+            include_management=include_management,
+        )
+        annual_cf = monthly_cf * 12
+
+        dscr = calculate_dscr(noi=noi, annual_debt_service=annual_debt_service)
+        coc = calculate_cash_on_cash(
+            annual_cash_flow=annual_cf,
+            total_cash_invested=total_cash_invested,
+        )
+        break_even = calculate_break_even_rent(
+            mortgage_payment=monthly_mortgage,
+            annual_taxes=annual_taxes,
+            insurance_value=purchase_price,
+            condo_fee_monthly=condo_fee_monthly,
+            maintenance_rate=maintenance_rate,
+            property_value=purchase_price,
+            include_management=include_management,
+        )
+
+        results.append(
+            {
+                "name": name,
+                "down_pct": down_pct,
+                "rate": rate,
+                "amortization_years": amortization_years,
+                "down_payment": down_payment,
+                "principal": principal,
+                "total_cash_invested": total_cash_invested,
+                "monthly_mortgage": monthly_mortgage,
+                "annual_debt_service": annual_debt_service,
+                "noi": noi,
+                "cap_rate": cap_rate,
+                "monthly_cash_flow": monthly_cf,
+                "annual_cash_flow": annual_cf,
+                "dscr": dscr,
+                "cash_on_cash": coc,
+                "break_even_rent": break_even,
+            }
+        )
+
+    return results
