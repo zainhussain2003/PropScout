@@ -85,4 +85,58 @@ requiring any scraper changes in the short term.
 
 ---
 
+## Rental comps CSS selector update required
+
+**What:** The CSS selectors in `rental_comps_scraper.py` are TEMPLATE CODE and do not
+match the live DOM of Rentals.ca, Kijiji, or PadMapper. Every sub-scraper returned
+0 listings in the 2026-05-25 dry run with the warning "listing cards did not appear".
+
+**Evidence from dry run (2026-05-25):**
+
+- All 12 sub-scrapes completed without errors (exit 0, Supabase scrape_logs written ✅)
+- Playwright launched successfully and navigated to each URL ✅
+- `wait_for_selector()` timed out on all 12 attempts — cards rendered but under different class names
+- 0 listings extracted across all 4 cities × 3 sources
+
+**What is needed per site:**
+
+1. **Rentals.ca** — open `https://rentals.ca/toronto` in a real browser, inspect the listing
+   card element, update the selectors in `scrape_rentals_ca()`. Current guess:
+   `[class*='listing-card'], [data-testid='listing-item'], article.listing`
+
+2. **Kijiji** — open `https://www.kijiji.ca/b-apartments-condos/toronto/c37l1700273` and inspect.
+   Also verify location IDs for Hamilton/Ottawa/Mississauga are still correct. Current guess:
+   `[data-testid='listing-card-list-item'], li[class*='regular-ad']`
+
+3. **PadMapper** — open `https://www.padmapper.com/apartments/toronto-on` and inspect.
+   PadMapper is a JS-heavy SPA; a longer `wait_for_selector()` timeout may be needed.
+   Current guess: `[class*='ListingCard'], [class*='property-card']`
+
+**If sites block on data-centre IP (Railway):**
+Apply the same ScraperAPI pattern used for Realtor.ca — route Playwright through
+ScraperAPI residential proxies. See `realtor_scraper.py` for the pattern.
+
+**When to pursue:** Before or during Week 4–5 when rental comps are needed for the
+investor report. Correct selectors are required for real comp data to flow.
+
+---
+
+## Railway environment variables required
+
+The following env vars must be set in the Railway project dashboard under
+**Variables** for the scraper service before the nightly job will run.
+They are already present in `.env` locally — Railway does not read `.env`.
+
+| Variable                          | Purpose                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `SUPABASE_URL`                    | Supabase project URL                                                      |
+| `SUPABASE_SERVICE_ROLE_KEY`       | Full DB access — backend only, never expose to frontend                   |
+| `SCRAPER_API_KEY`                 | Incapsula bypass for Realtor.ca ($49/mo Hobby plan)                       |
+| `PROXY_1` / `PROXY_2` / `PROXY_3` | Optional residential proxies — leave blank until Zillow bypass is pursued |
+| `RATE_LIMITER_STATE`              | Optional — defaults to `/tmp/propscout_rate_state.json`                   |
+
+**How to set them:** Railway dashboard → project → service → Variables tab → add each key.
+
+---
+
 _Last updated: 2026-05-25 — ScraperAPI marked complete_

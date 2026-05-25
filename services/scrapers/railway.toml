@@ -1,0 +1,19 @@
+# Railway deployment config for the PropScout scraper service.
+#
+# The nightly rental comps job runs at 02:00 ET (07:00 UTC).
+# Required environment variables — set in Railway dashboard > Variables:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   SCRAPER_API_KEY   (Realtor.ca Incapsula bypass — $49/mo Hobby plan)
+#   PROXY_1 / PROXY_2 / PROXY_3  (optional — residential proxies for Zillow)
+#   RATE_LIMITER_STATE            (optional — defaults to /tmp/propscout_rate_state.json)
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+
+[cron.nightly-rental-scrape]
+schedule = "0 7 * * *"
+command = "python jobs/nightly_rental_scrape.py"
