@@ -53,6 +53,13 @@ MAINTENANCE_RESERVE_RATES: dict[str, float] = {
     "pre_1980": 0.015,  # 1.5% — older build
 }
 
+# ── Non-Resident Speculation Tax (NRST) ───────────────────────────────────────
+
+# Ontario NRST — applies to residential purchases by non-Canadian residents.
+# Rate: 25% of purchase price (as of March 2022 amendment).
+# Source: Ontario Ministry of Finance — https://www.ontario.ca/page/non-resident-speculation-tax
+NRST_RATE: float = 0.25  # 25%
+
 # ── Closing cost flat estimates ────────────────────────────────────────────────
 
 # Legal fees: $1,500–$2,500 typical in Ontario. Higher for Toronto or complex deals.

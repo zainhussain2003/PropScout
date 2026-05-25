@@ -4,7 +4,7 @@ Ontario LTT + Toronto MLTT supported at MVP.
 """
 
 from constants.provinces import ONTARIO_LTT_BRACKETS, TORONTO_MLTT_BRACKETS
-from constants.rates import LEGAL_FEES, TITLE_INSURANCE, HOME_INSPECTION
+from constants.rates import LEGAL_FEES, NRST_RATE, TITLE_INSURANCE, HOME_INSPECTION
 
 
 def calculate_ltt(purchase_price: float, brackets: list[tuple[float, float]]) -> float:
@@ -64,6 +64,7 @@ def estimate_closing_costs(
     purchase_price: float,
     is_toronto: bool = False,
     include_home_inspection: bool = True,
+    non_resident: bool = False,
 ) -> dict[str, float]:
     """
     Estimate total closing costs for an Ontario purchase.
@@ -72,25 +73,63 @@ def estimate_closing_costs(
         purchase_price: Property purchase price.
         is_toronto: Whether the property is within the City of Toronto.
         include_home_inspection: Whether to include home inspection estimate.
+        non_resident: Whether the buyer is a non-Canadian resident subject to NRST.
+                      When True, adds 25% of purchase price as NRST (Ontario only).
 
     Returns:
-        Dict with individual line items and a total.
+        Dict with individual line items and a total. Includes an 'nrst' key
+        (0.0 when non_resident=False so callers can always read costs['nrst']).
     """
     ltt_provincial = calculate_ontario_ltt(purchase_price)
     ltt_municipal = calculate_toronto_mltt(purchase_price) if is_toronto else 0.0
+    nrst = round(purchase_price * NRST_RATE, 2) if non_resident else 0.0
     legal_fees = LEGAL_FEES
     title_insurance = TITLE_INSURANCE
     home_inspection = HOME_INSPECTION if include_home_inspection else 0.0
 
     total = (
-        ltt_provincial + ltt_municipal + legal_fees + title_insurance + home_inspection
+        ltt_provincial
+        + ltt_municipal
+        + nrst
+        + legal_fees
+        + title_insurance
+        + home_inspection
     )
 
     return {
         "ltt_provincial": ltt_provincial,
         "ltt_municipal": ltt_municipal,
+        "nrst": nrst,
         "legal_fees": legal_fees,
         "title_insurance": title_insurance,
         "home_inspection": home_inspection,
         "total": round(total, 2),
+    }
+
+
+def get_nrst_risk_flag(purchase_price: float) -> dict:
+    """
+    Build a red risk flag for non-resident buyers subject to NRST.
+
+    The flag is only constructed (and surfaced) when non_resident=True.
+    The caller decides whether to include it in the risk flags list.
+
+    Args:
+        purchase_price: Property purchase price used to calculate the NRST amount.
+
+    Returns:
+        A risk flag dict compatible with the RiskFlag schema:
+            id, severity, label, evidence, confidence.
+    """
+    nrst_amount = round(purchase_price * NRST_RATE, 2)
+    formatted = f"${nrst_amount:,.0f}"
+    return {
+        "id": "nrst_ontario",
+        "severity": "red",
+        "label": "Non-Resident Speculation Tax (NRST)",
+        "evidence": (
+            f"Non-resident buyers pay an additional 25% Non-Resident Speculation Tax "
+            f"in Ontario — this adds {formatted} to your closing costs."
+        ),
+        "confidence": 100,
     }

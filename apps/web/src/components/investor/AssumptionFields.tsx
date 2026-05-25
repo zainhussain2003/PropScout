@@ -21,7 +21,10 @@ import { RateBanner } from '../shared/RateBanner'
 import {
   ASSUMPTION_FIELDS,
   DEFAULT_ASSUMPTIONS,
+  BOOLEAN_ASSUMPTION_FIELDS,
+  DEFAULT_BOOLEAN_ASSUMPTIONS,
   type AssumptionField,
+  type BooleanAssumptionField,
 } from '../../constants/assumptions'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -34,6 +37,7 @@ export interface AnalysisAssumptions {
   appreciationRate: number // % (e.g. 3 = 3%)
   legalFees: number // $ (e.g. 1500)
   mortgageRate: number // % (e.g. 4.79 = 4.79%) — 0 = use live rate
+  nonResident: boolean // default false — Ontario NRST (25%) when true
 }
 
 /** Metadata returned alongside the live rate from GET /rates/mortgage. */
@@ -71,7 +75,7 @@ export function AssumptionFields({
 }: AssumptionFieldsProps): JSX.Element {
   // When rateMetadata is provided, convert decimal → % and pre-fill mortgageRate.
   // initialValues takes precedence over rateMetadata (user may have a saved rate).
-  const liveRatePct =
+  const liveRatePct: Record<string, number> =
     rateMetadata && !('mortgageRate' in initialValues)
       ? { mortgageRate: parseFloat((rateMetadata.rate * 100).toFixed(4)) }
       : {}
@@ -79,8 +83,26 @@ export function AssumptionFields({
   const [values, setValues] = useState<Record<string, number>>({
     ...DEFAULT_ASSUMPTIONS,
     ...liveRatePct,
-    ...initialValues,
+    ...(Object.fromEntries(
+      Object.entries(initialValues).filter(([, v]) => typeof v === 'number')
+    ) as Record<string, number>),
   })
+
+  const [boolValues, setBoolValues] = useState<Record<string, boolean>>({
+    ...DEFAULT_BOOLEAN_ASSUMPTIONS,
+    ...(initialValues.nonResident !== undefined ? { nonResident: initialValues.nonResident } : {}),
+  })
+
+  // Build the full assumptions object and fire the callback.
+  const fireChange = useCallback(
+    (numericState: Record<string, number>, boolState: Record<string, boolean>) => {
+      onAssumptionsChange({
+        ...(numericState as unknown as AnalysisAssumptions),
+        ...boolState,
+      } as AnalysisAssumptions)
+    },
+    [onAssumptionsChange]
+  )
 
   const handleChange = useCallback(
     (key: string, raw: string) => {
@@ -93,9 +115,18 @@ export function AssumptionFields({
       const clamped = Math.min(field.max, Math.max(field.min, parsed))
       const next = { ...values, [key]: clamped }
       setValues(next)
-      onAssumptionsChange(next as unknown as AnalysisAssumptions)
+      fireChange(next, boolValues)
     },
-    [values, onAssumptionsChange]
+    [values, boolValues, fireChange]
+  )
+
+  const handleBoolChange = useCallback(
+    (key: string, checked: boolean) => {
+      const next = { ...boolValues, [key]: checked }
+      setBoolValues(next)
+      fireChange(values, next)
+    },
+    [boolValues, values, fireChange]
   )
 
   return (
@@ -112,6 +143,15 @@ export function AssumptionFields({
           />
         ))}
       </div>
+      {/* Boolean fields render below the numeric grid — full width */}
+      {BOOLEAN_ASSUMPTION_FIELDS.map((field) => (
+        <BooleanAssumptionRow
+          key={field.key}
+          field={field}
+          value={boolValues[field.key] ?? field.defaultValue}
+          onChange={handleBoolChange}
+        />
+      ))}
     </div>
   )
 }
@@ -166,6 +206,55 @@ function AssumptionRow({ field, value, onChange }: AssumptionRowProps): JSX.Elem
           aria-label={field.label}
         />
         {!field.unitPrefix && <span style={unitStyle}>{field.unit}</span>}
+      </span>
+    </label>
+  )
+}
+
+// ── Boolean field row ──────────────────────────────────────────────────────────
+
+interface BooleanAssumptionRowProps {
+  field: BooleanAssumptionField
+  value: boolean
+  onChange: (key: string, checked: boolean) => void
+}
+
+function BooleanAssumptionRow({ field, value, onChange }: BooleanAssumptionRowProps): JSX.Element {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <label
+      htmlFor={`assumption-bool-${field.key}`}
+      style={{
+        ...boolRowStyle,
+        borderColor: hovered ? 'var(--accent)' : 'var(--line)',
+        background: value ? 'color-mix(in srgb, var(--fail) 6%, transparent)' : 'var(--bg-elev)',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Checkbox */}
+      <input
+        id={`assumption-bool-${field.key}`}
+        type="checkbox"
+        checked={value}
+        onChange={(e) => onChange(field.key, e.target.checked)}
+        style={checkboxStyle}
+        aria-label={field.label}
+      />
+
+      {/* Label + tooltip */}
+      <span style={boolLabelRowStyle}>
+        <span
+          style={{
+            ...labelStyle,
+            color: hovered ? 'var(--accent)' : value ? 'var(--fail)' : 'var(--ink-2)',
+            fontWeight: value ? 600 : 500,
+          }}
+        >
+          {field.label}
+        </span>
+        <Tooltip text={field.tooltip} />
       </span>
     </label>
   )
@@ -251,4 +340,32 @@ const unitStyle: React.CSSProperties = {
   fontWeight: 400,
   color: 'var(--ink-2)',
   flexShrink: 0,
+}
+
+const boolRowStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 10,
+  padding: '8px 12px',
+  border: '1px solid var(--line)',
+  borderRadius: 'var(--radius-sm)',
+  cursor: 'pointer',
+  transition: 'border-color 0.15s ease, background 0.15s ease',
+  userSelect: 'none',
+}
+
+const boolLabelRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  flex: 1,
+}
+
+const checkboxStyle: React.CSSProperties = {
+  width: 16,
+  height: 16,
+  flexShrink: 0,
+  cursor: 'pointer',
+  accentColor: 'var(--fail)',
 }

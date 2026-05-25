@@ -124,3 +124,34 @@ export const ASSUMPTION_MAP: Record<string, AssumptionField> = Object.fromEntrie
 export const DEFAULT_ASSUMPTIONS: Record<string, number> = Object.fromEntries(
   ASSUMPTION_FIELDS.map((f) => [f.key, f.defaultValue])
 )
+
+// ── Boolean assumption fields ──────────────────────────────────────────────────
+
+export interface BooleanAssumptionField {
+  /** Internal key used as the form field name */
+  key: string
+  /** Display label shown to the user */
+  label: string
+  /** Default value */
+  defaultValue: boolean
+  /** Tooltip text explaining the field and its implications */
+  tooltip: string
+}
+
+export const BOOLEAN_ASSUMPTION_FIELDS: BooleanAssumptionField[] = [
+  {
+    key: 'nonResident',
+    label: 'Non-resident buyer (NRST)',
+    defaultValue: false,
+    tooltip:
+      'Check if you are not a Canadian citizen or permanent resident purchasing in Ontario. ' +
+      'The Non-Resident Speculation Tax (NRST) adds 25% of the purchase price to your closing ' +
+      'costs. For a $700,000 property that is an additional $175,000. Exemptions may apply ' +
+      'for nominees, protected persons, and Canadian spouses — consult a lawyer.',
+  },
+]
+
+/** Default boolean assumption values — use alongside DEFAULT_ASSUMPTIONS to initialise form state. */
+export const DEFAULT_BOOLEAN_ASSUMPTIONS: Record<string, boolean> = Object.fromEntries(
+  BOOLEAN_ASSUMPTION_FIELDS.map((f) => [f.key, f.defaultValue])
+)

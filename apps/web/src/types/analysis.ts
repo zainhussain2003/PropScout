@@ -13,6 +13,7 @@ export interface AnalysisAssumptions {
   appreciationRate: number // % — default 3. Equity projections only.
   legalFees: number // $ — default 1500
   mortgageRate: number // % — default 0 (= use live Bank of Canada rate)
+  nonResident: boolean // default false — if true, Ontario NRST (25% of price) is added to closing costs
 }
 
 export type ReportMode = 'investor' | 'personal' | 'tenant' | 'landlord'
@@ -59,6 +60,7 @@ export interface InvestmentMetrics {
   closingCostsTotal: number
   lttProvincial: number
   lttMunicipal: number // Toronto only
+  nrst: number // Non-Resident Speculation Tax — 0 when buyer is resident
 
   // Sanity
   hasSanityWarnings: boolean

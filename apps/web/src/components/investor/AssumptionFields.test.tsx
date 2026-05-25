@@ -12,7 +12,12 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { AssumptionFields } from './AssumptionFields'
-import { ASSUMPTION_FIELDS, DEFAULT_ASSUMPTIONS, ASSUMPTION_MAP } from '../../constants/assumptions'
+import {
+  ASSUMPTION_FIELDS,
+  DEFAULT_ASSUMPTIONS,
+  ASSUMPTION_MAP,
+  BOOLEAN_ASSUMPTION_FIELDS,
+} from '../../constants/assumptions'
 
 // ── constants/assumptions.ts ───────────────────────────────────────────────────
 
@@ -101,11 +106,11 @@ describe('AssumptionFields', () => {
     expect(parseFloat(vacancyInput.value)).toBe(5)
   })
 
-  it('renders a tooltip trigger (?) for every field', () => {
+  it('renders a tooltip trigger (?) for every field including boolean fields', () => {
     renderFields()
-    // Each tooltip trigger renders '?' as its visible text
+    // Each numeric and boolean field renders a '?' tooltip trigger
     const triggers = screen.getAllByRole('button', { name: '?' })
-    expect(triggers.length).toBe(ASSUMPTION_FIELDS.length)
+    expect(triggers.length).toBe(ASSUMPTION_FIELDS.length + BOOLEAN_ASSUMPTION_FIELDS.length)
   })
 
   it('calls onAssumptionsChange when a value changes', () => {
@@ -205,6 +210,63 @@ describe('AssumptionFields', () => {
     expect(banner).toBeInTheDocument()
     expect(banner).toHaveTextContent('May 17, 2026')
     expect(banner).toHaveTextContent('live rate unavailable')
+  })
+
+  // ── nonResident / NRST boolean field ────────────────────────────────────────
+
+  it('renders the Non-resident buyer checkbox unchecked by default', () => {
+    renderFields()
+    const checkbox = screen.getByLabelText('Non-resident buyer (NRST)') as HTMLInputElement
+    expect(checkbox).toBeInTheDocument()
+    expect(checkbox.checked).toBe(false)
+  })
+
+  it('calls onAssumptionsChange with nonResident: true when checkbox is ticked', () => {
+    const onChange = vi.fn()
+    renderFields(onChange)
+
+    const checkbox = screen.getByLabelText('Non-resident buyer (NRST)') as HTMLInputElement
+    fireEvent.click(checkbox)
+
+    expect(onChange).toHaveBeenCalled()
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(lastCall.nonResident).toBe(true)
+  })
+
+  it('calls onAssumptionsChange with nonResident: false when checkbox is unticked', () => {
+    const onChange = vi.fn()
+    render(
+      <AssumptionFields onAssumptionsChange={onChange} initialValues={{ nonResident: true }} />
+    )
+    const checkbox = screen.getByLabelText('Non-resident buyer (NRST)') as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+
+    fireEvent.click(checkbox)
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(lastCall.nonResident).toBe(false)
+  })
+
+  it('preserves numeric values when nonResident checkbox is toggled', () => {
+    const onChange = vi.fn()
+    renderFields(onChange)
+
+    // First change a numeric field
+    const vacancyInput = screen.getByLabelText('Vacancy allowance') as HTMLInputElement
+    fireEvent.change(vacancyInput, { target: { value: '7' } })
+
+    // Then toggle the checkbox
+    const checkbox = screen.getByLabelText('Non-resident buyer (NRST)') as HTMLInputElement
+    fireEvent.click(checkbox)
+
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(lastCall.nonResident).toBe(true)
+    expect(lastCall.vacancyAllowance).toBe(7)
+  })
+
+  it('accepts initialValues.nonResident = true', () => {
+    render(<AssumptionFields onAssumptionsChange={vi.fn()} initialValues={{ nonResident: true }} />)
+    const checkbox = screen.getByLabelText('Non-resident buyer (NRST)') as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
   })
 
   it('shows the banner when source is fallback', () => {
