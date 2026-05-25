@@ -448,6 +448,16 @@ def _extract_fields(  # noqa: C901
     price_str = lease_price if lease_price else (price_raw or "")
     listing_type = parse_listing_type(url, price_string=price_str)
 
+    # ── 4a. Rental override ───────────────────────────────────────────────────
+    # Realtor.ca renders rental prices as e.g. "$4,300/Monthly". URL-based
+    # detection via parse_listing_type() sees "/real-estate/" and returns
+    # "for_sale" for every listing regardless of type. If the raw price string
+    # contains "/Monthly" (case-sensitive, matching Realtor.ca exactly), this
+    # is a rental listing — override the URL-based result.
+    # price_raw may be None for partial scrapes; do not override in that case.
+    if price_raw and "/Monthly" in price_raw:
+        listing_type = "for_rent"
+
     # ── 5. Beds ───────────────────────────────────────────────────────────────
     beds = _parse_int(dl.get("bedrooms"))
     if beds is None:
