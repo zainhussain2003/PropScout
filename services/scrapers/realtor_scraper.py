@@ -735,7 +735,24 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     duration_ms = int(time.monotonic() * 1000) - start_ms
 
     # ── Bot challenge detection ────────────────────────────────────────────────
-    if len(html) < _MIN_HTML_LENGTH or "Incapsula" in html:
+    # Incapsula injects <script> tags into EVERY page it protects — including
+    # legitimate listing pages. A bare "Incapsula" in html check false-positives
+    # on real pages fetched via ScraperAPI (which returns the full 1-2 MB DOM).
+    # Instead: detect the challenge-specific fingerprints that only appear on
+    # the challenge/block page, not on real listing pages.
+    # /_Incapsula_Resource and incapsula_res are injected by Incapsula into
+    # ALL pages it protects — including legitimate listing pages. They cannot
+    # be used to distinguish challenge pages from real content. Only the
+    # human-readable interstitial strings below are challenge-page-exclusive
+    # (confirmed by comparing 1.5 MB real listing response vs 216 KB block page).
+    _INCAPSULA_CHALLENGE_MARKERS = [
+        "test your browser",  # Incapsula CAPTCHA interstitial text
+        "checking your browser",  # Cloudflare/Incapsula interstitial text
+    ]
+    is_challenge = len(html) < _MIN_HTML_LENGTH or any(
+        m.lower() in html.lower() for m in _INCAPSULA_CHALLENGE_MARKERS
+    )
+    if is_challenge:
         error_msg = f"Bot challenge detected (response length: {len(html)})"
         logger.warning("scrape_listing bot challenge for %s: %s", url, error_msg)
         await log_scrape(SOURCE, url, "failed", http_status, error_msg, duration_ms)
