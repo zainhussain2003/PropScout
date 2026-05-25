@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: 2026-05-25 — ticked items confirmed complete as of feat/financing-scenarios branch
+Last updated: 2026-05-25 — PR 3 (landing, ModeModal, URL validation, analysis showcase) complete
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -37,7 +37,7 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 - [x] Parse URL to detect for-sale vs for-rent (spec Section 3)
 - [x] Fallback: detect from scraped price format (monthly = rental)
-- [ ] Ambiguous case: default to for-sale, show toggle (toggle is frontend — PR 3)
+- [x] Ambiguous case: default to for-sale, show toggle (ModeModal lets user correct kind — PR 3)
 
 ### Rental comps scraper (nightly job)
 
@@ -152,23 +152,23 @@ Reference: `Investor Report.html` — financing/assumptions panel
 
 Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 
-- [ ] Landing page `/` — URL paste hero, embedded sample report, pricing section, FAQ
-- [ ] URL input bar with validation (Realtor.ca and Zillow.ca regex patterns)
-- [ ] `<ModeModal open listing onSelect>` — for-sale (Investment/Personal) and for-rent (Tenant/Landlord) routing
-- [ ] Listing type auto-detection (for-sale vs for-rent from URL)
-- [ ] All hover and click interactions match the design exactly
-- [ ] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
+- [x] Landing page `/` — URL paste hero, embedded sample report, pricing section, FAQ
+- [x] URL input bar with validation (Realtor.ca and Zillow.ca regex patterns)
+- [x] `<ModeModal open listing onSelect>` — for-sale (Investment/Personal) and for-rent (Tenant/Landlord) routing
+- [x] Listing type auto-detection (for-sale vs for-rent from URL)
+- [x] All hover and click interactions match the design exactly
+- [x] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
 
 ### PR 4 — Investor report end-to-end
 
 Reference: `Investor Report.html` + `investor-report.jsx` + `investor-sections.jsx` + `investor-sections-2.jsx`
 
-- [ ] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
+- [x] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
 - [ ] `<Metric label value sub status>` — headline metric tile
-- [ ] `<RentalCompsBar low mid high ask>` — percentile bar + hover diamond marker
-- [ ] `<AIVerdictBlock>` — dark full-bleed card with ScoutMark watermark
-- [ ] `<RiskRow tone label detail>` — inline risk flag row
-- [ ] `<MiniMap height address pins>` — placeholder SVG map (replace with real Mapbox GL JS)
+- [x] `<RentalCompsBar low mid high ask>` — percentile bar + hover diamond marker
+- [x] `<AIVerdictBlock>` — dark full-bleed card with ScoutMark watermark
+- [x] `<RiskRow tone label detail>` — inline risk flag row
+- [x] `<MiniMap height address pins>` — placeholder SVG map (replace with real Mapbox GL JS)
 - [ ] `<PropertyHero listing score>` — photo grid + chips + address + sticky score card
 - [ ] `<FinancingSliders financing onChange>` — live sliders, every metric recalculates instantly on drag
 - [ ] `<OSFICard osfi financing>` — OSFI stress test card
