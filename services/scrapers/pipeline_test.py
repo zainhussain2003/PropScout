@@ -1219,6 +1219,11 @@ async def tc23():
         class _MockClient:
             """Async context manager — returns the mock HTTP client instantly."""
 
+            def __init__(
+                self, **kwargs
+            ):  # accept httpx.AsyncClient(**client_kwargs), ignore
+                pass
+
             async def __aenter__(self):
                 return mock_http
 
