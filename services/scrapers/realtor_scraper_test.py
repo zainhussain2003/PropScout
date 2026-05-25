@@ -524,3 +524,133 @@ class TestExtractFields:
 
 
 import pytest  # noqa: E402 — needed for pytest.approx in condo test
+
+# ── scrape_listing() — request routing (ScraperAPI vs direct) ─────────────────
+#
+# These tests verify that scrape_listing() routes requests through ScraperAPI
+# when SCRAPER_API_KEY is set and falls back to a direct httpx call when it is
+# not. Neither test hits a real network — httpx is fully mocked.
+
+
+class TestScrapingRouteScraperAPI:
+    """
+    Test A — When SCRAPER_API_KEY is set, the request must go through
+    api.scraperapi.com and the original Realtor.ca URL must appear (URL-encoded)
+    in the request URL.
+    """
+
+    @pytest.mark.asyncio
+    async def test_scraperapi_url_used_when_key_is_set(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Request URL must start with api.scraperapi.com and contain the encoded listing URL."""
+        import urllib.parse
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        monkeypatch.setenv("SCRAPER_API_KEY", "testkey123")
+
+        listing_url = (
+            "https://www.realtor.ca/real-estate/29795861/"
+            "5312-950-portage-parkway-vaughan-vaughan-corporate-centre"
+        )
+
+        # Pad to ensure we pass the 50KB bot-challenge size check.
+        # Parsing will return partial data from the fixture — that's fine here.
+        fake_html = REALTOR_HTML_FIXTURE + " " * 60_000
+
+        fake_response = MagicMock()
+        fake_response.status_code = 200
+        fake_response.text = fake_html
+        fake_response.raise_for_status = MagicMock()
+
+        captured_urls: list[str] = []
+
+        async def fake_get(url: str, **kwargs: object) -> MagicMock:
+            captured_urls.append(url)
+            return fake_response
+
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = fake_get
+
+        with (
+            patch("realtor_scraper.httpx.AsyncClient", return_value=mock_client),
+            patch("realtor_scraper.asyncio.sleep", new=AsyncMock()),
+            patch("realtor_scraper.upsert_listing", new=AsyncMock(return_value=None)),
+            patch("realtor_scraper.log_scrape", new=AsyncMock()),
+        ):
+            from realtor_scraper import scrape_listing
+
+            await scrape_listing(listing_url)
+
+        assert len(captured_urls) == 1, "Expected exactly one HTTP request"
+        used_url = captured_urls[0]
+        assert used_url.startswith(
+            "http://api.scraperapi.com"
+        ), f"Expected ScraperAPI URL, got: {used_url}"
+        assert "api_key=testkey123" in used_url
+        assert "render=true" in used_url
+        encoded = urllib.parse.quote(listing_url, safe="")
+        assert (
+            encoded in used_url
+        ), "Encoded listing URL must appear in ScraperAPI request"
+
+
+class TestScrapingRouteDirect:
+    """
+    Test B — When SCRAPER_API_KEY is not set, the request must go directly to
+    the original Realtor.ca URL (not through api.scraperapi.com).
+    """
+
+    @pytest.mark.asyncio
+    async def test_direct_request_when_key_not_set(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Without SCRAPER_API_KEY the scraper falls back to the direct Realtor.ca URL."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        monkeypatch.delenv("SCRAPER_API_KEY", raising=False)
+
+        listing_url = (
+            "https://www.realtor.ca/real-estate/29795861/"
+            "5312-950-portage-parkway-vaughan-vaughan-corporate-centre"
+        )
+
+        fake_html = REALTOR_HTML_FIXTURE + " " * 60_000
+        fake_response = MagicMock()
+        fake_response.status_code = 200
+        fake_response.text = fake_html
+        fake_response.raise_for_status = MagicMock()
+
+        captured_urls: list[str] = []
+
+        async def fake_get(url: str, **kwargs: object) -> MagicMock:
+            captured_urls.append(url)
+            return fake_response
+
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = fake_get
+
+        with (
+            patch("realtor_scraper.httpx.AsyncClient", return_value=mock_client),
+            patch("realtor_scraper.asyncio.sleep", new=AsyncMock()),
+            patch("realtor_scraper.upsert_listing", new=AsyncMock(return_value=None)),
+            patch("realtor_scraper.log_scrape", new=AsyncMock()),
+        ):
+            from realtor_scraper import scrape_listing
+
+            result = await scrape_listing(listing_url)
+
+        assert len(captured_urls) == 1, "Expected exactly one HTTP request"
+        used_url = captured_urls[0]
+        assert (
+            "api.scraperapi.com" not in used_url
+        ), "Without a key, must not route through ScraperAPI"
+        assert (
+            used_url == listing_url
+        ), f"Direct request must go straight to Realtor.ca URL. Got: {used_url}"
+        # scrape_status may be partial/success depending on fixture — just confirm no crash
+        assert "scrape_status" in result

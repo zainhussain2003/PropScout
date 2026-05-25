@@ -33,10 +33,13 @@ participant threshold. Would replace the HTML scraper entirely for Realtor.ca
 listings and provide structured, reliable data.
 """
 
+import asyncio
 import logging
 import os
+import random
 import re
 import time
+import urllib.parse
 from typing import Any
 
 import httpx
@@ -44,7 +47,6 @@ import httpx
 from db import log_scrape, upsert_listing
 from listing_type import parse_listing_type
 from province import detect_province
-from rate_limiter import wait_for_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +57,29 @@ SOURCE = "realtor_ca"
 # Realtor.ca listing page base URL — TEMPLATE CODE
 _BASE_URL = "https://www.realtor.ca"
 
-# Browser-like headers to pass Incapsula bot detection on first request.
-# Sec-Fetch-* headers are important for appearing as a real browser.
-_HEADERS = {
-    "User-Agent": (
+# Rotate between common browser User-Agent strings — fixed intervals and a
+# single static UA are bot signals; humans use different browser versions.
+USER_AGENTS = [
+    (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
+    (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) "
+        "Gecko/20100101 Firefox/125.0"
+    ),
+]
+
+# Browser-like headers to pass Incapsula bot detection on first request.
+# Sec-Fetch-* headers are important for appearing as a real browser.
+# User-Agent is set per-request from USER_AGENTS (rotated randomly).
+_HEADERS = {
     "Accept": (
         "text/html,application/xhtml+xml,application/xml;"
         "q=0.9,image/avif,image/webp,*/*;q=0.8"
@@ -628,8 +645,10 @@ async def scrape_listing(url: str) -> dict[str, Any]:
             "error": "Could not extract a Realtor.ca listing ID from this URL.",
         }
 
-    # Enforce rate limit before making any request
-    await wait_for_rate_limit(SOURCE)
+    # Randomised delay — fixed 4-second intervals are a bot signal.
+    # Humans don't request pages on a metronome; 3-7 seconds looks natural.
+    delay = random.uniform(3.0, 7.0)
+    await asyncio.sleep(delay)
 
     proxy = _get_next_proxy()
 
@@ -637,18 +656,41 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     http_status: int | None = None
     error_msg: str | None = None
 
-    # httpx 0.28+ uses proxy= (single URL string) instead of proxies= dict
-    client_kwargs: dict = {
-        "headers": _HEADERS,
-        "timeout": 20.0,
-        "follow_redirects": True,
-    }
-    if proxy:
-        client_kwargs["proxy"] = proxy
+    # ── Request delivery — ScraperAPI or direct ───────────────────────────────
+    # ScraperAPI handles Incapsula bypass via render=true (real browser session).
+    # Falls back to a direct httpx request when the key is not configured —
+    # direct requests work on clean IPs but fail on Incapsula-flagged ones.
+    scraper_api_key = os.getenv("SCRAPER_API_KEY", "").strip()
+
+    if scraper_api_key:
+        encoded_url = urllib.parse.quote(url, safe="")
+        request_url = (
+            f"http://api.scraperapi.com"
+            f"?api_key={scraper_api_key}"
+            f"&url={encoded_url}"
+            f"&render=true"
+        )
+        # ScraperAPI with render=true needs a longer timeout — real browser boots
+        client_kwargs: dict = {"timeout": 60.0, "follow_redirects": True}
+    else:
+        logger.warning(
+            "SCRAPER_API_KEY not configured — falling back to direct request. "
+            "Realtor.ca will likely be blocked on flagged IPs."
+        )
+        # httpx 0.28+ uses proxy= (single URL string) instead of proxies= dict.
+        # Pick a random User-Agent on each request — rotating UA looks more human.
+        request_url = url
+        client_kwargs = {
+            "headers": {**_HEADERS, "User-Agent": random.choice(USER_AGENTS)},
+            "timeout": 20.0,
+            "follow_redirects": True,
+        }
+        if proxy:
+            client_kwargs["proxy"] = proxy
 
     try:
         async with httpx.AsyncClient(**client_kwargs) as client:
-            response = await client.get(url)
+            response = await client.get(request_url)
             http_status = response.status_code
             response.raise_for_status()
             html: str = response.text

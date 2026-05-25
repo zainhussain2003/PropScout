@@ -5,25 +5,25 @@ prioritised. They are captured so nothing falls through the cracks.
 
 ---
 
-## ScraperAPI integration
+## ~~ScraperAPI integration~~ — COMPLETED
 
-**What:** Replace the raw `httpx` fetch in `realtor_scraper.py` with a ScraperAPI-proxied
-request. ScraperAPI handles Incapsula / Imperva bot protection automatically — no change
-to parsing logic, only to the HTTP call.
+**Status:** Integrated 2026-05-25 after three confirmed IP-level Incapsula blocks.
+Persistent 216KB challenge page across all three runs confirmed the IP was flagged at
+network level — header tricks and jitter could not help. ScraperAPI is now the request
+layer for Realtor.ca. `render=true` required for Incapsula bypass.
 
-**Why:** The current scraper works reliably on a fresh IP but gets blocked by Incapsula
-after repeated requests in a session. Residential proxy rotation (PROXY_1/2/3) mitigates
-this but ScraperAPI provides a cleaner managed solution.
+**What was changed:**
 
-**Cost:** $49/month (Growth plan, 100k API credits).
+- `realtor_scraper.py` — `scrape_listing()` now routes through `api.scraperapi.com`
+  when `SCRAPER_API_KEY` is set. Falls back to direct `httpx` request when key is absent
+  (local development on clean IPs still works without a key).
+- `SCRAPER_API_KEY` added to `.env` (live key) and `.env.example` (placeholder).
+- Two unit tests added in `realtor_scraper_test.py` confirming ScraperAPI routing when
+  key is set and direct fallback when key is absent.
+- `render=true` is required — Incapsula serves the challenge page to headless requests
+  without a real browser session.
 
-**When to pursue:** When bot-blocking becomes a consistent production problem that
-proxy rotation cannot absorb — not before.
-
-**Implementation note:** The parsing pipeline is unchanged. Only `scrape_listing()` in
-`realtor_scraper.py` changes: swap the `httpx.get(url, headers=_HEADERS)` call for
-`httpx.get(f"http://api.scraperapi.com/?api_key={SCRAPERAPI_KEY}&url={url}")`.
-Add `SCRAPERAPI_KEY` to `.env` and `.env.example`.
+**Cost:** $49/month (Hobby plan). Key stored in `.env` only — never committed.
 
 ---
 
@@ -85,4 +85,4 @@ requiring any scraper changes in the short term.
 
 ---
 
-_Last updated: 2026-05-25_
+_Last updated: 2026-05-25 — ScraperAPI marked complete_
