@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026 — ticked items confirmed complete as of feat/calc-engine branch
+Last updated: May 2026 — ticked items confirmed complete as of feat/financing-scenarios branch
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -78,11 +78,18 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [x] Break-even rent = all monthly expenses combined
 - [x] Ontario LTT calculation (non-Toronto and Toronto — spec Section 6)
 - [x] OSFI stress test: qualifying_rate = max(contract_rate + 0.02, 0.0525)
-- [ ] Four financing scenarios (base, OSFI stress, 35% down, conservative)
+- [x] Four financing scenarios (base, OSFI stress, 35% down, conservative)
+- [x] Equity build projection — 20-year equity curve with appreciation (`equity_build.py`)
+- [x] Sanity checks on all metric outputs — cap rate, deal score, cash flow, DSCR, break-even (`sanity.py`)
 - [x] Deal score formula — all components (spec Section 10)
 - [x] Risk flag deductions applied to deal score
-- [x] Unit tests: 101 passing across mortgage, investment, closing_costs, deal_score, osfi
-- [x] Calibration test: 5702 Buttermill Ave scores 0/100 (hard pass — correct direction)
+- [x] NRST (25% of purchase price) added to closing costs for Ontario non-resident buyers
+- [x] `get_nrst_risk_flag()` — red flag with formatted dollar amount surfaced when NRST applies
+- [x] Bank of Canada weekly rate fetch — 7-day file cache, 3-level fallback (live → cached → hardcoded 4.79%)
+- [x] `GET /rates/mortgage` FastAPI route — returns rate + source + fetched_at + warning
+- [x] `GET /rates/mortgage` Fastify proxy route — frontend calls this, never Python directly
+- [x] Unit tests: all passing across mortgage, investment, closing_costs, deal_score, osfi, equity_build, sanity, bank_of_canada_service
+- [x] Calibration test: 5702 Buttermill Ave scores ≤ 5/100 (hard pass — correct direction)
 
 ---
 
@@ -110,6 +117,8 @@ Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 - [x] `<Nav variant>` — landing, report, and account variants
 - [x] `<Footer>` — shared footer
 - [x] `<SignInModal open onClose>` — bottom-sheet sign-in / sign-up
+- [x] `<Tooltip text>` — inline ? trigger with floating tooltip (used by AssumptionFields and report sections)
+- [x] `<RateBanner warning>` — amber alert banner shown when mortgage rate is from stale cache or hardcoded fallback
 - [x] Unit test + accessibility test every shared component before moving to PR 2
 
 ### PR 2 — Calc engine Python port
@@ -126,7 +135,18 @@ Reference: `COMPONENT_MANIFEST.md §10` + `services/calc-engine/calculations/`
 - [x] `maintenance_rate()` → `rates.py` (constants) + `investment.py`
 - [x] 100% unit test coverage on all 8 functions (101 tests passing)
 - [x] Calibration test: 5702 Buttermill scores 0/100 (hard pass — scores ≤ 5, correct direction)
-- [x] Hamilton duplex calibration test: scores 84/100 (strong buy — scores ≥ 80, correct direction)
+- [x] Hamilton duplex calibration test: scores 72/100 (good deal — scores ≥ 65, correct direction; corrected from 84 — prior figure used 1.8% vacancy instead of standard 5%)
+
+### PR 2b — Investor assumption inputs (built ahead of PR 4 to unblock calc engine wiring)
+
+Reference: `Investor Report.html` — financing/assumptions panel
+
+- [x] `<AssumptionFields onAssumptionsChange initialValues rateMetadata compact>` — 7 editable numeric assumption inputs (vacancy, insurance, management fee, maintenance, appreciation, legal fees, mortgage rate) + non-resident buyer boolean toggle
+- [x] Mortgage rate pre-filled from live Bank of Canada rate (`rateMetadata.rate × 100`)
+- [x] NRST checkbox — checked state adds 25% of purchase price to closing costs; tooltip cites exemptions and links to lawyer advice
+- [x] `AnalysisAssumptions` type exported — used by investor report + landlord report
+- [x] `constants/assumptions.ts` — `ASSUMPTION_FIELDS`, `BOOLEAN_ASSUMPTION_FIELDS`, `DEFAULT_ASSUMPTIONS`, `DEFAULT_BOOLEAN_ASSUMPTIONS` — no magic numbers in component
+- [x] 31 unit tests passing (field defaults, clamping, tooltip count, boolean toggle, banner conditions, rate pre-fill, initialValues precedence)
 
 ### PR 3 — Landing + Mode modal
 
