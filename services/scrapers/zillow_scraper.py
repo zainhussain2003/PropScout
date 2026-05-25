@@ -26,6 +26,7 @@ import logging
 import os
 import re
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 from playwright.async_api import Browser, Page, async_playwright
@@ -477,6 +478,7 @@ async def scrape_listing(url: str) -> dict[str, Any]:
         "raw_json": {"html_length": len(raw_html), "url": url},
         "scrape_status": status,
         "missing_fields": missing,
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
     }
 
     # Write to Supabase

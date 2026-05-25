@@ -40,6 +40,7 @@ import random
 import re
 import time
 import urllib.parse
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -824,6 +825,7 @@ async def scrape_listing(url: str) -> dict[str, Any]:
         "raw_json": raw_json,
         "scrape_status": status,
         "missing_fields": missing,
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
     }
 
     # Write to Supabase
