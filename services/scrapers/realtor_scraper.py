@@ -548,18 +548,34 @@ def _extract_fields(  # noqa: C901
         missing.append("days_on_market")
 
     # ── 13. Listing description ───────────────────────────────────────────────
-    # Look for the public remarks section by class name
-    desc_match = re.search(
-        r'class="[^"]*listingDescriptionText[^"]*"[^>]*>(.*?)</div>',
-        html,
-        re.DOTALL | re.IGNORECASE,
-    )
+    # Primary: stable element IDs present in current Realtor.ca page structure.
+    # "propertyDescriptionCon" is the direct container (description text only).
+    # "PropertyDescription" is the outer wrapper that may include a section label.
+    # Class-based search is kept as a last-resort fallback for older page versions.
     listing_description: str | None = None
-    if desc_match:
-        raw_desc = re.sub(r"<[^>]+>", " ", desc_match.group(1))
-        listing_description = _strip_pii(re.sub(r"\s+", " ", raw_desc).strip())
+
+    raw_desc = _get_element_value(html, "propertyDescriptionCon")
+    if not raw_desc:
+        raw_desc = _get_element_value(html, "PropertyDescription")
+    if raw_desc:
+        # Strip the "Listing Description" section label if present at the start.
+        raw_desc = re.sub(
+            r"^Listing\s+Description\s*", "", raw_desc, flags=re.IGNORECASE
+        ).strip()
+        listing_description = _strip_pii(raw_desc) if raw_desc else None
+
     if not listing_description:
-        # Try alternative class names used in different page versions
+        # Fallback — class-based search for older Realtor.ca page versions.
+        desc_match = re.search(
+            r'class="[^"]*listingDescriptionText[^"]*"[^>]*>(.*?)</div>',
+            html,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if desc_match:
+            raw_desc2 = re.sub(r"<[^>]+>", " ", desc_match.group(1))
+            listing_description = _strip_pii(re.sub(r"\s+", " ", raw_desc2).strip())
+
+    if not listing_description:
         for cls in ["listingRemarks", "propertyDescription", "remarksText"]:
             desc_match2 = re.search(
                 rf'class="[^"]*{cls}[^"]*"[^>]*>(.*?)</div>',
@@ -567,10 +583,11 @@ def _extract_fields(  # noqa: C901
                 re.DOTALL | re.IGNORECASE,
             )
             if desc_match2:
-                raw_desc = re.sub(r"<[^>]+>", " ", desc_match2.group(1))
-                listing_description = _strip_pii(re.sub(r"\s+", " ", raw_desc).strip())
+                raw_desc2 = re.sub(r"<[^>]+>", " ", desc_match2.group(1))
+                listing_description = _strip_pii(re.sub(r"\s+", " ", raw_desc2).strip())
                 if listing_description:
                     break
+
     if not listing_description:
         missing.append("listing_description")
 
