@@ -559,74 +559,88 @@ async def tc07():
 
 
 async def tc08():
+    """
+    TC-08: 24h read-through cache in scraper_routes.py.
+
+    Sequence:
+      1. First POST — triggers a fresh scrape, records scraped_at (first_ts).
+      2. Second POST (same URL, immediate) — must return in < 2000ms because
+         the cache layer in scraper_routes serves the DB row without re-scraping.
+      3. Assert scraped_at on second response equals first_ts (same row, no re-scrape).
+      4. Assert row count is still 1 (no duplicate inserted).
+    """
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print("TC-08 · Cache hit — same URL re-submitted immediately after TC-01")
+    print("TC-08 · 24h cache — second request must return from DB in < 2s")
     print(f"        URL: {FIXTURE_CONDO_SALE}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     try:
-        # Get the scraped_at from TC-01's DB row
-        original = await sb_get("listings", FIXTURE_CONDO_SALE)
-        if not original:
+        # ── First request: fresh scrape ────────────────────────────────────────
+        print("  Request 1 — fresh scrape (may take ~40s)...")
+        t1_start = time.time()
+        resp1 = await scrape(FIXTURE_CONDO_SALE)
+        t1_ms = (time.time() - t1_start) * 1000
+        lst1 = resp1.get("listing", {})
+        first_ts = lst1.get("scraped_at", "")
+        print(f"  Request 1 elapsed: {t1_ms:.0f}ms")
+        print(f"  scraped_at:        {first_ts!r}")
+
+        if not first_ts:
             record(
                 8,
-                "TC-01 row exists in DB for cache test",
+                "first request returned a valid scraped_at",
                 False,
-                "row exists",
-                "not found",
+                "non-empty timestamp",
+                first_ts,
             )
-            tc_summary(8, "Cache hit")
+            tc_summary(8, "24h cache hit")
             return
 
-        original_ts = original.get("scraped_at", "")
-        print(f"  TC-01 scraped_at: {original_ts}")
-
-        # Re-submit — should return cached data
-        before = time.time()
-        resp = await scrape(FIXTURE_CONDO_SALE)
-        elapsed_ms = (time.time() - before) * 1000
-        lst = resp.get("listing", {})
-        returned_ts = lst.get("scraped_at", "")
-
-        print(f"  Cache response time: {elapsed_ms:.0f}ms")
-        print(f"  Returned scraped_at: {returned_ts}")
-        row_after = await sb_count("listings", FIXTURE_CONDO_SALE)
-        print(f"  Row count in listings: {row_after} (should be 1 — no duplicate)")
-
-        # Cache check: scraper returns existing row when scraped_at < 24h ago
-        # The scraper does NOT implement a cache layer internally in the current code —
-        # it re-scrapes on every request. Document this as an observation.
-        observations.append(
-            "TC-08: The realtor_scraper does not implement a read-through cache. "
-            "Every POST /scrape/listing triggers a fresh scrape. "
-            "Cache behaviour (scraped_at unchanged, < 2s response) will FAIL by design. "
-            "A cache layer should be added to scraper_routes.py before production."
+        record(
+            8,
+            "first request returned a valid scraped_at",
+            bool(first_ts),
+            "non-empty",
+            first_ts,
         )
+
+        # ── Second request: must hit cache ─────────────────────────────────────
+        print("  Request 2 — same URL (must be served from cache)...")
+        t2_start = time.time()
+        resp2 = await scrape(FIXTURE_CONDO_SALE)
+        t2_ms = (time.time() - t2_start) * 1000
+        lst2 = resp2.get("listing", {})
+        second_ts = lst2.get("scraped_at", "")
+        print(f"  Request 2 elapsed: {t2_ms:.0f}ms  (must be < 2000ms)")
+        print(f"  scraped_at:        {second_ts!r}")
+
+        row_count = await sb_count("listings", FIXTURE_CONDO_SALE)
+        print(f"  DB row count:      {row_count}  (must be 1 — no duplicate)")
 
         record(
             8,
-            "response time < 2000ms",
-            elapsed_ms < 2000,
+            "second request response time < 2000ms (cache hit)",
+            t2_ms < 2000,
             "< 2000ms",
-            f"{elapsed_ms:.0f}ms",
+            f"{t2_ms:.0f}ms",
         )
         record(
             8,
-            "scraped_at matches TC-01 (no re-scrape)",
-            returned_ts == original_ts,
-            original_ts,
-            returned_ts,
+            "scraped_at unchanged on second request (DB row reused)",
+            second_ts == first_ts,
+            first_ts,
+            second_ts,
         )
         record(
             8,
-            "no duplicate row inserted (row count still 1)",
-            row_after == 1,
+            "no duplicate row inserted (DB row count == 1)",
+            row_count == 1,
             1,
-            row_after,
+            row_count,
         )
     except Exception as e:
         print(f"  EXCEPTION: {e}")
         record(8, "TC-08 completed without exception", False, "no exception", str(e))
-    tc_summary(8, "Cache hit")
+    tc_summary(8, "24h cache hit")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
