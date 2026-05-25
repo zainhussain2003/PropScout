@@ -548,24 +548,25 @@ def _extract_fields(  # noqa: C901
         missing.append("days_on_market")
 
     # ── 13. Listing description ───────────────────────────────────────────────
-    # Primary: stable element IDs present in current Realtor.ca page structure.
-    # "propertyDescriptionCon" is the direct container (description text only).
-    # "PropertyDescription" is the outer wrapper that may include a section label.
-    # Class-based search is kept as a last-resort fallback for older page versions.
+    # Primary: direct div-text extraction from id="propertyDescriptionCon".
+    # Description text sits directly inside this div — no nested value div —
+    # so _get_element_value() cannot be used here (it requires a Value class).
+    # Approach: find the opening tag boundary, read until the first </div>.
     listing_description: str | None = None
 
-    raw_desc = _get_element_value(html, "propertyDescriptionCon")
-    if not raw_desc:
-        raw_desc = _get_element_value(html, "PropertyDescription")
-    if raw_desc:
-        # Strip the "Listing Description" section label if present at the start.
-        raw_desc = re.sub(
-            r"^Listing\s+Description\s*", "", raw_desc, flags=re.IGNORECASE
-        ).strip()
-        listing_description = _strip_pii(raw_desc) if raw_desc else None
+    idx = html.find('id="propertyDescriptionCon"')
+    if idx >= 0:
+        tag_end = html.find(">", idx)
+        close = html.find("</div>", tag_end)
+        if tag_end >= 0 and close >= 0:
+            inner = html[tag_end + 1 : close]
+            text = re.sub(r"<[^>]+>", " ", inner)
+            text = re.sub(r"\s+", " ", text).strip()
+            if text:
+                listing_description = _strip_pii(text)
 
     if not listing_description:
-        # Fallback — class-based search for older Realtor.ca page versions.
+        # Last resort — class-based search for older Realtor.ca page versions.
         desc_match = re.search(
             r'class="[^"]*listingDescriptionText[^"]*"[^>]*>(.*?)</div>',
             html,
