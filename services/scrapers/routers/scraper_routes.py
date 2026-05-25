@@ -98,26 +98,30 @@ async def scrape_listing_route(body: ScrapeListingRequest) -> ScrapeListingRespo
         raise HTTPException(status_code=422, detail="URL must not be empty.")
 
     # ── 24h read-through cache ─────────────────────────────────────────────────
-    # If a row for this URL was scraped within CACHE_TTL_HOURS, return it
-    # immediately without re-hitting ScraperAPI or Playwright.
+    # Only attempt the cache lookup for URLs this service can actually scrape.
+    # Unrecognised URLs (Kijiji, HouseSigma, etc.) skip Supabase entirely —
+    # they hit the fast-path error return in the dispatch block below.
     # On any Supabase error, log and fall through to a fresh scrape.
     listing: dict[str, Any] | None = None
 
-    try:
-        cached = await get_listing_by_url(url)
-        if cached and cached.get("scraped_at"):
-            ts = datetime.fromisoformat(cached["scraped_at"])
-            age = datetime.now(timezone.utc) - ts
-            if age.total_seconds() < CACHE_TTL_HOURS * 3600:
-                logger.info(
-                    "cache hit for %s (age %.1fh < %dh TTL)",
-                    url,
-                    age.total_seconds() / 3600,
-                    CACHE_TTL_HOURS,
-                )
-                listing = cached
-    except Exception as exc:
-        logger.warning("cache lookup failed — proceeding with fresh scrape: %s", exc)
+    if is_realtor_ca_url(url) or is_zillow_url(url):
+        try:
+            cached = await get_listing_by_url(url)
+            if cached and cached.get("scraped_at"):
+                ts = datetime.fromisoformat(cached["scraped_at"])
+                age = datetime.now(timezone.utc) - ts
+                if age.total_seconds() < CACHE_TTL_HOURS * 3600:
+                    logger.info(
+                        "cache hit for %s (age %.1fh < %dh TTL)",
+                        url,
+                        age.total_seconds() / 3600,
+                        CACHE_TTL_HOURS,
+                    )
+                    listing = cached
+        except Exception as exc:
+            logger.warning(
+                "cache lookup failed — proceeding with fresh scrape: %s", exc
+            )
 
     # ── Dispatch to the correct scraper (skipped on cache hit) ────────────────
     # Realtor.ca and Zillow.com are the two supported sources.
