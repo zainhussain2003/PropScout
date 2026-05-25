@@ -19,11 +19,16 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3001"],  # Fastify API only
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
-# Routers are registered here as each is built:
+# ── Routers ────────────────────────────────────────────────────────────────────
+
+from routers import rates  # noqa: E402
+
+app.include_router(rates.router, prefix="/rates")
+
 # from routers import analysis
 # app.include_router(analysis.router, prefix="/analysis")
 
@@ -32,4 +37,5 @@ app.add_middleware(
 async def health() -> dict[str, str]:
     """Health check endpoint."""
     from datetime import datetime, timezone
+
     return {"status": "ok", "ts": datetime.now(timezone.utc).isoformat()}

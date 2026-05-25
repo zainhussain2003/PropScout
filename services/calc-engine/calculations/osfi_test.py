@@ -25,10 +25,12 @@ class TestCalculateStressTestPayment:
         """
         Vaughan calibration: $583,920 loan at 4.79% contract.
         Stress rate = 4.79% + 2% = 6.79% (above the 5.25% floor).
-        Expected stress payment: ~$4,100–$4,500/month.
+        With Canadian semi-annual compounding: ~$4,014/month.
         """
         payment = calculate_stress_test_payment(583_920, 0.0479, 25)
         assert 4_000 <= payment <= 4_600, f"Stress payment out of range: {payment:.2f}"
+        # Tighter check — Canadian compounding gives ~$4,014.44
+        assert abs(payment - 4_014.44) < 2.0, f"Stress payment drifted: {payment}"
 
     def test_low_rate_hits_floor(self) -> None:
         """

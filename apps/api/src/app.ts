@@ -23,9 +23,11 @@ async function main(): Promise<void> {
 
   // ── Routes ─────────────────────────────────────────────────────────────────
 
-  // Routes are registered here as each is built:
-  // fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
-  // fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })
+  await fastify.register(import('./routes/rates'), { prefix: '/rates' })
+
+  // Routes registered as each is built:
+  // await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
+  // await fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })
 
   fastify.get('/health', async (_req, _reply) => {
     return { status: 'ok', ts: new Date().toISOString() }

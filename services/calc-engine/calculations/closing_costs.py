@@ -4,6 +4,7 @@ Ontario LTT + Toronto MLTT supported at MVP.
 """
 
 from constants.provinces import ONTARIO_LTT_BRACKETS, TORONTO_MLTT_BRACKETS
+from constants.rates import LEGAL_FEES, TITLE_INSURANCE, HOME_INSPECTION
 
 
 def calculate_ltt(purchase_price: float, brackets: list[tuple[float, float]]) -> float:
@@ -77,9 +78,9 @@ def estimate_closing_costs(
     """
     ltt_provincial = calculate_ontario_ltt(purchase_price)
     ltt_municipal = calculate_toronto_mltt(purchase_price) if is_toronto else 0.0
-    legal_fees = 1_500.0
-    title_insurance = 300.0
-    home_inspection = 600.0 if include_home_inspection else 0.0
+    legal_fees = LEGAL_FEES
+    title_insurance = TITLE_INSURANCE
+    home_inspection = HOME_INSPECTION if include_home_inspection else 0.0
 
     total = (
         ltt_provincial + ltt_municipal + legal_fees + title_insurance + home_inspection
