@@ -9,12 +9,13 @@ Authentication will be added before any public exposure.
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from db import query_rental_comps
+from db import get_listing_by_url, query_rental_comps
 from listing_type import is_realtor_ca_url, is_zillow_url
 from province import detect_province, is_ontario, province_gate_error
 from rental_comps_scraper import calculate_percentiles
@@ -22,6 +23,11 @@ from rental_comps_scraper import calculate_percentiles
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Listings are considered fresh if scraped within this window.
+# A re-submission within 24 hours returns the cached DB row immediately,
+# skipping ScraperAPI / Playwright and saving ~40s per request.
+CACHE_TTL_HOURS = 24
 
 
 # ── Request / response models ──────────────────────────────────────────────────
@@ -91,36 +97,57 @@ async def scrape_listing_route(body: ScrapeListingRequest) -> ScrapeListingRespo
     if not url:
         raise HTTPException(status_code=422, detail="URL must not be empty.")
 
-    # ── Dispatch to the correct scraper ────────────────────────────────────────
+    # ── 24h read-through cache ─────────────────────────────────────────────────
+    # If a row for this URL was scraped within CACHE_TTL_HOURS, return it
+    # immediately without re-hitting ScraperAPI or Playwright.
+    # On any Supabase error, log and fall through to a fresh scrape.
+    listing: dict[str, Any] | None = None
+
+    try:
+        cached = await get_listing_by_url(url)
+        if cached and cached.get("scraped_at"):
+            ts = datetime.fromisoformat(cached["scraped_at"])
+            age = datetime.now(timezone.utc) - ts
+            if age.total_seconds() < CACHE_TTL_HOURS * 3600:
+                logger.info(
+                    "cache hit for %s (age %.1fh < %dh TTL)",
+                    url,
+                    age.total_seconds() / 3600,
+                    CACHE_TTL_HOURS,
+                )
+                listing = cached
+    except Exception as exc:
+        logger.warning("cache lookup failed — proceeding with fresh scrape: %s", exc)
+
+    # ── Dispatch to the correct scraper (skipped on cache hit) ────────────────
     # Realtor.ca and Zillow.com are the two supported sources.
     # Zillow.ca does not exist as a product — all Canadian listings are on
     # zillow.com. Geographic filtering is handled by the province gate below.
-    listing: dict[str, Any]
+    if listing is None:
+        if is_realtor_ca_url(url):
+            from realtor_scraper import scrape_listing
 
-    if is_realtor_ca_url(url):
-        from realtor_scraper import scrape_listing
+            listing = await scrape_listing(url)
 
-        listing = await scrape_listing(url)
+        elif is_zillow_url(url):
+            from zillow_scraper import scrape_listing
 
-    elif is_zillow_url(url):
-        from zillow_scraper import scrape_listing
+            listing = await scrape_listing(url)
 
-        listing = await scrape_listing(url)
-
-    else:
-        # Unrecognised source — cannot scrape
-        return ScrapeListingResponse(
-            scrape_status="failed",
-            listing={
-                "source_url": url,
-                "error": (
-                    "Unrecognised listing source. "
-                    "PropScout currently supports Realtor.ca and Zillow.com."
-                ),
-            },
-            province_supported=False,
-            province_error=None,
-        )
+        else:
+            # Unrecognised source — cannot scrape
+            return ScrapeListingResponse(
+                scrape_status="failed",
+                listing={
+                    "source_url": url,
+                    "error": (
+                        "Unrecognised listing source. "
+                        "PropScout currently supports Realtor.ca and Zillow.com."
+                    ),
+                },
+                province_supported=False,
+                province_error=None,
+            )
 
     # ── Province gate ──────────────────────────────────────────────────────────
     postal_code = listing.get("postal_code")

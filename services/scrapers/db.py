@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from supabase import AsyncClient, acreate_client
+from supabase import AClient as AsyncClient, acreate_client
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,34 @@ async def _get_client() -> AsyncClient:
 
 
 # ── Listing writes ─────────────────────────────────────────────────────────────
+
+
+async def get_listing_by_url(source_url: str) -> dict[str, Any] | None:
+    """
+    Return the listings row for a given source_url, or None if not found.
+
+    Uses maybe_single() so the call succeeds even when no row exists.
+    Used by the cache layer in scraper_routes to avoid redundant re-scrapes.
+
+    Args:
+        source_url: Full listing URL (the unique conflict key).
+
+    Returns:
+        The row dict, or None if not found or on error.
+    """
+    try:
+        client = await _get_client()
+        response = await (
+            client.table("listings")
+            .select("*")
+            .eq("source_url", source_url)
+            .maybe_single()
+            .execute()
+        )
+        return response.data  # None when no row exists
+    except Exception as exc:
+        logger.error("get_listing_by_url failed: %s", exc)
+        return None
 
 
 async def upsert_listing(listing: dict[str, Any]) -> dict[str, Any] | None:
