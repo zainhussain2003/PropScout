@@ -449,13 +449,14 @@ def _extract_fields(  # noqa: C901
     listing_type = parse_listing_type(url, price_string=price_str)
 
     # ── 4a. Rental override ───────────────────────────────────────────────────
-    # Realtor.ca renders rental prices as e.g. "$4,300/Monthly". URL-based
-    # detection via parse_listing_type() sees "/real-estate/" and returns
-    # "for_sale" for every listing regardless of type. If the raw price string
-    # contains "/Monthly" (case-sensitive, matching Realtor.ca exactly), this
-    # is a rental listing — override the URL-based result.
-    # price_raw may be None for partial scrapes; do not override in that case.
-    if price_raw and "/Monthly" in price_raw:
+    # Rental override — URL-based detection always returns for_sale for
+    # /real-estate/ paths. Correct it using page signals already extracted:
+    #   - "for rent:" in the page <title> (Realtor.ca renders this explicitly)
+    #   - leasePrice non-empty in the dataLayer (Realtor.ca sets this for rentals)
+    # lease_price and title_text are already in scope. Only override to for_rent,
+    # never to for_sale — keep parse_listing_type() result if neither signal fires.
+    title_lower = title_text.lower() if title_text else ""
+    if "for rent:" in title_lower or lease_price:
         listing_type = "for_rent"
 
     # ── 5. Beds ───────────────────────────────────────────────────────────────
