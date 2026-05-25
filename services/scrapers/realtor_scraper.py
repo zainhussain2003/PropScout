@@ -21,6 +21,16 @@ PII policy: agent names, emails, and phone numbers are stripped before
 writing to the database. Only property data is stored.
 
 Runs on Railway as a triggered job (not a scheduled cron).
+
+FUTURE: ScraperAPI integration ($49/mo) — replace the raw httpx fetch with a
+ScraperAPI-proxied request so Incapsula is handled automatically. The parsing
+logic stays identical; only the HTTP call changes. Pursue when bot-blocking
+becomes a consistent production problem.
+
+FUTURE: CREA DDF partnership — official data feed from the Canadian Real Estate
+Association. Pursue when PropScout has 50+ paying users to meet CREA's minimum
+participant threshold. Would replace the HTML scraper entirely for Realtor.ca
+listings and provide structured, reliable data.
 """
 
 import logging

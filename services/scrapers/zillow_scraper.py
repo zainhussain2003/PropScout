@@ -1,11 +1,19 @@
 """
-Zillow.ca listing scraper — spec Section 11.2 (TEMPLATE CODE).
+Zillow.com listing scraper — spec Section 11.2 (TEMPLATE CODE).
 
-Uses Playwright headless Chrome — Zillow.ca does not expose a public API.
+Uses Playwright headless Chrome — Zillow.com does not expose a public API.
 Field selectors and page structure will shift; update when they break.
 
+Accepts any zillow.com URL. Geographic filtering is handled by the province
+gate in scraper_routes.py — the scraper just parses and returns data.
+
+Special case: if the listing address contains no Canadian postal code, the
+scraper returns scrape_status='failed' with a clear error before any DB write.
+This covers US addresses submitted on zillow.com URLs — the scraper checks
+for a Canadian postal code (A1A 1A1 format) after parsing and rejects the
+listing if none is found.
+
 Safety guards:
-  - US Zillow URLs (zillow.com) are rejected immediately.
   - The rate limiter enforces 4-second gaps between requests.
   - Proxy rotation uses PROXY_1 / PROXY_2 / PROXY_3 env vars.
   - All failures return partial data — never raise.
@@ -23,7 +31,7 @@ from typing import Any
 from playwright.async_api import Browser, Page, async_playwright
 
 from db import log_scrape, upsert_listing
-from listing_type import is_us_zillow_url, parse_listing_type
+from listing_type import parse_listing_type
 from province import detect_province
 from rate_limiter import wait_for_rate_limit
 
@@ -31,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-SOURCE = "zillow_ca"
+SOURCE = "zillow"
 
 # CSS selectors for Zillow.ca listing pages — TEMPLATE CODE
 # These will shift as Zillow updates their front end.
@@ -369,19 +377,6 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     Returns:
         Dict with all extracted listing fields plus 'scrape_status'.
     """
-    # Reject US Zillow
-    if is_us_zillow_url(url):
-        logger.warning("Rejected US Zillow URL: %s", url)
-        return {
-            "source_url": url,
-            "source": SOURCE,
-            "scrape_status": "failed",
-            "error": (
-                "This appears to be a US Zillow listing. "
-                "PropScout currently covers Canadian properties only."
-            ),
-        }
-
     # Enforce rate limit
     await wait_for_rate_limit(SOURCE)
 
@@ -451,6 +446,22 @@ async def scrape_listing(url: str) -> dict[str, Any]:
         }
 
     duration_ms = int(time.monotonic() * 1000) - start_ms
+
+    # If no Canadian postal code was found, the listing is outside Canada —
+    # return a clear error without writing anything to the database.
+    if not fields.get("postal_code"):
+        logger.warning(
+            "No Canadian postal code found for %s — likely a US listing", url
+        )
+        await log_scrape(
+            SOURCE, url, "failed", http_status, "No Canadian postal code", duration_ms
+        )
+        return {
+            "source_url": url,
+            "source": SOURCE,
+            "scrape_status": "failed",
+            "error": "Property does not appear to be in Ontario.",
+        }
 
     # Determine final status
     critical_fields = {"address", "price", "beds"}

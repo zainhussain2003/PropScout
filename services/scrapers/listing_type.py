@@ -87,12 +87,30 @@ def is_realtor_ca_url(url: str) -> bool:
     return bool(re.search(r"https?://(www\.)?realtor\.ca/", url, re.IGNORECASE))
 
 
+def is_zillow_url(url: str) -> bool:
+    """
+    Return True if the URL belongs to Zillow (zillow.com or zillow.ca).
+
+    All Canadian Zillow listings are served from zillow.com — zillow.ca does not
+    exist as a separate product. Any zillow.com URL is accepted; the Ontario
+    province gate (applied after scraping) handles geographic filtering.
+
+    Args:
+        url: Full listing URL.
+
+    Returns:
+        True if the URL host is zillow.com or zillow.ca.
+    """
+    return bool(re.search(r"https?://(www\.)?zillow\.(com|ca)/", url, re.IGNORECASE))
+
+
 def is_zillow_ca_url(url: str) -> bool:
     """
-    Return True if the URL belongs to Zillow.ca.
+    Return True if the URL belongs to Zillow.ca specifically.
 
-    Also detects Zillow.com URLs with Canadian postal codes so the caller
-    can warn the user that US listings are not supported.
+    Note: zillow.ca does not exist as a real product — all Canadian listings are
+    on zillow.com. This function is kept for reference but will never match
+    any real listing URL. Use is_zillow_url() for dispatch logic.
 
     Args:
         url: Full listing URL.
@@ -105,9 +123,12 @@ def is_zillow_ca_url(url: str) -> bool:
 
 def is_us_zillow_url(url: str) -> bool:
     """
-    Return True if the URL points to a US Zillow listing (zillow.com, not .ca).
+    Return True if the URL points to zillow.com (US or Canadian listing).
 
-    Zillow.com is out of scope — only Zillow.ca is supported.
+    Note: This function is kept for backwards compatibility. Under the current
+    scraping policy, zillow.com URLs are accepted and scraped — geographic
+    filtering is handled by the province gate after the address is parsed.
+    Use is_zillow_url() for dispatch decisions.
 
     Args:
         url: Full listing URL.

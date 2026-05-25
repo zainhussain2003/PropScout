@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from db import query_rental_comps
-from listing_type import is_realtor_ca_url, is_zillow_ca_url, is_us_zillow_url
+from listing_type import is_realtor_ca_url, is_zillow_url
 from province import detect_province, is_ontario, province_gate_error
 from rental_comps_scraper import calculate_percentiles
 
@@ -91,22 +91,10 @@ async def scrape_listing_route(body: ScrapeListingRequest) -> ScrapeListingRespo
     if not url:
         raise HTTPException(status_code=422, detail="URL must not be empty.")
 
-    # ── US Zillow guard ────────────────────────────────────────────────────────
-    if is_us_zillow_url(url):
-        return ScrapeListingResponse(
-            scrape_status="failed",
-            listing={
-                "source_url": url,
-                "error": (
-                    "This looks like a US Zillow listing. "
-                    "PropScout covers Canadian properties only."
-                ),
-            },
-            province_supported=False,
-            province_error=province_gate_error(None),
-        )
-
     # ── Dispatch to the correct scraper ────────────────────────────────────────
+    # Realtor.ca and Zillow.com are the two supported sources.
+    # Zillow.ca does not exist as a product — all Canadian listings are on
+    # zillow.com. Geographic filtering is handled by the province gate below.
     listing: dict[str, Any]
 
     if is_realtor_ca_url(url):
@@ -114,7 +102,7 @@ async def scrape_listing_route(body: ScrapeListingRequest) -> ScrapeListingRespo
 
         listing = await scrape_listing(url)
 
-    elif is_zillow_ca_url(url):
+    elif is_zillow_url(url):
         from zillow_scraper import scrape_listing
 
         listing = await scrape_listing(url)
@@ -127,7 +115,7 @@ async def scrape_listing_route(body: ScrapeListingRequest) -> ScrapeListingRespo
                 "source_url": url,
                 "error": (
                     "Unrecognised listing source. "
-                    "PropScout currently supports Realtor.ca and Zillow.ca."
+                    "PropScout currently supports Realtor.ca and Zillow.com."
                 ),
             },
             province_supported=False,

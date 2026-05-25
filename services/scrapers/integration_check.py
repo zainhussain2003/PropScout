@@ -8,12 +8,12 @@ Run with:
 Checks:
   1. Realtor.ca: scrape a live listing page (HTML-parse approach), print all
      fields, query Supabase to confirm the DB write.
-  2. Zillow.com US guard: confirm the scraper blocks zillow.com URLs before
-     making any network request.
-  3. Zillow.ca domain discovery: note that zillow.ca does not appear to be
-     a real domain — Canadian listings are on zillow.com, not zillow.ca.
+  2. Zillow Ontario: scrape an Ontario zillow.com listing, confirm Canadian
+     postal code is detected and province == 'ON', confirm DB write.
+  3. Zillow US: scrape a US zillow.com listing, confirm no Canadian postal
+     code is found and the scraper returns the Ontario error without a DB write.
 
-Scraper approach:
+Scraper approach (Realtor.ca):
   The scraper fetches the public listing page HTML (not the internal JSON API,
   which is blocked by Incapsula bot protection). Data is extracted from:
     a) The embedded dataLayer.push() JavaScript object in the HTML
@@ -25,7 +25,12 @@ Bot protection note:
   The scraper detects this (response < 50 KB) and returns scrape_status='failed'
   with a clear error. Use PROXY_1/PROXY_2/PROXY_3 env vars to rotate IPs.
 
-Does NOT hit any site more than once.
+Zillow note:
+  Zillow.com is protected by anti-bot measures (Cloudflare / CAPTCHA). The
+  Playwright scraper may get blocked on a bare IP. Use PROXY_1/2/3 env vars
+  with residential proxies for reliable Zillow scraping in production.
+
+Does NOT hit any site more than once per section.
 """
 
 import asyncio
@@ -51,9 +56,13 @@ REALTOR_URL = (
     "https://www.realtor.ca/real-estate/29795861/"
     "5312-950-portage-parkway-vaughan-vaughan-corporate-centre"
 )
-ZILLOW_COM_URL = (
+ZILLOW_ON_URL = (
     "https://www.zillow.com/homedetails/"
     "332-Ellen-Davidson-Dr-Oakville-ON-L6M-0Y6/462657380_zpid/"
+)
+ZILLOW_US_URL = (
+    "https://www.zillow.com/homedetails/"
+    "2909-23rd-Ave-S-Minneapolis-MN-55406/49113185_zpid/"
 )
 
 SEP = "-" * 70
@@ -193,54 +202,85 @@ async def check_supabase(source_url: str) -> None:
         print(f"  Supabase query error: {exc}")
 
 
-def check_zillow_us_block() -> None:
-    """Confirm is_us_zillow_url() blocks the .com URL before any network call."""
-    section("2 of 3 — ZILLOW.COM US GUARD")
-    print(f"  URL: {ZILLOW_COM_URL}\n")
+async def check_zillow_ontario() -> None:
+    """Scrape the Zillow Ontario URL and confirm province detection + DB write."""
+    section("2 of 3 — ZILLOW.COM ONTARIO LISTING")
+    print(f"  URL: {ZILLOW_ON_URL}\n")
 
-    from listing_type import is_us_zillow_url, is_zillow_ca_url
+    from zillow_scraper import scrape_listing
 
-    is_us = is_us_zillow_url(ZILLOW_COM_URL)
-    is_ca = is_zillow_ca_url(ZILLOW_COM_URL)
+    print("  Calling Zillow scraper (rate limit: 4 s)...\n")
+    result = await scrape_listing(ZILLOW_ON_URL)
 
-    print(f"  is_us_zillow_url() -> {is_us}")
-    print(f"  is_zillow_ca_url() -> {is_ca}")
+    missing = result.get("missing_fields", [])
+    status = result.get("scrape_status", "unknown")
 
-    if is_us and not is_ca:
+    print(f"  scrape_status   : {status!r}")
+    print(f"  missing_fields  : {missing!r}\n")
+
+    fields_to_show = [
+        ("source_url", result.get("source_url")),
+        ("source", result.get("source")),
+        ("listing_type", result.get("listing_type")),
+        ("address", result.get("address")),
+        ("postal_code", result.get("postal_code")),
+        ("province", result.get("province")),
+        ("price", result.get("price")),
+        ("beds", result.get("beds")),
+        ("baths", result.get("baths")),
+        ("sqft", result.get("sqft")),
+        ("property_type", result.get("property_type")),
+    ]
+    for label, value in fields_to_show:
+        print_field(label, value, missing)
+
+    error = result.get("error")
+    if error:
+        print(f"\n  ERROR returned by scraper: {error!r}")
+
+    postal_code = result.get("postal_code")
+    province = result.get("province")
+    if postal_code and province == "ON":
+        print("\n  [OK] Ontario postal code detected — analysis would proceed.")
+    elif error and "Ontario" in str(error):
+        print("\n  [FAIL] Scraper returned Ontario error for an Ontario URL.")
+    else:
+        print(f"\n  [INFO] province={province!r}, postal_code={postal_code!r}")
+
+
+async def check_zillow_us() -> None:
+    """Scrape the Zillow US URL and confirm no-postal-code guard fires."""
+    section("3 of 3 — ZILLOW.COM US LISTING (no Canadian postal code)")
+    print(f"  URL: {ZILLOW_US_URL}\n")
+
+    from zillow_scraper import scrape_listing
+
+    print("  Calling Zillow scraper (rate limit: 4 s)...\n")
+    result = await scrape_listing(ZILLOW_US_URL)
+
+    status = result.get("scrape_status", "unknown")
+    error = result.get("error", "")
+    postal_code = result.get("postal_code")
+
+    print(f"  scrape_status : {status!r}")
+    print(f"  postal_code   : {postal_code!r}")
+    print(f"  error         : {error!r}")
+
+    if status == "failed" and "Ontario" in str(error) and not postal_code:
         print(
-            "\n  [OK] BLOCK FIRES CORRECTLY -- zillow.com URL is rejected before any"
-            "\n    network request is made. The scraper_routes.py route would return:"
-            "\n    scrape_status='failed', error='This looks like a US Zillow listing...'"
+            "\n  [OK] US listing correctly rejected — no Canadian postal code found."
+            "\n    scrape_status='failed', no DB write, user sees Ontario error."
+        )
+    elif status == "failed" and postal_code is None:
+        print(
+            "\n  [OK] US listing rejected (no postal code). "
+            f"Error message: {error!r}"
         )
     else:
-        print("\n  [FAIL] UNEXPECTED: guard did not fire as expected.")
-
-
-def report_zillow_ca_finding() -> None:
-    """Report the discovery that zillow.ca does not exist as a real domain."""
-    section("3 of 3 — ZILLOW.CA DOMAIN DISCOVERY")
-    print(
-        "  FINDING: zillow.ca does not appear to be a real domain.\n"
-        "  All Canadian property listings (including Oakville, Toronto, Vaughan)\n"
-        "  are served from zillow.com — there is no separate Canadian TLD.\n"
-        "\n"
-        "  Implication for the scraper:\n"
-        "    • is_zillow_ca_url() will never match any real listing URL\n"
-        "    • The zillow_scraper.py Playwright implementation is unreachable\n"
-        "      via the current route dispatch logic in scraper_routes.py\n"
-        "\n"
-        "  Recommended fix (next dev session):\n"
-        "    Option A — Update is_zillow_ca_url() to also match zillow.com URLs\n"
-        "               that contain a Canadian postal code in the address slug\n"
-        "               (e.g. '-ON-L6M-' in the path).\n"
-        "    Option B — Remove Zillow support entirely and add realtor.ca as the\n"
-        "               primary source + kijiji.ca for rentals.\n"
-        "    Option C — Keep the zillow_scraper.py file as-is and update the route\n"
-        "               to detect Canadian zillow.com URLs via province/postal detection\n"
-        "               on the slugified address in the URL.\n"
-        "\n"
-        "  No network request was made to Zillow during this check."
-    )
+        print(
+            f"\n  [FAIL] Unexpected result for US URL — "
+            f"status={status!r}, postal_code={postal_code!r}"
+        )
 
 
 async def main() -> None:
@@ -259,11 +299,11 @@ async def main() -> None:
         section("1b — SUPABASE DB WRITE CONFIRMATION")
         print("  SKIP: scraper returned no source_url (scrape failed above).")
 
-    # 2. Zillow.com guard
-    check_zillow_us_block()
+    # 2. Zillow Ontario listing
+    await check_zillow_ontario()
 
-    # 3. Zillow.ca finding
-    report_zillow_ca_finding()
+    # 3. Zillow US listing — confirm no-postal-code guard
+    await check_zillow_us()
 
     print(f"\n{SEP}")
     print("  Done. Review output above before marking integration check complete.")
