@@ -1,18 +1,26 @@
 """Unit tests for mortgage calculations."""
 
-import pytest
 from .mortgage import calculate_monthly_payment, calculate_osfi_stress_rate
 
 
 def test_monthly_payment_standard_case() -> None:
-    """5702 Buttermill Ave calibration case: $583,920 loan at 4.79% over 25 years."""
+    """5702 Buttermill Ave calibration case: $583,920 loan at 4.79% over 25 years.
+
+    Uses Canadian semi-annual compounding (Interest Act):
+        monthly_rate = (1 + 0.0479/2)^(1/6) - 1 = 0.395241%
+    vs US monthly compounding: 0.0479/12 = 0.399167%
+    Expected: ~$3,327/month (Canadian) vs ~$3,339 (US).
+    """
     payment = calculate_monthly_payment(
         principal=583_920,
         annual_rate=0.0479,
         amortization_years=25,
     )
-    # Expected: ~$3,340/month
     assert 3_200 <= payment <= 3_500, f"Unexpected payment: {payment}"
+    # Tighter check — Canadian compounding gives ~$3,326.64
+    assert (
+        abs(payment - 3_326.64) < 1.0
+    ), f"Payment drifted from Canadian formula: {payment}"
 
 
 def test_monthly_payment_zero_rate() -> None:

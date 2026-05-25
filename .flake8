@@ -1,6 +1,10 @@
 [flake8]
-# Match black's default line length so the two tools don't conflict.
-max-line-length = 88
+# 100 chars — black's target is 88 but it won't break string literals or
+# comments, so lines up to ~100 are intentional and should not be flagged.
+# This matches services/calc-engine/setup.cfg.
+max-line-length = 100
+# E203: whitespace before ':' — black and flake8 disagree on slice formatting
+extend-ignore = E203
 exclude =
     .venv,
     __pycache__,

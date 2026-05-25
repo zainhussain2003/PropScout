@@ -1,5 +1,20 @@
 // Analysis, report, and deal score types
 
+/**
+ * User-editable assumptions that override calc engine defaults.
+ * Every field has a tooltip in constants/assumptions.ts explaining its default.
+ * All percentage values are stored as plain numbers (e.g. 5 = 5%, not 0.05).
+ */
+export interface AnalysisAssumptions {
+  vacancyAllowance: number // % — default 5 (= 5%)
+  insuranceRate: number // % — default 0.35 (= 0.35% of property value)
+  managementFee: number // % — default 8 (= 8% of gross rent). 0 = self-managing.
+  maintenanceRate: number // % — default auto by build year (0.5 / 1.0 / 1.5%)
+  appreciationRate: number // % — default 3. Equity projections only.
+  legalFees: number // $ — default 1500
+  mortgageRate: number // % — default 0 (= use live Bank of Canada rate)
+}
+
 export type ReportMode = 'investor' | 'personal' | 'tenant' | 'landlord'
 
 export type DealVerdict =
@@ -11,7 +26,7 @@ export type DealVerdict =
   | 'hard_pass'
 
 export interface DealScore {
-  total: number           // 0–100
+  total: number // 0–100
   verdict: DealVerdict
   breakdown: {
     cashFlow: number
@@ -26,11 +41,11 @@ export interface InvestmentMetrics {
   // Core returns
   cashFlowMonthly: number
   cashFlowAnnual: number
-  capRate: number         // decimal (e.g. 0.045 = 4.5%)
+  capRate: number // decimal (e.g. 0.045 = 4.5%)
   cashOnCashReturn: number
-  dscr: number            // debt-service coverage ratio
-  grm: number             // gross rent multiplier
-  noi: number             // net operating income (annual)
+  dscr: number // debt-service coverage ratio
+  grm: number // gross rent multiplier
+  noi: number // net operating income (annual)
 
   // Mortgage
   mortgagePaymentMonthly: number
@@ -43,7 +58,7 @@ export interface InvestmentMetrics {
   breakEvenRent: number
   closingCostsTotal: number
   lttProvincial: number
-  lttMunicipal: number    // Toronto only
+  lttMunicipal: number // Toronto only
 
   // Sanity
   hasSanityWarnings: boolean
@@ -55,8 +70,8 @@ export interface RiskFlag {
   id: string
   severity: FlagSeverity
   label: string
-  evidence: string | null   // quote from listing description
-  confidence: number        // 0–100
+  evidence: string | null // quote from listing description
+  confidence: number // 0–100
 }
 
 export interface RentalEstimate {
@@ -70,7 +85,7 @@ export interface RentalEstimate {
 
 export interface Analysis {
   id: string
-  token: string             // share token for /r/[token]
+  token: string // share token for /r/[token]
   mode: ReportMode
   createdAt: string
   metrics: InvestmentMetrics | null

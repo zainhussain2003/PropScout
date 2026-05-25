@@ -23,17 +23,5 @@
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.3"
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix --max-warnings 0",
-      "prettier --write"
-    ],
-    "*.{js,json,md,css}": [
-      "prettier --write"
-    ],
-    "*.py": [
-      "black",
-      "flake8"
-    ]
-  }
+  "_lint-staged-config": ".lintstagedrc.cjs"
 }
