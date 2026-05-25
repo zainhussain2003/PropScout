@@ -1,8 +1,17 @@
 """
 Realtor.ca listing scraper — spec Section 11.2 (TEMPLATE CODE).
 
-Uses the Realtor.ca internal JSON API (not HTML scraping).
-Endpoint URLs and field mappings will shift as Realtor.ca updates their API.
+Fetches the public listing page and parses data from:
+  1. The embedded dataLayer.push() JavaScript object (price, beds, baths,
+     property type, sqft, city, province, MLS number)
+  2. HTML element IDs in the listing details section (annual taxes, condo fee,
+     year built, days on market, listing description)
+
+The Realtor.ca internal JSON API (api2.realtor.ca) is blocked by Incapsula
+bot protection when called without a real browser session. Parsing the page
+HTML is more reliable and does not require maintaining session cookies.
+
+HTML structure and element IDs will shift when Realtor.ca updates their site.
 Update this file and the spec together whenever the scraper changes.
 
 Rate limiting: 4-second minimum between requests.
@@ -33,22 +42,35 @@ logger = logging.getLogger(__name__)
 
 SOURCE = "realtor_ca"
 
-# Realtor.ca internal PropertyDetails API — TEMPLATE CODE
-# This endpoint is reverse-engineered from browser network tabs.
-# Field paths will shift when Realtor.ca updates their API.
-_DETAILS_URL = "https://api2.realtor.ca/Listing.svc/PropertyDetails"
+# Realtor.ca listing page base URL — TEMPLATE CODE
+_BASE_URL = "https://www.realtor.ca"
 
+# Browser-like headers to pass Incapsula bot detection on first request.
+# Sec-Fetch-* headers are important for appearing as a real browser.
 _HEADERS = {
     "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Referer": "https://www.realtor.ca/",
-    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;"
+        "q=0.9,image/avif,image/webp,*/*;q=0.8"
+    ),
     "Accept-Language": "en-CA,en;q=0.9",
-    "X-Requested-With": "XMLHttpRequest",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0",
 }
+
+# Minimum HTML length that indicates a real listing page (not a bot challenge).
+# Incapsula challenge pages are ~1-5 KB; real listing pages are 150-250 KB.
+_MIN_HTML_LENGTH = 50_000
 
 # Round-robin index — persists within a single worker process
 _proxy_index = 0
@@ -105,7 +127,7 @@ def _parse_price(raw: str | None) -> float | None:
     """
     Parse a Realtor.ca price string to a float.
 
-    Handles formats like "729,900" or "$729,900" or "729900".
+    Handles formats like "729,900" or "$729,900" or "729900" or "569900.00".
 
     Args:
         raw: Raw price string from the API response.
@@ -135,7 +157,8 @@ def _parse_int(raw: Any) -> int | None:
     if raw is None:
         return None
     try:
-        return int(str(raw).strip())
+        cleaned = re.sub(r"[^0-9]", "", str(raw).strip())
+        return int(cleaned) if cleaned else None
     except (ValueError, AttributeError):
         return None
 
@@ -163,19 +186,38 @@ def _parse_sqft(raw: str | None) -> int | None:
     """
     Parse an interior size string to integer square feet.
 
-    Handles "1,400 sqft", "1400", "130 m²" (converted to sqft).
+    Handles:
+      - "600 - 699 sqft" range  → midpoint (649)
+      - "55.7414 m2"            → converted to sqft
+      - "1,400 sqft"            → 1400
+      - "1400"                  → 1400
 
     Args:
-        raw: Raw size string from the API.
+        raw: Raw size string.
 
     Returns:
         Size in square feet as int, or None if parsing fails.
     """
     if not raw:
         return None
+
     raw_lower = raw.lower()
 
-    # Extract the numeric part
+    # Range like "600 - 699 sqft" → use midpoint
+    range_match = re.search(r"([\d,]+)\s*-\s*([\d,]+)", raw)
+    if range_match:
+        try:
+            lo = float(range_match.group(1).replace(",", ""))
+            hi = float(range_match.group(2).replace(",", ""))
+            value = (lo + hi) / 2
+            # If unit is m², convert
+            if "m2" in raw_lower or "m²" in raw_lower:
+                value = value * 10.7639
+            return int(value)
+        except ValueError:
+            pass
+
+    # Single value
     match = re.search(r"([\d,]+\.?\d*)", raw)
     if not match:
         return None
@@ -185,8 +227,8 @@ def _parse_sqft(raw: str | None) -> int | None:
     except ValueError:
         return None
 
-    # Convert m² to sqft if unit is metric
-    if "m²" in raw_lower or "sq m" in raw_lower or "sqm" in raw_lower:
+    # Convert m² to sqft
+    if "m2" in raw_lower or "m²" in raw_lower or "sq m" in raw_lower:
         value = value * 10.7639
 
     return int(value)
@@ -220,141 +262,292 @@ def _strip_pii(text: str | None) -> str | None:
     return text
 
 
-# ── Field extraction from API response ────────────────────────────────────────
+# ── HTML element value extraction ──────────────────────────────────────────────
 
 
-def _extract_fields(
-    data: dict[str, Any],
+def _get_element_value(html: str, element_id: str) -> str | None:
+    """
+    Extract the text content from a specific element ID in the Realtor.ca HTML.
+
+    Realtor.ca uses stable element IDs for listing detail values.
+    The pattern is: <div id="{element_id}">...<div class="...Value">{text}</div>
+
+    Args:
+        html:       Full HTML source of the listing page.
+        element_id: The HTML element ID to look up.
+
+    Returns:
+        Stripped text content of the value div, or None if not found.
+    """
+    # Find the container div
+    idx = html.find(element_id)
+    if idx < 0:
+        return None
+
+    # Find the next "Value" div within 500 characters
+    search_window = html[idx : idx + 500]
+    value_match = re.search(
+        r'class="propertyDetailsSectionContentValue"[^>]*>(.*?)</div>',
+        search_window,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not value_match:
+        return None
+
+    # Strip HTML tags and decode common entities
+    raw = value_match.group(1)
+    text = re.sub(r"<[^>]+>", " ", raw)
+    text = text.replace("&amp;", "&").replace("&nbsp;", " ").strip()
+    text = re.sub(r"\s+", " ", text)
+    return text if text else None
+
+
+def _extract_datalayer_property(html: str) -> dict[str, str]:
+    """
+    Extract the property object from the dataLayer.push() call in the page HTML.
+
+    Realtor.ca embeds listing metadata in a JavaScript dataLayer.push() call
+    inside a <script> tag. The property object contains key facts:
+    price, beds, baths, property type, sqft, city, province, MLS number.
+
+    Args:
+        html: Full HTML source of the listing page.
+
+    Returns:
+        Dict of property fields (all values are strings). Empty dict if not found.
+    """
+    prop_match = re.search(r"property\s*:\s*\{([^}]+)\}", html, re.DOTALL)
+    if not prop_match:
+        return {}
+
+    prop_str = prop_match.group(1)
+    result: dict[str, str] = {}
+    for kv in re.finditer(r"(\w+)\s*:\s*'([^']*)'", prop_str):
+        result[kv.group(1)] = kv.group(2)
+    return result
+
+
+# ── Field extraction from page HTML ───────────────────────────────────────────
+
+
+def _extract_fields(  # noqa: C901
+    html: str,
     url: str,
     listing_id: str,
 ) -> tuple[dict[str, Any], list[str]]:
     """
-    Extract listing fields from the Realtor.ca PropertyDetails API response.
+    Extract listing fields from the Realtor.ca listing page HTML.
 
-    This is TEMPLATE CODE — field paths may shift when Realtor.ca updates their API.
-    Extend the mapping below when new fields are encountered.
+    This is TEMPLATE CODE — HTML structure and element IDs will shift when
+    Realtor.ca updates their site. Update field mappings when they change.
+
+    Data sources (in order of preference):
+      1. dataLayer.push() object  — price, beds, baths, sqft, property type
+      2. Element ID value divs    — taxes, condo fees, year built
+      3. Page title / H1          — address, postal code
 
     Args:
-        data:       Full parsed API response dict.
+        html:       Full HTML source of the listing page.
         url:        Original listing URL (used for listing_type detection).
-        listing_id: Realtor.ca listing ID (used as fallback identifier).
+        listing_id: Realtor.ca numeric listing ID.
 
     Returns:
         Tuple of (extracted_fields_dict, list_of_missing_field_names).
     """
-    # The API wraps all data under a top-level "PropertyDetails" key
-    pd = data.get("PropertyDetails", data)
-
-    prop = pd.get("Property", {})
-    building = pd.get("Building", {})
-    tax_info = pd.get("AnnualTax", {}) or {}
-    address_info = prop.get("Address", {})
-
     missing: list[str] = []
 
-    # ── Address ───────────────────────────────────────────────────────────────
-    # AddressText is pipe-delimited: "5702 BUTTERMILL Ave|Vaughan, Ontario L4K 5N2"
-    raw_address = address_info.get("AddressText", "")
-    address = raw_address.split("|")[0].strip() if raw_address else None
-    if not address:
-        missing.append("address")
+    # ── 1. dataLayer.push() object ────────────────────────────────────────────
+    dl = _extract_datalayer_property(html)
 
-    # ── Postal code ───────────────────────────────────────────────────────────
-    postal_match = re.search(r"[A-Z]\d[A-Z]\s?\d[A-Z]\d", raw_address.upper())
-    postal_code = postal_match.group(0).replace(" ", "") if postal_match else None
-    # Re-format with space: "L4K5N2" → "L4K 5N2"
-    if postal_code and len(postal_code) == 6:
-        postal_code = postal_code[:3] + " " + postal_code[3:]
+    # ── 2. Address and postal code from page title ────────────────────────────
+    # Page title format: "For sale: {ADDRESS}, {CITY}, {PROV} {POSTAL} - {MLS} | REALTOR.ca"
+    title_match = re.search(r"<title[^>]*>([^<]+)</title>", html)
+    title_text = title_match.group(1).strip() if title_match else ""
+
+    # Extract postal code — Canadian format: A1A 1A1
+    postal_match = re.search(r"\b([A-Z]\d[A-Z]\s*\d[A-Z]\d)\b", title_text.upper())
+    postal_code: str | None = None
+    if postal_match:
+        raw_postal = postal_match.group(1).replace(" ", "")
+        postal_code = (
+            raw_postal[:3] + " " + raw_postal[3:] if len(raw_postal) == 6 else None
+        )
     if not postal_code:
         missing.append("postal_code")
 
-    # ── Price ─────────────────────────────────────────────────────────────────
-    price_raw = prop.get("Price") or prop.get("PriceUnformattedValue")
-    price = _parse_price(str(price_raw)) if price_raw else None
+    # Extract street address from H1 (format: "5312 - 950 PORTAGE PKWY\nVaughan..., ON L4K0J7")
+    h1_match = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.DOTALL)
+    address: str | None = None
+    if h1_match:
+        h1_raw = re.sub(r"<[^>]+>", "", h1_match.group(1))
+        # H1 format: "{ADDRESS}{CITY}, Ontario {POSTAL}"
+        # Address is everything before the first city/province line
+        h1_lines = [line.strip() for line in h1_raw.split("\n") if line.strip()]
+        if h1_lines:
+            address = h1_lines[0]
+            # If address contains the city on the same line, split at the postal code
+            if postal_code:
+                postal_plain = postal_code.replace(" ", "")
+                addr_split = re.split(
+                    re.escape(postal_plain), address, flags=re.IGNORECASE
+                )
+                if len(addr_split) > 1:
+                    address = addr_split[0].rstrip(", ").strip()
+    if not address:
+        # Fallback: extract from title ("For sale: {ADDRESS}, {CITY}...")
+        title_addr_match = re.search(
+            r"For (?:sale|rent):\s*([^,]+)", title_text, re.IGNORECASE
+        )
+        if title_addr_match:
+            address = title_addr_match.group(1).strip()
+    if not address:
+        missing.append("address")
+
+    # ── 3. Price ──────────────────────────────────────────────────────────────
+    price_raw = dl.get("price") or dl.get("leasePrice")
+    price = _parse_price(price_raw) if price_raw else None
+    if price is None:
+        # Fallback: look for price in Open Graph meta tag
+        og_price_match = re.search(
+            r'property="og:price:amount"[^>]*content="([^"]+)"', html
+        )
+        if og_price_match:
+            price = _parse_price(og_price_match.group(1))
     if price is None:
         missing.append("price")
 
-    # ── Listing type ──────────────────────────────────────────────────────────
-    price_str = str(prop.get("Price", ""))
+    # ── 4. Listing type ───────────────────────────────────────────────────────
+    lease_price = dl.get("leasePrice", "")
+    price_str = lease_price if lease_price else (price_raw or "")
     listing_type = parse_listing_type(url, price_string=price_str)
 
-    # ── Beds ──────────────────────────────────────────────────────────────────
-    beds_raw = (
-        building.get("BedroomsAboveGround")
-        or building.get("BedroomsTotal")
-        or building.get("Bedrooms")
-    )
-    beds = _parse_int(beds_raw)
+    # ── 5. Beds ───────────────────────────────────────────────────────────────
+    beds = _parse_int(dl.get("bedrooms"))
+    if beds is None:
+        # Fallback: HTML element for bedrooms above grade
+        bed_val = _get_element_value(
+            html, "propertyDetailsSectionContentSubCon_BedroomsAboveGrade"
+        )
+        if bed_val:
+            beds = _parse_int(bed_val.split()[0])
     if beds is None:
         missing.append("beds")
 
-    # ── Baths ─────────────────────────────────────────────────────────────────
-    baths_raw = building.get("BathroomTotal") or building.get("Bathrooms")
-    baths = _parse_float(baths_raw)
+    # ── 6. Baths ─────────────────────────────────────────────────────────────
+    baths = _parse_float(dl.get("bathrooms"))
+    if baths is None:
+        bath_val = _get_element_value(
+            html, "propertyDetailsSectionContentSubCon_BathroomTotal"
+        )
+        if bath_val:
+            baths = _parse_float(bath_val.split()[0])
     if baths is None:
         missing.append("baths")
 
-    # ── Sqft ──────────────────────────────────────────────────────────────────
-    sqft_raw = building.get("SizeInterior")
-    sqft = _parse_sqft(str(sqft_raw)) if sqft_raw else None
+    # ── 7. Sqft ───────────────────────────────────────────────────────────────
+    sqft: int | None = None
+    # Try interior floor space from dataLayer (in m²)
+    sqft_dl = dl.get("interiorFloorSpace", "")
+    if sqft_dl:
+        sqft = _parse_sqft(sqft_dl)
+    if sqft is None:
+        # Fallback: look for sqft range in HTML ("600 - 699 sqft")
+        sqft_match = re.search(r"([\d,]+)\s*-\s*([\d,]+)\s*sqft", html, re.IGNORECASE)
+        if sqft_match:
+            lo = int(sqft_match.group(1).replace(",", ""))
+            hi = int(sqft_match.group(2).replace(",", ""))
+            sqft = (lo + hi) // 2
+    if sqft is None:
+        sqft_el = _get_element_value(
+            html, "propertyDetailsSectionContentSubCon_SizeInterior"
+        )
+        if sqft_el:
+            sqft = _parse_sqft(sqft_el)
     if sqft is None:
         missing.append("sqft")
 
-    # ── Property type ─────────────────────────────────────────────────────────
-    property_type = None
-    type_obj = prop.get("Type")
-    if isinstance(type_obj, dict):
-        property_type = type_obj.get("Name")
-    elif isinstance(type_obj, str):
-        property_type = type_obj
+    # ── 8. Property type ─────────────────────────────────────────────────────
+    property_type = dl.get("propertyType") or dl.get("buildingType") or None
+    if not property_type:
+        pt_el = _get_element_value(
+            html, "propertyDetailsSectionContentSubCon_PropertyType"
+        )
+        property_type = pt_el
     if not property_type:
         missing.append("property_type")
 
-    # ── Annual taxes ──────────────────────────────────────────────────────────
-    tax_raw = tax_info.get("TaxAmount") or pd.get("AnnualTax")
-    annual_taxes = _parse_float(tax_raw)
+    # ── 9. Annual taxes ───────────────────────────────────────────────────────
+    tax_val = _get_element_value(
+        html, "propertyDetailsSectionContentSubCon_AnnualPropertyTaxes"
+    )
+    annual_taxes = _parse_float(tax_val) if tax_val else None
     taxes_known = annual_taxes is not None
     if not taxes_known:
         missing.append("annual_taxes")
 
-    # ── Condo fee ─────────────────────────────────────────────────────────────
-    fee_raw = (
-        pd.get("MaintenanceFee") or pd.get("CondoFee") or prop.get("MaintenanceFee")
+    # ── 10. Condo / maintenance fee ───────────────────────────────────────────
+    fee_val = _get_element_value(
+        html, "propertyDetailsSectionVal_MonthlyMaintenanceFees"
     )
-    condo_fee = _parse_float(fee_raw)
-    # A fee of 0 is valid (no condo fee) but unknown is None
+    condo_fee = _parse_float(fee_val) if fee_val else None
     condo_fee_known = condo_fee is not None
     if not condo_fee_known:
         missing.append("condo_fee")
 
-    # ── Year built ────────────────────────────────────────────────────────────
-    year_raw = building.get("YearBuilt") or building.get("BuiltIn")
-    year_built = _parse_int(year_raw)
+    # ── 11. Year built ────────────────────────────────────────────────────────
+    year_val = _get_element_value(html, "propertyDetailsSectionContentSubCon_YearBuilt")
+    year_built = _parse_int(year_val) if year_val else None
     year_built_known = year_built is not None
     if not year_built_known:
         missing.append("year_built")
 
-    # ── Days on market ────────────────────────────────────────────────────────
-    dom_raw = pd.get("DaysOnMarket") or prop.get("DaysOnMarket")
-    days_on_market = _parse_int(dom_raw)
+    # ── 12. Days on market ────────────────────────────────────────────────────
+    dom_val = _get_element_value(
+        html, "propertyDetailsSectionContentSubCon_DaysOnMarket"
+    )
+    days_on_market = _parse_int(dom_val) if dom_val else None
     if days_on_market is None:
         missing.append("days_on_market")
 
-    # ── Listing description (strip PII) ───────────────────────────────────────
-    description_raw = (
-        pd.get("PublicRemarks") or pd.get("Description") or prop.get("Description")
+    # ── 13. Listing description ───────────────────────────────────────────────
+    # Look for the public remarks section by class name
+    desc_match = re.search(
+        r'class="[^"]*listingDescriptionText[^"]*"[^>]*>(.*?)</div>',
+        html,
+        re.DOTALL | re.IGNORECASE,
     )
-    listing_description = _strip_pii(description_raw)
+    listing_description: str | None = None
+    if desc_match:
+        raw_desc = re.sub(r"<[^>]+>", " ", desc_match.group(1))
+        listing_description = _strip_pii(re.sub(r"\s+", " ", raw_desc).strip())
+    if not listing_description:
+        # Try alternative class names used in different page versions
+        for cls in ["listingRemarks", "propertyDescription", "remarksText"]:
+            desc_match2 = re.search(
+                rf'class="[^"]*{cls}[^"]*"[^>]*>(.*?)</div>',
+                html,
+                re.DOTALL | re.IGNORECASE,
+            )
+            if desc_match2:
+                raw_desc = re.sub(r"<[^>]+>", " ", desc_match2.group(1))
+                listing_description = _strip_pii(re.sub(r"\s+", " ", raw_desc).strip())
+                if listing_description:
+                    break
     if not listing_description:
         missing.append("listing_description")
 
-    # ── Photo URLs (metadata only — do not download) ──────────────────────────
-    photos_raw = prop.get("Photo") or []
-    photo_urls = [
-        p["LargePhotoUrl"]
-        for p in (photos_raw if isinstance(photos_raw, list) else [])
-        if isinstance(p, dict) and "LargePhotoUrl" in p
-    ]
+    # ── 14. Photo URLs ────────────────────────────────────────────────────────
+    # Photo URLs are loaded dynamically; count comes from dataLayer
+    photo_count = _parse_int(dl.get("photos", "0")) or 0
+    # We don't download photos — store empty list (count is in raw_json)
+    photo_urls: list[str] = []
+
+    # ── Province ─────────────────────────────────────────────────────────────
+    province_name = dl.get("province")  # e.g. "Ontario"
+    province_code = detect_province(postal_code) if postal_code else None
+
+    # ── MLS number (extra metadata) ───────────────────────────────────────────
+    mls_number = dl.get("listingID")  # e.g. "N13165754"
 
     fields: dict[str, Any] = {
         "source_url": url,
@@ -362,7 +555,7 @@ def _extract_fields(
         "listing_type": listing_type,
         "address": address,
         "postal_code": postal_code,
-        "province": detect_province(postal_code) if postal_code else None,
+        "province": province_code or province_name,
         "price": price,
         "beds": beds,
         "baths": baths,
@@ -377,6 +570,9 @@ def _extract_fields(
         "days_on_market": days_on_market,
         "listing_description": listing_description,
         "photo_urls": photo_urls,
+        # Extra fields stored in raw_json for debugging
+        "_mls_number": mls_number,
+        "_photo_count": photo_count,
     }
     return fields, missing
 
@@ -388,10 +584,19 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     """
     Scrape a single Realtor.ca listing and write the result to Supabase.
 
+    Fetches the public listing page with browser-like headers. The page HTML
+    contains embedded listing data (in a dataLayer.push call) plus structured
+    detail sections with element IDs for financial data (taxes, condo fees).
+
     Enforces 4-second rate limiting between requests. Rotates through
     proxy IPs from PROXY_1 / PROXY_2 / PROXY_3 environment variables.
 
-    On any failure (timeout, 403, parse error): logs the error, returns
+    Bot protection note: Incapsula protects Realtor.ca and will block repeated
+    requests from the same IP. A short response (<50 KB) indicates a bot
+    challenge page — the scraper returns 'failed' in that case. Use residential
+    proxies (PROXY_1/2/3) for reliable operation in production.
+
+    On any failure (timeout, blocked, parse error): logs the error, returns
     whatever partial data was collected, and sets scrape_status to
     'partial' or 'failed'. Never raises — always returns a dict.
 
@@ -416,34 +621,31 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     # Enforce rate limit before making any request
     await wait_for_rate_limit(SOURCE)
 
-    params = {
-        "ApplicationId": "1",
-        "PropertyID": listing_id,
-        "PropertyDetails.Culture": "en-CA",
-    }
-
     proxy = _get_next_proxy()
-    proxy_config = {"http://": proxy, "https://": proxy} if proxy else None
 
     start_ms = int(time.monotonic() * 1000)
     http_status: int | None = None
     error_msg: str | None = None
 
+    # httpx 0.28+ uses proxy= (single URL string) instead of proxies= dict
+    client_kwargs: dict = {
+        "headers": _HEADERS,
+        "timeout": 20.0,
+        "follow_redirects": True,
+    }
+    if proxy:
+        client_kwargs["proxy"] = proxy
+
     try:
-        async with httpx.AsyncClient(
-            headers=_HEADERS,
-            proxies=proxy_config,  # type: ignore[arg-type]
-            timeout=15.0,
-            follow_redirects=True,
-        ) as client:
-            response = await client.get(_DETAILS_URL, params=params)
+        async with httpx.AsyncClient(**client_kwargs) as client:
+            response = await client.get(url)
             http_status = response.status_code
             response.raise_for_status()
-            data: dict[str, Any] = response.json()
+            html: str = response.text
 
     except httpx.HTTPStatusError as exc:
         http_status = exc.response.status_code
-        error_msg = f"HTTP {http_status} from Realtor.ca API"
+        error_msg = f"HTTP {http_status} from Realtor.ca"
         logger.error("scrape_listing HTTP error for %s: %s", url, error_msg)
         duration_ms = int(time.monotonic() * 1000) - start_ms
         await log_scrape(SOURCE, url, "failed", http_status, error_msg, duration_ms)
@@ -456,7 +658,7 @@ async def scrape_listing(url: str) -> dict[str, Any]:
 
     except (httpx.TimeoutException, httpx.NetworkError) as exc:
         error_msg = f"Network error: {exc}"
-        logger.error("scrape_listing network error for %s: %s", url, error_msg)
+        logger.error("scrape_listing network error for %s: %s", url, exc)
         duration_ms = int(time.monotonic() * 1000) - start_ms
         await log_scrape(SOURCE, url, "failed", None, error_msg, duration_ms)
         return {
@@ -480,9 +682,24 @@ async def scrape_listing(url: str) -> dict[str, Any]:
 
     duration_ms = int(time.monotonic() * 1000) - start_ms
 
+    # ── Bot challenge detection ────────────────────────────────────────────────
+    if len(html) < _MIN_HTML_LENGTH or "Incapsula" in html:
+        error_msg = f"Bot challenge detected (response length: {len(html)})"
+        logger.warning("scrape_listing bot challenge for %s: %s", url, error_msg)
+        await log_scrape(SOURCE, url, "failed", http_status, error_msg, duration_ms)
+        return {
+            "source_url": url,
+            "source": SOURCE,
+            "scrape_status": "failed",
+            "error": (
+                "Realtor.ca is temporarily blocking automated requests. "
+                "Please try again in a few minutes or enter details manually."
+            ),
+        }
+
     # ── Parse the response ─────────────────────────────────────────────────────
     try:
-        fields, missing = _extract_fields(data, url, listing_id)
+        fields, missing = _extract_fields(html, url, listing_id)
     except Exception as exc:
         logger.error("_extract_fields failed for %s: %s", url, exc)
         await log_scrape(SOURCE, url, "failed", http_status, str(exc), duration_ms)
@@ -498,9 +715,12 @@ async def scrape_listing(url: str) -> dict[str, Any]:
     missing_critical = critical_fields & set(missing)
     status = "partial" if missing_critical else ("partial" if missing else "success")
 
+    # Store a summary of the dataLayer data as raw_json (not full HTML)
+    dl = _extract_datalayer_property(html)
+
     record: dict[str, Any] = {
         **fields,
-        "raw_json": data,
+        "raw_json": dl,
         "scrape_status": status,
         "missing_fields": missing,
     }
