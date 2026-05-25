@@ -41,15 +41,15 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Rental comps scraper (nightly job)
 
-- [ ] Playwright scraper for Rentals.ca
-- [ ] Playwright scraper for Kijiji (rental category)
-- [ ] Playwright scraper for PadMapper
-- [ ] Normalise: geocode address to lat/lng
-- [ ] Normalise: convert weekly rents to monthly
-- [ ] Normalise: parse beds to integer
-- [ ] Deduplicate: same address + rent + beds within 7 days = one record
-- [ ] Store to `rental_listings` table with timestamp
-- [ ] Schedule as nightly Railway job at 2am ET
+- [x] Playwright scraper for Rentals.ca
+- [x] Playwright scraper for Kijiji (rental category)
+- [x] Playwright scraper for PadMapper
+- [x] Normalise: geocode address to lat/lng (Nominatim, 1 req/sec)
+- [x] Normalise: convert weekly rents to monthly
+- [x] Normalise: parse beds to integer
+- [x] Deduplicate: same address + rent + beds within 7 days = one record
+- [x] Store to `rental_listings` table with timestamp
+- [x] Schedule as nightly Railway job at 2am ET (jobs/nightly_rental_scrape.py — deploy to Railway to activate)
 
 ### Province detection
 
