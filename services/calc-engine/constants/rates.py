@@ -12,6 +12,24 @@ Update this file (not the calculation modules) when assumptions change.
 # History: raised from 4.79% to 5.25% in June 2021.
 OSFI_FLOOR_RATE: float = 0.0525
 
+# Fallback mortgage rate used when the Bank of Canada API is unavailable and
+# no cached value exists. Represents a mid-cycle 5-year fixed rate.
+MORTGAGE_RATE_FALLBACK: float = 0.0479  # 4.79%
+
+# Bank of Canada Valet API — group endpoint returning today's key rates.
+BOC_VALET_URL: str = (
+    "https://www.bankofcanada.ca/valet/observations/group/BofC-today/json"
+)
+
+# The Valet API series ID for the prime business loan rate.
+# Prime drives variable mortgage rates; fixed rates track the 5-yr GoC bond.
+# We use prime as a starting-point default — users should override with their
+# actual quoted rate.
+BOC_PRIME_SERIES: str = "PRIME"
+
+# How long a cached rate is considered fresh before a refetch is attempted.
+BOC_CACHE_TTL_DAYS: int = 7
+
 # ── Operating expense rates ────────────────────────────────────────────────────
 
 # Vacancy allowance — fraction of gross rent lost to vacancy and turnover.

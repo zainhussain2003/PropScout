@@ -172,4 +172,75 @@ describe('AssumptionFields', () => {
     render(<AssumptionFields onAssumptionsChange={vi.fn()} compact />)
     expect(screen.getByLabelText('Vacancy allowance')).toBeInTheDocument()
   })
+
+  // ── rateMetadata + RateBanner ────────────────────────────────────────────────
+
+  it('shows no banner when rateMetadata is not provided', () => {
+    renderFields()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows no banner when rateMetadata.source is live', () => {
+    render(
+      <AssumptionFields
+        onAssumptionsChange={vi.fn()}
+        rateMetadata={{ rate: 0.052, source: 'live', warning: null }}
+      />
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows the banner when source is cached', () => {
+    render(
+      <AssumptionFields
+        onAssumptionsChange={vi.fn()}
+        rateMetadata={{
+          rate: 0.052,
+          source: 'cached',
+          warning: 'Using cached rate from May 17, 2026 — live rate unavailable.',
+        }}
+      />
+    )
+    const banner = screen.getByRole('alert')
+    expect(banner).toBeInTheDocument()
+    expect(banner).toHaveTextContent('May 17, 2026')
+    expect(banner).toHaveTextContent('live rate unavailable')
+  })
+
+  it('shows the banner when source is fallback', () => {
+    render(
+      <AssumptionFields
+        onAssumptionsChange={vi.fn()}
+        rateMetadata={{
+          rate: 0.0479,
+          source: 'fallback',
+          warning: 'Live rate unavailable — using default rate.',
+        }}
+      />
+    )
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+  })
+
+  it('pre-fills mortgageRate from rateMetadata when not in initialValues', () => {
+    render(
+      <AssumptionFields
+        onAssumptionsChange={vi.fn()}
+        rateMetadata={{ rate: 0.052, source: 'live', warning: null }}
+      />
+    )
+    const input = screen.getByLabelText('Mortgage rate') as HTMLInputElement
+    expect(parseFloat(input.value)).toBeCloseTo(5.2, 1)
+  })
+
+  it('initialValues.mortgageRate takes precedence over rateMetadata', () => {
+    render(
+      <AssumptionFields
+        onAssumptionsChange={vi.fn()}
+        initialValues={{ mortgageRate: 4.25 }}
+        rateMetadata={{ rate: 0.052, source: 'live', warning: null }}
+      />
+    )
+    const input = screen.getByLabelText('Mortgage rate') as HTMLInputElement
+    expect(parseFloat(input.value)).toBeCloseTo(4.25, 2)
+  })
 })

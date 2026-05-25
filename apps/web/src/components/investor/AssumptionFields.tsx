@@ -17,6 +17,7 @@
 
 import { useState, useCallback } from 'react'
 import { Tooltip } from '../shared/Tooltip'
+import { RateBanner } from '../shared/RateBanner'
 import {
   ASSUMPTION_FIELDS,
   DEFAULT_ASSUMPTIONS,
@@ -35,11 +36,27 @@ export interface AnalysisAssumptions {
   mortgageRate: number // % (e.g. 4.79 = 4.79%) — 0 = use live rate
 }
 
+/** Metadata returned alongside the live rate from GET /rates/mortgage. */
+export interface RateMetadata {
+  /** Decimal rate (e.g. 0.052 = 5.20%). Converted to % before pre-filling. */
+  rate: number
+  /** "live" = fresh fetch; "cached" = stale cache used; "fallback" = hardcoded default. */
+  source: 'live' | 'cached' | 'fallback'
+  /** User-facing warning string. Non-null when source is "cached" or "fallback". */
+  warning: string | null
+}
+
 interface AssumptionFieldsProps {
   /** Called on every value change — parent should debounce if triggering API calls. */
   onAssumptionsChange: (assumptions: AnalysisAssumptions) => void
   /** Override any default values (e.g. if user has saved preferences). */
   initialValues?: Partial<AnalysisAssumptions>
+  /**
+   * Live rate metadata from GET /rates/mortgage.
+   * When provided, pre-fills the mortgage rate field (rate × 100 → %).
+   * Also controls whether the RateBanner is shown.
+   */
+  rateMetadata?: RateMetadata
   /** When true, renders fields in a compact single-column layout. */
   compact?: boolean
 }
@@ -49,10 +66,19 @@ interface AssumptionFieldsProps {
 export function AssumptionFields({
   onAssumptionsChange,
   initialValues = {},
+  rateMetadata,
   compact = false,
 }: AssumptionFieldsProps): JSX.Element {
+  // When rateMetadata is provided, convert decimal → % and pre-fill mortgageRate.
+  // initialValues takes precedence over rateMetadata (user may have a saved rate).
+  const liveRatePct =
+    rateMetadata && !('mortgageRate' in initialValues)
+      ? { mortgageRate: parseFloat((rateMetadata.rate * 100).toFixed(4)) }
+      : {}
+
   const [values, setValues] = useState<Record<string, number>>({
     ...DEFAULT_ASSUMPTIONS,
+    ...liveRatePct,
     ...initialValues,
   })
 
@@ -73,15 +99,19 @@ export function AssumptionFields({
   )
 
   return (
-    <div style={compact ? compactGridStyle : gridStyle}>
-      {ASSUMPTION_FIELDS.map((field) => (
-        <AssumptionRow
-          key={field.key}
-          field={field}
-          value={values[field.key] ?? field.defaultValue}
-          onChange={handleChange}
-        />
-      ))}
+    <div style={wrapperStyle}>
+      {/* Rate banner spans the full width above the field grid */}
+      <RateBanner warning={rateMetadata?.warning ?? null} />
+      <div style={compact ? compactGridStyle : gridStyle}>
+        {ASSUMPTION_FIELDS.map((field) => (
+          <AssumptionRow
+            key={field.key}
+            field={field}
+            value={values[field.key] ?? field.defaultValue}
+            onChange={handleChange}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -142,6 +172,12 @@ function AssumptionRow({ field, value, onChange }: AssumptionRowProps): JSX.Elem
 }
 
 // ── Styles — all values from CSS tokens ───────────────────────────────────────
+
+const wrapperStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+}
 
 const gridStyle: React.CSSProperties = {
   display: 'grid',
