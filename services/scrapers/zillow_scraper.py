@@ -261,6 +261,22 @@ async def _extract_page_data(page: Page, url: str) -> tuple[dict[str, Any], list
     address_raw = await _try_text([_SELECTORS["address"], "h1[class*='address']", "h1"])
     address = address_raw.split(",")[0].strip() if address_raw else None
     postal_code = _parse_postal_code(address_raw)
+
+    # Fallback: extract postal code from the URL slug when the page element
+    # is absent (Zillow's address element sometimes doesn't render the full
+    # address with postal code). The slug always contains the postal code in
+    # A1A-1A1 form, e.g. "toronto-on-m5b-2p7". This does not match US ZIP
+    # codes (5 digits only — no letter-digit-letter pattern).
+    if not postal_code:
+        slug_match = re.search(
+            r"([a-z]\d[a-z])-(\d[a-z]\d)",
+            url.lower(),
+        )
+        if slug_match:
+            raw_pc = slug_match.group(1) + slug_match.group(2)
+            postal_code = raw_pc[:3].upper() + " " + raw_pc[3:].upper()
+            logger.info("Postal code extracted from URL slug: %s", postal_code)
+
     if not address:
         missing.append("address")
     if not postal_code:
