@@ -343,12 +343,19 @@ def _parse_age_band(age_raw: str | None) -> tuple[int | None, int | None]:
     Returns (None, None) if the input is absent or unparseable.
     Uses the current calendar year — never hardcoded.
 
+    For open-ended bands ("100+ years", "51+ years"), year_built_earliest
+    is returned as None — the lower bound is genuinely unknown. Callers
+    must handle None for year_built_earliest; year_built_latest is always
+    an integer when the band is parseable.
+
     Args:
         age_raw: Raw age band string from the AgeOfBuilding element,
                  e.g. "11 to 15 years".
 
     Returns:
-        (year_built_earliest, year_built_latest) as integers, or (None, None).
+        (year_built_earliest, year_built_latest) as integers, or
+        (None, year_built_latest) for open-ended bands, or (None, None)
+        if the input is absent or unparseable.
     """
     if not age_raw:
         return None, None
@@ -363,13 +370,14 @@ def _parse_age_band(age_raw: str | None) -> tuple[int | None, int | None]:
         max_age = int(range_match.group(2))
         return current_year - max_age, current_year - min_age
 
-    # Pattern: "100+ years" or "51+ years"
+    # Pattern: "100+ years" or "51+ years" — lower bound is genuinely unknown.
+    # year_built_earliest = None (unbounded); year_built_latest = the latest
+    # possible build year (current_year - min_age).
+    # "100+ years" at 2026 → (None, 1926). "51+ years" → (None, 1975).
     plus_match = re.match(r"(\d+)\+\s*years?", normalised)
     if plus_match:
         min_age = int(plus_match.group(1))
-        # Earliest is unbounded — use a sentinel of (current_year - 999)
-        # so callers can always treat it as an integer.
-        return current_year - 999, current_year - min_age
+        return None, current_year - min_age
 
     # Pattern: "less than 1 year" or "0 to 1 years"
     if "less than" in normalised:
