@@ -112,7 +112,7 @@ def calculate_dscr(noi: float, annual_debt_service: float) -> float:
         DSCR as a ratio (e.g. 0.85).
     """
     if annual_debt_service <= 0:
-        raise ValueError("Annual debt service must be greater than zero")
+        return float("inf")
     return noi / annual_debt_service
 
 

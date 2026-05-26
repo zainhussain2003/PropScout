@@ -107,6 +107,23 @@ def estimate_closing_costs(
     }
 
 
+def get_nrst_cost(purchase_price: float, is_non_resident: bool = True) -> float:
+    """
+    Return the Non-Resident Speculation Tax amount.
+
+    Args:
+        purchase_price: Property purchase price in dollars.
+        is_non_resident: True if buyer is a non-resident of Canada (default True).
+
+    Returns:
+        NRST amount in dollars (purchase_price * NRST_RATE) for non-residents,
+        0.0 for resident buyers.
+    """
+    if not is_non_resident:
+        return 0.0
+    return round(purchase_price * NRST_RATE, 2)
+
+
 def get_nrst_risk_flag(purchase_price: float) -> dict:
     """
     Build a red risk flag for non-resident buyers subject to NRST.

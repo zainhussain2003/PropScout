@@ -69,7 +69,7 @@ def calculate_osfi_stress_rate(contract_rate: float) -> float:
     Returns:
         The qualifying rate for stress test purposes.
     """
-    return max(contract_rate + 0.02, OSFI_FLOOR_RATE)
+    return round(max(contract_rate + 0.02, OSFI_FLOOR_RATE), 10)
 
 
 def calculate_amortization_schedule(
@@ -116,3 +116,37 @@ def calculate_amortization_schedule(
         )
 
     return schedule
+
+
+def remaining_balance(
+    principal: float,
+    annual_rate: float,
+    amortization_years: int,
+    month: int,
+) -> float:
+    """
+    Return the outstanding principal balance after a given number of monthly payments.
+
+    Args:
+        principal: Original loan amount in dollars.
+        annual_rate: Annual interest rate as a decimal (e.g. 0.0479 for 4.79%).
+        amortization_years: Total amortization period in years.
+        month: Number of payments already made (0 = start of loan).
+
+    Returns:
+        Remaining balance in dollars, rounded to 2 decimal places.
+        Returns the original principal if month == 0.
+        Returns 0.0 if month >= total number of payments.
+    """
+    n = amortization_years * 12
+    if month == 0:
+        return round(principal, 2)
+    if month >= n:
+        return 0.0
+    if annual_rate == 0:
+        monthly_payment = principal / n
+        return round(max(0.0, principal - monthly_payment * month), 2)
+    r = _monthly_rate(annual_rate)
+    pmt = principal * (r * (1 + r) ** n) / ((1 + r) ** n - 1)
+    balance = principal * (1 + r) ** month - pmt * ((1 + r) ** month - 1) / r
+    return round(max(0.0, balance), 2)
