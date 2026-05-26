@@ -8,9 +8,9 @@
 
 const path = require('path')
 
-/** Convert absolute staged file paths to paths relative to the repo root. */
+/** Convert absolute staged file paths to paths relative to the repo root, quoted for shell safety. */
 function toRelative(filenames) {
-  return filenames.map((f) => path.relative(process.cwd(), f).replace(/\\/g, '/'))
+  return filenames.map((f) => `"${path.relative(process.cwd(), f).replace(/\\/g, '/')}"`)
 }
 
 module.exports = {
@@ -23,15 +23,15 @@ module.exports = {
   },
 
   '**/*.{js,json,md,css}': (filenames) => {
-    const rel = toRelative(filenames).join(' ')
-    return [`prettier --write ${rel}`]
+    // One prettier call per file so paths with spaces are individually quoted.
+    return toRelative(filenames).map((f) => `prettier --write ${f}`)
   },
 
   '**/*.py': (filenames) => {
-    const rel = toRelative(filenames).join(' ')
-    return [
-      `python -m black ${rel}`,
-      `python -m flake8 ${rel}`,
-    ]
+    // One black + flake8 call per file so paths with spaces are individually quoted.
+    return toRelative(filenames).flatMap((f) => [
+      `python -m black ${f}`,
+      `python -m flake8 ${f}`,
+    ])
   },
 }
