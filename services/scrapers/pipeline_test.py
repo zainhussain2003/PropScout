@@ -159,6 +159,7 @@ async def tc01():
         print(
             f"  year_built_known: {lst.get('year_built_known')}   year_built: {lst.get('year_built')}"  # noqa: E501
         )
+        print(f"  age_of_building_raw: {lst.get('age_of_building_raw')!r}")
         print(f"  province:      {lst.get('province')}")
         print(f"  scraped_at:    {lst.get('scraped_at')}")
         print(f"  photo_urls:    {len(lst.get('photo_urls') or [])} photos")
@@ -210,14 +211,23 @@ async def tc01():
             "true & > 0",
             f"known={lst.get('condo_fee_known')} val={lst.get('condo_fee')}",
         )
+        # TC-01 fixture has neither YearBuilt nor AgeOfBuilding — year_built_known=False is
+        # correct. Confirmed via ScraperAPI: SubCon IDs on this page are BuildingType,
+        # AnnualPropertyTaxes, SquareFootage, CommunityName, ParkingType, PropertyType,
+        # TimeOnRealtor, Title — no age data at all.
         record(
             1,
-            "year_built_known == true AND year_built is 4-digit",
-            lst.get("year_built_known") is True
-            and isinstance(lst.get("year_built"), int)
-            and 1800 < lst.get("year_built", 0) < 2030,
-            "true & 4-digit",
-            f"known={lst.get('year_built_known')} val={lst.get('year_built')}",
+            "year_built_known == false (no YearBuilt or AgeOfBuilding on this page)",
+            lst.get("year_built_known") is False,
+            False,
+            lst.get("year_built_known"),
+        )
+        record(
+            1,
+            "year_built == null (no age data on this page)",
+            lst.get("year_built") is None,
+            None,
+            lst.get("year_built"),
         )
         record(
             1,
