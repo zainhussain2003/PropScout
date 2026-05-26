@@ -871,24 +871,52 @@ async def tc13():
 
 async def tc14():
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print("TC-14 · Pre-2018 build — raw field extraction only")
+    print("TC-14 · Pre-2018 build — age band extraction")
     print(f"        URL: {FIXTURE_PRE2018}")
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    # TC-14 fixture has AgeOfBuilding "11 to 15 years" instead of a specific
+    # YearBuilt. The scraper derives year_built_latest from the age band.
+    # year_built_known remains False because we have a range, not an exact year.
     try:
         resp = await scrape(FIXTURE_PRE2018)
         lst = resp.get("listing", {})
-        yb = lst.get("year_built")
-        print(f"  year_built_known: {lst.get('year_built_known')}")
-        print(f"  year_built:       {yb}")
+        age_raw = lst.get("age_of_building_raw")
+        yb_earliest = lst.get("year_built_earliest")
+        yb_latest = lst.get("year_built_latest")
+        yb_known = lst.get("year_built_known")
+        print(f"  year_built_known:     {yb_known}")
+        print(f"  age_of_building_raw:  {age_raw!r}")
+        print(f"  year_built_earliest:  {yb_earliest}")
+        print(f"  year_built_latest:    {yb_latest}")
 
         record(
             14,
-            "year_built_known == true",
-            lst.get("year_built_known") is True,
-            True,
-            lst.get("year_built_known"),
+            "year_built_known == false (no exact year, only age band)",
+            yb_known is False,
+            False,
+            yb_known,
         )
-        record(14, "year_built < 2018", isinstance(yb, int) and yb < 2018, "< 2018", yb)
+        record(
+            14,
+            "age_of_building_raw is non-empty",
+            isinstance(age_raw, str) and len(age_raw) > 0,
+            "non-empty string",
+            age_raw,
+        )
+        record(
+            14,
+            "year_built_latest is not null",
+            yb_latest is not None,
+            "not None",
+            yb_latest,
+        )
+        record(
+            14,
+            "year_built_latest < 2018 (confirms pre-2018 build)",
+            isinstance(yb_latest, int) and yb_latest < 2018,
+            "< 2018",
+            yb_latest,
+        )
         record(
             14,
             "rent_controlled == true",
@@ -908,7 +936,7 @@ async def tc14():
     except Exception as e:
         print(f"  EXCEPTION: {e}")
         record(14, "TC-14 completed without exception", False, "no exception", str(e))
-    tc_summary(14, "Pre-2018 build — raw field extraction only")
+    tc_summary(14, "Pre-2018 build — age band extraction")
 
 
 async def tc15():

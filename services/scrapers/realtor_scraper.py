@@ -330,6 +330,54 @@ def _get_element_value(html: str, element_id: str) -> str | None:
     return text if text else None
 
 
+def _parse_age_band(age_raw: str | None) -> tuple[int | None, int | None]:
+    """
+    Parse a Realtor.ca age band string into (year_built_earliest, year_built_latest).
+
+    Realtor.ca agents may publish an age band instead of a specific year.
+    Known band vocabulary:
+      "0 to 5 years", "6 to 10 years", "11 to 15 years",
+      "16 to 30 years", "31 to 50 years", "51 to 99 years",
+      "100+ years", "Less than 1 year"
+
+    Returns (None, None) if the input is absent or unparseable.
+    Uses the current calendar year — never hardcoded.
+
+    Args:
+        age_raw: Raw age band string from the AgeOfBuilding element,
+                 e.g. "11 to 15 years".
+
+    Returns:
+        (year_built_earliest, year_built_latest) as integers, or (None, None).
+    """
+    if not age_raw:
+        return None, None
+
+    current_year = datetime.now().year
+    normalised = age_raw.strip().lower()
+
+    # Pattern: "X to Y years" — e.g. "11 to 15 years"
+    range_match = re.match(r"(\d+)\s+to\s+(\d+)\s+years?", normalised)
+    if range_match:
+        min_age = int(range_match.group(1))
+        max_age = int(range_match.group(2))
+        return current_year - max_age, current_year - min_age
+
+    # Pattern: "100+ years" or "51+ years"
+    plus_match = re.match(r"(\d+)\+\s*years?", normalised)
+    if plus_match:
+        min_age = int(plus_match.group(1))
+        # Earliest is unbounded — use a sentinel of (current_year - 999)
+        # so callers can always treat it as an integer.
+        return current_year - 999, current_year - min_age
+
+    # Pattern: "less than 1 year" or "0 to 1 years"
+    if "less than" in normalised:
+        return current_year - 1, current_year
+
+    return None, None
+
+
 def _extract_datalayer_property(html: str) -> dict[str, str]:
     """
     Extract the property object from the dataLayer.push() call in the page HTML.
@@ -540,6 +588,16 @@ def _extract_fields(  # noqa: C901
     if not year_built_known:
         missing.append("year_built")
 
+    # ── 11b. Age of building (fallback when YearBuilt is absent) ─────────────
+    # Agents sometimes publish an age band ("11 to 15 years") instead of a
+    # specific year. Parse it into a year range so callers can still bound
+    # the construction date. year_built and year_built_known are unchanged —
+    # year_built_known remains False when only a range is available.
+    age_of_building_raw = _get_element_value(
+        html, "propertyDetailsSectionContentSubCon_AgeOfBuilding"
+    )
+    year_built_earliest, year_built_latest = _parse_age_band(age_of_building_raw)
+
     # ── 12. Days on market ────────────────────────────────────────────────────
     dom_val = _get_element_value(
         html, "propertyDetailsSectionContentSubCon_DaysOnMarket"
@@ -624,6 +682,9 @@ def _extract_fields(  # noqa: C901
         "condo_fee_known": condo_fee_known,
         "year_built": year_built,
         "year_built_known": year_built_known,
+        "age_of_building_raw": age_of_building_raw,
+        "year_built_earliest": year_built_earliest,
+        "year_built_latest": year_built_latest,
         "days_on_market": days_on_market,
         "listing_description": listing_description,
         "photo_urls": photo_urls,
