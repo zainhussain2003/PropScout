@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -979,6 +979,123 @@ async def tc15():
     tc_summary(15, "Basement unit — raw field extraction only")
 
 
+async def tc16():
+    """
+    TC-16: 24h cache expiry — stale row triggers a fresh scrape.
+
+    Sequence:
+      1. Scrape the TC-01 condo URL — ensure a row exists with current scraped_at.
+      2. Back-date scraped_at to 25 hours ago via Supabase client (bypasses cache TTL).
+      3. Submit the same URL again — scraper_routes must see stale row and re-scrape.
+      4. Assert response time > 5s (fresh ScraperAPI call, not cache hit).
+      5. Assert scraped_at in the response is newer than the stale timestamp we set.
+      6. Assert the DB row's scraped_at has been updated.
+      7. Restore scraped_at to current time (cleanup — runs even if assertions fail).
+    """
+    from supabase import acreate_client
+
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print("TC-16 · Cache expiry — stale row (>24h) triggers fresh scrape")
+    print(f"        URL: {FIXTURE_CONDO_SALE}")
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+    cl = await acreate_client(SUPABASE_URL, SUPABASE_KEY)
+    stale_time = (datetime.now(timezone.utc) - timedelta(hours=25)).isoformat()
+    restored = False
+
+    try:
+        # Step 1 — ensure a cached row exists before we back-date it
+        print("  Step 1: ensuring cached row exists...")
+        warm = await scrape(FIXTURE_CONDO_SALE)
+        first_ts = warm.get("listing", {}).get("scraped_at", "")
+        print(f"  Current scraped_at: {first_ts}")
+
+        # Step 2 — back-date the row to 25 hours ago
+        print("  Step 2: back-dating scraped_at to 25h ago...")
+        try:
+            await cl.table("listings").update({"scraped_at": stale_time}).eq(
+                "source_url", FIXTURE_CONDO_SALE
+            ).execute()
+            print(f"  Stale time set: {stale_time}")
+        except Exception as upd_exc:
+            print(f"  Supabase update failed: {upd_exc}")
+            for label in [
+                "scraped_at back-dated successfully",
+                "fresh scrape triggered (response > 5s)",
+                "response scraped_at is newer than stale_time",
+                "DB row scraped_at updated after fresh scrape",
+            ]:
+                record(
+                    16,
+                    label,
+                    False,
+                    skip_reason="SKIP — Supabase update failed; cannot simulate stale row",
+                )
+            tc_summary(16, "Cache expiry — stale row triggers fresh scrape")
+            return
+
+        record(16, "scraped_at back-dated successfully", True)
+
+        # Step 3 — submit same URL; scraper_routes should see stale row and re-scrape
+        print("  Step 3: submitting URL again (expect fresh scrape ~40s)...")
+        t0 = time.monotonic()
+        resp2 = await scrape(FIXTURE_CONDO_SALE, timeout=180)
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        print(f"  Response time: {elapsed_ms}ms")
+        new_ts = resp2.get("listing", {}).get("scraped_at", "")
+        print(f"  Response scraped_at: {new_ts}")
+
+        # Step 4 — response time must be > 5s (real ScraperAPI call, not cache)
+        record(
+            16,
+            "fresh scrape triggered (response > 5s)",
+            elapsed_ms > 5_000,
+            "> 5000ms",
+            f"{elapsed_ms}ms",
+        )
+
+        # Step 5 — response scraped_at must be newer than the stale time we set
+        fresh_enough = bool(new_ts) and new_ts > stale_time
+        record(
+            16,
+            "response scraped_at is newer than stale_time",
+            fresh_enough,
+            f"> {stale_time}",
+            new_ts,
+        )
+
+        # Step 6 — confirm DB row's scraped_at is updated
+        db_row = await sb_get("listings", FIXTURE_CONDO_SALE)
+        db_ts = db_row.get("scraped_at", "") if db_row else ""
+        print(f"  DB row scraped_at: {db_ts}")
+        db_updated = bool(db_ts) and db_ts > stale_time
+        record(
+            16,
+            "DB row scraped_at updated after fresh scrape",
+            db_updated,
+            f"> {stale_time}",
+            db_ts,
+        )
+
+    except Exception as e:
+        print(f"  EXCEPTION: {e}")
+        record(16, "TC-16 completed without exception", False, "no exception", str(e))
+    finally:
+        # Step 7 — restore scraped_at so cache works normally after this run
+        if not restored:
+            try:
+                now_iso = datetime.now(timezone.utc).isoformat()
+                await cl.table("listings").update({"scraped_at": now_iso}).eq(
+                    "source_url", FIXTURE_CONDO_SALE
+                ).execute()
+                print(f"  Restored scraped_at to now ({now_iso[:19]})")
+                restored = True
+            except Exception as restore_exc:
+                print(f"  WARNING: restore failed — {restore_exc}")
+
+    tc_summary(16, "Cache expiry — stale row triggers fresh scrape")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CATEGORY 3 — ERROR / FAILURE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1457,7 +1574,7 @@ def print_report():
         "TC-15 VERIFY_BASEMENT_LEGALITY risk flag + basement_unit_flag",
         "TC-06 calc engine estimated_taxes assertion",
         "TC-07 pre_1980_flag and maintenance reserve rate assertions",
-        "TC-16 Cache expiry (24h) — scraper has no cache layer yet",
+        # TC-16 is now active — removed from skip list (cache layer was added)
         "TC-21 Supabase mock — no DI point in scraper yet",
     }
     for s in sorted(skip_expected):
@@ -1509,7 +1626,8 @@ async def main():
     await tc13()
     await tc14()
     await tc15()
-    # TC-16, TC-21 skipped per user rules (no DI / no cache layer)
+    await tc16()
+    # TC-21 skipped — no DI point in scraper for Supabase mock
 
     # Category 3 — Error / failure
     await tc17()
