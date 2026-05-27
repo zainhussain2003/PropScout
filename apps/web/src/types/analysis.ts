@@ -25,16 +25,27 @@ export type DealVerdict =
   | 'do_not_buy'
   | 'hard_pass'
 
+export interface DealScoreBreakdown {
+  capRate: number // maps to Python 'cap_rate'        — max 25
+  cashFlow: number // maps to Python 'cash_flow'      — max 25
+  cashOnCash: number // maps to Python 'cash_on_cash' — max 20
+  dscr: number // maps to Python 'dscr'               — max 15
+  demand: number // maps to Python 'demand'           — max 10
+  subtotal: number // sum before deductions
+  deduction: number // maps to Python 'deduction'    — risk flag penalty, capped at 15
+  componentMaxes: {
+    capRate: number // always 25
+    cashFlow: number // always 25
+    cashOnCash: number // always 20
+    dscr: number // always 15
+    demand: number // always 10
+  }
+}
+
 export interface DealScore {
   total: number // 0–100
   verdict: DealVerdict
-  breakdown: {
-    cashFlow: number
-    capRate: number
-    dscr: number
-    closingCosts: number
-    riskFlags: number
-  }
+  breakdown: DealScoreBreakdown
 }
 
 export interface InvestmentMetrics {
