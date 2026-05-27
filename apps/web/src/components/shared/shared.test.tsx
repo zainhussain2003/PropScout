@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ScoutMark } from './ScoutMark'
 import { Wordmark } from './Wordmark'
 import { Icon } from './Icon'
@@ -343,5 +343,45 @@ describe('SignInModal', () => {
     const input = screen.getByPlaceholderText('you@example.com')
     fireEvent.click(input)
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('moves focus inside the modal on open', async () => {
+    render(<SignInModal open onClose={vi.fn()} />)
+    const dialog = screen.getByRole('dialog')
+    await waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true)
+    })
+  })
+
+  it('traps Tab at the last focusable element', () => {
+    render(<SignInModal open onClose={vi.fn()} />)
+    const dialog = screen.getByRole('dialog')
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => !el.hasAttribute('disabled'))
+    const last = focusable[focusable.length - 1]
+    const first = focusable[0]
+    last.focus()
+    // Fire on the focused element — event bubbles up to the card's onKeyDown handler
+    fireEvent.keyDown(last, { key: 'Tab', shiftKey: false })
+    expect(document.activeElement).toBe(first)
+  })
+
+  it('traps Shift+Tab at the first focusable element', () => {
+    render(<SignInModal open onClose={vi.fn()} />)
+    const dialog = screen.getByRole('dialog')
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => !el.hasAttribute('disabled'))
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    first.focus()
+    // Fire on the focused element — event bubbles up to the card's onKeyDown handler
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(last)
   })
 })

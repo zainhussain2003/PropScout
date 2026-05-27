@@ -75,14 +75,14 @@ Steps:
 4. Find an accent-coloured button in the Pricing section or CTA section (if present) → right-click → Inspect → Computed → check background-color
 5. Right-click the primary button → Inspect → Styles panel → look for a `transition` property → note the duration and easing value
 6. In DevTools → Elements, with the primary button selected, click the `:hov` toggle and force `:hover` state → check the new colour values in Computed — should shift to `var(--accent)` / #D97757 (terracotta)
-7. Leave the URL input empty (do not type anything) → observe the Analyze button — note if it appears visually muted or disabled
-8. With the URL input empty, click Analyze → confirm it does not navigate or open a modal (it should show a validation error, not fire an action)
+7. Leave the URL input empty (do not type anything) → observe the Analyze button — it should appear fully active and enabled (not muted, not disabled, not greyed out)
+8. With the URL input empty, click Analyze → confirm an inline "Not a usable link" validation error appears near the input. No modal opens. No navigation occurs.
 9. Click somewhere neutral on the page to clear focus → press Tab repeatedly until a button receives keyboard focus → confirm a visible focus ring appears on the focused button
 10. With a button focused, press Enter → confirm its action fires
 11. Tab to another button, press Space → confirm its action fires
 12. Right-click any ghost button → Inspect → confirm background is transparent or uses `var(--surface)` / very light token, and border is visible
-    PASS: Primary button: dark background (#0E1320 / `var(--ink)`), light text. Ghost button: transparent background, visible border. Accent button (if present): terracotta background (#D97757). `transition` property present on buttons with duration `0.15s` and easing `ease`. Forcing `:hover` shows terracotta colour. An empty Analyze click shows an error rather than navigating. A visible focus ring appears on Tab-focused buttons. Enter and Space both trigger button actions.
-    FAIL: Primary button is white or transparent. Ghost button has a dark filled background identical to primary. No `transition` property on any button. Hover colour is blue, green, or no change. Disabled state is not visually distinct from active. No focus ring appears on keyboard focus (pressing Tab shows no visual indicator). Enter or Space on a focused button does nothing.
+    PASS: Primary button: dark background (#0E1320 / `var(--ink)`), light text. Ghost button: transparent background, visible border. Accent button (if present): terracotta background (#D97757). `transition` property present on buttons with duration `0.15s` and easing `ease`. Forcing `:hover` shows terracotta colour. Analyze button is active on empty input — clicking it shows "Not a usable link" validation error; button does not navigate or open modal. A visible focus ring appears on Tab-focused buttons. Enter and Space both trigger button actions.
+    FAIL: Primary button is white or transparent. Ghost button has a dark filled background identical to primary. No `transition` property on any button. Hover colour is blue, green, or no change. No focus ring appears on keyboard focus (pressing Tab shows no visual indicator). Enter or Space on a focused button does nothing. Clicking Analyze with empty input navigates or opens ModeModal without showing an error.
     ─────────────────────────────────────────
 
 ─────────────────────────────────────────

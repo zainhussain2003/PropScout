@@ -3,7 +3,7 @@
 // Two modes: 'signin' (default) and 'signup'. Tab-escaped, scroll-locked while open.
 // Google OAuth button + email magic link / account creation.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Icon } from './Icon'
 import { ScoutMark } from './ScoutMark'
 
@@ -41,8 +41,9 @@ function GoogleLogo(): JSX.Element {
 export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | null {
   const [mode, setMode] = useState<ModalMode>('signin')
   const [email, setEmail] = useState('')
+  const cardRef = useRef<HTMLDivElement>(null)
 
-  // Escape key + scroll lock
+  // Escape key, scroll lock, and initial focus
   useEffect(() => {
     if (!open) return
     const handleKey = (e: KeyboardEvent): void => {
@@ -50,11 +51,43 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
     }
     window.addEventListener('keydown', handleKey)
     document.body.style.overflow = 'hidden'
+    // Move focus into the modal on open
+    const frame = requestAnimationFrame(() => {
+      if (!cardRef.current) return
+      const focusable = cardRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      focusable[0]?.focus()
+    })
     return () => {
       window.removeEventListener('keydown', handleKey)
       document.body.style.overflow = ''
+      cancelAnimationFrame(frame)
     }
   }, [open, onClose])
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (e.key !== 'Tab' || !cardRef.current) return
+    const focusable = Array.from(
+      cardRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => !el.hasAttribute('disabled'))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+  }
 
   if (!open) return null
 
@@ -80,7 +113,9 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
     >
       {/* Modal card — stop propagation so clicking inside doesn't close */}
       <div
+        ref={cardRef}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleCardKeyDown}
         style={{
           width: '100%',
           maxWidth: 460,
