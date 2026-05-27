@@ -27,12 +27,26 @@ import { ScoutMark } from '../components/shared/ScoutMark'
 import { ModeModal } from '../components/shared/ModeModal'
 import type { ListingPreviewData } from '../components/shared/ModeModal'
 import { validateUrl } from '../lib/validateUrl'
+import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function clampStr(min: number, max: number): string {
   return `clamp(${min}px, 1.4vw, ${max}px)`
+}
+
+function detectKindFromUrl(url: string): 'sale' | 'rent' {
+  const lower = url.toLowerCase()
+  if (
+    lower.includes('/rental') ||
+    lower.includes('/rentals') ||
+    lower.includes('for-rent') ||
+    lower.includes('for_rent')
+  ) {
+    return 'rent'
+  }
+  return 'sale'
 }
 
 // ── Static landing-demo micro-components ─────────────────────────────
@@ -362,9 +376,11 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
 
   const handleAnalyze = (): void => {
     if (stage === 'done') {
-      // Open the mode modal with the current sample listing preview
+      // Open the mode modal with the current listing preview.
+      // Detect kind from the actual URL in the input so that a typed URL
+      // overrides the sample's preset kind.
       const sample = SAMPLE_LISTINGS[sampleIdx]
-      onOpenModal(sample.preview)
+      onOpenModal({ ...sample.preview, kind: detectKindFromUrl(url) })
       return
     }
     runDemo()
@@ -915,19 +931,7 @@ function ReportShowcase(): JSX.Element {
                 <h4 className="serif" style={{ fontSize: 22 }}>
                   Listing accuracy
                 </h4>
-                <span
-                  className="chip"
-                  style={{
-                    background: 'color-mix(in oklab, var(--caution) 10%, transparent)',
-                    borderColor: 'color-mix(in oklab, var(--caution) 30%, transparent)',
-                    color: 'var(--caution)',
-                  }}
-                >
-                  <span
-                    style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--caution)' }}
-                  />
-                  2 flags · 1 confirmation
-                </span>
+                <VerdictPill tone="caution" label="2 flags · 1 confirmation" />
               </div>
               <ShowcaseRiskRow
                 tone="red"
@@ -1015,16 +1019,7 @@ function ReportShowcase(): JSX.Element {
                 >
                   Negotiation
                 </div>
-                <span
-                  className="chip"
-                  style={{
-                    background: 'color-mix(in oklab, var(--pass) 10%, transparent)',
-                    borderColor: 'color-mix(in oklab, var(--pass) 30%, transparent)',
-                    color: 'var(--pass)',
-                  }}
-                >
-                  Strong leverage
-                </span>
+                <VerdictPill tone="pass" label="Strong leverage" />
               </div>
               <div className="serif tabular" style={{ fontSize: 26, lineHeight: 1.1 }}>
                 Target $1,950–2,000
@@ -1159,6 +1154,7 @@ function ReportsSection(): JSX.Element {
         ['Cash flow', '−$1,833', 'fail'],
         ['DSCR', '0.45×', 'fail'],
       ] as [string, string, string][],
+      verdict: { tone: 'fail' as const, label: 'Hard pass' },
     },
     {
       who: 'Landlord',
@@ -1276,6 +1272,9 @@ function ReportsSection(): JSX.Element {
                     </div>
                   ))}
                 </div>
+                {'verdict' in m && m.verdict !== undefined && (
+                  <VerdictPill tone={m.verdict.tone} label={m.verdict.label} />
+                )}
               </div>
             </article>
           ))}
@@ -1324,7 +1323,13 @@ function HowSection(): JSX.Element {
           on your screen, ready to share.
         </SectionHeader>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 22,
+          }}
+        >
           {steps.map((s, i) => (
             <div key={s.n} className="card col" style={{ padding: 24, gap: 18, minHeight: 360 }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -1865,7 +1870,7 @@ function PricingSection(): JSX.Element {
                 </p>
               </div>
               <div className="row" style={{ alignItems: 'baseline', gap: 6 }}>
-                <span className="serif tabular" style={{ fontSize: 56, lineHeight: 1 }}>
+                <span className="mono tabular" style={{ fontSize: 56, lineHeight: 1 }}>
                   ${Math.round(t.price)}
                   {'priceSuffix' in t ? (t.priceSuffix as string) : ''}
                 </span>

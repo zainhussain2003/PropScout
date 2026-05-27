@@ -71,6 +71,16 @@ describe('LandingPage', () => {
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument()
   })
 
+  it('shows validation error when Analyze is clicked with empty input', async () => {
+    renderLanding()
+    const input = screen.getByPlaceholderText(/paste a listing url/i)
+    // Clear the pre-filled sample URL
+    fireEvent.change(input, { target: { value: '' } })
+    const analyzeButton = screen.getByRole('button', { name: /analyze/i })
+    fireEvent.click(analyzeButton)
+    expect(await screen.findByText(/not a usable link/i)).toBeInTheDocument()
+  })
+
   // ── Sample listings ───────────────────────────────────────────────
 
   it('renders the sample listing buttons', () => {
