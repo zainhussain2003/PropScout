@@ -8,14 +8,20 @@ from pydantic import BaseModel, Field
 
 class FinancingInput(BaseModel):
     """Financing parameters — driven by the frontend sliders."""
-    down_payment_pct: float = Field(..., ge=0.05, le=1.0, description="e.g. 0.20 for 20%")
-    mortgage_rate: float = Field(..., ge=0.01, le=0.25, description="e.g. 0.0479 for 4.79%")
+
+    down_payment_pct: float = Field(
+        ..., ge=0.05, le=1.0, description="e.g. 0.20 for 20%"
+    )
+    mortgage_rate: float = Field(
+        ..., ge=0.01, le=0.25, description="e.g. 0.0479 for 4.79%"
+    )
     amortization_years: int = Field(..., ge=1, le=30)
     include_management_fee: bool = False
 
 
 class PropertyInput(BaseModel):
     """Scraped or manually entered property data."""
+
     address: str
     province: str = "ON"
     price: int = Field(..., gt=0)
@@ -32,6 +38,7 @@ class PropertyInput(BaseModel):
 
 class RentalEstimate(BaseModel):
     """Rental comp estimates — sourced from the nightly scraper."""
+
     low: int
     mid: int
     high: int
@@ -42,6 +49,7 @@ class RentalEstimate(BaseModel):
 
 class InvestmentMetricsOutput(BaseModel):
     """All calculated investment metrics returned to Fastify."""
+
     cash_flow_monthly: float
     cash_flow_annual: float
     cap_rate: float
@@ -52,6 +60,10 @@ class InvestmentMetricsOutput(BaseModel):
     mortgage_payment_monthly: float
     down_payment: float
     mortgage_amount: float
+    # Financing inputs passed through in the output so the frontend can
+    # display them without storing separate state.
+    amortization_years: int
+    mortgage_rate: float
     break_even_rent: float
     closing_costs_total: float
     ltt_provincial: float
@@ -61,6 +73,7 @@ class InvestmentMetricsOutput(BaseModel):
 
 class DealScoreOutput(BaseModel):
     """Deal score result with component breakdown."""
+
     total: float  # 0–100
     verdict: str
     breakdown: dict[str, float]
@@ -68,6 +81,7 @@ class DealScoreOutput(BaseModel):
 
 class AnalysisOutput(BaseModel):
     """Full analysis result returned to the Fastify API."""
+
     metrics: InvestmentMetricsOutput
     deal_score: DealScoreOutput
     risk_flags: list[dict[str, object]]
