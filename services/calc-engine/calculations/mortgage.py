@@ -33,27 +33,46 @@ def _monthly_rate(annual_rate: float) -> float:
 
 def calculate_monthly_payment(
     principal: float,
-    annual_rate: float,
-    amortization_years: int,
+    annual_rate: float | None = None,
+    amortization_years: int | None = None,
+    *,
+    rate: float | None = None,
+    years: int | None = None,
 ) -> float:
     """
     Calculate the fixed monthly mortgage payment using the standard annuity formula
     with Canadian semi-annual compounding.
 
+    Accepts two naming conventions for the rate and term parameters so that both
+    the external verification script (``rate``, ``years``) and internal callers
+    (``annual_rate``, ``amortization_years``) work without modification.
+
     Args:
         principal: Loan amount in dollars.
         annual_rate: Nominal annual interest rate as a decimal (e.g. 0.0479 for 4.79%).
-        amortization_years: Amortization period in years.
+            Alias: ``rate``.
+        amortization_years: Amortization period in years.  Alias: ``years``.
 
     Returns:
         Monthly payment in dollars.
     """
-    n = amortization_years * 12
+    effective_rate: float = (
+        annual_rate if annual_rate is not None else (rate if rate is not None else 0.0)
+    )
+    effective_years: int = int(
+        amortization_years
+        if amortization_years is not None
+        else (years if years is not None else 0)
+    )
+    if effective_years == 0:
+        raise ValueError("amortization_years (or years) must be provided and > 0")
 
-    if annual_rate == 0:
+    n = effective_years * 12
+
+    if effective_rate == 0:
         return round(principal / n, 2)
 
-    r = _monthly_rate(annual_rate)
+    r = _monthly_rate(effective_rate)
     payment = principal * (r * (1 + r) ** n) / ((1 + r) ** n - 1)
     return round(payment, 2)
 

@@ -3,7 +3,9 @@
  *
  * Covers:
  *   - snake_case → camelCase transformation of calc engine responses
- *   - Request body forwarded to calc engine unchanged
+ *   - snake_case input body forwarded to calc engine unchanged
+ *   - camelCase input converted to snake_case before forwarding to calc engine
+ *   - camelCase input returns fully camelCase response (round-trip)
  *   - 503 when the calc engine is unreachable (ECONNREFUSED)
  *   - 422 when the calc engine rejects the input
  *   - 500 when the calc engine returns an unexpected server error
@@ -160,7 +162,7 @@ describe('POST / — analysis route', () => {
 
   // ── Test 2 ─────────────────────────────────────────────────────────────────
 
-  it('forwards body to calc engine unchanged', async () => {
+  it('forwards snake_case body to calc engine unchanged', async () => {
     mockCalcEngineOK(CALC_ENGINE_RESPONSE)
 
     const requestBody = {
@@ -183,7 +185,144 @@ describe('POST / — analysis route', () => {
     ]
 
     expect(calledUrl).toContain('/analysis/')
+    // snake_case input passes through without modification
     expect(calledOptions.body).toBe(JSON.stringify(requestBody))
+  })
+
+  // ── Test 2b ────────────────────────────────────────────────────────────────
+
+  it('converts camelCase input to snake_case before forwarding to calc engine', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+
+    const camelBody = {
+      propertyData: {
+        address: '5702 Buttermill Ave',
+        province: 'ON',
+        price: 729900,
+        annualTaxes: 3326,
+        condoFeeMonthly: 761,
+        condoFeeKnown: true,
+        beds: 3,
+        baths: 2,
+        sqft: 1050,
+        yearBuilt: 2005,
+        propertyType: 'condo',
+        isToronto: false,
+      },
+      financing: {
+        downPaymentPct: 0.2,
+        mortgageRate: 0.0479,
+        amortizationYears: 25,
+        includeManagementFee: false,
+      },
+      rental: {
+        low: 2700,
+        mid: 2900,
+        high: 3200,
+        compCount: 8,
+        confidence: 'medium' as const,
+        postalCode: 'L4K',
+      },
+    }
+
+    await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: camelBody,
+    })
+
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+
+    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { method: string; headers: Record<string, string>; body: string },
+    ]
+
+    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
+
+    // Input was converted from camelCase to snake_case
+    expect(forwarded).toHaveProperty('property_data')
+    expect(forwarded).not.toHaveProperty('propertyData')
+
+    const propData = forwarded['property_data'] as Record<string, unknown>
+    expect(propData).toHaveProperty('annual_taxes', 3326)
+    expect(propData).toHaveProperty('condo_fee_monthly', 761)
+    expect(propData).toHaveProperty('condo_fee_known', true)
+    expect(propData).toHaveProperty('year_built', 2005)
+    expect(propData).toHaveProperty('property_type', 'condo')
+    expect(propData).toHaveProperty('is_toronto', false)
+    expect(propData).not.toHaveProperty('annualTaxes')
+    expect(propData).not.toHaveProperty('yearBuilt')
+
+    const fin = forwarded['financing'] as Record<string, unknown>
+    expect(fin).toHaveProperty('down_payment_pct', 0.2)
+    expect(fin).toHaveProperty('mortgage_rate', 0.0479)
+    expect(fin).toHaveProperty('amortization_years', 25)
+    expect(fin).not.toHaveProperty('downPaymentPct')
+
+    const rental = forwarded['rental'] as Record<string, unknown>
+    expect(rental).toHaveProperty('comp_count', 8)
+    expect(rental).toHaveProperty('postal_code', 'L4K')
+    expect(rental).not.toHaveProperty('compCount')
+  })
+
+  // ── Test 2c ────────────────────────────────────────────────────────────────
+
+  it('returns 200 and fully camelCase response for camelCase input (round-trip)', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        propertyData: {
+          address: '5702 Buttermill Ave',
+          price: 729900,
+          annualTaxes: 3326,
+          condoFeeMonthly: 761,
+          condoFeeKnown: true,
+          beds: 3,
+          baths: 2,
+          yearBuilt: 2005,
+          propertyType: 'condo',
+          isToronto: false,
+        },
+        financing: {
+          downPaymentPct: 0.2,
+          mortgageRate: 0.0479,
+          amortizationYears: 25,
+          includeManagementFee: false,
+        },
+        rental: {
+          low: 2700,
+          mid: 2900,
+          high: 3200,
+          compCount: 8,
+          confidence: 'medium' as const,
+          postalCode: 'L4K',
+        },
+      },
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    const body = response.json() as Analysis
+    const metrics = body.metrics as NonNullable<Analysis['metrics']>
+
+    // Response is fully camelCase — no snake_case keys
+    const metricKeys = Object.keys(metrics)
+    const snakeCaseKeys = metricKeys.filter((k) => k.includes('_'))
+    expect(snakeCaseKeys).toHaveLength(0)
+
+    // Key camelCase fields present
+    expect(metrics).toHaveProperty('cashFlowMonthly')
+    expect(metrics).toHaveProperty('mortgagePaymentMonthly')
+    expect(metrics).toHaveProperty('lttProvincial')
+    expect(metrics).toHaveProperty('amortizationYears', 25)
+
+    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
+    expect(dealScore.breakdown.componentMaxes).toBeDefined()
+    expect(dealScore.breakdown.componentMaxes.capRate).toBe(25)
   })
 
   // ── Test 3 ─────────────────────────────────────────────────────────────────

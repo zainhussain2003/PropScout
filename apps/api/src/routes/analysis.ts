@@ -1,7 +1,13 @@
 /**
- * Analysis route — proxies POST /analysis to the Python calc engine,
- * transforms the snake_case response into camelCase, and returns it to
- * the React frontend.
+ * Analysis route — accepts camelCase input from the React frontend,
+ * converts it to snake_case before forwarding to the Python calc engine,
+ * transforms the snake_case response into camelCase, and returns it.
+ *
+ * Input format handled:
+ *   - camelCase (from React frontend via analysisService.ts)
+ *     e.g. { propertyData: { annualTaxes: 3326 }, financing: { downPaymentPct: 0.2 } }
+ *   - snake_case (legacy / direct callers, passed through unchanged)
+ *     e.g. { property_data: { annual_taxes: 3326 }, financing: { down_payment_pct: 0.2 } }
  *
  * Registered in app.ts with prefix "/analysis":
  *   await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
@@ -14,7 +20,127 @@ import type { InvestmentMetrics, DealScore, DealScoreBreakdown, Analysis } from 
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
-// ── Python response types (snake_case) ────────────────────────────────────────
+// ── Frontend camelCase input types ────────────────────────────────────────────
+
+interface CamelPropertyData {
+  address: string
+  province?: string
+  price: number
+  annualTaxes: number
+  condoFeeMonthly?: number | null
+  condoFeeKnown?: boolean
+  beds: number
+  baths: number
+  sqft?: number | null
+  yearBuilt?: number | null
+  propertyType?: string
+  isToronto?: boolean
+}
+
+interface CamelFinancing {
+  downPaymentPct: number
+  mortgageRate: number
+  amortizationYears: number
+  includeManagementFee?: boolean
+}
+
+interface CamelRental {
+  low: number
+  mid: number
+  high: number
+  compCount: number
+  confidence: 'low' | 'medium' | 'high'
+  postalCode: string
+}
+
+interface CamelAnalysisRequest {
+  propertyData: CamelPropertyData
+  financing: CamelFinancing
+  rental: CamelRental
+}
+
+// ── Python snake_case types (sent to calc engine) ─────────────────────────────
+
+interface SnakePropertyData {
+  address: string
+  province: string
+  price: number
+  annual_taxes: number
+  condo_fee_monthly: number | null
+  condo_fee_known: boolean
+  beds: number
+  baths: number
+  sqft: number | null
+  year_built: number | null
+  property_type: string
+  is_toronto: boolean
+}
+
+interface SnakeFinancing {
+  down_payment_pct: number
+  mortgage_rate: number
+  amortization_years: number
+  include_management_fee: boolean
+}
+
+interface SnakeRental {
+  low: number
+  mid: number
+  high: number
+  comp_count: number
+  confidence: 'low' | 'medium' | 'high'
+  postal_code: string
+}
+
+interface SnakeAnalysisRequest {
+  property_data: SnakePropertyData
+  financing: SnakeFinancing
+  rental: SnakeRental
+}
+
+// ── camelCase → snake_case input conversion ───────────────────────────────────
+
+function isCamelCaseRequest(body: unknown): body is CamelAnalysisRequest {
+  return typeof body === 'object' && body !== null && 'propertyData' in body
+}
+
+function toSnakeRequest(body: CamelAnalysisRequest): SnakeAnalysisRequest {
+  const p = body.propertyData
+  const f = body.financing
+  const r = body.rental
+  return {
+    property_data: {
+      address: p.address,
+      province: p.province ?? 'ON',
+      price: p.price,
+      annual_taxes: p.annualTaxes,
+      condo_fee_monthly: p.condoFeeMonthly ?? null,
+      condo_fee_known: p.condoFeeKnown ?? false,
+      beds: p.beds,
+      baths: p.baths,
+      sqft: p.sqft ?? null,
+      year_built: p.yearBuilt ?? null,
+      property_type: p.propertyType ?? 'condo',
+      is_toronto: p.isToronto ?? false,
+    },
+    financing: {
+      down_payment_pct: f.downPaymentPct,
+      mortgage_rate: f.mortgageRate,
+      amortization_years: f.amortizationYears,
+      include_management_fee: f.includeManagementFee ?? false,
+    },
+    rental: {
+      low: r.low,
+      mid: r.mid,
+      high: r.high,
+      comp_count: r.compCount,
+      confidence: r.confidence,
+      postal_code: r.postalCode,
+    },
+  }
+}
+
+// ── Python response types (snake_case from calc engine) ───────────────────────
 
 interface PyComponentMaxes {
   cap_rate: number
@@ -77,7 +203,7 @@ interface PyAnalysisOutput {
   has_sanity_warnings: boolean
 }
 
-// ── Snake → camelCase transforms ──────────────────────────────────────────────
+// ── snake_case → camelCase output transforms ──────────────────────────────────
 
 function toMetrics(py: PyInvestmentMetrics): InvestmentMetrics {
   return {
@@ -131,12 +257,16 @@ function toDealScore(py: PyDealScore): DealScore {
 
 async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/', async (req, reply) => {
+    // Detect format: camelCase frontend input is converted to snake_case
+    // before forwarding; snake_case input (legacy / direct) passes through.
+    const snakeBody: unknown = isCamelCaseRequest(req.body) ? toSnakeRequest(req.body) : req.body
+
     let pyResponse: Response
     try {
       pyResponse = await fetch(`${CALC_ENGINE_URL}/analysis/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(req.body),
+        body: JSON.stringify(snakeBody),
       })
     } catch (err) {
       fastify.log.error({ err }, 'Calc engine unreachable')
