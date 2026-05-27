@@ -71,12 +71,35 @@ class InvestmentMetricsOutput(BaseModel):
     has_sanity_warnings: bool
 
 
+class ComponentMaxes(BaseModel):
+    """Maximum points each deal-score component can contribute."""
+
+    cap_rate: int
+    cash_flow: int
+    cash_on_cash: int
+    dscr: int
+    demand: int
+
+
+class DealScoreBreakdownOutput(BaseModel):
+    """Per-component deal-score breakdown returned to the Fastify API."""
+
+    cap_rate: int
+    cash_flow: int
+    cash_on_cash: int
+    dscr: int
+    demand: int
+    subtotal: int
+    deduction: int
+    component_maxes: ComponentMaxes
+
+
 class DealScoreOutput(BaseModel):
     """Deal score result with component breakdown."""
 
-    total: float  # 0–100
+    total: int  # 0–95
     verdict: str
-    breakdown: dict[str, float]
+    breakdown: DealScoreBreakdownOutput
 
 
 class AnalysisOutput(BaseModel):
