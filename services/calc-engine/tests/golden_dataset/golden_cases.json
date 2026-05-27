@@ -28,5 +28,182 @@
       "str_history": true
     },
     "notes": "Fixer-upper + STR flag"
+  },
+  {
+    "id": "gc-004",
+    "description": "Bright 2-bedroom condo on the 18th floor. Monthly condo fee is $612 and covers heat, water, and building maintenance. Parking included. Locker included. Steps to subway.",
+    "expected_flags": {
+      "parking_included": true,
+      "tenanted": false,
+      "no_pets": false
+    },
+    "notes": "Standard condo with explicit condo fee — parking included via direct statement"
+  },
+  {
+    "id": "gc-005",
+    "description": "Spacious corner unit. Well-maintained building with reasonable maintenance of $580 per month covering common elements. Pet friendly building — dogs and cats welcome. Tenant pays own hydro extra.",
+    "expected_flags": {
+      "pets_allowed": true,
+      "utilities_extra": true,
+      "tenanted": false
+    },
+    "notes": "Condo fee buried in paragraph — pets allowed + utilities extra"
+  },
+  {
+    "id": "gc-006",
+    "description": "Rare fully detached 3-bedroom in east Hamilton. No condo fees ever. Large lot, double car garage. Owner-occupied, vacant possession on closing. Great starter or investment.",
+    "expected_flags": {
+      "tenanted": false,
+      "no_pets": false,
+      "needs_work": false,
+      "parking_included": false
+    },
+    "notes": "Freehold with no condo fee — all flags should be absent"
+  },
+  {
+    "id": "gc-007",
+    "description": "Modern stacked townhouse. Condo fee TBD — builder finalizing budget. Occupancy expected Q3. Pets not permitted per building rules. Brand new floors and kitchen.",
+    "expected_flags": {
+      "no_pets": true,
+      "recently_renovated": true,
+      "tenanted": false
+    },
+    "notes": "Condo fee TBD — no_pets fires + brand new floors triggers recently_renovated"
+  },
+  {
+    "id": "gc-008",
+    "description": "All utilities included — heat, hydro, water, and cable. Perfect for a tenant seeking hassle-free living. Pet free building. Steps from GO station.",
+    "expected_flags": {
+      "utilities_included": true,
+      "no_pets": true,
+      "tenanted": false
+    },
+    "notes": "Utilities included via standard phrase + pet free building"
+  },
+  {
+    "id": "gc-009",
+    "description": "Investors take note: this property has an active Airbnb history with over 200 five-star reviews. Existing tenant in place — flexible closing.",
+    "expected_flags": {
+      "str_history": true,
+      "tenanted": true
+    },
+    "notes": "STR history (Airbnb) + tenant in place"
+  },
+  {
+    "id": "gc-010",
+    "description": "No pets allowed in this building. Underground parking included with unit. Heat and hydro included in monthly rent. Ensuite laundry. Well-maintained.",
+    "expected_flags": {
+      "no_pets": true,
+      "parking_included": true,
+      "utilities_included": true
+    },
+    "notes": "Multiple flags: no pets, parking, utilities included"
+  },
+  {
+    "id": "gc-011",
+    "description": "Parking available for separate purchase at $35,000. Locker extra. Pet friendly — cats and small dogs welcome. Utilities extra — tenant is responsible for hydro and heat extra.",
+    "expected_flags": {
+      "parking_included": false,
+      "pets_allowed": true,
+      "utilities_extra": true
+    },
+    "notes": "Parking for purchase (NOT included) — pets allowed, utilities extra"
+  },
+  {
+    "id": "gc-012",
+    "description": "Price recently reduced from $749,000 to $719,000 — motivated seller. Estate sale, sold as-is. Probate is clear. Great opportunity for renovators.",
+    "expected_flags": {
+      "needs_work": true,
+      "tenanted": false,
+      "str_history": false
+    },
+    "notes": "Estate sale + sold as-is triggers needs_work; price reduction is not a regex flag"
+  },
+  {
+    "id": "gc-013",
+    "description": "",
+    "expected_flags": {
+      "tenanted": false,
+      "no_pets": false,
+      "parking_included": false,
+      "utilities_included": false,
+      "needs_work": false,
+      "str_history": false
+    },
+    "notes": "Empty description — no flags should fire"
+  },
+  {
+    "id": "gc-014",
+    "description": "Beau 3 chambres et demi dans le Plateau-Mont-Royal. Chauffage inclus. Disponible immédiatement. Animal de compagnie bienvenu.",
+    "expected_flags": {
+      "utilities_included": false,
+      "tenanted": false,
+      "no_pets": false
+    },
+    "notes": "French description — English regex patterns should not fire on French text"
+  },
+  {
+    "id": "gc-015",
+    "description": "Fully gut renovated in 2023 — new plumbing, electrical, and HVAC. Brand new kitchen with quartz countertops. Recently updated bathrooms. Move-in ready.",
+    "expected_flags": {
+      "recently_renovated": true,
+      "needs_work": false,
+      "tenanted": false
+    },
+    "notes": "Major renovation — recently_renovated fires; not a fixer-upper"
+  },
+  {
+    "id": "gc-016",
+    "description": "Secondary suite in basement of detached home. Separate entrance. In-law suite perfectly set up for extended family or rental income. Currently rented at market rate.",
+    "expected_flags": {
+      "basement_unit": true,
+      "tenanted": true
+    },
+    "notes": "In-law suite / secondary suite + currently rented"
+  },
+  {
+    "id": "gc-017",
+    "description": "Approx 900 sq ft as per builder floor plan. Tenant is currently month-to-month. Heat extra. Pets welcome with landlord approval.",
+    "expected_flags": {
+      "tenanted": true,
+      "utilities_extra": true,
+      "pets_allowed": true
+    },
+    "notes": "Vague sq ft — tenanted + utilities extra + pets allowed"
+  },
+  {
+    "id": "gc-018",
+    "description": "Spacious unit in a well-maintained mid-rise. Amenities include gym, concierge, rooftop terrace, and indoor pool. One parking spot included. Pet free building.",
+    "expected_flags": {
+      "parking_included": true,
+      "no_pets": true,
+      "tenanted": false
+    },
+    "notes": "Gym/concierge/pool listed — parking included + pet free"
+  },
+  {
+    "id": "gc-019",
+    "description": "Investment property with existing tenant in place at $2,400/month. Tenant pays utilities extra. No pets per lease. VRBO rental history from previous owner — short-term rentals now prohibited by building.",
+    "expected_flags": {
+      "tenanted": true,
+      "utilities_extra": true,
+      "no_pets": true,
+      "str_history": true
+    },
+    "notes": "Multiple flags — VRBO mention fires str_history even though STR is now prohibited; this is a known regex limitation"
+  },
+  {
+    "id": "gc-020",
+    "description": "Tenant in place paying $3,200/month. Sold as-is. No pets. Utilities extra — tenant pays all utilities. 1 parking included. Basement unit with separate entrance. Newly renovated kitchen.",
+    "expected_flags": {
+      "tenanted": true,
+      "needs_work": true,
+      "no_pets": true,
+      "utilities_extra": true,
+      "parking_included": true,
+      "basement_unit": true,
+      "recently_renovated": true
+    },
+    "notes": "All-flags baseline — every current flag fires in a single description"
   }
 ]

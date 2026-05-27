@@ -470,3 +470,277 @@ def test_hamilton_deal_score() -> None:
         f"Unexpected verdict: {result['verdict']} (expected good_deal). "
         f"Score: {result['total']}"
     )
+
+
+# ── Borderline caution case (synthetic) ───────────────────────────
+
+
+def test_borderline_caution_deal_score() -> None:
+    """
+    Borderline caution property: entry-level freehold at 4.79% with rent near breakeven.
+    Expected deal score in caution/marginal band (35–64).
+
+    inputs: price=380000, taxes=3500, condo_fee=0, rent=2600/mo,
+            down=20%, rate=4.79%, amort=25, year_built=1990
+    Actual score ≈ 50, verdict = caution.
+    """
+    price = 380_000
+    taxes = 3_500
+    condo_fee_monthly = 0
+    rent = 2_600
+    year_built = 1990
+    down_pct = 0.20
+    rate = 0.0479
+    amort = 25
+
+    maintenance_rate = get_maintenance_rate(year_built)  # 1980-2010 → 1.0%
+    assert maintenance_rate == 0.010, f"Unexpected maintenance rate: {maintenance_rate}"
+
+    principal = price * (1 - down_pct)
+    monthly_mortgage = calculate_monthly_payment(principal, rate, amort)
+
+    noi = calculate_noi(
+        gross_annual_rent=rent * 12,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_annual=condo_fee_monthly * 12,
+        maintenance_rate=maintenance_rate,
+        property_value=price,
+        include_management=False,
+    )
+    cap = calculate_cap_rate(noi=noi, purchase_price=price)
+    annual_ds = monthly_mortgage * 12
+    dscr = calculate_dscr(noi=noi, annual_debt_service=annual_ds)
+    cf = calculate_cash_flow_monthly(
+        monthly_rent=rent,
+        mortgage_payment=monthly_mortgage,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_monthly=condo_fee_monthly,
+        maintenance_rate=maintenance_rate,
+        property_value=price,
+        include_management=False,
+    )
+    closing = estimate_closing_costs(price, is_toronto=False)
+    down = price * down_pct
+    total_cash_invested = down + closing["total"]
+    coc = calculate_cash_on_cash(
+        annual_cash_flow=cf * 12,
+        total_cash_invested=total_cash_invested,
+    )
+
+    result = calculate_deal_score(
+        cap_rate=cap,
+        cash_flow_monthly=cf,
+        cash_on_cash=coc,
+        dscr=dscr,
+        cmhc_vacancy_rate=0.03,
+        rental_days_on_market=25,
+        rent_trend="rising",
+        risk_flag_deductions=0,
+    )
+
+    assert 35 <= result["total"] <= 64, (
+        f"Borderline case score {result['total']} outside caution/marginal range (35–64). "
+        f"Breakdown: {result['breakdown']}"
+    )
+    assert result["verdict"] in (
+        "caution",
+        "marginal",
+    ), f"Unexpected verdict: {result['verdict']}"
+
+
+# ── Perfect deal (synthetic, no condo fee) ────────────────────────
+
+
+def test_perfect_deal_case() -> None:
+    """
+    Perfect deal: affordable property with good yield and low rate.
+    Expected: positive cash flow, cap rate 5.5%+, deal score >= 60.
+
+    inputs: price=400000, taxes=4000, condo_fee=0, rent=3200/mo,
+            down=20%, rate=3.79%, amort=25, year_built=2015
+    """
+    price = 400_000
+    taxes = 4_000
+    condo_fee_monthly = 0
+    rent = 3_200
+    year_built = 2015
+    down_pct = 0.20
+    rate = 0.0379
+    amort = 25
+
+    maintenance_rate = get_maintenance_rate(year_built)  # post-2010 → 0.5%
+    assert maintenance_rate == 0.005
+
+    principal = price * (1 - down_pct)
+    monthly_mortgage = calculate_monthly_payment(principal, rate, amort)
+
+    noi = calculate_noi(
+        gross_annual_rent=rent * 12,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_annual=condo_fee_monthly * 12,
+        maintenance_rate=maintenance_rate,
+        property_value=price,
+        include_management=False,
+    )
+    cap = calculate_cap_rate(noi=noi, purchase_price=price)
+    annual_ds = monthly_mortgage * 12
+    dscr = calculate_dscr(noi=noi, annual_debt_service=annual_ds)
+    cf = calculate_cash_flow_monthly(
+        monthly_rent=rent,
+        mortgage_payment=monthly_mortgage,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_monthly=condo_fee_monthly,
+        maintenance_rate=maintenance_rate,
+        property_value=price,
+        include_management=False,
+    )
+    closing = estimate_closing_costs(price, is_toronto=False)
+    total_cash_invested = price * down_pct + closing["total"]
+    coc = calculate_cash_on_cash(
+        annual_cash_flow=cf * 12,
+        total_cash_invested=total_cash_invested,
+    )
+
+    result = calculate_deal_score(
+        cap_rate=cap,
+        cash_flow_monthly=cf,
+        cash_on_cash=coc,
+        dscr=dscr,
+        cmhc_vacancy_rate=0.02,
+        rental_days_on_market=14,
+        rent_trend="rising",
+        risk_flag_deductions=0,
+    )
+
+    assert cf > 0, f"Perfect deal should have positive cash flow, got {cf:.2f}"
+    assert 0.055 <= cap <= 0.120, f"Perfect deal cap rate unexpected: {cap:.4f}"
+    assert (
+        result["total"] >= 60
+    ), f"Perfect deal score {result['total']} is below 60. Breakdown: {result['breakdown']}"
+
+
+# ── Pre-1980 build penalty ────────────────────────────────────────
+
+
+def test_pre_1980_maintenance_rate() -> None:
+    """
+    Pre-1980 build uses 1.5% maintenance reserve (the highest tier).
+    This materially reduces NOI and cash flow compared to newer builds.
+    """
+    price = 550_000
+    taxes = 5_000
+    rent = 3_000
+    year_built = 1972
+
+    maintenance_rate = get_maintenance_rate(year_built)
+    assert (
+        maintenance_rate == 0.015
+    ), f"Pre-1980 build should use 1.5% maintenance, got {maintenance_rate:.3f}"
+
+    # Compare NOI with pre-1980 rate vs mid-age rate
+    noi_old = calculate_noi(
+        gross_annual_rent=rent * 12,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_annual=0,
+        maintenance_rate=0.015,  # pre-1980
+        property_value=price,
+        include_management=False,
+    )
+    noi_mid = calculate_noi(
+        gross_annual_rent=rent * 12,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_annual=0,
+        maintenance_rate=0.010,  # 1980-2010
+        property_value=price,
+        include_management=False,
+    )
+
+    # Pre-1980 NOI should be lower by approximately price * 0.5% = $2,750/yr
+    noi_difference = noi_mid - noi_old
+    expected_difference = price * (0.015 - 0.010)  # 0.5% of $550K = $2,750
+    assert (
+        abs(noi_difference - expected_difference) < 10
+    ), f"NOI difference from maintenance rate tier unexpected: {noi_difference:.2f}"
+
+
+def test_pre_1980_full_analysis() -> None:
+    """
+    Full analysis for pre-1980 build — verifies maintenance rate impacts are applied.
+    price=550000, taxes=5000, condo_fee=0, rent=3000/mo, 20% down, 4.79%, 25yr, 1972 build.
+    """
+    price = 550_000
+    taxes = 5_000
+    rent = 3_000
+    year_built = 1972
+    down_pct = 0.20
+    rate = 0.0479
+    amort = 25
+
+    maintenance_rate = get_maintenance_rate(year_built)  # should be 0.015
+    principal = price * (1 - down_pct)
+    monthly_mortgage = calculate_monthly_payment(principal, rate, amort)
+
+    noi = calculate_noi(
+        gross_annual_rent=rent * 12,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_annual=0,
+        maintenance_rate=maintenance_rate,
+        property_value=price,
+        include_management=False,
+    )
+    cf = calculate_cash_flow_monthly(
+        monthly_rent=rent,
+        mortgage_payment=monthly_mortgage,
+        annual_taxes=taxes,
+        insurance_value=price,
+        condo_fee_monthly=0,
+        maintenance_rate=maintenance_rate,
+        property_value=price,
+        include_management=False,
+    )
+
+    # Property with $3,000 rent and $550K price is borderline — verify reasonable range
+    cap = calculate_cap_rate(noi=noi, purchase_price=price)
+    assert 0.02 <= cap <= 0.06, f"Pre-1980 cap rate out of reasonable range: {cap:.4f}"
+    assert (
+        -3_000 <= cf <= 1_000
+    ), f"Pre-1980 cash flow out of reasonable range: {cf:.2f}"
+
+
+# ── OSFI stress consistency ────────────────────────────────────────
+
+
+def test_osfi_stress_payment_exceeds_base_for_all_cases() -> None:
+    """
+    For each calibration property, the OSFI stress payment (at stress rate)
+    must exceed the base contract payment.
+
+    OSFI stress rate = max(contract + 2%, 5.25%) > contract rate always.
+    Therefore stress payment > base payment for any positive principal.
+    """
+    from calculations.mortgage import calculate_osfi_stress_rate
+
+    calibration_cases = [
+        # (name, principal, rate, amort)
+        ("Vaughan base", 583_920, 0.0479, 25),
+        ("Hamilton base", 359_200, 0.0479, 25),
+        ("Borderline", 520_000, 0.0579, 25),
+        ("Perfect deal", 320_000, 0.0379, 25),
+        ("Pre-1980 build", 440_000, 0.0479, 25),
+    ]
+
+    for name, principal, rate, amort in calibration_cases:
+        base_payment = calculate_monthly_payment(principal, rate, amort)
+        stress_rate = calculate_osfi_stress_rate(rate)
+        stress_payment = calculate_monthly_payment(principal, stress_rate, amort)
+        assert stress_payment > base_payment, (
+            f"{name}: OSFI stress payment ({stress_payment:.2f}) should exceed "
+            f"base payment ({base_payment:.2f}) at rate {rate:.2%}"
+        )

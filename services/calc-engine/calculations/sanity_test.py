@@ -190,3 +190,44 @@ def test_custom_bounds_override_defaults() -> None:
     # Vaughan 1.97% cap rate is below the tight minimum
     result = sanity_check_metrics(**_VAUGHAN_OK, bounds=tight)
     assert any("Cap rate" in w for w in result)
+
+
+# ── Additional edge cases ──────────────────────────────────────────
+
+
+def test_price_zero_triggers_warning() -> None:
+    """Purchase price of exactly $0 is below the $50K minimum — triggers warning."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "purchase_price": 0})
+    assert any("Purchase price" in w for w in result)
+
+
+def test_price_50m_triggers_warning() -> None:
+    """Purchase price of $50M is well above the $10M maximum — triggers warning."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "purchase_price": 50_000_000})
+    assert any("Purchase price" in w for w in result)
+
+
+def test_dscr_at_low_value_does_not_warn() -> None:
+    """
+    DSCR of 0.5x is a very poor deal but NOT a data error.
+    The sanity check has no lower bound on DSCR (only upper bound of 5.0x).
+    """
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "dscr": 0.5})
+    assert not any("DSCR" in w for w in result)
+
+
+def test_dscr_at_5_exactly_does_not_warn() -> None:
+    """DSCR of exactly 5.0x is at the boundary — should NOT warn."""
+    assert sanity_check_metrics(**{**_VAUGHAN_OK, "dscr": 5.0}) == []
+
+
+def test_cap_rate_at_0_exactly_does_not_warn() -> None:
+    """Cap rate of exactly 0% is at lower bound — should NOT warn (NOI barely positive)."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "cap_rate": 0.0})
+    assert result == []
+
+
+def test_cap_rate_at_20pct_exactly_does_not_warn() -> None:
+    """Cap rate of exactly 20% is at upper bound — should NOT warn."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "cap_rate": 0.20})
+    assert result == []
