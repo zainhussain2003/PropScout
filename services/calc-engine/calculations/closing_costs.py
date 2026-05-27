@@ -33,17 +33,36 @@ def calculate_ltt(purchase_price: float, brackets: list[tuple[float, float]]) ->
     return round(tax, 2)
 
 
-def calculate_ontario_ltt(purchase_price: float) -> float:
+def calculate_ontario_ltt(
+    purchase_price: float | None = None,
+    *,
+    price: float | None = None,
+    is_toronto: bool = False,
+) -> float:
     """
     Calculate Ontario provincial Land Transfer Tax.
 
+    Accepts two naming conventions so that both internal callers
+    (``purchase_price``) and the external verification script (``price``,
+    ``is_toronto``) work without modification.
+
     Args:
-        purchase_price: Property purchase price.
+        purchase_price: Property purchase price.  Alias: ``price``.
+        is_toronto: When ``True``, adds the Toronto Municipal Land Transfer
+            Tax (MLTT) on top of the provincial LTT.  Default ``False``.
 
     Returns:
-        Provincial LTT in dollars.
+        Provincial LTT in dollars (plus MLTT when ``is_toronto=True``).
     """
-    return calculate_ltt(purchase_price, list(ONTARIO_LTT_BRACKETS))
+    effective_price: float = (
+        purchase_price
+        if purchase_price is not None
+        else (price if price is not None else 0.0)
+    )
+    ltt = calculate_ltt(effective_price, list(ONTARIO_LTT_BRACKETS))
+    if is_toronto:
+        ltt += calculate_toronto_mltt(effective_price)
+    return round(ltt, 2)
 
 
 def calculate_toronto_mltt(purchase_price: float) -> float:

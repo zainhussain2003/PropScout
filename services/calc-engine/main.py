@@ -29,8 +29,9 @@ from routers import rates  # noqa: E402
 
 app.include_router(rates.router, prefix="/rates")
 
-# from routers import analysis
-# app.include_router(analysis.router, prefix="/analysis")
+from routers import analysis  # noqa: E402
+
+app.include_router(analysis.router, prefix="/analysis")
 
 
 @app.get("/health")
