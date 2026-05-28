@@ -169,25 +169,27 @@ Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 
 ### PR 4 — Investor report end-to-end
 
+<!-- PR 4 merged — feat/investor-report — all 111 Chrome UI tests passing — May 2026 -->
+
 Reference: `Investor Report.html` + `investor-report.jsx` + `investor-sections.jsx` + `investor-sections-2.jsx`
 
 - [x] `<AssumptionFields>` — financing assumption inputs (down payment %, rate, amortization, management fee toggle) — 26 tests
-- [ ] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
-- [ ] `<Metric label value sub status>` — headline metric tile
-- [ ] `<RentalCompsBar low mid high ask>` — percentile bar + hover diamond marker
-- [ ] `<AIVerdictBlock>` — dark full-bleed card with ScoutMark watermark
-- [ ] `<RiskRow tone label detail>` — inline risk flag row
-- [ ] `<MiniMap height address pins>` — placeholder SVG map (replace with real Mapbox GL JS)
-- [ ] `<PropertyHero listing score>` — photo grid + chips + address + sticky score card
-- [ ] `<FinancingSliders financing onChange>` — live sliders, every metric recalculates instantly on drag
-- [ ] `<OSFICard osfi financing>` — OSFI stress test card
-- [ ] `<LTTTable ltt price toronto>` — Ontario LTT bracket table
-- [ ] `<EquityChart equityCurve totalCashInvested>` — 20-year line chart with hover tooltip
-- [ ] `<InvestmentMetricsSection>` — 8-tile metrics grid + annual expense breakdown
-- [ ] `<NeighbourhoodSection>` — 6 stat tiles + comparable sales + appreciation card
-- [ ] `<STRPlaceholderSection>` — Phase-2 placeholder + STR legality card
-- [ ] All 11 investor report sections rendered and functional
-- [ ] Use Vaughan dataset from `investor-calc.jsx` until scraper is live
+- [x] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
+- [x] `<Metric label value sub status>` — headline metric tile
+- [x] `<RentalCompsBar low mid high ask>` — percentile bar + hover diamond marker
+- [x] `<AIVerdictBlock>` — dark full-bleed card with ScoutMark watermark
+- [x] `<RiskRow tone label detail>` — inline risk flag row
+- [x] `<MiniMap height address pins>` — placeholder SVG map (replace with real Mapbox GL JS)
+- [x] `<PropertyHero listing score>` — photo grid + chips + address + sticky score card
+- [x] `<FinancingSliders financing onChange>` — live sliders, every metric recalculates instantly on drag
+- [x] `<OSFICard osfi financing>` — OSFI stress test card
+- [x] `<LTTTable ltt price toronto>` — Ontario LTT bracket table
+- [x] `<EquityChart equityCurve totalCashInvested>` — 20-year line chart with hover tooltip
+- [x] `<InvestmentMetricsSection>` — 8-tile metrics grid + annual expense breakdown
+- [x] `<NeighbourhoodSection>` — 6 stat tiles + comparable sales + appreciation card
+- [x] `<STRPlaceholderSection>` — Phase-2 placeholder + STR legality card
+- [x] All 11 investor report sections rendered and functional
+- [x] Use Vaughan dataset from `investor-calc.jsx` until scraper is live
 
 ### PR 5 — Tenant report
 
