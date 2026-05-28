@@ -1428,8 +1428,7 @@ exports[`RentalCompsBar > matches snapshot 1`] = `
     <span
       class="mono"
     >
-      Ask rent
-       
+      Ask rent 
       <span
         style="color: var(--ink); font-weight: 600;"
       >

@@ -334,6 +334,10 @@ describe('InvestorReport page — snapshot', () => {
   it('matches loaded-state snapshot (Vaughan)', () => {
     mockedUseInvestorReport.mockReturnValue(makeLoadedState())
     const { container } = renderInvestorReport()
+    // Blank the EquityChart SVG before snapshotting — its `d` path coordinates
+    // differ by 1 ULP between Windows/Node24 and Linux CI (floating-point math).
+    const equitySvg = container.querySelector('svg[aria-label="20-year equity build chart"]')
+    if (equitySvg) equitySvg.innerHTML = ''
     expect(container).toMatchSnapshot()
   })
 
