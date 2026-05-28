@@ -171,7 +171,7 @@ describe('LandingPage', () => {
 
   it('toggles dark mode when the theme button is clicked', async () => {
     renderLanding()
-    const toggle = screen.getByRole('button', { name: /switch to dark mode/i })
+    const toggle = screen.getByRole('button', { name: /toggle dark mode|switch to dark mode/i })
     fireEvent.click(toggle)
     await waitFor(() => {
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark')

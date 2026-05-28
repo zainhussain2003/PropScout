@@ -11,7 +11,7 @@ const FOOTER_COLS = [
     items: [
       { label: 'Investment report', href: '#' },
       { label: 'Personal buyer report', href: '#' },
-      { label: 'Tenant report', href: '#' },
+      { label: 'Tenant analysis', href: '#' },
       { label: 'Landlord report', href: '#' },
       { label: 'SunScout', href: '#' },
       { label: 'Portfolio tracker', href: '#' },

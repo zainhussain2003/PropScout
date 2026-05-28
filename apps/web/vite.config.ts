@@ -29,6 +29,8 @@ export default defineConfig({
       'src/**/*.test.tsx',
       // External test suite — Week 3-4 investor report tests
       '../../Week3-4 Front end/PR4/*.test.tsx',
+      // PR5 — Tenant report tests
+      '../../Week3-4 Front end/PR5/*.test.tsx',
     ],
   },
 })

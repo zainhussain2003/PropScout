@@ -56,7 +56,7 @@ function LandingNav({ dark, onToggleDark, onSignIn }: LandingNavProps): JSX.Elem
           <button
             className="btn btn-ghost"
             onClick={onToggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={dark ? 'Toggle light mode' : 'Toggle dark mode'}
             style={{ padding: '10px 12px' }}
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
@@ -117,7 +117,7 @@ function ReportNav({
           <button
             className="btn btn-ghost"
             onClick={onToggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={dark ? 'Toggle light mode' : 'Toggle dark mode'}
             style={{ padding: '10px 12px' }}
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
@@ -166,7 +166,7 @@ function AccountNav({
           <button
             className="btn btn-ghost"
             onClick={onToggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={dark ? 'Toggle light mode' : 'Toggle dark mode'}
             style={{ padding: '10px 12px' }}
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
