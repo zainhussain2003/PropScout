@@ -24,6 +24,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      // External test suite — Week 3-4 investor report tests
+      '../../Week3-4 Front end/PR4/*.test.tsx',
+    ],
   },
 })

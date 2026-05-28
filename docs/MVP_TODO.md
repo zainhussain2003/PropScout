@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026 — ticked items confirmed complete as of feat/calc-engine branch
+Last updated: May 2026 — ticked items confirmed complete as of PR 10 (fix/visual-qa-pr1-pr3)
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -32,12 +32,14 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [ ] Detect listing type from page structure and price format
 - [ ] Detect if URL is a US property (block with error message)
 - [ ] Handle scraper failure gracefully
+- [ ] Cloudflare bypass — deferred to FUTURE.md (blocked; Zillow.ca URL validation done in frontend only)
 
 ### Listing type detection
 
-- [ ] Parse URL to detect for-sale vs for-rent (spec Section 3)
+- [ ] Parse URL to detect for-sale vs for-rent (spec Section 3) — scraper pipeline
 - [ ] Fallback: detect from scraped price format (monthly = rental)
 - [ ] Ambiguous case: default to for-sale, show toggle
+- [x] `detectKindFromUrl()` in frontend Hero — URL pattern detection for ModeModal routing (sale/rent)
 
 ### Rental comps scraper (nightly job)
 
@@ -68,7 +70,7 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [x] Maintenance reserve by age: post-2010 (0.5%), 1980–2010 (1.0%), pre-1980 (1.5%)
 - [x] NOI calculation
 - [x] Cap rate = NOI / purchase price
-- [x] Monthly mortgage payment (standard amortisation formula)
+- [x] Monthly mortgage payment (Canadian semi-annual compounding — Interest Act)
 - [x] Annual and monthly debt service
 - [x] Annual and monthly cash flow = NOI − debt service
 - [x] Total cash invested = down payment + LTT + closing costs estimate
@@ -78,11 +80,20 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [x] Break-even rent = all monthly expenses combined
 - [x] Ontario LTT calculation (non-Toronto and Toronto — spec Section 6)
 - [x] OSFI stress test: qualifying_rate = max(contract_rate + 0.02, 0.0525)
-- [ ] Four financing scenarios (base, OSFI stress, 35% down, conservative)
+- [x] Four financing scenarios (base, OSFI stress, 35% down, conservative) — PR 4
 - [x] Deal score formula — all components (spec Section 10)
 - [x] Risk flag deductions applied to deal score
-- [x] Unit tests: 101 passing across mortgage, investment, closing_costs, deal_score, osfi
-- [x] Calibration test: 5702 Buttermill Ave scores 0/100 (hard pass — correct direction)
+- [x] Sanity checks module (`sanity.py`) — validates every metric output is within realistic bounds before returning to API
+- [x] Equity build curve (`equity_build.py`) — 20-year principal paydown + appreciation model
+- [x] Bank of Canada live rate feed (`bank_of_canada_service.py`) — 24h cached, fallback to last known rate on API failure
+- [x] Regex-based listing flag extraction (`regex_rules.py`) — deterministic patterns, Phase 1 of spec Section 19
+- [x] Extraction logic gate (`logic_gate.py`) — merges regex + AI results, applies 85%/60% confidence thresholds
+- [x] Walk Score service (`walkscore_service.py`) — Walk/Transit/Bike Score API wrapper
+- [x] Rates endpoint (`routers/rates.py`) — GET /rates returning live mortgage rates to frontend
+- [x] Unit tests: 164 passing across mortgage, investment, closing_costs, deal_score, osfi, bank_of_canada, sanity
+- [x] Calibration test: 5702 Buttermill Ave (Vaughan) scores ≤ 15 / hard_pass — correct
+- [x] Calibration test: Hamilton duplex scores ≥ 80 / strong_buy — correct
+- [x] Regression suite: 15 tests covering both calibration properties — must pass 100%
 
 ---
 
@@ -102,15 +113,15 @@ Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 - [x] `<Wordmark height>` — "Prop*Scout*" wordmark with ScoutMark glyph
 - [x] `<ScoutMark size color>` — standalone glyph (used as watermark on dark cards)
 - [x] `<Icon name size stroke>` — full line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot)
-- [x] `<Chip>` — inline pill tag
+- [x] `<Chip>` — inline pill tag (with and without accent dot variant)
 - [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → terracotta 0.15s
 - [x] `<Card>` — surface + line + shadow + radius-lg
 - [x] `<SectionHead n topic question verdict tone>` — every report section header (shared across all 4 reports)
-- [x] `<VerdictPill tone label>` — pass / caution / fail pill with dot prefix
+- [x] `<VerdictPill tone label>` — pass / caution / fail pill, class-only colour (no inline styles)
 - [x] `<Nav variant>` — landing, report, and account variants
 - [x] `<Footer>` — shared footer
-- [x] `<SignInModal open onClose>` — bottom-sheet sign-in / sign-up
-- [x] Unit test + accessibility test every shared component before moving to PR 2
+- [x] `<SignInModal open onClose>` — bottom-sheet sign-in / sign-up with complete keyboard focus trap
+- [x] Unit test + accessibility test every shared component (43 tests in shared.test.tsx + 3 focus trap tests = 46 total)
 
 ### PR 2 — Calc engine Python port
 
@@ -124,41 +135,61 @@ Reference: `COMPONENT_MANIFEST.md §10` + `services/calc-engine/calculations/`
 - [x] `compute_deal_score()` → `deal_score.py`
 - [x] `closing_costs_estimate()` → `closing_costs.py`
 - [x] `maintenance_rate()` → `rates.py` (constants) + `investment.py`
-- [x] 100% unit test coverage on all 8 functions (101 tests passing)
-- [x] Calibration test: 5702 Buttermill scores 0/100 (hard pass — scores ≤ 5, correct direction)
-- [x] Hamilton duplex calibration test: scores 84/100 (strong buy — scores ≥ 80, correct direction)
+- [x] 100% unit test coverage on all 8 functions (101 tests passing in calc engine)
+- [x] Calibration test: 5702 Buttermill scores ≤ 15 / hard_pass — correct
+- [x] Hamilton duplex calibration test: scores ≥ 80 / strong_buy — correct
 
 ### PR 3 — Landing + Mode modal
 
 Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 
-- [ ] Landing page `/` — URL paste hero, embedded sample report, pricing section, FAQ
-- [ ] URL input bar with validation (Realtor.ca and Zillow.ca regex patterns)
-- [ ] `<ModeModal open listing onSelect>` — for-sale (Investment/Personal) and for-rent (Tenant/Landlord) routing
-- [ ] Listing type auto-detection (for-sale vs for-rent from URL)
-- [ ] All hover and click interactions match the design exactly
+- [x] Landing page `/` — URL paste hero, embedded sample report, pricing section, FAQ, How it works, Reports, SunScout teaser, CTA
+- [x] URL input bar with validation (`validateUrl.ts` — realtor.ca + zillow.ca patterns, 20 test cases)
+- [x] `<ModeModal open listing onSelect>` — for-sale (Investment/Personal) and for-rent (Tenant/Landlord) routing
+- [x] Listing type auto-detection — `detectKindFromUrl()` in Hero, sale/rent from URL pattern
+- [x] Dark mode toggle — `data-theme` on `<html>`, full token-driven dark mode
+- [x] FAQ expand/collapse — individual item toggle
+- [x] Pricing toggle — monthly/yearly with correct price display
+- [x] All VerdictPill tones present on landing (pass, caution, fail) — class-only colour
+- [x] Price values in Pricing section use Geist Mono (not Instrument Serif)
+- [x] How it works section — `auto-fit` responsive grid (no horizontal overflow at any width)
+- [ ] All hover and click interactions match the design exactly (visual QA 18/19 — 1 criterion corrected)
 - [ ] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
+
+### API wiring — Fastify ↔ Calc engine ↔ Frontend (completed in PR 9)
+
+- [x] Fastify `POST /analysis` route — accepts camelCase from React, converts to snake_case, proxies to calc engine, returns camelCase response
+- [x] Bidirectional camelCase↔snake_case data layer — frontend never sees Python naming conventions
+- [x] `analysisService.ts` — frontend service layer for `POST /analysis`, throws `ApiRequestError` on failure
+- [x] `useAnalysis.ts` hook — manages analysis state, loading, and error in React
+- [x] Error handling: 503 (engine unreachable), 422 (invalid input), 500 (engine error) all return consistent `ApiError` shape
+- [x] `analysis.test.ts` — 16 Jest tests covering all conversion paths and error cases
+- [x] `analysisService.test.ts` — 10 Vitest tests covering the frontend service layer
+- [x] `useAnalysis.test.ts` — 7 Vitest tests covering hook state management
 
 ### PR 4 — Investor report end-to-end
 
+<!-- PR 4 merged — feat/investor-report — all 111 Chrome UI tests passing — May 2026 -->
+
 Reference: `Investor Report.html` + `investor-report.jsx` + `investor-sections.jsx` + `investor-sections-2.jsx`
 
-- [ ] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
-- [ ] `<Metric label value sub status>` — headline metric tile
-- [ ] `<RentalCompsBar low mid high ask>` — percentile bar + hover diamond marker
-- [ ] `<AIVerdictBlock>` — dark full-bleed card with ScoutMark watermark
-- [ ] `<RiskRow tone label detail>` — inline risk flag row
-- [ ] `<MiniMap height address pins>` — placeholder SVG map (replace with real Mapbox GL JS)
-- [ ] `<PropertyHero listing score>` — photo grid + chips + address + sticky score card
-- [ ] `<FinancingSliders financing onChange>` — live sliders, every metric recalculates instantly on drag
-- [ ] `<OSFICard osfi financing>` — OSFI stress test card
-- [ ] `<LTTTable ltt price toronto>` — Ontario LTT bracket table
-- [ ] `<EquityChart equityCurve totalCashInvested>` — 20-year line chart with hover tooltip
-- [ ] `<InvestmentMetricsSection>` — 8-tile metrics grid + annual expense breakdown
-- [ ] `<NeighbourhoodSection>` — 6 stat tiles + comparable sales + appreciation card
-- [ ] `<STRPlaceholderSection>` — Phase-2 placeholder + STR legality card
-- [ ] All 11 investor report sections rendered and functional
-- [ ] Use Vaughan dataset from `investor-calc.jsx` until scraper is live
+- [x] `<AssumptionFields>` — financing assumption inputs (down payment %, rate, amortization, management fee toggle) — 26 tests
+- [x] `<DealScore score size label showVerdict animate>` — radial gauge, stroke animation 1.4s cubic-bezier(.2,.7,.2,1)
+- [x] `<Metric label value sub status>` — headline metric tile
+- [x] `<RentalCompsBar low mid high ask>` — percentile bar + hover diamond marker
+- [x] `<AIVerdictBlock>` — dark full-bleed card with ScoutMark watermark
+- [x] `<RiskRow tone label detail>` — inline risk flag row
+- [x] `<MiniMap height address pins>` — placeholder SVG map (replace with real Mapbox GL JS)
+- [x] `<PropertyHero listing score>` — photo grid + chips + address + sticky score card
+- [x] `<FinancingSliders financing onChange>` — live sliders, every metric recalculates instantly on drag
+- [x] `<OSFICard osfi financing>` — OSFI stress test card
+- [x] `<LTTTable ltt price toronto>` — Ontario LTT bracket table
+- [x] `<EquityChart equityCurve totalCashInvested>` — 20-year line chart with hover tooltip
+- [x] `<InvestmentMetricsSection>` — 8-tile metrics grid + annual expense breakdown
+- [x] `<NeighbourhoodSection>` — 6 stat tiles + comparable sales + appreciation card
+- [x] `<STRPlaceholderSection>` — Phase-2 placeholder + STR legality card
+- [x] All 11 investor report sections rendered and functional
+- [x] Use Vaughan dataset from `investor-calc.jsx` until scraper is live
 
 ### PR 5 — Tenant report
 
@@ -230,9 +261,9 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [ ] Match Google Places results to `schools` table by name + address
 - [ ] Return nearest 3 per type (elementary, middle, high) with distance and drive time
 - [ ] Highlight schools within catchment area (TDSB polygon data — Toronto first)
-- [ ] Walk Score API integration (Walk Score + Transit Score)
+- [ ] Walk Score API integration (Walk Score + Transit Score) — service layer exists (`walkscore_service.py`), wiring pending
 - [ ] Statistics Canada — demographics by postal code (household income, population growth)
-- [ ] CMHC vacancy rate by city (public API, refresh quarterly)
+- [ ] CMHC vacancy rate by city (public API, refresh quarterly) — service stub exists (`cmhc_service.py`)
 - [ ] Neighbourhood intelligence module assembled from above sources
 
 ---
@@ -241,10 +272,10 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 
 All tasks reference spec Section 19.
 
-- [ ] Deterministic regex rules — all patterns for all flag types
-- [ ] Claude Haiku extraction — API call setup, prompt template (TEMPLATE — iterate)
+- [x] Deterministic regex rules (`regex_rules.py`) — patterns for 7 flag types, Phase 1
+- [x] Logic gate (`logic_gate.py`) — merges regex + AI results, 85%/60% confidence thresholds
+- [ ] Claude Haiku extraction — full implementation (`haiku_extraction.py` is a stub)
 - [ ] JSON parse validation with fallback (all-false on parse error, log failure)
-- [ ] Logic gate — merge regex + AI results with confidence thresholds
 - [ ] Red flag threshold: 85%+ → red, deducts score
 - [ ] Amber flag threshold: 60–84% → amber, no score deduction
 - [ ] Below 60% → not shown
@@ -254,14 +285,14 @@ All tasks reference spec Section 19.
 - [ ] Override state saved to analysis record
 - [ ] All 7 risk flag types rendering correctly in report UI
 - [ ] **Golden dataset — 50 real Ontario listing descriptions collected and labelled**
-- [ ] Pytest regression test suite written for golden dataset
-- [ ] Accuracy at or above 95% before proceeding to Week 6
+- [x] Pytest regression test suite written for golden dataset (framework in place, 1 test passing)
+- [ ] Accuracy at or above 95% before proceeding to Week 6 (pending Haiku implementation)
 
 ### SunScout
 
-- [ ] pvlib installed in Python calc engine
-- [ ] `window_sun_hours_by_month()` function (spec Section 17 — TEMPLATE)
-- [ ] `annual_light_score()` function (spec Section 17 — TEMPLATE)
+- [x] pvlib installed in Python calc engine
+- [ ] `window_sun_hours_by_month()` function fully implemented (`sun_path.py` is a stub)
+- [ ] `annual_light_score()` function
 - [ ] Window direction input UI (compass direction dropdown per window)
 - [ ] Monthly sun hours grid output (Dec / Mar / Jun / Sep columns)
 - [ ] Sun arc SVG visualization (summer vs winter day)

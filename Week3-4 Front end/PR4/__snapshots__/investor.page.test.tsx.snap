@@ -1,0 +1,5622 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
+<div>
+  <div
+    style="min-height: 100vh; background: var(--bg);"
+  >
+    <header
+      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+    >
+      <div
+        class="container row"
+        style="padding: 14px 0px; justify-content: space-between;"
+      >
+        <div
+          class="row gap-16"
+        >
+          <div
+            class="row gap-12"
+            style="height: 22px; display: inline-flex; align-items: center; gap: 10px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="21"
+              viewBox="0 0 32 32"
+              width="21"
+            >
+              <circle
+                cx="16"
+                cy="16"
+                opacity="0.35"
+                r="14.5"
+                stroke="currentColor"
+                stroke-width="1"
+              />
+              <path
+                d="M5 21 L16 8 L27 21"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+              />
+              <circle
+                cx="16"
+                cy="21"
+                fill="currentColor"
+                r="1.8"
+              />
+              <path
+                d="M16 4 L16 7"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.6"
+              />
+            </svg>
+            <span
+              style="font-family: "Instrument Serif", serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+            >
+              Prop
+              <span
+                style="font-style: italic;"
+              >
+                Scout
+              </span>
+            </span>
+          </div>
+          <div
+            class="row gap-8"
+            style="color: var(--muted); font-size: 13px;"
+          >
+            <span
+              style="opacity: 0.55;"
+            >
+              /
+            </span>
+            <span>
+              Investor report
+            </span>
+            <span
+              style="opacity: 0.55;"
+            >
+              /
+            </span>
+            <span
+              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px;"
+            >
+              unit-5702-5-buttermill-avenue
+            </span>
+          </div>
+        </div>
+        <div
+          class="row gap-12"
+        >
+          <button
+            aria-label="Switch to dark mode"
+            class="btn btn-ghost"
+            style="padding: 10px 12px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="15"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="15"
+            >
+              <path
+                d="M21 13A9 9 0 0 1 11 3a8 8 0 1 0 10 10z"
+              />
+            </svg>
+          </button>
+          <button
+            class="btn btn-ghost"
+            style="padding: 10px 14px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"
+              />
+              <path
+                d="M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1"
+              />
+            </svg>
+             Share link
+          </button>
+          <button
+            class="btn btn-primary"
+          >
+            Save report 
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M5 12h14M13 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div
+        class="container"
+        style="padding-top: 48px; padding-bottom: 48px;"
+      >
+        <div
+          style="min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center; padding: 0px 24px;"
+        >
+          <div
+            style="width: 56px; height: 56px; border-radius: 999px; background: color-mix(in oklab, var(--fail) 12%, transparent); display: flex; align-items: center; justify-content: center;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M4 21V4M4 4h12l-2 4 2 4H4"
+              />
+            </svg>
+          </div>
+          <div
+            class="col"
+            style="gap: 8px; max-width: 420px;"
+          >
+            <h3
+              class="serif"
+              style="font-size: 24px;"
+            >
+              Analysis failed
+            </h3>
+            <p
+              style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
+            >
+              Analysis failed — please try again.
+            </p>
+          </div>
+          <button
+            class="btn btn-primary"
+          >
+            Try again 
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M5 12h14M13 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </main>
+    <footer
+      style="background: var(--ink); color: var(--bg); padding: 80px 0px 36px; margin-top: 80px;"
+    >
+      <div
+        class="container col gap-32"
+      >
+        <div
+          style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
+        >
+          <div
+            class="col gap-16"
+          >
+            <div
+              style="color: var(--bg);"
+            >
+              <div
+                class="row gap-12"
+                style="height: 26px; display: inline-flex; align-items: center; gap: 10px;"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="25"
+                  viewBox="0 0 32 32"
+                  width="25"
+                >
+                  <circle
+                    cx="16"
+                    cy="16"
+                    opacity="0.35"
+                    r="14.5"
+                    stroke="currentColor"
+                    stroke-width="1"
+                  />
+                  <path
+                    d="M5 21 L16 8 L27 21"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                  />
+                  <circle
+                    cx="16"
+                    cy="21"
+                    fill="currentColor"
+                    r="1.8"
+                  />
+                  <path
+                    d="M16 4 L16 7"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span
+                  style="font-family: "Instrument Serif", serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+                >
+                  Prop
+                  <span
+                    style="font-style: italic;"
+                  >
+                    Scout
+                  </span>
+                </span>
+              </div>
+            </div>
+            <p
+              style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 280px; line-height: 1.55;"
+            >
+              Underwriting for Canadian real estate. Built in Toronto, opinionated about the numbers.
+            </p>
+            <div
+              class="row gap-8"
+            >
+              <span
+                class="chip"
+              >
+                Ontario · Live
+              </span>
+              <span
+                class="chip"
+              >
+                BC · Q3 2026
+              </span>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Product
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Investment report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Personal buyer report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Tenant report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Landlord report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                SunScout
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Portfolio tracker
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Company
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                About
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Methodology
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Data sources
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Press
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Careers
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Resources
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Help centre
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Underwriting glossary
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Ontario LTT calculator
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                OSFI stress test
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                API (Team)
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Legal
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="/privacy"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Privacy
+              </a>
+              <a
+                href="/terms"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Terms
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Disclaimer
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Brokerage info
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          class="divider"
+          style="background: rgba(255, 255, 255, 0.12);"
+        />
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: rgba(255, 255, 255, 0.55); flex-wrap: wrap; gap: 12px;"
+        >
+          <span>
+            © 2026 PropScout Analytics Inc. · propscout.ca
+          </span>
+          <span
+            class="mono"
+          >
+            v0.9 · MVP preview
+          </span>
+          <span>
+            Not financial or legal advice. Always do your own due diligence.
+          </span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
+`;
+
+exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaughan) 1`] = `
+<div>
+  <div
+    style="min-height: 100vh; background: var(--bg);"
+  >
+    <header
+      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+    >
+      <div
+        class="container row"
+        style="padding: 14px 0px; justify-content: space-between;"
+      >
+        <div
+          class="row gap-16"
+        >
+          <div
+            class="row gap-12"
+            style="height: 22px; display: inline-flex; align-items: center; gap: 10px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="21"
+              viewBox="0 0 32 32"
+              width="21"
+            >
+              <circle
+                cx="16"
+                cy="16"
+                opacity="0.35"
+                r="14.5"
+                stroke="currentColor"
+                stroke-width="1"
+              />
+              <path
+                d="M5 21 L16 8 L27 21"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+              />
+              <circle
+                cx="16"
+                cy="21"
+                fill="currentColor"
+                r="1.8"
+              />
+              <path
+                d="M16 4 L16 7"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.6"
+              />
+            </svg>
+            <span
+              style="font-family: "Instrument Serif", serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+            >
+              Prop
+              <span
+                style="font-style: italic;"
+              >
+                Scout
+              </span>
+            </span>
+          </div>
+          <div
+            class="row gap-8"
+            style="color: var(--muted); font-size: 13px;"
+          >
+            <span
+              style="opacity: 0.55;"
+            >
+              /
+            </span>
+            <span>
+              Investor report
+            </span>
+            <span
+              style="opacity: 0.55;"
+            >
+              /
+            </span>
+            <span
+              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px;"
+            >
+              unit-5702-5-buttermill-avenue
+            </span>
+          </div>
+        </div>
+        <div
+          class="row gap-12"
+        >
+          <button
+            aria-label="Switch to dark mode"
+            class="btn btn-ghost"
+            style="padding: 10px 12px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="15"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="15"
+            >
+              <path
+                d="M21 13A9 9 0 0 1 11 3a8 8 0 1 0 10 10z"
+              />
+            </svg>
+          </button>
+          <button
+            class="btn btn-ghost"
+            style="padding: 10px 14px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"
+              />
+              <path
+                d="M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1"
+              />
+            </svg>
+             Share link
+          </button>
+          <button
+            class="btn btn-primary"
+          >
+            Save report 
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M5 12h14M13 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section
+        class="container"
+        style="padding-top: 56px; padding-bottom: 48px;"
+      >
+        <div
+          class="row gap-12"
+          style="margin-bottom: 28px; color: var(--muted); font-size: 13px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px;"
+        >
+          <button
+            aria-label="Analyze another listing"
+            style="display: inline-flex; align-items: center; gap: 6px; background: none; border: medium; cursor: pointer; color: inherit; font-size: inherit; font-family: inherit; padding: 0px; transition: color 0.15s ease;"
+          >
+            <span
+              aria-hidden="true"
+              style="transform: rotate(180deg); display: inline-flex;"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="13"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+                viewBox="0 0 24 24"
+                width="13"
+              >
+                <path
+                  d="M5 12h14M13 5l7 7-7 7"
+                />
+              </svg>
+            </span>
+            Analyze another listing
+          </button>
+          <span
+            style="opacity: 0.4;"
+          >
+            ·
+          </span>
+          <span
+            class="mono"
+            style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;"
+          >
+            Report · Investor view
+          </span>
+          <span
+            style="opacity: 0.4;"
+          >
+            ·
+          </span>
+          <span
+            style="display: inline-flex; align-items: center; gap: 6px;"
+          >
+            <span
+              aria-hidden="true"
+              class="live-dot"
+              style="width: 6px; height: 6px; border-radius: 999px; background: var(--pass);"
+            />
+            Live recalc · sliders below
+          </span>
+        </div>
+        <div
+          style="display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(28px, 3.5vw, 52px); align-items: flex-start;"
+        >
+          <div
+            class="col"
+            style="gap: 28px;"
+          >
+            <div
+              style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; height: 360px;"
+            >
+              <div
+                style="border-radius: 18px; height: 100%; background: var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;"
+                >
+                  exterior · 
+                  condo apartment
+                </span>
+              </div>
+              <div
+                class="col"
+                style="gap: 8px;"
+              >
+                <div
+                  style="border-radius: 14px; flex: 1 1 0%; background: var(--line); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;"
+                >
+                  <span
+                    class="mono"
+                    style="font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;"
+                  >
+                    living
+                  </span>
+                </div>
+                <div
+                  style="border-radius: 14px; flex: 1 1 0%; background: var(--line); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;"
+                >
+                  <span
+                    class="mono"
+                    style="font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;"
+                  >
+                    kitchen
+                  </span>
+                </div>
+                <div
+                  style="border-radius: 14px; flex: 1 1 0%; background: var(--line); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;"
+                >
+                  <span
+                    class="mono"
+                    style="font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;"
+                  >
+                    floorplan
+                  </span>
+                  <div
+                    class="mono"
+                    style="position: absolute; right: 10px; bottom: 10px; font-size: 10px; letter-spacing: 0.1em; padding: 3px 8px; background: color-mix(in oklab, var(--surface) 90%, transparent); border-radius: 999px; color: var(--ink); backdrop-filter: blur(4px);"
+                  >
+                    + more
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="col"
+              style="gap: 18px;"
+            >
+              <div
+                style="display: flex; gap: 8px; flex-wrap: wrap;"
+              >
+                <span
+                  class="chip"
+                >
+                  Investment · For sale
+                </span>
+                <span
+                  class="chip"
+                >
+                  Vaughan · L4K
+                </span>
+                <span
+                  class="chip"
+                >
+                  Condo · 950 sqft
+                </span>
+                <span
+                  class="chip"
+                >
+                  Built 2020 · No rent control
+                </span>
+              </div>
+              <h1
+                class="serif"
+                style="text-wrap: balance; letter-spacing: -0.035em; margin-top: 4px;"
+              >
+                Unit 5702 · 5 Buttermill Avenue
+              </h1>
+              <div
+                style="font-size: 16px; color: var(--muted);"
+              >
+                Vaughan · L4K · VMC Corridor
+              </div>
+              <div
+                style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; font-size: 14px; color: var(--ink-2); align-items: center;"
+              >
+                <span
+                  style="display: inline-flex; align-items: center; gap: 8px;"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="14"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                    width="14"
+                  >
+                    <path
+                      d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"
+                    />
+                  </svg>
+                  3
+                   bed · 
+                  2
+                   bath
+                </span>
+                <span
+                  style="display: inline-flex; align-items: center; gap: 8px;"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="10"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                    width="10"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      fill="currentColor"
+                      r="3"
+                    />
+                  </svg>
+                  950
+                   sqft
+                </span>
+                <span
+                  style="display: inline-flex; align-items: center; gap: 8px;"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="14"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                    width="14"
+                  >
+                    <circle
+                      cx="8"
+                      cy="15"
+                      r="4"
+                    />
+                    <path
+                      d="M11 13l9-9M16 8l3 3"
+                    />
+                  </svg>
+                  1
+                   parking
+                </span>
+                <span
+                  style="display: inline-flex; align-items: center; gap: 8px;"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="14"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                    viewBox="0 0 24 24"
+                    width="14"
+                  >
+                    <path
+                      d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"
+                    />
+                  </svg>
+                  Built 
+                  2020
+                </span>
+              </div>
+            </div>
+            <div
+              aria-label="Map showing rental comps near Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor"
+              role="img"
+              style="border-radius: 14px; overflow: hidden; background: var(--bg-elev); border: 1px solid var(--line); position: relative;"
+            >
+              <svg
+                preserveAspectRatio="xMidYMid slice"
+                style="width: 100%; height: 180px; display: block;"
+                viewBox="0 0 720 180"
+              >
+                <rect
+                  fill="color-mix(in oklab, var(--bg-elev) 100%, transparent)"
+                  height="180"
+                  width="720"
+                />
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="0"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="0"
+                    y2="0"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="90"
+                    x2="90"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="22.5"
+                    y2="22.5"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="180"
+                    x2="180"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="45"
+                    y2="45"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="270"
+                    x2="270"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="67.5"
+                    y2="67.5"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="360"
+                    x2="360"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="90"
+                    y2="90"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="450"
+                    x2="450"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="112.5"
+                    y2="112.5"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="540"
+                    x2="540"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="135"
+                    y2="135"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="630"
+                    x2="630"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="157.5"
+                    y2="157.5"
+                  />
+                </g>
+                <g>
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="720"
+                    x2="720"
+                    y1="0"
+                    y2="180"
+                  />
+                  <line
+                    stroke="var(--line)"
+                    stroke-width="0.75"
+                    x1="0"
+                    x2="720"
+                    y1="180"
+                    y2="180"
+                  />
+                </g>
+                <line
+                  opacity="0.8"
+                  stroke="var(--surface)"
+                  stroke-width="6"
+                  x1="0"
+                  x2="720"
+                  y1="81"
+                  y2="90"
+                />
+                <line
+                  opacity="0.6"
+                  stroke="var(--surface)"
+                  stroke-width="4"
+                  x1="288"
+                  x2="324"
+                  y1="0"
+                  y2="180"
+                />
+                <line
+                  opacity="0.5"
+                  stroke="var(--surface)"
+                  stroke-width="3"
+                  x1="0"
+                  x2="720"
+                  y1="129.6"
+                  y2="122.4"
+                />
+                <g>
+                  <circle
+                    cx="158.4"
+                    cy="54"
+                    fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+                    r="18"
+                  />
+                  <circle
+                    cx="158.4"
+                    cy="54"
+                    fill="var(--accent)"
+                    r="5"
+                  />
+                </g>
+                <g>
+                  <circle
+                    cx="503.99999999999994"
+                    cy="39.6"
+                    fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+                    r="18"
+                  />
+                  <circle
+                    cx="503.99999999999994"
+                    cy="39.6"
+                    fill="var(--accent)"
+                    r="5"
+                  />
+                </g>
+                <g>
+                  <circle
+                    cx="259.2"
+                    cy="115.2"
+                    fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+                    r="18"
+                  />
+                  <circle
+                    cx="259.2"
+                    cy="115.2"
+                    fill="var(--accent)"
+                    r="5"
+                  />
+                </g>
+                <g>
+                  <circle
+                    cx="547.2"
+                    cy="122.4"
+                    fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+                    r="18"
+                  />
+                  <circle
+                    cx="547.2"
+                    cy="122.4"
+                    fill="var(--accent)"
+                    r="5"
+                  />
+                </g>
+                <g>
+                  <circle
+                    cx="417.59999999999997"
+                    cy="140.4"
+                    fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+                    r="18"
+                  />
+                  <circle
+                    cx="417.59999999999997"
+                    cy="140.4"
+                    fill="var(--accent)"
+                    r="5"
+                  />
+                </g>
+                <g>
+                  <circle
+                    cx="360"
+                    cy="90"
+                    fill="var(--ink)"
+                    r="10"
+                  />
+                  <circle
+                    cx="360"
+                    cy="90"
+                    fill="var(--bg)"
+                    r="5"
+                  />
+                </g>
+              </svg>
+              <div
+                style="position: absolute; bottom: 12px; left: 12px; background: color-mix(in oklab, var(--surface) 92%, transparent); backdrop-filter: blur(8px); border-radius: 8px; padding: 6px 12px; font-size: 11px; font-family: "Geist Mono", monospace; color: var(--ink); border: 1px solid var(--line);"
+              >
+                Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor
+              </div>
+              <div
+                style="position: absolute; top: 10px; right: 10px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(6px); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);"
+              >
+                Map placeholder · Mapbox GL JS
+              </div>
+            </div>
+          </div>
+          <div
+            class="card col"
+            style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
+          >
+            <div
+              class="col"
+              style="align-items: center; gap: 8px;"
+            >
+              <div
+                aria-label="Deal score: 8 out of 95"
+                style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
+              >
+                <div
+                  style="position: relative; width: 180px; height: 180px;"
+                >
+                  <svg
+                    aria-hidden="true"
+                    height="180"
+                    role="img"
+                    viewBox="0 0 180 180"
+                    width="180"
+                  >
+                    <circle
+                      cx="90"
+                      cy="90"
+                      fill="none"
+                      r="82.5"
+                      stroke="var(--line)"
+                      stroke-width="15"
+                    />
+                    <circle
+                      cx="90"
+                      cy="90"
+                      fill="none"
+                      r="82.5"
+                      stroke="var(--fail)"
+                      stroke-dasharray="518.3627878423158"
+                      stroke-dashoffset="518.3627878423158"
+                      stroke-linecap="round"
+                      stroke-width="15"
+                      style="transition: stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1);"
+                      transform="rotate(-90 90 90)"
+                    />
+                  </svg>
+                  <div
+                    style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+                  >
+                    <span
+                      class="serif tabular"
+                      style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--fail);"
+                    >
+                      8
+                    </span>
+                    <span
+                      class="mono"
+                      style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+                    >
+                      Deal score / 95
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="col"
+              style="text-align: center; align-items: center; gap: 8px;"
+            >
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fail);"
+              >
+                Hard pass
+              </div>
+              <div
+                class="serif"
+                style="font-size: 20px; line-height: 1.2; text-wrap: balance;"
+              >
+                Fails on multiple fundamentals.
+              </div>
+            </div>
+            <div
+              class="divider"
+              style="border-top: 1px solid var(--line);"
+            />
+            <div
+              class="col"
+              style="gap: 10px;"
+            >
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              >
+                Score breakdown
+              </div>
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 12px;"
+                >
+                  <span
+                    style="color: var(--ink-2);"
+                  >
+                    Cap rate
+                  </span>
+                  <span
+                    class="mono tabular"
+                    style="color: var(--muted);"
+                  >
+                    0
+                     / 
+                    25
+                  </span>
+                </div>
+                <div
+                  style="height: 3px; border-radius: 999px; background: var(--line);"
+                >
+                  <div
+                    style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+                  />
+                </div>
+              </div>
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 12px;"
+                >
+                  <span
+                    style="color: var(--ink-2);"
+                  >
+                    Cash flow
+                  </span>
+                  <span
+                    class="mono tabular"
+                    style="color: var(--muted);"
+                  >
+                    0
+                     / 
+                    25
+                  </span>
+                </div>
+                <div
+                  style="height: 3px; border-radius: 999px; background: var(--line);"
+                >
+                  <div
+                    style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+                  />
+                </div>
+              </div>
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 12px;"
+                >
+                  <span
+                    style="color: var(--ink-2);"
+                  >
+                    CoC return
+                  </span>
+                  <span
+                    class="mono tabular"
+                    style="color: var(--muted);"
+                  >
+                    0
+                     / 
+                    20
+                  </span>
+                </div>
+                <div
+                  style="height: 3px; border-radius: 999px; background: var(--line);"
+                >
+                  <div
+                    style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+                  />
+                </div>
+              </div>
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 12px;"
+                >
+                  <span
+                    style="color: var(--ink-2);"
+                  >
+                    DSCR
+                  </span>
+                  <span
+                    class="mono tabular"
+                    style="color: var(--muted);"
+                  >
+                    0
+                     / 
+                    15
+                  </span>
+                </div>
+                <div
+                  style="height: 3px; border-radius: 999px; background: var(--line);"
+                >
+                  <div
+                    style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+                  />
+                </div>
+              </div>
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 12px;"
+                >
+                  <span
+                    style="color: var(--ink-2);"
+                  >
+                    Demand
+                  </span>
+                  <span
+                    class="mono tabular"
+                    style="color: var(--muted);"
+                  >
+                    3
+                     / 
+                    10
+                  </span>
+                </div>
+                <div
+                  style="height: 3px; border-radius: 999px; background: var(--line);"
+                >
+                  <div
+                    style="width: 30%; height: 100%; border-radius: 999px; background: var(--caution);"
+                  />
+                </div>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;"
+              >
+                <span
+                  style="color: var(--ink-2);"
+                >
+                  Risk deductions
+                </span>
+                <span
+                  class="mono tabular"
+                  style="color: var(--fail);"
+                >
+                  −
+                  6
+                </span>
+              </div>
+            </div>
+            <div
+              class="divider"
+              style="border-top: 1px solid var(--line);"
+            />
+            <div
+              class="col"
+              style="gap: 12px;"
+            >
+              <div
+                style="display: flex; justify-content: space-between; align-items: baseline;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Asking
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 32px; line-height: 1;"
+                >
+                  $729,900
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+              >
+                <span>
+                  Cash flow
+                </span>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 600; color: var(--fail);"
+                >
+                  −$2,431/mo
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+              >
+                <span>
+                  Cap rate
+                </span>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 600; color: var(--ink);"
+                >
+                  1.47%
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+              >
+                <span>
+                  DSCR
+                </span>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 600; color: var(--ink);"
+                >
+                  0.44×
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div
+        class="container"
+        style="margin-bottom: 32px;"
+      >
+        <div
+          style="background: var(--ink); color: var(--bg); border-radius: 24px; position: relative; overflow: hidden;"
+        >
+          <div
+            aria-hidden="true"
+            style="position: absolute; right: -80px; top: -40px; opacity: 0.06; color: var(--accent); pointer-events: none;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="520"
+              viewBox="0 0 32 32"
+              width="520"
+            >
+              <circle
+                cx="16"
+                cy="16"
+                opacity="0.35"
+                r="14.5"
+                stroke="var(--accent)"
+                stroke-width="1"
+              />
+              <path
+                d="M5 21 L16 8 L27 21"
+                stroke="var(--accent)"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+              />
+              <circle
+                cx="16"
+                cy="21"
+                fill="var(--accent)"
+                r="1.8"
+              />
+              <path
+                d="M16 4 L16 7"
+                stroke="var(--accent)"
+                stroke-linecap="round"
+                stroke-width="1.6"
+              />
+            </svg>
+          </div>
+          <div
+            class="row gap-8"
+            style="color: rgba(255, 255, 255, 0.55); margin-bottom: 20px; position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
+          >
+            <span
+              aria-hidden="true"
+              class="live-dot"
+              style="width: 7px; height: 7px; border-radius: 999px; background: var(--accent); flex-shrink: 0;"
+            />
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;"
+            >
+              Scout AI · investor verdict
+            </span>
+            <span
+              style="flex: 1 1 0%;"
+            />
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.4);"
+            >
+              claude · sonnet 4.6
+            </span>
+          </div>
+          <div
+            class="serif"
+            style="line-height: 1.1; letter-spacing: -0.025em; color: var(--bg); text-wrap: balance; max-width: 920px; position: relative; z-index: 1;"
+          >
+            At 
+            $729,900
+            , this property 
+            <em>
+              fails on the fundamentals
+            </em>
+             — deeply negative cash flow and a DSCR far below investment grade.
+          </div>
+          <div
+            class="serif"
+            style="line-height: 1.5; color: rgba(255, 255, 255, 0.78); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
+          >
+            The cap rate of 
+            1.47%
+             at the 
+            $729,900
+             asking price sits
+             
+            well below
+             the standard 5% investment threshold for Ontario condos. Monthly cash flow of 
+            −
+            $2,431
+             
+            requires top-up from your pocket
+             at current market rents of 
+            $2,900
+            /mo. Adjust the financing sliders below to model different down payment and rate scenarios.
+          </div>
+        </div>
+      </div>
+      <section
+        class="container tr-section"
+        data-section="01"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                01
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Investment metrics
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              Does the deal 
+              <em>
+                pencil
+              </em>
+              ?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill fail"
+          >
+            4 below threshold
+          </span>
+        </div>
+        <div
+          style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;"
+        >
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Cap rate
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--fail);"
+            >
+              1.47%
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              Below 3% threshold
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Monthly cash flow
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--fail);"
+            >
+              −$2,431
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              per month
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Cash-on-cash
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--fail);"
+            >
+              -4.20%
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              On $160,053 invested
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              DSCR
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--fail);"
+            >
+              0.44×
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              Will not qualify
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Monthly payment
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--ink);"
+            >
+              $3,327
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              mortgage P+I
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              NOI
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--ink);"
+            >
+              $10,730
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              annual
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              GRM
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--ink);"
+            >
+              21.0
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              Gross Rent Multiplier
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Break-even rent
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--fail);"
+            >
+              $4,585
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              to cover all costs
+            </div>
+          </div>
+          <div
+            class="col"
+            style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Gross yield
+            </div>
+            <div
+              class="mono tabular"
+              style="font-size: 30px; line-height: 1; color: var(--ink);"
+            >
+              4.77%
+            </div>
+            <div
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              before expenses
+            </div>
+          </div>
+        </div>
+        <div
+          class="card"
+          style="margin-top: 22px; padding: 28px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; margin-bottom: 18px; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+          >
+            <div
+              class="col"
+              style="gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                Operating expenses · annual
+              </span>
+              <h3
+                class="serif"
+                style="font-size: 22px;"
+              >
+                Where the money goes.
+              </h3>
+            </div>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1; color: var(--accent);"
+            >
+              $20,402
+              <span
+                style="font-size: 13px; color: var(--muted);"
+              >
+                /yr
+              </span>
+            </span>
+          </div>
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 0px;"
+          >
+            <div
+              style="border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 24px 12px 0px; border-left: medium;"
+            >
+              <div
+                class="col"
+                style="gap: 2px;"
+              >
+                <span
+                  style="font-size: 14px; color: var(--ink);"
+                >
+                  Property taxes
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  as listed
+                </span>
+              </div>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                $3,326
+              </span>
+            </div>
+            <div
+              style="border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0px 12px 24px; border-left: 1px solid var(--line);"
+            >
+              <div
+                class="col"
+                style="gap: 2px;"
+              >
+                <span
+                  style="font-size: 14px; color: var(--ink);"
+                >
+                  Insurance (0.35%)
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  of value
+                </span>
+              </div>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                $2,555
+              </span>
+            </div>
+            <div
+              style="border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 24px 12px 0px; border-left: medium;"
+            >
+              <div
+                class="col"
+                style="gap: 2px;"
+              >
+                <span
+                  style="font-size: 14px; color: var(--ink);"
+                >
+                  Maintenance reserve
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  0.50% of value
+                </span>
+              </div>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                $3,650
+              </span>
+            </div>
+            <div
+              style="border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0px 12px 24px; border-left: 1px solid var(--line);"
+            >
+              <div
+                class="col"
+                style="gap: 2px;"
+              >
+                <span
+                  style="font-size: 14px; color: var(--ink);"
+                >
+                  Vacancy allowance (5%)
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  of gross rent
+                </span>
+              </div>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                $1,740
+              </span>
+            </div>
+            <div
+              style="border-bottom: medium; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 24px 12px 0px; border-left: medium;"
+            >
+              <div
+                class="col"
+                style="gap: 2px;"
+              >
+                <span
+                  style="font-size: 14px; color: var(--ink);"
+                >
+                  Condo fee
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  $761/mo
+                </span>
+              </div>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                $9,132
+              </span>
+            </div>
+            <div
+              style="border-bottom: medium; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0px 12px 24px; border-left: 1px solid var(--line);"
+            >
+              <div
+                class="col"
+                style="gap: 2px;"
+              >
+                <span
+                  style="font-size: 14px; color: var(--ink);"
+                >
+                  Property management
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  not included
+                </span>
+              </div>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--muted);"
+              >
+                —
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="02"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                02
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Financing scenarios
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              How does leverage change the 
+              <em>
+                return
+              </em>
+              ?
+            </h2>
+          </div>
+        </div>
+        <div
+          class="card"
+          style="padding: 28px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; align-items: flex-end;"
+          >
+            <div
+              class="col"
+              style="gap: 6px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                Financing assumptions
+              </span>
+              <h3
+                class="serif"
+                style="font-size: 24px;"
+              >
+                Adjust live — every metric updates.
+              </h3>
+            </div>
+            <div
+              style="display: flex; gap: 8px;"
+            >
+              <button
+                class="btn btn-ghost"
+                style="padding: 7px 12px; font-size: 11px;"
+              >
+                Base
+              </button>
+              <button
+                class="btn btn-ghost"
+                style="padding: 7px 12px; font-size: 11px;"
+              >
+                OSFI
+              </button>
+              <button
+                class="btn btn-ghost"
+                style="padding: 7px 12px; font-size: 11px;"
+              >
+                35% down
+              </button>
+              <button
+                class="btn btn-ghost"
+                style="padding: 7px 12px; font-size: 11px;"
+              >
+                Conservative
+              </button>
+            </div>
+          </div>
+          <div
+            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;"
+          >
+            <div
+              class="col"
+              style="gap: 8px;"
+            >
+              <div
+                style="display: flex; justify-content: space-between; align-items: baseline;"
+              >
+                <label
+                  class="mono"
+                  for="slider-down-payment"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Down payment
+                </label>
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+                >
+                  of price
+                </span>
+              </div>
+              <div
+                style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;"
+              >
+                <span
+                  class="serif tabular"
+                  style="font-size: 28px; line-height: 1; letter-spacing: -0.02em;"
+                >
+                  20%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  $145,980
+                </span>
+              </div>
+              <input
+                aria-label="Down payment"
+                class="scout-slider"
+                id="slider-down-payment"
+                max="50"
+                min="5"
+                step="5"
+                style="width: 100%;"
+                type="range"
+                value="20"
+              />
+              <div
+                style="display: flex; justify-content: space-between; margin-top: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  5%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  20%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  35%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  50%
+                </span>
+              </div>
+            </div>
+            <div
+              class="col"
+              style="gap: 8px;"
+            >
+              <div
+                style="display: flex; justify-content: space-between; align-items: baseline;"
+              >
+                <label
+                  class="mono"
+                  for="slider-mortgage-rate"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Mortgage rate
+                </label>
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+                >
+                  annual
+                </span>
+              </div>
+              <div
+                style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;"
+              >
+                <span
+                  class="serif tabular"
+                  style="font-size: 28px; line-height: 1; letter-spacing: -0.02em;"
+                >
+                  4.79%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  vs Base +0.00%
+                </span>
+              </div>
+              <input
+                aria-label="Mortgage rate"
+                class="scout-slider"
+                id="slider-mortgage-rate"
+                max="10"
+                min="2"
+                step="0.25"
+                style="width: 100%;"
+                type="range"
+                value="4.79"
+              />
+              <div
+                style="display: flex; justify-content: space-between; margin-top: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  2%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  4.79%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  6.79%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  10%
+                </span>
+              </div>
+            </div>
+            <div
+              class="col"
+              style="gap: 8px;"
+            >
+              <div
+                style="display: flex; justify-content: space-between; align-items: baseline;"
+              >
+                <label
+                  class="mono"
+                  for="slider-amortization"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Amortization
+                </label>
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+                >
+                  years
+                </span>
+              </div>
+              <div
+                style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;"
+              >
+                <span
+                  class="serif tabular"
+                  style="font-size: 28px; line-height: 1; letter-spacing: -0.02em;"
+                >
+                  25 yrs
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  Default
+                </span>
+              </div>
+              <input
+                aria-label="Amortization"
+                class="scout-slider"
+                id="slider-amortization"
+                max="30"
+                min="10"
+                step="5"
+                style="width: 100%;"
+                type="range"
+                value="25"
+              />
+              <div
+                style="display: flex; justify-content: space-between; margin-top: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  10
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  15
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  20
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  25
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  30
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            style="height: 1px; background: var(--line); margin: 24px 0px 18px;"
+          />
+          <div
+            style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; align-items: center;"
+          >
+            <div
+              style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;"
+            >
+              <label
+                style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;"
+              >
+                <button
+                  aria-checked="false"
+                  role="switch"
+                  style="width: 36px; height: 20px; border-radius: 999px; background: var(--line-strong); border: medium; cursor: pointer; position: relative; transition: background-color .15s ease; flex-shrink: 0;"
+                  type="button"
+                >
+                  <span
+                    style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--surface); transition: left .18s ease; box-shadow: 0 1px 3px rgba(0,0,0,.2);"
+                  />
+                </button>
+                <span
+                  style="color: var(--ink);"
+                >
+                  Include 8% management fee
+                </span>
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px;"
+              >
+                <button
+                  aria-checked="false"
+                  role="switch"
+                  style="width: 36px; height: 20px; border-radius: 999px; background: var(--line-strong); border: medium; cursor: pointer; position: relative; transition: background-color .15s ease; flex-shrink: 0;"
+                  type="button"
+                >
+                  <span
+                    style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--surface); transition: left .18s ease; box-shadow: 0 1px 3px rgba(0,0,0,.2);"
+                  />
+                </button>
+                <span
+                  style="color: var(--ink);"
+                >
+                  Toronto LTT stacking
+                </span>
+                <span
+                  style="color: var(--muted); font-size: 11px;"
+                >
+                  · 
+                  Doubles provincial LTT for City of Toronto
+                </span>
+              </label>
+            </div>
+            <div
+              style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted);"
+            >
+              <span>
+                Appreciation:
+              </span>
+              <select
+                aria-label="Annual appreciation rate"
+                style="background: var(--bg-elev); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-family: inherit; color: var(--ink); outline: none; cursor: pointer;"
+              >
+                <option
+                  value="0"
+                >
+                  0% / yr (flat)
+                </option>
+                <option
+                  value="0.02"
+                >
+                  2% / yr (conservative)
+                </option>
+                <option
+                  value="0.03"
+                >
+                  3% / yr (default)
+                </option>
+                <option
+                  value="0.05"
+                >
+                  5% / yr (optimistic)
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="03"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                03
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Rental comps
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              What will tenants 
+              <em>
+                actually
+              </em>
+               pay?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill pass"
+          >
+            Within comp range
+          </span>
+        </div>
+        <div
+          class="card"
+          style="padding: 28px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+          >
+            <div
+              class="col"
+              style="gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                Market rent range · 
+                8
+                 comparable rentals
+              </span>
+            </div>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--caution);"
+            >
+              Medium
+               confidence
+            </span>
+          </div>
+          <div
+            aria-label="Rental comps: low $2,700, mid $2,900, high $3,200, estimate $2,900"
+            role="region"
+            style="padding: 20px 0px;"
+          >
+            <div
+              style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: var(--muted);"
+            >
+              <span
+                class="mono"
+              >
+                $2,700
+                <br />
+                <span
+                  style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;"
+                >
+                  Low
+                </span>
+              </span>
+              <span
+                class="mono"
+                style="text-align: center;"
+              >
+                $2,900
+                <br />
+                <span
+                  style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;"
+                >
+                  Median
+                </span>
+              </span>
+              <span
+                class="mono"
+                style="text-align: right;"
+              >
+                $3,200
+                <br />
+                <span
+                  style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;"
+                >
+                  High
+                </span>
+              </span>
+            </div>
+            <div
+              style="position: relative; height: 40px;"
+            >
+              <div
+                style="position: absolute; top: 50%; left: 0px; right: 0px; height: 8px; border-radius: 999px; background: var(--line); transform: translateY(-50%);"
+              />
+              <div
+                style="position: absolute; top: 50%; left: 0px; right: 0px; height: 8px; border-radius: 999px; background: linear-gradient(90deg,
+              color-mix(in oklab, var(--caution) 40%, transparent) 0%,
+              color-mix(in oklab, var(--pass) 60%, transparent) 100%); transform: translateY(-50%);"
+              />
+              <div
+                aria-label="Estimated rent: $2,900"
+                role="img"
+                style="position: absolute; top: 50%; left: 40%; transform: translate(-50%, -50%) rotate(45deg) scale(1); width: 16px; height: 16px; background: var(--ink); border: 2px solid var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,.18); transition: transform 0.12s ease, background-color 0.12s ease; cursor: crosshair; z-index: 2;"
+              />
+            </div>
+            <div
+              style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--muted);"
+            >
+              <span
+                class="mono"
+              >
+                Ask rent 
+                <span
+                  style="color: var(--ink); font-weight: 600;"
+                >
+                  $2,900
+                  /mo
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="04"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                04
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Cash to close
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              What do you need 
+              <em>
+                on day one
+              </em>
+              ?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill caution"
+          >
+            $159,553
+          </span>
+        </div>
+        <div
+          class="col"
+          style="gap: 16px;"
+        >
+          <div
+            class="card"
+            style="padding: 0px; overflow: hidden;"
+          >
+            <div
+              style="padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+            >
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Land Transfer Tax · Ontario
+                </span>
+                <h4
+                  class="serif"
+                  style="font-size: 22px;"
+                >
+                  $729,900
+                   purchase
+                </h4>
+              </div>
+              <div
+                class="col"
+                style="gap: 2px; align-items: flex-end;"
+              >
+                <span
+                  class="serif tabular"
+                  style="font-size: 28px; line-height: 1; color: var(--accent);"
+                >
+                  $11,073
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--muted);"
+                >
+                  Provincial only
+                </span>
+              </div>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--line);"
+            >
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: left;"
+              >
+                Bracket
+              </div>
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+              >
+                Rate
+              </div>
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+              >
+                Amount taxed
+              </div>
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+              >
+                LTT
+              </div>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 24px; border-bottom: 1px solid var(--line); font-size: 13px;"
+            >
+              <span
+                style="color: var(--ink);"
+              >
+                $0 – $55,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                0.5%
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                $55,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink); text-align: right; font-weight: 500;"
+              >
+                $275
+              </span>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 24px; border-bottom: 1px solid var(--line); font-size: 13px;"
+            >
+              <span
+                style="color: var(--ink);"
+              >
+                $55,000 – $250,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                1.0%
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                $195,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink); text-align: right; font-weight: 500;"
+              >
+                $1,950
+              </span>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 24px; border-bottom: 1px solid var(--line); font-size: 13px;"
+            >
+              <span
+                style="color: var(--ink);"
+              >
+                $250,000 – $400,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                1.5%
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                $150,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink); text-align: right; font-weight: 500;"
+              >
+                $2,250
+              </span>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 24px; border-bottom: medium; font-size: 13px;"
+            >
+              <span
+                style="color: var(--ink);"
+              >
+                $400,000 – $2,000,000
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                2.0%
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink-2); text-align: right;"
+              >
+                $329,900
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--ink); text-align: right; font-weight: 500;"
+              >
+                $6,598
+              </span>
+            </div>
+          </div>
+          <div
+            class="card"
+            style="padding: 28px;"
+          >
+            <div
+              style="display: flex; justify-content: space-between; margin-bottom: 18px; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+            >
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Closing cost summary
+                </span>
+                <h4
+                  class="serif"
+                  style="font-size: 22px;"
+                >
+                  Total cash required at closing.
+                </h4>
+              </div>
+              <span
+                class="serif tabular"
+                style="font-size: 30px; line-height: 1; color: var(--accent);"
+              >
+                $159,553
+              </span>
+            </div>
+            <div
+              class="col"
+              style="gap: 0px;"
+            >
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Down payment
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    20% of purchase price
+                  </span>
+                </div>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
+                >
+                  $145,980
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Land Transfer Tax
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Ontario provincial (+ Toronto if applicable)
+                  </span>
+                </div>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
+                >
+                  $11,073
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Legal fees
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Estimated — get a quote from a real estate lawyer
+                  </span>
+                </div>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
+                >
+                  $1,500
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Title insurance
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    One-time · protects against title defects
+                  </span>
+                </div>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
+                >
+                  $350
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Home inspection
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Strongly recommended before waiving condition
+                  </span>
+                </div>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
+                >
+                  $650
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: medium; gap: 12px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Miscellaneous
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Moving costs, minor repairs, utility setup
+                  </span>
+                </div>
+                <span
+                  class="mono tabular"
+                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
+                >
+                  $0
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="05"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                05
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                OSFI stress test
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              Can you 
+              <em>
+                qualify
+              </em>
+               at the stress-test rate?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill fail"
+          >
+            Fails GDS test
+          </span>
+        </div>
+        <div
+          class="card col gap-20"
+          style="padding: 26px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+          >
+            <div
+              class="col"
+              style="gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                OSFI stress test
+              </span>
+              <h4
+                class="serif"
+                style="font-size: 22px;"
+              >
+                B-20 mortgage qualification
+              </h4>
+            </div>
+            <span
+              class="verdict-pill fail"
+            >
+              Fails
+            </span>
+          </div>
+          <div
+            class="col"
+            style="gap: 12px;"
+          >
+            <div
+              style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: baseline;"
+            >
+              <span
+                style="color: var(--ink-2);"
+              >
+                Contract rate
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                4.79%
+              </span>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: baseline;"
+            >
+              <span
+                style="color: var(--ink-2);"
+              >
+                Stress buffer
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                +2.00 pts
+              </span>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: baseline;"
+            >
+              <span
+                style="color: var(--ink-2);"
+              >
+                Qualifying rate (higher of)
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 600; color: var(--accent);"
+              >
+                6.79%
+              </span>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: baseline;"
+            >
+              <span
+                style="color: var(--ink-2);"
+              >
+                Qualifying payment
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                $4,049/mo
+              </span>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: baseline;"
+            >
+              <span
+                style="color: var(--ink-2);"
+              >
+                GDS ratio
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 600; color: var(--fail);"
+              >
+                45.2%
+              </span>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; padding-bottom: 0px; border-bottom: medium; font-size: 13px; align-items: baseline;"
+            >
+              <span
+                style="color: var(--ink-2);"
+              >
+                Threshold
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500; color: var(--ink);"
+              >
+                44%
+              </span>
+            </div>
+          </div>
+          <span
+            class="mono"
+            style="font-size: 11px; color: var(--muted);"
+          >
+            Higher of: contract rate + 2.00% or 5.25% floor
+          </span>
+          <div
+            style="padding: 10px 14px; border-radius: 12px; background: color-mix(in oklab, var(--fail) 8%, transparent); border: 1px solid color-mix(in oklab, var(--fail) 25%, transparent); font-size: 12px; color: var(--ink-2); line-height: 1.5;"
+          >
+            Assumed gross household income $125k. Qualifying payment pushes GDS to
+             
+            45.2%
+             — above the 44% federal threshold. Standard A-lender financing likely unavailable; alt-lender or higher income required.
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="06"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                06
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Risk flags
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              What could go 
+              <em>
+                wrong
+              </em>
+              ?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill fail"
+          >
+            2 red · 1 amber
+          </span>
+        </div>
+        <div
+          class="card col"
+          style="padding: 0px; overflow: hidden;"
+        >
+          <div
+            style="padding: 12px 24px; background: color-mix(in oklab, var(--fail) 8%, transparent); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 13px;"
+          >
+            <span
+              style="color: var(--ink-2);"
+            >
+              Total deal score deductions
+            </span>
+            <span
+              class="mono tabular"
+              style="color: var(--fail); font-weight: 600;"
+            >
+              −
+              6
+               pts
+            </span>
+          </div>
+          <div
+            style="border-bottom: 1px solid var(--line); padding: 4px 0px;"
+          >
+            <div
+              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+            >
+              <div
+                aria-hidden="true"
+                style="width: 4px; background: var(--fail); flex-shrink: 0;"
+              />
+              <div
+                style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+              >
+                <span
+                  style="font-size: 14px; font-weight: 500; color: var(--ink);"
+                >
+                  Condo-fee burden
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+                >
+                  $761/mo · 26% of estimated gross rent (threshold 20%)
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            style="border-bottom: 1px solid var(--line); padding: 4px 0px;"
+          >
+            <div
+              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+            >
+              <div
+                aria-hidden="true"
+                style="width: 4px; background: var(--fail); flex-shrink: 0;"
+              />
+              <div
+                style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+              >
+                <span
+                  style="font-size: 14px; font-weight: 500; color: var(--ink);"
+                >
+                  Deeply negative cash flow
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+                >
+                  Break-even rent $4,585 vs. market $2,900
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            style="border-bottom: medium; padding: 4px 0px;"
+          >
+            <div
+              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+            >
+              <div
+                aria-hidden="true"
+                style="width: 4px; background: var(--caution); flex-shrink: 0;"
+              />
+              <div
+                style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--caution) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+              >
+                <span
+                  style="font-size: 14px; font-weight: 500; color: var(--ink);"
+                >
+                  Building supply pressure
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+                >
+                  24 active rentals in same building · trend declining
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="07"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                07
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Equity build
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              How does your wealth grow over 
+              <em>
+                20 years
+              </em>
+              ?
+            </h2>
+          </div>
+        </div>
+        <div
+          class="card col"
+          style="padding: 28px; gap: 20px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;"
+          >
+            <div
+              class="col"
+              style="gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                Equity build · 20 yr horizon
+              </span>
+              <h4
+                class="serif"
+                style="font-size: 24px;"
+              >
+                Where your money sits over time.
+              </h4>
+            </div>
+            <div
+              style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); align-items: center;"
+            >
+              <span
+                style="display: inline-flex; align-items: center; gap: 8px;"
+              >
+                <span
+                  style="width: 14px; height: 2px; background: var(--ink); display: inline-block;"
+                />
+                Property value
+              </span>
+              <span
+                style="display: inline-flex; align-items: center; gap: 8px;"
+              >
+                <span
+                  style="width: 14px; height: 6px; background: color-mix(in oklab, var(--accent) 50%, transparent); border-radius: 2px; display: inline-block;"
+                />
+                Your equity
+              </span>
+            </div>
+          </div>
+          <div
+            style="position: relative; width: 100%; overflow: hidden;"
+          >
+            <svg
+              aria-label="20-year equity build chart"
+              preserveAspectRatio="xMidYMid meet"
+              style="width: 100%; height: auto; display: block;"
+              viewBox="0 0 720 280"
+            />
+          </div>
+          <div
+            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;"
+          >
+            <div
+              class="col"
+              style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              >
+                Year 
+                5
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 24px; line-height: 1;"
+              >
+                $330,666
+              </span>
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--pass);"
+              >
+                +
+                115
+                % vs cash in
+              </span>
+            </div>
+            <div
+              class="col"
+              style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              >
+                Year 
+                10
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 24px; line-height: 1;"
+              >
+                $552,346
+              </span>
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--pass);"
+              >
+                +
+                254
+                % vs cash in
+              </span>
+            </div>
+            <div
+              class="col"
+              style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              >
+                Year 
+                20
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 24px; line-height: 1;"
+              >
+                $1,140,254
+              </span>
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--pass);"
+              >
+                +
+                621
+                % vs cash in
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="08"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                08
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Neighbourhood
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              What's the 
+              <em>
+                market
+              </em>
+               doing around it?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill pass"
+          >
+            Strong appreciation
+          </span>
+        </div>
+        <div
+          style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px;"
+        >
+          <div
+            class="card col"
+            style="padding: 18px 22px; gap: 4px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Median income (FSA)
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1;"
+            >
+              $88,500
+            </span>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              StatsCan 2021
+            </span>
+          </div>
+          <div
+            class="card col"
+            style="padding: 18px 22px; gap: 4px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              5-year pop. growth
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1;"
+            >
+              18.2%
+            </span>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              StatsCan
+            </span>
+          </div>
+          <div
+            class="card col"
+            style="padding: 18px 22px; gap: 4px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Walk Score
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1;"
+            >
+              72
+            </span>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              Mostly walkable
+            </span>
+          </div>
+          <div
+            class="card col"
+            style="padding: 18px 22px; gap: 4px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Transit Score
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1;"
+            >
+              85
+            </span>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              Excellent
+            </span>
+          </div>
+          <div
+            class="card col"
+            style="padding: 18px 22px; gap: 4px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Active building permits
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1;"
+            >
+              24
+            </span>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              in 1km radius
+            </span>
+          </div>
+          <div
+            class="card col"
+            style="padding: 18px 22px; gap: 4px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Price per sqft trend
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 26px; line-height: 1;"
+            >
+              Up 8.2% YoY
+            </span>
+            <span
+              class="mono"
+              style="font-size: 11px; color: var(--muted);"
+            >
+              last 12 months
+            </span>
+          </div>
+        </div>
+        <div
+          style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px;"
+        >
+          <div
+            class="card col"
+            style="padding: 28px; gap: 18px;"
+          >
+            <div
+              style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+            >
+              <div
+                class="col"
+                style="gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Comparable recent sales
+                </span>
+                <h3
+                  class="serif"
+                  style="font-size: 22px;"
+                >
+                  What sold nearby.
+                </h3>
+              </div>
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--muted);"
+              >
+                3
+                 verified sales
+              </span>
+            </div>
+            <div
+              class="col"
+              style="gap: 0px;"
+            >
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 16px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Unit 4203 · 5 Buttermill Ave
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    3
+                     bed · 
+                    945
+                     sqft
+                  </span>
+                </div>
+                <div
+                  class="col"
+                  style="align-items: flex-end; gap: 2px; flex-shrink: 0;"
+                >
+                  <span
+                    class="serif tabular"
+                    style="font-size: 18px; line-height: 1; color: var(--ink);"
+                  >
+                    $705,000
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Mar 2026
+                  </span>
+                </div>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 16px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Unit 3115 · 7 Buttermill Ave
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    3
+                     bed · 
+                    970
+                     sqft
+                  </span>
+                </div>
+                <div
+                  class="col"
+                  style="align-items: flex-end; gap: 2px; flex-shrink: 0;"
+                >
+                  <span
+                    class="serif tabular"
+                    style="font-size: 18px; line-height: 1; color: var(--ink);"
+                  >
+                    $721,500
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Feb 2026
+                  </span>
+                </div>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: medium; gap: 16px; align-items: flex-start;"
+              >
+                <div
+                  class="col"
+                  style="gap: 2px;"
+                >
+                  <span
+                    style="font-size: 14px; color: var(--ink);"
+                  >
+                    Unit 2802 · 5 Buttermill Ave
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    3
+                     bed · 
+                    925
+                     sqft
+                  </span>
+                </div>
+                <div
+                  class="col"
+                  style="align-items: flex-end; gap: 2px; flex-shrink: 0;"
+                >
+                  <span
+                    class="serif tabular"
+                    style="font-size: 18px; line-height: 1; color: var(--ink);"
+                  >
+                    $695,000
+                  </span>
+                  <span
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted);"
+                  >
+                    Jan 2026
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="card col"
+            style="padding: 28px; gap: 18px; background: var(--ink); color: var(--bg); border-color: var(--ink);"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55);"
+            >
+              Appreciation
+            </div>
+            <div
+              class="col"
+              style="gap: 4px;"
+            >
+              <span
+                class="serif tabular"
+                style="line-height: 1; color: var(--accent);"
+              >
+                +
+                27.6%
+              </span>
+              <span
+                style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+              >
+                5-year median sale price
+              </span>
+            </div>
+            <div
+              style="display: flex; gap: 12px; margin-top: 6px; align-items: center; font-size: 13px; color: rgba(255, 255, 255, 0.7);"
+            >
+              <span>
+                10-year:
+              </span>
+              <span
+                class="mono tabular"
+                style="color: var(--bg); font-weight: 500;"
+              >
+                +
+                61.2%
+              </span>
+            </div>
+            <div
+              style="height: 1px; background: rgba(255, 255, 255, 0.15); margin: 4px 0px;"
+            />
+            <p
+              style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.55;"
+            >
+              Numbers from Teranet HPI · public MLS · adjusted for inflation. Past appreciation is not a guarantee of future returns.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="09"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                09
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                SunScout
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              How much 
+              <em>
+                light
+              </em>
+               does it get?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill caution"
+          >
+            Modeling · Phase 2
+          </span>
+        </div>
+        <div
+          class="card col"
+          style="padding: 40px; gap: 20px; align-items: center; text-align: center;"
+        >
+          <div
+            style="width: 64px; height: 64px; border-radius: 999px; background: color-mix(in oklab, var(--caution) 14%, transparent); display: flex; align-items: center; justify-content: center;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="28"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="28"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="3.5"
+              />
+              <path
+                d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"
+              />
+            </svg>
+          </div>
+          <div
+            class="col"
+            style="gap: 8px; max-width: 560px;"
+          >
+            <span
+              class="chip"
+            >
+              Coming Phase 2
+            </span>
+            <h4
+              class="serif"
+              style="font-size: 24px;"
+            >
+              Solar path analysis — shipping Q3 2026.
+            </h4>
+            <p
+              style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
+            >
+              SunScout will use NASA NREL sun-path data and building-height obstruction modelling to show you peak sun hours by season and window orientation. Ideal for evaluating south-facing condos and adding solar panels.
+            </p>
+          </div>
+          <div
+            aria-hidden="true"
+            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 8px; width: 100%; filter: blur(2px); opacity: 0.5; pointer-events: none;"
+          >
+            <div
+              class="col"
+              style="padding: 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+              >
+                Dec
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 22px; line-height: 1;"
+              >
+                2.9
+                h
+              </span>
+              <span
+                class="mono"
+                style="font-size: 10px; color: var(--muted);"
+              >
+                peak sun / day
+              </span>
+            </div>
+            <div
+              class="col"
+              style="padding: 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+              >
+                Mar
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 22px; line-height: 1;"
+              >
+                4.4
+                h
+              </span>
+              <span
+                class="mono"
+                style="font-size: 10px; color: var(--muted);"
+              >
+                peak sun / day
+              </span>
+            </div>
+            <div
+              class="col"
+              style="padding: 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+              >
+                Jun
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 22px; line-height: 1;"
+              >
+                6.8
+                h
+              </span>
+              <span
+                class="mono"
+                style="font-size: 10px; color: var(--muted);"
+              >
+                peak sun / day
+              </span>
+            </div>
+            <div
+              class="col"
+              style="padding: 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+              >
+                Sep
+              </span>
+              <span
+                class="serif tabular"
+                style="font-size: 22px; line-height: 1;"
+              >
+                5.1
+                h
+              </span>
+              <span
+                class="mono"
+                style="font-size: 10px; color: var(--muted);"
+              >
+                peak sun / day
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="10"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                10
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                STR vs LTR
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              Could you make 
+              <em>
+                more
+              </em>
+               short-term?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill caution"
+          >
+            Modeling · Phase 2
+          </span>
+        </div>
+        <div
+          style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;"
+        >
+          <div
+            class="card col"
+            style="padding: 28px; gap: 16px; position: relative; overflow: hidden;"
+          >
+            <div
+              aria-hidden="true"
+              style="position: absolute; inset: 0px; background: linear-gradient(180deg, transparent 0%, transparent 30%, color-mix(in oklab, var(--surface) 96%, transparent) 100%); pointer-events: none; z-index: 1;"
+            />
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                Short-term rental analysis
+              </span>
+              <span
+                class="chip"
+              >
+                Coming Phase 2
+              </span>
+            </div>
+            <h3
+              class="serif"
+              style="font-size: 24px; position: relative; z-index: 2;"
+            >
+              AirDNA revenue modeling — shipping Q3 2026.
+            </h3>
+            <p
+              style="font-size: 14px; color: var(--ink-2); line-height: 1.55; position: relative; z-index: 2;"
+            >
+              We're integrating AirDNA to project nightly rates, occupancy, seasonality, and net revenue for this exact unit against true STR comparables. Until then, the LTR baseline shown above is your reference.
+            </p>
+            <div
+              aria-hidden="true"
+              style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; filter: blur(2px); opacity: 0.55; pointer-events: none; position: relative; z-index: 0;"
+            >
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Nightly ADR
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 20px; line-height: 1;"
+                >
+                  $184
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Occupancy
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 20px; line-height: 1;"
+                >
+                  68%
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Net rev /mo
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 20px; line-height: 1;"
+                >
+                  $3,120
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  STR – LTR
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 20px; line-height: 1;"
+                >
+                  + $220
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Seasonality
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 20px; line-height: 1;"
+                >
+                  ±18%
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Cleaning/turn
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 20px; line-height: 1;"
+                >
+                  $2,400/mo
+                </span>
+              </div>
+            </div>
+            <button
+              class="btn btn-ghost"
+              style="align-self: flex-start; margin-top: 4px; position: relative; z-index: 2;"
+            >
+              Notify me when STR ships 
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="13"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+                viewBox="0 0 24 24"
+                width="13"
+              >
+                <path
+                  d="M5 12h14M13 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+          <div
+            class="card col"
+            style="padding: 28px; gap: 18px;"
+          >
+            <div
+              style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;"
+            >
+              <span
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              >
+                STR legality · live
+              </span>
+              <span
+                class="verdict-pill caution"
+              >
+                Permitted with registration
+              </span>
+            </div>
+            <h3
+              class="serif"
+              style="font-size: 22px;"
+            >
+              Vaughan
+               rules
+            </h3>
+            <p
+              style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
+            >
+              Vaughan permits short-term rentals subject to operator registration and zoning checks.
+            </p>
+            <div
+              style="height: 1px; background: var(--line);"
+            />
+            <div
+              class="col"
+              style="gap: 8px;"
+            >
+              <div
+                class="mono"
+                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              >
+                Other Ontario cities
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 8px 0px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: center;"
+              >
+                <span
+                  style="color: var(--ink-2);"
+                >
+                  Toronto
+                </span>
+                <span
+                  class="verdict-pill fail"
+                >
+                  Principal-residence only
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 8px 0px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: center;"
+              >
+                <span
+                  style="color: var(--ink-2);"
+                >
+                  Ottawa
+                </span>
+                <span
+                  class="verdict-pill caution"
+                >
+                  Permitted · registration
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 8px 0px; border-bottom: 1px solid var(--line); font-size: 13px; align-items: center;"
+              >
+                <span
+                  style="color: var(--ink-2);"
+                >
+                  Mississauga
+                </span>
+                <span
+                  class="verdict-pill fail"
+                >
+                  Principal residence
+                </span>
+              </div>
+              <div
+                style="display: flex; justify-content: space-between; padding: 8px 0px; border-bottom: medium; font-size: 13px; align-items: center;"
+              >
+                <span
+                  style="color: var(--ink-2);"
+                >
+                  Hamilton
+                </span>
+                <span
+                  class="verdict-pill pass"
+                >
+                  Permitted
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="container tr-section"
+        data-section="11"
+      >
+        <div
+          class="tr-section-head"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                11
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Due diligence
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              What to check before you 
+              <em>
+                sign
+              </em>
+              .
+            </h2>
+          </div>
+          <span
+            class="verdict-pill fail"
+          >
+            0 / 16 complete
+          </span>
+        </div>
+        <div
+          style="height: 6px; border-radius: 999px; background: var(--line); margin-bottom: 28px; overflow: hidden;"
+        >
+          <div
+            style="height: 100%; width: 0%; border-radius: 999px; background: var(--accent); transition: width 0.3s ease;"
+          />
+        </div>
+        <div
+          style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;"
+        >
+          <div
+            class="card col"
+            style="padding: 24px; gap: 16px;"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+            >
+              Title & legal
+            </div>
+            <div
+              class="col"
+              style="gap: 10px;"
+            >
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Order title search — confirm no liens, encumbrances, or work orders
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Review status certificate (condos) — check for pending special assessments and reserve fund health
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Verify zoning and permitted uses with the municipality
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Confirm HST treatment with your accountant (new construction vs resale)
+                </span>
+              </label>
+            </div>
+          </div>
+          <div
+            class="card col"
+            style="padding: 24px; gap: 16px;"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+            >
+              Physical inspection
+            </div>
+            <div
+              class="col"
+              style="gap: 10px;"
+            >
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Schedule a licensed home inspector — attend the inspection yourself
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Request HVAC service records; confirm system age and warranty status
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Check electrical panel — knob-and-tube and 60A panels affect insurability
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Inspect roof (freehold): ask for age and any recent repairs
+                </span>
+              </label>
+            </div>
+          </div>
+          <div
+            class="card col"
+            style="padding: 24px; gap: 16px;"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+            >
+              Tenancy & income
+            </div>
+            <div
+              class="col"
+              style="gap: 10px;"
+            >
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Obtain copy of current lease(s) — confirm term, rent, last increase date
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Verify rent is at or below guideline maximum if property is rent-controlled
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Request last 12 months of utility bills to validate expense estimates
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Confirm no outstanding N1 (rent increase) or N12 (personal use) notices
+                </span>
+              </label>
+            </div>
+          </div>
+          <div
+            class="card col"
+            style="padding: 24px; gap: 16px;"
+          >
+            <div
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+            >
+              Financing & insurance
+            </div>
+            <div
+              class="col"
+              style="gap: 10px;"
+            >
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Get mortgage pre-approval with a DSCR lender (not just your primary bank)
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Confirm property insurability — high-rise condos above 10 floors need specialist
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Get fire insurance quote before waiving conditions
+                </span>
+              </label>
+              <label
+                style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: 13px; color: var(--ink); text-decoration: none; transition: color 0.12s ease;"
+              >
+                <input
+                  style="flex-shrink: 0; margin-top: 2px; accent-color: var(--pass); width: 15px; height: 15px; cursor: pointer;"
+                  type="checkbox"
+                />
+                <span
+                  style="line-height: 1.5;"
+                >
+                  Ask lender about rental property surcharge on rate and down-payment minimum
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer
+      style="background: var(--ink); color: var(--bg); padding: 80px 0px 36px; margin-top: 80px;"
+    >
+      <div
+        class="container col gap-32"
+      >
+        <div
+          style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
+        >
+          <div
+            class="col gap-16"
+          >
+            <div
+              style="color: var(--bg);"
+            >
+              <div
+                class="row gap-12"
+                style="height: 26px; display: inline-flex; align-items: center; gap: 10px;"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="25"
+                  viewBox="0 0 32 32"
+                  width="25"
+                >
+                  <circle
+                    cx="16"
+                    cy="16"
+                    opacity="0.35"
+                    r="14.5"
+                    stroke="currentColor"
+                    stroke-width="1"
+                  />
+                  <path
+                    d="M5 21 L16 8 L27 21"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                  />
+                  <circle
+                    cx="16"
+                    cy="21"
+                    fill="currentColor"
+                    r="1.8"
+                  />
+                  <path
+                    d="M16 4 L16 7"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span
+                  style="font-family: "Instrument Serif", serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+                >
+                  Prop
+                  <span
+                    style="font-style: italic;"
+                  >
+                    Scout
+                  </span>
+                </span>
+              </div>
+            </div>
+            <p
+              style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 280px; line-height: 1.55;"
+            >
+              Underwriting for Canadian real estate. Built in Toronto, opinionated about the numbers.
+            </p>
+            <div
+              class="row gap-8"
+            >
+              <span
+                class="chip"
+              >
+                Ontario · Live
+              </span>
+              <span
+                class="chip"
+              >
+                BC · Q3 2026
+              </span>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Product
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Investment report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Personal buyer report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Tenant report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Landlord report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                SunScout
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Portfolio tracker
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Company
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                About
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Methodology
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Data sources
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Press
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Careers
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Resources
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Help centre
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Underwriting glossary
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Ontario LTT calculator
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                OSFI stress test
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                API (Team)
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Legal
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="/privacy"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Privacy
+              </a>
+              <a
+                href="/terms"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Terms
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Disclaimer
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Brokerage info
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          class="divider"
+          style="background: rgba(255, 255, 255, 0.12);"
+        />
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: rgba(255, 255, 255, 0.55); flex-wrap: wrap; gap: 12px;"
+        >
+          <span>
+            © 2026 PropScout Analytics Inc. · propscout.ca
+          </span>
+          <span
+            class="mono"
+          >
+            v0.9 · MVP preview
+          </span>
+          <span>
+            Not financial or legal advice. Always do your own due diligence.
+          </span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
+`;
+
+exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] = `
+<div>
+  <div
+    style="min-height: 100vh; background: var(--bg);"
+  >
+    <header
+      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+    >
+      <div
+        class="container row"
+        style="padding: 14px 0px; justify-content: space-between;"
+      >
+        <div
+          class="row gap-16"
+        >
+          <div
+            class="row gap-12"
+            style="height: 22px; display: inline-flex; align-items: center; gap: 10px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="21"
+              viewBox="0 0 32 32"
+              width="21"
+            >
+              <circle
+                cx="16"
+                cy="16"
+                opacity="0.35"
+                r="14.5"
+                stroke="currentColor"
+                stroke-width="1"
+              />
+              <path
+                d="M5 21 L16 8 L27 21"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.6"
+              />
+              <circle
+                cx="16"
+                cy="21"
+                fill="currentColor"
+                r="1.8"
+              />
+              <path
+                d="M16 4 L16 7"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.6"
+              />
+            </svg>
+            <span
+              style="font-family: "Instrument Serif", serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+            >
+              Prop
+              <span
+                style="font-style: italic;"
+              >
+                Scout
+              </span>
+            </span>
+          </div>
+          <div
+            class="row gap-8"
+            style="color: var(--muted); font-size: 13px;"
+          >
+            <span
+              style="opacity: 0.55;"
+            >
+              /
+            </span>
+            <span>
+              Investor report
+            </span>
+            <span
+              style="opacity: 0.55;"
+            >
+              /
+            </span>
+            <span
+              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px;"
+            >
+              unit-5702-5-buttermill-avenue
+            </span>
+          </div>
+        </div>
+        <div
+          class="row gap-12"
+        >
+          <button
+            aria-label="Switch to dark mode"
+            class="btn btn-ghost"
+            style="padding: 10px 12px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="15"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="15"
+            >
+              <path
+                d="M21 13A9 9 0 0 1 11 3a8 8 0 1 0 10 10z"
+              />
+            </svg>
+          </button>
+          <button
+            class="btn btn-ghost"
+            style="padding: 10px 14px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"
+              />
+              <path
+                d="M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1"
+              />
+            </svg>
+             Share link
+          </button>
+          <button
+            class="btn btn-primary"
+          >
+            Save report 
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            >
+              <path
+                d="M5 12h14M13 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div
+        style="min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;"
+      >
+        <div
+          aria-hidden="true"
+          style="width: 48px; height: 48px; border-radius: 999px; border-top-color: var(--accent); animation: spin 0.8s linear infinite;"
+        />
+        <div
+          class="col"
+          style="align-items: center; gap: 8px;"
+        >
+          <div
+            class="mono"
+            style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+          >
+            Running analysis
+          </div>
+          <p
+            style="font-size: 14px; color: var(--ink-2);"
+          >
+            Calculating investment metrics…
+          </p>
+        </div>
+        <style>
+          @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+      </div>
+    </main>
+    <footer
+      style="background: var(--ink); color: var(--bg); padding: 80px 0px 36px; margin-top: 80px;"
+    >
+      <div
+        class="container col gap-32"
+      >
+        <div
+          style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
+        >
+          <div
+            class="col gap-16"
+          >
+            <div
+              style="color: var(--bg);"
+            >
+              <div
+                class="row gap-12"
+                style="height: 26px; display: inline-flex; align-items: center; gap: 10px;"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="25"
+                  viewBox="0 0 32 32"
+                  width="25"
+                >
+                  <circle
+                    cx="16"
+                    cy="16"
+                    opacity="0.35"
+                    r="14.5"
+                    stroke="currentColor"
+                    stroke-width="1"
+                  />
+                  <path
+                    d="M5 21 L16 8 L27 21"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.6"
+                  />
+                  <circle
+                    cx="16"
+                    cy="21"
+                    fill="currentColor"
+                    r="1.8"
+                  />
+                  <path
+                    d="M16 4 L16 7"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span
+                  style="font-family: "Instrument Serif", serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+                >
+                  Prop
+                  <span
+                    style="font-style: italic;"
+                  >
+                    Scout
+                  </span>
+                </span>
+              </div>
+            </div>
+            <p
+              style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 280px; line-height: 1.55;"
+            >
+              Underwriting for Canadian real estate. Built in Toronto, opinionated about the numbers.
+            </p>
+            <div
+              class="row gap-8"
+            >
+              <span
+                class="chip"
+              >
+                Ontario · Live
+              </span>
+              <span
+                class="chip"
+              >
+                BC · Q3 2026
+              </span>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Product
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Investment report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Personal buyer report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Tenant report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Landlord report
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                SunScout
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Portfolio tracker
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Company
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                About
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Methodology
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Data sources
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Press
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Careers
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Resources
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Help centre
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Underwriting glossary
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Ontario LTT calculator
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                OSFI stress test
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                API (Team)
+              </a>
+            </div>
+          </div>
+          <div
+            class="col gap-12"
+          >
+            <div
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+            >
+              Legal
+            </div>
+            <div
+              class="col gap-8"
+            >
+              <a
+                href="/privacy"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Privacy
+              </a>
+              <a
+                href="/terms"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Terms
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Disclaimer
+              </a>
+              <a
+                href="#"
+                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+              >
+                Brokerage info
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          class="divider"
+          style="background: rgba(255, 255, 255, 0.12);"
+        />
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: rgba(255, 255, 255, 0.55); flex-wrap: wrap; gap: 12px;"
+        >
+          <span>
+            © 2026 PropScout Analytics Inc. · propscout.ca
+          </span>
+          <span
+            class="mono"
+          >
+            v0.9 · MVP preview
+          </span>
+          <span>
+            Not financial or legal advice. Always do your own due diligence.
+          </span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
+`;
