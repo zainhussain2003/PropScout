@@ -1,0 +1,1468 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AIVerdictBlock > matches snapshot 1`] = `
+<div
+  style="background: var(--ink); color: var(--bg); border-radius: 24px; position: relative; overflow: hidden;"
+>
+  <div
+    aria-hidden="true"
+    style="position: absolute; right: -80px; top: -40px; opacity: 0.06; color: var(--accent); pointer-events: none;"
+  >
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="520"
+      viewBox="0 0 32 32"
+      width="520"
+    >
+      <circle
+        cx="16"
+        cy="16"
+        opacity="0.35"
+        r="14.5"
+        stroke="var(--accent)"
+        stroke-width="1"
+      />
+      <path
+        d="M5 21 L16 8 L27 21"
+        stroke="var(--accent)"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.6"
+      />
+      <circle
+        cx="16"
+        cy="21"
+        fill="var(--accent)"
+        r="1.8"
+      />
+      <path
+        d="M16 4 L16 7"
+        stroke="var(--accent)"
+        stroke-linecap="round"
+        stroke-width="1.6"
+      />
+    </svg>
+  </div>
+  <div
+    class="row gap-8"
+    style="color: rgba(255, 255, 255, 0.55); margin-bottom: 20px; position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
+  >
+    <span
+      aria-hidden="true"
+      class="live-dot"
+      style="width: 7px; height: 7px; border-radius: 999px; background: var(--accent); flex-shrink: 0;"
+    />
+    <span
+      class="mono"
+      style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;"
+    >
+      Scout AI · investor verdict
+    </span>
+    <span
+      style="flex: 1 1 0%;"
+    />
+    <span
+      class="mono"
+      style="font-size: 10px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.4);"
+    >
+      claude · sonnet 4.6
+    </span>
+  </div>
+  <div
+    class="serif"
+    style="line-height: 1.1; letter-spacing: -0.025em; color: var(--bg); text-wrap: balance; max-width: 920px; position: relative; z-index: 1;"
+  >
+    Hard pass.
+  </div>
+  <div
+    class="serif"
+    style="line-height: 1.5; color: rgba(255, 255, 255, 0.78); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
+  >
+    Deeply negative cash flow on every scenario.
+  </div>
+</div>
+`;
+
+exports[`DealScore > matches snapshot 1`] = `
+<div
+  aria-label="Deal score: 8 out of 95"
+  style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
+>
+  <div
+    style="position: relative; width: 120px; height: 120px;"
+  >
+    <svg
+      aria-hidden="true"
+      height="120"
+      role="img"
+      viewBox="0 0 120 120"
+      width="120"
+    >
+      <circle
+        cx="60"
+        cy="60"
+        fill="none"
+        r="55"
+        stroke="var(--line)"
+        stroke-width="10"
+      />
+      <circle
+        cx="60"
+        cy="60"
+        fill="none"
+        r="55"
+        stroke="var(--fail)"
+        stroke-dasharray="345.57519189487726"
+        stroke-dashoffset="316.4741231037297"
+        stroke-linecap="round"
+        stroke-width="10"
+        style="transition: none;"
+        transform="rotate(-90 60 60)"
+      />
+    </svg>
+    <div
+      style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+    >
+      <span
+        class="serif tabular"
+        style="font-size: 28.2px; line-height: 1; letter-spacing: -0.02em; color: var(--fail);"
+      >
+        8
+      </span>
+      <span
+        class="mono"
+        style="font-size: 8.52px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+      >
+        Deal score / 100
+      </span>
+    </div>
+  </div>
+  <span
+    class="mono"
+    style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fail);"
+  >
+    Hard pass
+  </span>
+</div>
+`;
+
+exports[`Metric > matches snapshot 1`] = `
+<div
+  class="col"
+  style="padding: 18px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); gap: 6px; box-shadow: var(--shadow-card);"
+>
+  <div
+    class="mono"
+    style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+  >
+    Cap rate
+  </div>
+  <div
+    class="mono tabular"
+    style="font-size: 30px; line-height: 1; color: var(--fail);"
+  >
+    1.47%
+  </div>
+  <div
+    class="mono"
+    style="font-size: 11px; color: var(--muted);"
+  >
+    Below 3% threshold
+  </div>
+</div>
+`;
+
+exports[`MiniMap > matches snapshot 1`] = `
+<div
+  aria-label="Map showing rental comps near 5702-5 Buttermill Ave, Vaughan"
+  role="img"
+  style="border-radius: 14px; overflow: hidden; background: var(--bg-elev); border: 1px solid var(--line); position: relative;"
+>
+  <svg
+    preserveAspectRatio="xMidYMid slice"
+    style="width: 100%; height: 280px; display: block;"
+    viewBox="0 0 720 280"
+  >
+    <rect
+      fill="color-mix(in oklab, var(--bg-elev) 100%, transparent)"
+      height="280"
+      width="720"
+    />
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="0"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="0"
+        y2="0"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="90"
+        x2="90"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="35"
+        y2="35"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="180"
+        x2="180"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="70"
+        y2="70"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="270"
+        x2="270"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="105"
+        y2="105"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="360"
+        x2="360"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="140"
+        y2="140"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="450"
+        x2="450"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="175"
+        y2="175"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="540"
+        x2="540"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="210"
+        y2="210"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="630"
+        x2="630"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="245"
+        y2="245"
+      />
+    </g>
+    <g>
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="720"
+        x2="720"
+        y1="0"
+        y2="280"
+      />
+      <line
+        stroke="var(--line)"
+        stroke-width="0.75"
+        x1="0"
+        x2="720"
+        y1="280"
+        y2="280"
+      />
+    </g>
+    <line
+      opacity="0.8"
+      stroke="var(--surface)"
+      stroke-width="6"
+      x1="0"
+      x2="720"
+      y1="126"
+      y2="140"
+    />
+    <line
+      opacity="0.6"
+      stroke="var(--surface)"
+      stroke-width="4"
+      x1="288"
+      x2="324"
+      y1="0"
+      y2="280"
+    />
+    <line
+      opacity="0.5"
+      stroke="var(--surface)"
+      stroke-width="3"
+      x1="0"
+      x2="720"
+      y1="201.6"
+      y2="190.4"
+    />
+    <g>
+      <circle
+        cx="158.4"
+        cy="84"
+        fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+        r="18"
+      />
+      <circle
+        cx="158.4"
+        cy="84"
+        fill="var(--accent)"
+        r="5"
+      />
+    </g>
+    <g>
+      <circle
+        cx="503.99999999999994"
+        cy="61.6"
+        fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+        r="18"
+      />
+      <circle
+        cx="503.99999999999994"
+        cy="61.6"
+        fill="var(--accent)"
+        r="5"
+      />
+    </g>
+    <g>
+      <circle
+        cx="259.2"
+        cy="179.20000000000002"
+        fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+        r="18"
+      />
+      <circle
+        cx="259.2"
+        cy="179.20000000000002"
+        fill="var(--accent)"
+        r="5"
+      />
+    </g>
+    <g>
+      <circle
+        cx="547.2"
+        cy="190.4"
+        fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+        r="18"
+      />
+      <circle
+        cx="547.2"
+        cy="190.4"
+        fill="var(--accent)"
+        r="5"
+      />
+    </g>
+    <g>
+      <circle
+        cx="417.59999999999997"
+        cy="218.4"
+        fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+        r="18"
+      />
+      <circle
+        cx="417.59999999999997"
+        cy="218.4"
+        fill="var(--accent)"
+        r="5"
+      />
+    </g>
+    <g>
+      <circle
+        cx="360"
+        cy="140"
+        fill="var(--ink)"
+        r="10"
+      />
+      <circle
+        cx="360"
+        cy="140"
+        fill="var(--bg)"
+        r="5"
+      />
+    </g>
+  </svg>
+  <div
+    style="position: absolute; bottom: 12px; left: 12px; background: color-mix(in oklab, var(--surface) 92%, transparent); backdrop-filter: blur(8px); border-radius: 8px; padding: 6px 12px; font-size: 11px; font-family: "Geist Mono", monospace; color: var(--ink); border: 1px solid var(--line);"
+  >
+    5702-5 Buttermill Ave, Vaughan
+  </div>
+  <div
+    style="position: absolute; top: 10px; right: 10px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(6px); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);"
+  >
+    Map placeholder · Mapbox GL JS
+  </div>
+</div>
+`;
+
+exports[`PropertyHero > matches snapshot 1`] = `
+<section
+  class="container"
+  style="padding-top: 56px; padding-bottom: 48px;"
+>
+  <div
+    class="row gap-12"
+    style="margin-bottom: 28px; color: var(--muted); font-size: 13px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px;"
+  >
+    <button
+      aria-label="Analyze another listing"
+      style="display: inline-flex; align-items: center; gap: 6px; background: none; border: medium; cursor: pointer; color: inherit; font-size: inherit; font-family: inherit; padding: 0px; transition: color 0.15s ease;"
+    >
+      <span
+        aria-hidden="true"
+        style="transform: rotate(180deg); display: inline-flex;"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+          viewBox="0 0 24 24"
+          width="13"
+        >
+          <path
+            d="M5 12h14M13 5l7 7-7 7"
+          />
+        </svg>
+      </span>
+      Analyze another listing
+    </button>
+    <span
+      style="opacity: 0.4;"
+    >
+      ·
+    </span>
+    <span
+      class="mono"
+      style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;"
+    >
+      Report · Investor view
+    </span>
+    <span
+      style="opacity: 0.4;"
+    >
+      ·
+    </span>
+    <span
+      style="display: inline-flex; align-items: center; gap: 6px;"
+    >
+      <span
+        aria-hidden="true"
+        class="live-dot"
+        style="width: 6px; height: 6px; border-radius: 999px; background: var(--pass);"
+      />
+      Live recalc · sliders below
+    </span>
+  </div>
+  <div
+    style="display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(28px, 3.5vw, 52px); align-items: flex-start;"
+  >
+    <div
+      class="col"
+      style="gap: 28px;"
+    >
+      <div
+        style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; height: 360px;"
+      >
+        <div
+          style="border-radius: 18px; height: 100%; background: var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden;"
+        >
+          <span
+            class="mono"
+            style="font-size: 11px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;"
+          >
+            exterior · 
+            condo apartment
+          </span>
+        </div>
+        <div
+          class="col"
+          style="gap: 8px;"
+        >
+          <div
+            style="border-radius: 14px; flex: 1 1 0%; background: var(--line); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;"
+            >
+              living
+            </span>
+          </div>
+          <div
+            style="border-radius: 14px; flex: 1 1 0%; background: var(--line); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;"
+            >
+              kitchen
+            </span>
+          </div>
+          <div
+            style="border-radius: 14px; flex: 1 1 0%; background: var(--line); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;"
+            >
+              floorplan
+            </span>
+            <div
+              class="mono"
+              style="position: absolute; right: 10px; bottom: 10px; font-size: 10px; letter-spacing: 0.1em; padding: 3px 8px; background: color-mix(in oklab, var(--surface) 90%, transparent); border-radius: 999px; color: var(--ink); backdrop-filter: blur(4px);"
+            >
+              + more
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="col"
+        style="gap: 18px;"
+      >
+        <div
+          style="display: flex; gap: 8px; flex-wrap: wrap;"
+        >
+          <span
+            class="chip"
+          >
+            Investment · For sale
+          </span>
+          <span
+            class="chip"
+          >
+            Vaughan · L4K
+          </span>
+          <span
+            class="chip"
+          >
+            Condo · 950 sqft
+          </span>
+        </div>
+        <h1
+          class="serif"
+          style="text-wrap: balance; letter-spacing: -0.035em; margin-top: 4px;"
+        >
+          Unit 5702 · 5 Buttermill Avenue
+        </h1>
+        <div
+          style="font-size: 16px; color: var(--muted);"
+        >
+          Vaughan · L4K · VMC Corridor
+        </div>
+        <div
+          style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; font-size: 14px; color: var(--ink-2); align-items: center;"
+        >
+          <span
+            style="display: inline-flex; align-items: center; gap: 8px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="14"
+            >
+              <path
+                d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"
+              />
+            </svg>
+            3
+             bed · 
+            2
+             bath
+          </span>
+          <span
+            style="display: inline-flex; align-items: center; gap: 8px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="10"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="10"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                fill="currentColor"
+                r="3"
+              />
+            </svg>
+            950
+             sqft
+          </span>
+          <span
+            style="display: inline-flex; align-items: center; gap: 8px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="14"
+            >
+              <circle
+                cx="8"
+                cy="15"
+                r="4"
+              />
+              <path
+                d="M11 13l9-9M16 8l3 3"
+              />
+            </svg>
+            1
+             parking
+          </span>
+          <span
+            style="display: inline-flex; align-items: center; gap: 8px;"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="14"
+            >
+              <path
+                d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"
+              />
+            </svg>
+            Built 
+            2020
+          </span>
+        </div>
+      </div>
+      <div
+        aria-label="Map showing rental comps near Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor"
+        role="img"
+        style="border-radius: 14px; overflow: hidden; background: var(--bg-elev); border: 1px solid var(--line); position: relative;"
+      >
+        <svg
+          preserveAspectRatio="xMidYMid slice"
+          style="width: 100%; height: 180px; display: block;"
+          viewBox="0 0 720 180"
+        >
+          <rect
+            fill="color-mix(in oklab, var(--bg-elev) 100%, transparent)"
+            height="180"
+            width="720"
+          />
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="0"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="0"
+              y2="0"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="90"
+              x2="90"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="22.5"
+              y2="22.5"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="180"
+              x2="180"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="45"
+              y2="45"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="270"
+              x2="270"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="67.5"
+              y2="67.5"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="360"
+              x2="360"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="90"
+              y2="90"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="450"
+              x2="450"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="112.5"
+              y2="112.5"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="540"
+              x2="540"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="135"
+              y2="135"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="630"
+              x2="630"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="157.5"
+              y2="157.5"
+            />
+          </g>
+          <g>
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="720"
+              x2="720"
+              y1="0"
+              y2="180"
+            />
+            <line
+              stroke="var(--line)"
+              stroke-width="0.75"
+              x1="0"
+              x2="720"
+              y1="180"
+              y2="180"
+            />
+          </g>
+          <line
+            opacity="0.8"
+            stroke="var(--surface)"
+            stroke-width="6"
+            x1="0"
+            x2="720"
+            y1="81"
+            y2="90"
+          />
+          <line
+            opacity="0.6"
+            stroke="var(--surface)"
+            stroke-width="4"
+            x1="288"
+            x2="324"
+            y1="0"
+            y2="180"
+          />
+          <line
+            opacity="0.5"
+            stroke="var(--surface)"
+            stroke-width="3"
+            x1="0"
+            x2="720"
+            y1="129.6"
+            y2="122.4"
+          />
+          <g>
+            <circle
+              cx="158.4"
+              cy="54"
+              fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+              r="18"
+            />
+            <circle
+              cx="158.4"
+              cy="54"
+              fill="var(--accent)"
+              r="5"
+            />
+          </g>
+          <g>
+            <circle
+              cx="503.99999999999994"
+              cy="39.6"
+              fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+              r="18"
+            />
+            <circle
+              cx="503.99999999999994"
+              cy="39.6"
+              fill="var(--accent)"
+              r="5"
+            />
+          </g>
+          <g>
+            <circle
+              cx="259.2"
+              cy="115.2"
+              fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+              r="18"
+            />
+            <circle
+              cx="259.2"
+              cy="115.2"
+              fill="var(--accent)"
+              r="5"
+            />
+          </g>
+          <g>
+            <circle
+              cx="547.2"
+              cy="122.4"
+              fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+              r="18"
+            />
+            <circle
+              cx="547.2"
+              cy="122.4"
+              fill="var(--accent)"
+              r="5"
+            />
+          </g>
+          <g>
+            <circle
+              cx="417.59999999999997"
+              cy="140.4"
+              fill="color-mix(in oklab, var(--accent) 15%, transparent)"
+              r="18"
+            />
+            <circle
+              cx="417.59999999999997"
+              cy="140.4"
+              fill="var(--accent)"
+              r="5"
+            />
+          </g>
+          <g>
+            <circle
+              cx="360"
+              cy="90"
+              fill="var(--ink)"
+              r="10"
+            />
+            <circle
+              cx="360"
+              cy="90"
+              fill="var(--bg)"
+              r="5"
+            />
+          </g>
+        </svg>
+        <div
+          style="position: absolute; bottom: 12px; left: 12px; background: color-mix(in oklab, var(--surface) 92%, transparent); backdrop-filter: blur(8px); border-radius: 8px; padding: 6px 12px; font-size: 11px; font-family: "Geist Mono", monospace; color: var(--ink); border: 1px solid var(--line);"
+        >
+          Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor
+        </div>
+        <div
+          style="position: absolute; top: 10px; right: 10px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(6px); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);"
+        >
+          Map placeholder · Mapbox GL JS
+        </div>
+      </div>
+    </div>
+    <div
+      class="card col"
+      style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
+    >
+      <div
+        class="col"
+        style="align-items: center; gap: 8px;"
+      >
+        <div
+          aria-label="Deal score: 8 out of 95"
+          style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
+        >
+          <div
+            style="position: relative; width: 180px; height: 180px;"
+          >
+            <svg
+              aria-hidden="true"
+              height="180"
+              role="img"
+              viewBox="0 0 180 180"
+              width="180"
+            >
+              <circle
+                cx="90"
+                cy="90"
+                fill="none"
+                r="82.5"
+                stroke="var(--line)"
+                stroke-width="15"
+              />
+              <circle
+                cx="90"
+                cy="90"
+                fill="none"
+                r="82.5"
+                stroke="var(--fail)"
+                stroke-dasharray="518.3627878423158"
+                stroke-dashoffset="518.3627878423158"
+                stroke-linecap="round"
+                stroke-width="15"
+                style="transition: stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1);"
+                transform="rotate(-90 90 90)"
+              />
+            </svg>
+            <div
+              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+            >
+              <span
+                class="serif tabular"
+                style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--fail);"
+              >
+                8
+              </span>
+              <span
+                class="mono"
+                style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+              >
+                Deal score / 95
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="col"
+        style="text-align: center; align-items: center; gap: 8px;"
+      >
+        <div
+          class="mono"
+          style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fail);"
+        >
+          Hard pass
+        </div>
+        <div
+          class="serif"
+          style="font-size: 20px; line-height: 1.2; text-wrap: balance;"
+        >
+          Fails on multiple fundamentals.
+        </div>
+      </div>
+      <div
+        class="divider"
+        style="border-top: 1px solid var(--line);"
+      />
+      <div
+        class="col"
+        style="gap: 10px;"
+      >
+        <div
+          class="mono"
+          style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        >
+          Score breakdown
+        </div>
+        <div
+          class="col"
+          style="gap: 4px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; font-size: 12px;"
+          >
+            <span
+              style="color: var(--ink-2);"
+            >
+              Cap rate
+            </span>
+            <span
+              class="mono tabular"
+              style="color: var(--muted);"
+            >
+              0
+               / 
+              25
+            </span>
+          </div>
+          <div
+            style="height: 3px; border-radius: 999px; background: var(--line);"
+          >
+            <div
+              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+            />
+          </div>
+        </div>
+        <div
+          class="col"
+          style="gap: 4px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; font-size: 12px;"
+          >
+            <span
+              style="color: var(--ink-2);"
+            >
+              Cash flow
+            </span>
+            <span
+              class="mono tabular"
+              style="color: var(--muted);"
+            >
+              0
+               / 
+              25
+            </span>
+          </div>
+          <div
+            style="height: 3px; border-radius: 999px; background: var(--line);"
+          >
+            <div
+              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+            />
+          </div>
+        </div>
+        <div
+          class="col"
+          style="gap: 4px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; font-size: 12px;"
+          >
+            <span
+              style="color: var(--ink-2);"
+            >
+              CoC return
+            </span>
+            <span
+              class="mono tabular"
+              style="color: var(--muted);"
+            >
+              0
+               / 
+              20
+            </span>
+          </div>
+          <div
+            style="height: 3px; border-radius: 999px; background: var(--line);"
+          >
+            <div
+              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+            />
+          </div>
+        </div>
+        <div
+          class="col"
+          style="gap: 4px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; font-size: 12px;"
+          >
+            <span
+              style="color: var(--ink-2);"
+            >
+              DSCR
+            </span>
+            <span
+              class="mono tabular"
+              style="color: var(--muted);"
+            >
+              0
+               / 
+              15
+            </span>
+          </div>
+          <div
+            style="height: 3px; border-radius: 999px; background: var(--line);"
+          >
+            <div
+              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+            />
+          </div>
+        </div>
+        <div
+          class="col"
+          style="gap: 4px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; font-size: 12px;"
+          >
+            <span
+              style="color: var(--ink-2);"
+            >
+              Demand
+            </span>
+            <span
+              class="mono tabular"
+              style="color: var(--muted);"
+            >
+              3
+               / 
+              10
+            </span>
+          </div>
+          <div
+            style="height: 3px; border-radius: 999px; background: var(--line);"
+          >
+            <div
+              style="width: 30%; height: 100%; border-radius: 999px; background: var(--caution);"
+            />
+          </div>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;"
+        >
+          <span
+            style="color: var(--ink-2);"
+          >
+            Risk deductions
+          </span>
+          <span
+            class="mono tabular"
+            style="color: var(--fail);"
+          >
+            −
+            6
+          </span>
+        </div>
+      </div>
+      <div
+        class="divider"
+        style="border-top: 1px solid var(--line);"
+      />
+      <div
+        class="col"
+        style="gap: 12px;"
+      >
+        <div
+          style="display: flex; justify-content: space-between; align-items: baseline;"
+        >
+          <span
+            class="mono"
+            style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+          >
+            Asking
+          </span>
+          <span
+            class="serif tabular"
+            style="font-size: 32px; line-height: 1;"
+          >
+            $729,900
+          </span>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            Cash flow
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--fail);"
+          >
+            −$2,431/mo
+          </span>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            Cap rate
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--ink);"
+          >
+            1.47%
+          </span>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            DSCR
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--ink);"
+          >
+            0.44×
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+`;
+
+exports[`RentalCompsBar > matches snapshot 1`] = `
+<div
+  aria-label="Rental comps: low $2,700, mid $2,900, high $3,200, estimate $2,900"
+  role="region"
+  style="padding: 20px 0px;"
+>
+  <div
+    style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: var(--muted);"
+  >
+    <span
+      class="mono"
+    >
+      $2,700
+      <br />
+      <span
+        style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;"
+      >
+        Low
+      </span>
+    </span>
+    <span
+      class="mono"
+      style="text-align: center;"
+    >
+      $2,900
+      <br />
+      <span
+        style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;"
+      >
+        Median
+      </span>
+    </span>
+    <span
+      class="mono"
+      style="text-align: right;"
+    >
+      $3,200
+      <br />
+      <span
+        style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;"
+      >
+        High
+      </span>
+    </span>
+  </div>
+  <div
+    style="position: relative; height: 40px;"
+  >
+    <div
+      style="position: absolute; top: 50%; left: 0px; right: 0px; height: 8px; border-radius: 999px; background: var(--line); transform: translateY(-50%);"
+    />
+    <div
+      style="position: absolute; top: 50%; left: 0px; right: 0px; height: 8px; border-radius: 999px; background: linear-gradient(90deg,
+              color-mix(in oklab, var(--caution) 40%, transparent) 0%,
+              color-mix(in oklab, var(--pass) 60%, transparent) 100%); transform: translateY(-50%);"
+    />
+    <div
+      aria-label="Estimated rent: $2,900"
+      role="img"
+      style="position: absolute; top: 50%; left: 40%; transform: translate(-50%, -50%) rotate(45deg) scale(1); width: 16px; height: 16px; background: var(--ink); border: 2px solid var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,.18); transition: transform 0.12s ease, background-color 0.12s ease; cursor: crosshair; z-index: 2;"
+    />
+  </div>
+  <div
+    style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--muted);"
+  >
+    <span
+      class="mono"
+    >
+      Ask rent
+       
+      <span
+        style="color: var(--ink); font-weight: 600;"
+      >
+        $2,900
+        /mo
+      </span>
+    </span>
+  </div>
+</div>
+`;
+
+exports[`RiskRow > matches snapshot 1`] = `
+<div
+  style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+>
+  <div
+    aria-hidden="true"
+    style="width: 4px; background: var(--fail); flex-shrink: 0;"
+  />
+  <div
+    style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+  >
+    <span
+      style="font-size: 14px; font-weight: 500; color: var(--ink);"
+    >
+      Condo-fee burden
+    </span>
+    <span
+      class="mono"
+      style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+    >
+      $761/mo · 26% of rent
+    </span>
+  </div>
+</div>
+`;

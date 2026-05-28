@@ -1,3 +1,10 @@
 // Investor-specific components — also reused by landlord report
 export { AssumptionFields } from './AssumptionFields'
 export type { AnalysisAssumptions, RateMetadata } from './AssumptionFields'
+export { FinancingSliders } from './FinancingSliders'
+export { OSFICard } from './OSFICard'
+export { LTTTable } from './LTTTable'
+export { EquityChart } from './EquityChart'
+export { InvestmentMetricsSection } from './InvestmentMetricsSection'
+export { NeighbourhoodSection } from './NeighbourhoodSection'
+export { STRPlaceholderSection } from './STRPlaceholderSection'

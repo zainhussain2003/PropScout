@@ -43,3 +43,9 @@ yarn-error.log*
 .DS_Store
 ehthumbs.db
 Desktop.ini
+
+# Runtime cache files — regenerated on each run, never commit
+**/.boc_rate_cache.json
+
+# Supabase temp files
+supabase/.temp/
