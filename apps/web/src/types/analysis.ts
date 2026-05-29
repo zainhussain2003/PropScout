@@ -274,3 +274,119 @@ export interface ComputedInvestorMetrics extends InvestmentMetrics {
   totalCashInvested: number
   principal: number
 }
+
+// ── Tenant report types ────────────────────────────────────────────────────────
+
+/**
+ * A single flag surfaced in the listing accuracy and listed-vs-reality sections.
+ * tone 'good' is used for confirmed positives (e.g. "Utilities are clear").
+ */
+export interface TenantFlag {
+  id?: string
+  tone: 'red' | 'amber' | 'good'
+  label: string
+  detail: string
+  /** Exact quote pulled from the listing description as evidence. */
+  evidence?: string
+  /** Suggested question to ask the landlord before signing. */
+  ask?: string
+}
+
+/** Single amenity cell in the What's Included grid. */
+export interface TenantAmenity {
+  label: string
+  /** 'incl' = included in rent · 'extra' = additional cost · 'unclear' = needs confirmation */
+  status: 'incl' | 'extra' | 'unclear'
+  /** Short note displayed below the label, e.g. "~$80–110/mo" */
+  note?: string
+}
+
+export type SchoolBoard = 'public' | 'catholic' | 'french'
+export type SchoolQuality = 'above' | 'avg' | 'below'
+
+/** One school card in the TenantSchoolsSection. */
+export interface TenantSchool {
+  board: SchoolBoard
+  boardLabel: string
+  name: string
+  grades: string
+  distance: string
+  walk: string
+  quality: SchoolQuality
+  inCatchment: boolean
+}
+
+/** Three-level school breakdown passed to TenantSchoolsSection. */
+export interface TenantSchools {
+  elementary: TenantSchool[]
+  middle: TenantSchool[]
+  high: TenantSchool[]
+}
+
+/** Walk / Transit / Bike score tile. */
+export interface TenantMobilityScore {
+  label: string
+  val: number
+  sub: string
+  tone: 'pass' | 'caution'
+}
+
+/** One row in the "From this address" distance table. */
+export interface TenantDistanceRow {
+  k: string
+  v: string
+  unit: string
+  tone: 'pass' | 'caution'
+}
+
+/** One factor row in the negotiation leverage card. */
+export interface TenantLeverageRow {
+  k: string
+  v: string
+  tone: 'pass' | 'caution'
+}
+
+/** One line in the monthly cost breakdown table. */
+export interface TenantCostLine {
+  k: string
+  asking: number
+  target: number
+  included: boolean | 'maybe'
+  note?: string
+}
+
+/** One item in the Listed vs Reality side-by-side comparison. */
+export interface TenantRealityItem {
+  txt: string
+  tone: 'ok' | 'bad'
+}
+
+/** One confirm-before-signing checklist item. */
+export interface TenantChecklistItem {
+  label: string
+  critical: boolean
+}
+
+/**
+ * Tenant-specific listing data.
+ * Separate from ListingData (investor) — rental listings have different fields.
+ */
+export interface TenantListingData {
+  id: string
+  addressLine1: string
+  addressLine2: string
+  asking: number
+  beds: string
+  baths: string
+  sqft: string
+  floor: string
+  utilities: string
+  scoreNumber: number
+  scoreTone: 'pass' | 'caution' | 'fail'
+  verdictLabel: string
+  verdictSub: string
+  targetLow: number
+  targetHigh: number
+  chips: string[]
+  photoUrls?: string[]
+}

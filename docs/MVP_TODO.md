@@ -193,18 +193,25 @@ Reference: `Investor Report.html` + `investor-report.jsx` + `investor-sections.j
 
 ### PR 5 — Tenant report
 
+> PR5 complete — 2026-05-28. 372/372 tests passing.
+> Mobile responsive pass deferred to PR8.
+> Known: SignInModal renders as centred overlay, not bottom-sheet —
+> animation to be aligned with spec in PR8 mobile pass.
+> Known: duplicate "Save to account" button (nav + score card) —
+> to be resolved when nav is finalised in PR7.
+
 Reference: `Tenant Report.html` + `tenant-report.jsx` + `tenant-sections.jsx` + `tenant-sections-2.jsx` + `tenant-sections-3.jsx` + `tenant-schools.jsx`
 
-- [ ] `<FlagDeepRow flag>` — expandable risk flag with evidence quote + "Ask before signing"
-- [ ] `<ListedVsRealitySection>` — conditional side-by-side cards (only when flags fire)
-- [ ] `<WhatsIncludedSection>` — amenities grid with included/extra/unclear colouring
-- [ ] `<LocationCommuteSection>` — Walk/Transit/Bike scores + distances
-- [ ] `<NegotiationSection>` — leverage card + suggested-message card
-- [ ] `<TenantSchoolsSection>` — slim schools section (1 per board × 3 levels)
-- [ ] Full unit breakdown card — all scraped fields, "Not listed" for missing values
-- [ ] Confirm-before-signing checklist — dynamically generated from fired flags, copy-pasteable negotiation script
-- [ ] Conversion prompt at bottom — links to Report A flow + optional email capture
-- [ ] All 12 tenant report sections rendered (spec Section 8)
+- [x] `<FlagDeepRow flag>` — expandable risk flag with evidence quote + "Ask before signing"
+- [x] `<ListedVsRealitySection>` — conditional side-by-side cards (only when flags fire)
+- [x] `<WhatsIncludedSection>` — amenities grid with included/extra/unclear colouring
+- [x] `<LocationCommuteSection>` — Walk/Transit/Bike scores + distances
+- [x] `<NegotiationSection>` — leverage card + suggested-message card
+- [x] `<TenantSchoolsSection>` — slim schools section (1 per board × 3 levels)
+- [x] Full unit breakdown card — all scraped fields, "Not listed" for missing values
+- [x] Confirm-before-signing checklist — dynamically generated from fired flags, copy-pasteable negotiation script
+- [x] Conversion prompt at bottom — links to Report A flow + optional email capture
+- [x] All 12 tenant report sections rendered (spec Section 8)
 
 ### PR 6 — Personal buyer + Landlord reports
 

@@ -1,11 +1,12 @@
 // Nav — top navigation bar.
 // Three variants driven by the `variant` prop:
 //   'landing' — full marketing nav with links + Sign in + Start free
-//   'report'  — breadcrumb (report type + address slug) + Share + Save
+//   'report'  — breadcrumb (report type + address slug) + Share + Save + Sign in
 //   'account' — breadcrumb (Your account) + Help + user avatar pill
 //
 // Dark mode is controlled by data-theme on <html> — toggle by calling onToggleDark.
 
+import { useState } from 'react'
 import { Icon } from './Icon'
 import { Wordmark } from './Wordmark'
 
@@ -56,7 +57,7 @@ function LandingNav({ dark, onToggleDark, onSignIn }: LandingNavProps): JSX.Elem
           <button
             className="btn btn-ghost"
             onClick={onToggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={dark ? 'Toggle light mode' : 'Toggle dark mode'}
             style={{ padding: '10px 12px' }}
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
@@ -92,6 +93,17 @@ function ReportNav({
   reportLabel,
   addressSlug,
 }: ReportNavProps): JSX.Element {
+  // Slug copy feedback — same 2-second revert pattern as NegotiationSection copy button.
+  const [slugCopied, setSlugCopied] = useState(false)
+
+  function handleSlugClick(): void {
+    void navigator.clipboard.writeText(window.location.href).catch(() => {
+      // Clipboard API unavailable (non-HTTPS, iframe) — silently ignore
+    })
+    setSlugCopied(true)
+    setTimeout(() => setSlugCopied(false), 2000)
+  }
+
   return (
     <header style={headerStyleReport}>
       <div className="container row" style={{ padding: '14px 0', justifyContent: 'space-between' }}>
@@ -102,13 +114,18 @@ function ReportNav({
             <span>{reportLabel}</span>
             <span style={{ opacity: 0.55 }}>/</span>
             <span
+              onClick={handleSlugClick}
+              aria-label="Copy share link"
               style={{
-                color: 'var(--ink)',
+                color: slugCopied ? 'var(--accent)' : 'var(--ink)',
                 fontFamily: "'Geist Mono', monospace",
                 fontSize: 12,
+                cursor: 'pointer',
+                transition: 'color 0.15s ease',
+                userSelect: 'none',
               }}
             >
-              {addressSlug}
+              {slugCopied ? 'Link copied!' : addressSlug}
             </span>
           </div>
         </div>
@@ -117,7 +134,7 @@ function ReportNav({
           <button
             className="btn btn-ghost"
             onClick={onToggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={dark ? 'Toggle light mode' : 'Toggle dark mode'}
             style={{ padding: '10px 12px' }}
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
@@ -125,8 +142,11 @@ function ReportNav({
           <button className="btn btn-ghost" style={{ padding: '10px 14px' }}>
             <Icon name="link" size={13} /> Share link
           </button>
+          <button className="btn btn-ghost" onClick={onSignIn} style={{ padding: '10px 14px' }}>
+            Sign in
+          </button>
           <button className="btn btn-primary" onClick={onSignIn}>
-            Save report <Icon name="arrow" size={13} />
+            Save to account <Icon name="arrow" size={13} />
           </button>
         </div>
       </div>
@@ -166,7 +186,7 @@ function AccountNav({
           <button
             className="btn btn-ghost"
             onClick={onToggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={dark ? 'Toggle light mode' : 'Toggle dark mode'}
             style={{ padding: '10px 12px' }}
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />

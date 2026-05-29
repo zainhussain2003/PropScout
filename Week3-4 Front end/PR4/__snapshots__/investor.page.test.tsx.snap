@@ -55,11 +55,11 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               />
             </svg>
             <span
-              style="font-family: "Instrument Serif", serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+              style="font-family: "Geist", sans-serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
             >
               Prop
               <span
-                style="font-style: italic;"
+                style="font-family: "Instrument Serif", serif; font-style: italic;"
               >
                 Scout
               </span>
@@ -83,7 +83,8 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               /
             </span>
             <span
-              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px;"
+              aria-label="Copy share link"
+              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px; cursor: pointer; transition: color 0.15s ease; user-select: none;"
             >
               unit-5702-5-buttermill-avenue
             </span>
@@ -93,7 +94,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
           class="row gap-12"
         >
           <button
-            aria-label="Switch to dark mode"
+            aria-label="Toggle dark mode"
             class="btn btn-ghost"
             style="padding: 10px 12px;"
           >
@@ -138,9 +139,15 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
              Share link
           </button>
           <button
+            class="btn btn-ghost"
+            style="padding: 10px 14px;"
+          >
+            Sign in
+          </button>
+          <button
             class="btn btn-primary"
           >
-            Save report 
+            Save to account 
             <svg
               aria-hidden="true"
               fill="none"
@@ -281,11 +288,11 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
                   />
                 </svg>
                 <span
-                  style="font-family: "Instrument Serif", serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+                  style="font-family: "Geist", sans-serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
                 >
                   Prop
                   <span
-                    style="font-style: italic;"
+                    style="font-family: "Instrument Serif", serif; font-style: italic;"
                   >
                     Scout
                   </span>
@@ -293,7 +300,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               </div>
             </div>
             <p
-              style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 280px; line-height: 1.55;"
+              style="color: color-mix(in oklab, var(--bg) 60%, transparent); font-size: 14px; max-width: 280px; line-height: 1.55;"
             >
               Underwriting for Canadian real estate. Built in Toronto, opinionated about the numbers.
             </p>
@@ -316,7 +323,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Product
             </div>
@@ -325,37 +332,37 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Investment report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Personal buyer report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Tenant report
+                Tenant analysis
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Landlord report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 SunScout
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Portfolio tracker
               </a>
@@ -365,7 +372,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Company
             </div>
@@ -374,31 +381,31 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 About
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Methodology
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Data sources
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Press
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Careers
               </a>
@@ -408,7 +415,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Resources
             </div>
@@ -417,31 +424,31 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Help centre
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Underwriting glossary
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Ontario LTT calculator
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 OSFI stress test
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 API (Team)
               </a>
@@ -451,7 +458,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Legal
             </div>
@@ -460,25 +467,25 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             >
               <a
                 href="/privacy"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Privacy
               </a>
               <a
                 href="/terms"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Terms
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Disclaimer
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Brokerage info
               </a>
@@ -487,11 +494,11 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
         </div>
         <div
           class="divider"
-          style="background: rgba(255, 255, 255, 0.12);"
+          style="background: color-mix(in oklab, var(--bg) 12%, transparent);"
         />
         <div
           class="row"
-          style="justify-content: space-between; font-size: 13px; color: rgba(255, 255, 255, 0.55); flex-wrap: wrap; gap: 12px;"
+          style="justify-content: space-between; font-size: 13px; color: color-mix(in oklab, var(--bg) 55%, transparent); flex-wrap: wrap; gap: 12px;"
         >
           <span>
             © 2026 PropScout Analytics Inc. · propscout.ca
@@ -566,11 +573,11 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               />
             </svg>
             <span
-              style="font-family: "Instrument Serif", serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+              style="font-family: "Geist", sans-serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
             >
               Prop
               <span
-                style="font-style: italic;"
+                style="font-family: "Instrument Serif", serif; font-style: italic;"
               >
                 Scout
               </span>
@@ -594,7 +601,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               /
             </span>
             <span
-              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px;"
+              aria-label="Copy share link"
+              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px; cursor: pointer; transition: color 0.15s ease; user-select: none;"
             >
               unit-5702-5-buttermill-avenue
             </span>
@@ -604,7 +612,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           class="row gap-12"
         >
           <button
-            aria-label="Switch to dark mode"
+            aria-label="Toggle dark mode"
             class="btn btn-ghost"
             style="padding: 10px 12px;"
           >
@@ -649,9 +657,15 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
              Share link
           </button>
           <button
+            class="btn btn-ghost"
+            style="padding: 10px 14px;"
+          >
+            Sign in
+          </button>
+          <button
             class="btn btn-primary"
           >
-            Save report 
+            Save to account 
             <svg
               aria-hidden="true"
               fill="none"
@@ -1607,7 +1621,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </div>
           <div
             class="row gap-8"
-            style="color: rgba(255, 255, 255, 0.55); margin-bottom: 20px; position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
+            style="color: color-mix(in oklab, var(--bg) 55%, transparent); margin-bottom: 20px; position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"
           >
             <span
               aria-hidden="true"
@@ -1625,7 +1639,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             />
             <span
               class="mono"
-              style="font-size: 10px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.4);"
+              style="font-size: 10px; letter-spacing: 0.12em; color: color-mix(in oklab, var(--bg) 40%, transparent);"
             >
               claude · sonnet 4.6
             </span>
@@ -1644,7 +1658,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </div>
           <div
             class="serif"
-            style="line-height: 1.5; color: rgba(255, 255, 255, 0.78); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
+            style="line-height: 1.5; color: color-mix(in oklab, var(--bg) 78%, transparent); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
           >
             The cap rate of 
             1.47%
@@ -4917,11 +4931,11 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   />
                 </svg>
                 <span
-                  style="font-family: "Instrument Serif", serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+                  style="font-family: "Geist", sans-serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
                 >
                   Prop
                   <span
-                    style="font-style: italic;"
+                    style="font-family: "Instrument Serif", serif; font-style: italic;"
                   >
                     Scout
                   </span>
@@ -4929,7 +4943,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               </div>
             </div>
             <p
-              style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 280px; line-height: 1.55;"
+              style="color: color-mix(in oklab, var(--bg) 60%, transparent); font-size: 14px; max-width: 280px; line-height: 1.55;"
             >
               Underwriting for Canadian real estate. Built in Toronto, opinionated about the numbers.
             </p>
@@ -4952,7 +4966,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Product
             </div>
@@ -4961,37 +4975,37 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Investment report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Personal buyer report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Tenant report
+                Tenant analysis
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Landlord report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 SunScout
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Portfolio tracker
               </a>
@@ -5001,7 +5015,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Company
             </div>
@@ -5010,31 +5024,31 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 About
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Methodology
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Data sources
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Press
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Careers
               </a>
@@ -5044,7 +5058,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Resources
             </div>
@@ -5053,31 +5067,31 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Help centre
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Underwriting glossary
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Ontario LTT calculator
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 OSFI stress test
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 API (Team)
               </a>
@@ -5087,7 +5101,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Legal
             </div>
@@ -5096,25 +5110,25 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             >
               <a
                 href="/privacy"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Privacy
               </a>
               <a
                 href="/terms"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Terms
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Disclaimer
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Brokerage info
               </a>
@@ -5123,11 +5137,11 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
         </div>
         <div
           class="divider"
-          style="background: rgba(255, 255, 255, 0.12);"
+          style="background: color-mix(in oklab, var(--bg) 12%, transparent);"
         />
         <div
           class="row"
-          style="justify-content: space-between; font-size: 13px; color: rgba(255, 255, 255, 0.55); flex-wrap: wrap; gap: 12px;"
+          style="justify-content: space-between; font-size: 13px; color: color-mix(in oklab, var(--bg) 55%, transparent); flex-wrap: wrap; gap: 12px;"
         >
           <span>
             © 2026 PropScout Analytics Inc. · propscout.ca
@@ -5202,11 +5216,11 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               />
             </svg>
             <span
-              style="font-family: "Instrument Serif", serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+              style="font-family: "Geist", sans-serif; font-size: 23px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
             >
               Prop
               <span
-                style="font-style: italic;"
+                style="font-family: "Instrument Serif", serif; font-style: italic;"
               >
                 Scout
               </span>
@@ -5230,7 +5244,8 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               /
             </span>
             <span
-              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px;"
+              aria-label="Copy share link"
+              style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px; cursor: pointer; transition: color 0.15s ease; user-select: none;"
             >
               unit-5702-5-buttermill-avenue
             </span>
@@ -5240,7 +5255,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
           class="row gap-12"
         >
           <button
-            aria-label="Switch to dark mode"
+            aria-label="Toggle dark mode"
             class="btn btn-ghost"
             style="padding: 10px 12px;"
           >
@@ -5285,9 +5300,15 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
              Share link
           </button>
           <button
+            class="btn btn-ghost"
+            style="padding: 10px 14px;"
+          >
+            Sign in
+          </button>
+          <button
             class="btn btn-primary"
           >
-            Save report 
+            Save to account 
             <svg
               aria-hidden="true"
               fill="none"
@@ -5391,11 +5412,11 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
                   />
                 </svg>
                 <span
-                  style="font-family: "Instrument Serif", serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
+                  style="font-family: "Geist", sans-serif; font-size: 27px; letter-spacing: -0.02em; line-height: 1; color: var(--ink); user-select: none;"
                 >
                   Prop
                   <span
-                    style="font-style: italic;"
+                    style="font-family: "Instrument Serif", serif; font-style: italic;"
                   >
                     Scout
                   </span>
@@ -5403,7 +5424,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               </div>
             </div>
             <p
-              style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 280px; line-height: 1.55;"
+              style="color: color-mix(in oklab, var(--bg) 60%, transparent); font-size: 14px; max-width: 280px; line-height: 1.55;"
             >
               Underwriting for Canadian real estate. Built in Toronto, opinionated about the numbers.
             </p>
@@ -5426,7 +5447,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Product
             </div>
@@ -5435,37 +5456,37 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Investment report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Personal buyer report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Tenant report
+                Tenant analysis
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Landlord report
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 SunScout
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Portfolio tracker
               </a>
@@ -5475,7 +5496,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Company
             </div>
@@ -5484,31 +5505,31 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 About
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Methodology
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Data sources
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Press
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Careers
               </a>
@@ -5518,7 +5539,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Resources
             </div>
@@ -5527,31 +5548,31 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             >
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Help centre
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Underwriting glossary
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Ontario LTT calculator
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 OSFI stress test
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 API (Team)
               </a>
@@ -5561,7 +5582,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             class="col gap-12"
           >
             <div
-              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+              style="font-family: "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
             >
               Legal
             </div>
@@ -5570,25 +5591,25 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             >
               <a
                 href="/privacy"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Privacy
               </a>
               <a
                 href="/terms"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Terms
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Disclaimer
               </a>
               <a
                 href="#"
-                style="color: rgba(255, 255, 255, 0.85); font-size: 14px;"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Brokerage info
               </a>
@@ -5597,11 +5618,11 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
         </div>
         <div
           class="divider"
-          style="background: rgba(255, 255, 255, 0.12);"
+          style="background: color-mix(in oklab, var(--bg) 12%, transparent);"
         />
         <div
           class="row"
-          style="justify-content: space-between; font-size: 13px; color: rgba(255, 255, 255, 0.55); flex-wrap: wrap; gap: 12px;"
+          style="justify-content: space-between; font-size: 13px; color: color-mix(in oklab, var(--bg) 55%, transparent); flex-wrap: wrap; gap: 12px;"
         >
           <span>
             © 2026 PropScout Analytics Inc. · propscout.ca

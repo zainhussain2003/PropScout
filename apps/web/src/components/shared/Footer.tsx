@@ -11,7 +11,7 @@ const FOOTER_COLS = [
     items: [
       { label: 'Investment report', href: '#' },
       { label: 'Personal buyer report', href: '#' },
-      { label: 'Tenant report', href: '#' },
+      { label: 'Tenant analysis', href: '#' },
       { label: 'Landlord report', href: '#' },
       { label: 'SunScout', href: '#' },
       { label: 'Portfolio tracker', href: '#' },
@@ -74,7 +74,7 @@ export function Footer(): JSX.Element {
             </div>
             <p
               style={{
-                color: 'rgba(255,255,255,0.6)',
+                color: 'color-mix(in oklab, var(--bg) 60%, transparent)',
                 fontSize: 14,
                 maxWidth: 280,
                 lineHeight: 1.55,
@@ -98,7 +98,7 @@ export function Footer(): JSX.Element {
                   fontSize: 11,
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.5)',
+                  color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
                 }}
               >
                 {col.heading}
@@ -108,7 +108,10 @@ export function Footer(): JSX.Element {
                   <a
                     key={item.label}
                     href={item.href}
-                    style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14 }}
+                    style={{
+                      color: 'color-mix(in oklab, var(--bg) 85%, transparent)',
+                      fontSize: 14,
+                    }}
                   >
                     {item.label}
                   </a>
@@ -119,7 +122,10 @@ export function Footer(): JSX.Element {
         </div>
 
         {/* Divider */}
-        <div className="divider" style={{ background: 'rgba(255,255,255,0.12)' }} />
+        <div
+          className="divider"
+          style={{ background: 'color-mix(in oklab, var(--bg) 12%, transparent)' }}
+        />
 
         {/* Legal line */}
         <div
@@ -127,7 +133,7 @@ export function Footer(): JSX.Element {
           style={{
             justifyContent: 'space-between',
             fontSize: 13,
-            color: 'rgba(255,255,255,0.55)',
+            color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
             flexWrap: 'wrap',
             gap: 12,
           }}
