@@ -135,9 +135,10 @@ describe('TenantReport — Report Nav', () => {
     expect(slug).toBe(true)
   })
 
-  it('renders a "Save report" button in the Nav', () => {
+  it('renders a "Save to account" button in the Nav', () => {
     renderPage()
-    expect(screen.getByRole('button', { name: /Save report/i })).toBeInTheDocument()
+    const buttons = screen.getAllByRole('button', { name: /Save to account/i })
+    expect(buttons.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders the theme toggle button in the Nav', () => {

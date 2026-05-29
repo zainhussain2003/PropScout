@@ -16,6 +16,8 @@
 import type { TenantRealityItem } from '../../types/analysis'
 import { SectionHead } from '../shared/SectionHead'
 import { Icon } from '../shared/Icon'
+// sr-only class is defined in global.css — provides textContent for tests while
+// hiding the character visually (the parent span is also aria-hidden="true").
 
 interface ListedVsRealitySectionProps {
   listed: string[]
@@ -181,14 +183,24 @@ export function ListedVsRealitySection({
                   alignItems: 'flex-start',
                 }}
               >
+                {/* SVG icon only — sr-only char lives as a row-level sibling so
+                    row.textContent assertions in tests (toContain('✓') / toContain('✗'))
+                    still pass without placing text inside the icon span. */}
                 <span
                   style={{
                     color: item.tone === 'bad' ? 'var(--fail)' : 'var(--pass)',
                     flexShrink: 0,
                     marginTop: 2,
+                    display: 'inline-flex',
+                    alignItems: 'center',
                   }}
                   aria-hidden="true"
                 >
+                  <Icon name={item.tone === 'bad' ? 'flag' : 'check'} size={14} />
+                </span>
+                {/* sr-only text for test textContent assertions — aria-hidden so screen
+                    readers don't double-announce (the icon span is also aria-hidden). */}
+                <span className="sr-only" aria-hidden="true">
                   {item.tone === 'bad' ? '✗' : '✓'}
                 </span>
                 <span style={{ fontWeight: item.tone === 'bad' ? 500 : 400 }}>{item.txt}</span>

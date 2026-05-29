@@ -19,7 +19,7 @@ export function Wordmark({ height = 28 }: WordmarkProps): JSX.Element {
       <ScoutMark size={Math.round(height * 0.95)} />
       <span
         style={{
-          fontFamily: "'Instrument Serif', serif",
+          fontFamily: "'Geist', sans-serif",
           fontSize: Math.round(height * 1.05),
           letterSpacing: '-0.02em',
           lineHeight: 1,
@@ -27,7 +27,8 @@ export function Wordmark({ height = 28 }: WordmarkProps): JSX.Element {
           userSelect: 'none',
         }}
       >
-        Prop<span style={{ fontStyle: 'italic' }}>Scout</span>
+        Prop
+        <span style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic' }}>Scout</span>
       </span>
     </div>
   )

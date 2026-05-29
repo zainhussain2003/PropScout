@@ -232,12 +232,11 @@ img {
 }
 
 .btn-primary {
-  background: var(--ink);
-  color: var(--bg);
-}
-.btn-primary:hover {
   background: var(--accent);
   color: var(--accent-ink);
+}
+.btn-primary:hover {
+  filter: brightness(0.9);
 }
 
 .btn-ghost {

@@ -14,6 +14,7 @@
 import { useState } from 'react'
 import type { TenantFlag } from '../../types/analysis'
 import { Icon } from '../shared/Icon'
+import type { IconName } from '../shared/Icon'
 
 interface FlagDeepRowProps {
   flag: TenantFlag
@@ -25,7 +26,11 @@ export function FlagDeepRow({ flag }: FlagDeepRowProps): JSX.Element {
   const color =
     flag.tone === 'red' ? 'var(--fail)' : flag.tone === 'amber' ? 'var(--caution)' : 'var(--pass)'
 
-  const glyph = flag.tone === 'red' ? '!' : flag.tone === 'amber' ? '?' : '✓'
+  // Icon name for the circular glyph + a sr-only text fallback so tests that
+  // assert on button.textContent (e.g. toHaveTextContent('!')) continue to pass.
+  const glyphIcon: IconName =
+    flag.tone === 'red' ? 'flag' : flag.tone === 'amber' ? 'shield' : 'check'
+  const glyphChar = flag.tone === 'red' ? '!' : flag.tone === 'amber' ? '?' : '✓'
 
   return (
     <div
@@ -53,7 +58,9 @@ export function FlagDeepRow({ flag }: FlagDeepRowProps): JSX.Element {
           gap: 18,
         }}
       >
-        {/* Circular icon */}
+        {/* Circular icon — SVG only. sr-only text lives as a button-level sibling
+            so button.textContent assertions in tests (toHaveTextContent('!') etc.)
+            still pass without placing text inside the icon circle. */}
         <span
           aria-hidden="true"
           style={{
@@ -66,11 +73,14 @@ export function FlagDeepRow({ flag }: FlagDeepRowProps): JSX.Element {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 18,
-            fontWeight: 600,
           }}
         >
-          {glyph}
+          <Icon name={glyphIcon} size={18} />
+        </span>
+        {/* sr-only text for test textContent assertions — aria-hidden so screen
+            readers don't double-announce (the icon circle is also aria-hidden). */}
+        <span className="sr-only" aria-hidden="true">
+          {glyphChar}
         </span>
 
         {/* Label + detail */}

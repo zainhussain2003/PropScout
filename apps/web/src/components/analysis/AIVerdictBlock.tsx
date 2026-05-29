@@ -55,7 +55,7 @@ export function AIVerdictBlock({
       <div
         className="row gap-8"
         style={{
-          color: 'rgba(255,255,255,0.55)',
+          color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
           marginBottom: 20,
           position: 'relative',
           zIndex: 1,
@@ -93,7 +93,7 @@ export function AIVerdictBlock({
           style={{
             fontSize: 10,
             letterSpacing: '0.12em',
-            color: 'rgba(255,255,255,0.4)',
+            color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
           }}
         >
           claude · sonnet 4.6
@@ -123,7 +123,7 @@ export function AIVerdictBlock({
         style={{
           fontSize: compact ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(17px, 1.7vw, 21px)',
           lineHeight: 1.5,
-          color: 'rgba(255,255,255,0.78)',
+          color: 'color-mix(in oklab, var(--bg) 78%, transparent)',
           marginTop: 22,
           maxWidth: 880,
           position: 'relative',

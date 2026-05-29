@@ -691,7 +691,7 @@ function TenantSunScoutPlaceholder(): JSX.Element {
           >
             Sun hours analysis
           </span>
-          <Chip>Coming Phase 2</Chip>
+          <Chip highlight>Coming Phase 2</Chip>
         </div>
         <h3 className="serif" style={{ fontSize: 22 }}>
           Window-by-window solar path modeling — shipping Q3 2026.
@@ -1119,7 +1119,7 @@ function ConversionBlock(): JSX.Element {
               fontSize: 10,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.5)',
+              color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
             }}
           >
             Stay in the loop
@@ -1135,7 +1135,7 @@ function ConversionBlock(): JSX.Element {
           >
             Get notified if this rent <em style={{ color: 'var(--accent)' }}>drops</em>.
           </h3>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)' }}>
+          <p style={{ fontSize: 15, color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
             We'll watch this listing for 30 days and email you the moment the price changes or it
             gets relisted. Free, no account needed.
           </p>
@@ -1146,8 +1146,8 @@ function ConversionBlock(): JSX.Element {
               style={{
                 flex: 1,
                 padding: '12px 14px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'color-mix(in oklab, var(--bg) 8%, transparent)',
+                border: '1px solid color-mix(in oklab, var(--bg) 16%, transparent)',
                 borderRadius: 12,
                 color: 'var(--bg)',
                 fontSize: 14,
@@ -1165,7 +1165,7 @@ function ConversionBlock(): JSX.Element {
               fontSize: 10,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.4)',
+              color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
             Unsubscribe anytime · no marketing
