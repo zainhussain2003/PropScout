@@ -31,6 +31,8 @@ export default defineConfig({
       '../../Week3-4 Front end/PR4/*.test.tsx',
       // PR5 — Tenant report tests
       '../../Week3-4 Front end/PR5/*.test.tsx',
+      // PR6 — Personal Buyer + Landlord report tests
+      '../../Week3-4 Front end/PR6/*.test.tsx',
     ],
   },
 })

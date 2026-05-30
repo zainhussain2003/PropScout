@@ -217,12 +217,12 @@ Reference: `Tenant Report.html` + `tenant-report.jsx` + `tenant-sections.jsx` + 
 
 Reference: `Personal Buyer Report.html` + `Landlord Report.html`
 
-- [ ] `<SchoolCard school>` + `<SchoolColumn>` — EQAO + Fraser + catchment badge
-- [ ] `<PBTrueCostSection>` — itemised monthly cost table
-- [ ] `<PBFMVSection>` — FMV positioning bar
-- [ ] `<PBSalesSection>` — comparable sales table
-- [ ] Personal buyer report — all 6 sections (spec Section 7)
-- [ ] Landlord report — all sections (reuses investor components heavily)
+- [x] `<SchoolCard school>` + `<SchoolColumn>` — EQAO + Fraser + catchment badge
+- [x] `<PBTrueCostSection>` — itemised monthly cost table
+- [x] `<PBFMVSection>` — FMV positioning bar
+- [x] `<PBSalesSection>` — comparable sales table
+- [x] Personal buyer report — all 6 sections (spec Section 7)
+- [x] Landlord report — all sections (reuses investor components heavily)
 
 ### PR 7 — Paywall, account, errors, auth
 

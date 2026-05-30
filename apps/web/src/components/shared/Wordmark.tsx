@@ -13,6 +13,7 @@ interface WordmarkProps {
 export function Wordmark({ height = 28 }: WordmarkProps): JSX.Element {
   return (
     <div
+      data-testid="wordmark"
       className="row gap-12"
       style={{ height, display: 'inline-flex', alignItems: 'center', gap: 10 }}
     >

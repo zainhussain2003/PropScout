@@ -1,0 +1,562 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PBSalesSection > matches snapshot 1`] = `
+<section
+  class="container tr-section"
+>
+  <div
+    class="tr-section-head"
+  >
+    <div
+      class="col gap-12"
+      style="max-width: 760px;"
+    >
+      <span
+        class="mono"
+        style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+      >
+        <span
+          style="color: var(--accent);"
+        >
+          § 
+          03
+        </span>
+        <span
+          style="margin-left: 12px; color: var(--muted);"
+        >
+          Comparable sales
+        </span>
+      </span>
+      <h2
+        class="serif"
+        style="text-wrap: balance;"
+      >
+        What's 
+        <em>
+          actually
+        </em>
+         selling around here?
+      </h2>
+    </div>
+    <span
+      class="verdict-pill pass"
+    >
+      8 sales · last 6 mo
+    </span>
+  </div>
+  <div
+    class="card"
+    style="padding: 0px; overflow: hidden;"
+  >
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--line);"
+    >
+      <div
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: left;"
+      >
+        Address
+      </div>
+      <div
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+      >
+        Beds
+      </div>
+      <div
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+      >
+        Sqft
+      </div>
+      <div
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+      >
+        Sold for
+      </div>
+      <div
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+      >
+        $/sqft
+      </div>
+      <div
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: right;"
+      >
+        DOM
+      </div>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          262 Mountcrest Avenue
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          0.05 km
+           · sold 
+          Apr 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        3
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,640
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $882,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        538
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        9
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          124 Iroquois Avenue
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          0.4 km
+           · sold 
+          Mar 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        3
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,580
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $868,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        549
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        14
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          17 Lakeland Drive
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          0.6 km
+           · sold 
+          Mar 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        4
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,720
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $905,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        526
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        7
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          88 Sunnyhurst Crescent
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          0.8 km
+           · sold 
+          Feb 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        3
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,610
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $891,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        553
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        11
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          305 Mountcrest Avenue
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          0.2 km
+           · sold 
+          Feb 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        3
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,530
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $845,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        552
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        18
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          440 Plains Road East
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          1.1 km
+           · sold 
+          Jan 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        3
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,680
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $858,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        511
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        22
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          76 Orchard Avenue
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          1.3 km
+           · sold 
+          Jan 2026
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        4
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,750
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $921,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        526
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        6
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 14px 24px; border-bottom: medium; font-size: 13.5px; align-items: center;"
+    >
+      <div
+        class="col"
+        style="gap: 2px;"
+      >
+        <span
+          style="color: var(--ink);"
+        >
+          511 Stephenson Drive
+        </span>
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
+        >
+          0.9 km
+           · sold 
+          Dec 2025
+        </span>
+      </div>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        3
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink);"
+      >
+        1,560
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 16px;"
+      >
+        $836,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        $
+        536
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        15
+        d
+      </span>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr; padding: 16px 24px; background: color-mix(in oklab, var(--accent) 5%, var(--bg-elev)); border-top: 1px solid var(--line-strong); align-items: center;"
+    >
+      <span
+        class="mono"
+        style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+      >
+        Median · last 6 mo
+      </span>
+      <span />
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--ink-2);"
+      >
+        1,640
+      </span>
+      <span
+        class="serif tabular"
+        style="text-align: right; font-size: 18px; color: var(--accent);"
+      >
+        $882,000
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--accent);"
+      >
+        $
+        538
+      </span>
+      <span
+        class="mono tabular"
+        style="text-align: right; color: var(--accent);"
+      >
+        14
+        d
+      </span>
+    </div>
+  </div>
+</section>
+`;

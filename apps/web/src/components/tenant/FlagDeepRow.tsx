@@ -43,6 +43,7 @@ export function FlagDeepRow({ flag }: FlagDeepRowProps): JSX.Element {
     >
       {/* ── Header button ─────────────────────────────────────── */}
       <button
+        data-testid="flag-expand-btn"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         style={{

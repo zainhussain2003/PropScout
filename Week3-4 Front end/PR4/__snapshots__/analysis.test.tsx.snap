@@ -1363,6 +1363,7 @@ exports[`PropertyHero > matches snapshot 1`] = `
 exports[`RentalCompsBar > matches snapshot 1`] = `
 <div
   aria-label="Rental comps: low $2,700, mid $2,900, high $3,200, estimate $2,900"
+  data-testid="rental-comps-bar"
   role="region"
   style="padding: 20px 0px;"
 >

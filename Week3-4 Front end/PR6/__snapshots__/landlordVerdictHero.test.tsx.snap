@@ -1,0 +1,204 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LandlordVerdictHero > matches snapshot 1`] = `
+<section
+  class="container"
+  style="margin-top: 24px; margin-bottom: 16px;"
+>
+  <div
+    style="background: var(--ink); color: var(--bg); border-radius: 24px; position: relative; overflow: hidden;"
+  >
+    <div
+      style="position: absolute; right: -80px; top: -40px; opacity: 0.06; color: var(--accent);"
+    >
+      <svg
+        aria-hidden="true"
+        fill="none"
+        height="520"
+        viewBox="0 0 32 32"
+        width="520"
+      >
+        <circle
+          cx="16"
+          cy="16"
+          opacity="0.35"
+          r="14.5"
+          stroke="var(--accent)"
+          stroke-width="1"
+        />
+        <path
+          d="M5 21 L16 8 L27 21"
+          stroke="var(--accent)"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+        />
+        <circle
+          cx="16"
+          cy="21"
+          fill="var(--accent)"
+          r="1.8"
+        />
+        <path
+          d="M16 4 L16 7"
+          stroke="var(--accent)"
+          stroke-linecap="round"
+          stroke-width="1.6"
+        />
+      </svg>
+    </div>
+    <div
+      class="row gap-8"
+      style="color: rgba(255, 255, 255, 0.55); margin-bottom: 20px; position: relative; z-index: 1;"
+    >
+      <span
+        class="live-dot"
+        style="width: 7px; height: 7px; border-radius: 999px; background: var(--accent);"
+      />
+      <span
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;"
+      >
+        Scout AI · landlord verdict
+      </span>
+      <span
+        style="flex: 1 1 0%;"
+      />
+      <span
+        class="mono"
+        style="font-size: 10px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.4);"
+      >
+        claude · sonnet 4.6
+      </span>
+    </div>
+    <div
+      class="serif"
+      style="line-height: 1.1; letter-spacing: -0.025em; color: var(--bg); text-wrap: balance; max-width: 920px; position: relative; z-index: 1;"
+    >
+      You're
+       
+      <span
+        style="color: var(--accent);"
+      >
+        $300
+      </span>
+       
+      above the building median, and 
+      38
+       days on market is telling you exactly what the tenants think of it.
+    </div>
+    <div
+      class="serif"
+      style="line-height: 1.5; color: rgba(255, 255, 255, 0.78); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
+    >
+      Two comparable 1+1 units in your building rented inside 11 days at
+       
+      <span
+        class="tabular"
+      >
+        $3,050
+      </span>
+       and 
+      <span
+        class="tabular"
+      >
+        $3,100
+      </span>
+      . Dropping your ask to
+       
+      <span
+        class="tabular"
+        style="color: var(--accent);"
+      >
+        $3,150
+      </span>
+       
+      puts you at the top of the range and probably fills the unit inside two weeks. Holding at
+       
+      <span
+        class="tabular"
+      >
+        $
+        3,400
+      </span>
+       costs you roughly
+       
+      <span
+        class="tabular"
+        style="color: var(--accent);"
+      >
+        $113
+      </span>
+       
+      in lost rent every day the unit sits empty.
+    </div>
+    <div
+      class="row gap-16"
+      style="margin-top: 28px; color: rgba(255, 255, 255, 0.5); font-size: 12px; position: relative; z-index: 1; flex-wrap: wrap;"
+    >
+      <span
+        class="row gap-6"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="12"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+          viewBox="0 0 24 24"
+          width="12"
+        >
+          <path
+            d="M4 12l5 5L20 6"
+          />
+        </svg>
+        12
+         building comps · last 60 days
+      </span>
+      <span
+        class="row gap-6"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="12"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+          viewBox="0 0 24 24"
+          width="12"
+        >
+          <path
+            d="M4 12l5 5L20 6"
+          />
+        </svg>
+        Drop the rent slider below to model alternatives
+      </span>
+      <span
+        class="row gap-6"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="12"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+          viewBox="0 0 24 24"
+          width="12"
+        >
+          <path
+            d="M4 12l5 5L20 6"
+          />
+        </svg>
+        Cap rate at current rent: 
+        1.64%
+      </span>
+    </div>
+  </div>
+</section>
+`;
