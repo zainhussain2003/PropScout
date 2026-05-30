@@ -1183,13 +1183,19 @@ export function PersonalBuyerPage(): JSX.Element {
   const addressSlug = '248-mountcrest-burlington'
 
   return (
-    <div data-theme={dark ? 'dark' : 'light'}>
+    <div>
       <Nav
         variant="report"
         reportLabel="Personal buyer report"
         addressSlug={addressSlug}
         dark={dark}
-        onToggleDark={() => setDark((d) => !d)}
+        onToggleDark={() => {
+          setDark((d) => {
+            const next = !d
+            document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
+            return next
+          })
+        }}
         onSignIn={() => {
           /* TODO: wire sign-in modal */
         }}

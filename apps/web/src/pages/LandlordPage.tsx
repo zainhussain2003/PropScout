@@ -322,13 +322,19 @@ export function LandlordPage(): JSX.Element {
   const addressSlug = '3208-harbour-st-toronto'
 
   return (
-    <div data-theme={dark ? 'dark' : 'light'}>
+    <div>
       <Nav
         variant="report"
         reportLabel="Landlord report"
         addressSlug={addressSlug}
         dark={dark}
-        onToggleDark={() => setDark((d) => !d)}
+        onToggleDark={() => {
+          setDark((d) => {
+            const next = !d
+            document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
+            return next
+          })
+        }}
         onSignIn={() => {
           /* TODO: wire sign-in modal */
         }}

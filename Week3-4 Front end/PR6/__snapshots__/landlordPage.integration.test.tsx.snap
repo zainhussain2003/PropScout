@@ -1,9 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`LandlordPage — snapshot > matches shallow snapshot (SVGs blanked for stability) 1`] = `
-<div
-  data-theme="light"
->
+<div>
   <header
     style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
   >
@@ -682,8 +680,7 @@ exports[`LandlordPage — snapshot > matches shallow snapshot (SVGs blanked for 
         >
           $3,050
         </span>
-         and
-         
+         and 
         <span
           class="tabular"
         >
@@ -1240,8 +1237,7 @@ exports[`LandlordPage — snapshot > matches shallow snapshot (SVGs blanked for 
     <p
       style="margin-top: 18px; font-size: 13px; color: var(--muted); max-width: 720px;"
     >
-      Every metric on this page recalculates from your slider above. P25/P50/P75 are the last 60 days of
-       
+      Every metric on this page recalculates from your slider above. P25/P50/P75 are the last 60 days of 
       <span
         class="tabular"
       >

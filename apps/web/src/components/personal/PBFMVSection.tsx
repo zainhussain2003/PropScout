@@ -111,7 +111,11 @@ export function PBFMVSection({
         </div>
 
         {/* Range bar */}
-        <div style={{ position: 'relative', height: 32, marginTop: 10, marginBottom: 18 }}>
+        <div
+          role="img"
+          aria-label={`Fair market value range: $${fmv.low.toLocaleString()} to $${fmv.high.toLocaleString()}, median $${fmv.mid.toLocaleString()}, asking $${property.price.toLocaleString()}`}
+          style={{ position: 'relative', height: 32, marginTop: 10, marginBottom: 18 }}
+        >
           {/* Gradient track */}
           <div
             style={{
@@ -120,7 +124,7 @@ export function PBFMVSection({
               transform: 'translateY(-50%)',
               left: 0,
               right: 0,
-              height: 6,
+              height: 12,
               borderRadius: 999,
               background:
                 'linear-gradient(90deg, color-mix(in oklab, var(--accent) 18%, var(--bg-elev)), color-mix(in oklab, var(--accent) 55%, transparent), color-mix(in oklab, var(--accent) 18%, var(--bg-elev)))',

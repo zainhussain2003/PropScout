@@ -1,9 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to keep stable) 1`] = `
-<div
-  data-theme="light"
->
+<div>
   <header
     style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
   >
@@ -715,8 +713,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         class="serif"
         style="line-height: 1.1; letter-spacing: -0.025em; color: var(--bg); text-wrap: balance; max-width: 920px; position: relative; z-index: 1;"
       >
-        This is
-         
+        This is 
         <span
           style="color: var(--accent);"
         >
@@ -728,8 +725,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         class="serif"
         style="line-height: 1.5; color: rgba(255, 255, 255, 0.78); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
       >
-        At
-         
+        At 
         <span
           class="tabular"
         >
@@ -745,8 +741,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           $6,057
         </span>
          
-        — about
-         
+        — about 
         <span
           class="tabular"
         >
@@ -1352,10 +1347,12 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         </span>
       </div>
       <div
+        aria-label="Fair market value range: $845,000 to $925,000, median $880,000, asking $875,000"
+        role="img"
         style="position: relative; height: 32px; margin-top: 10px; margin-bottom: 18px;"
       >
         <div
-          style="position: absolute; top: 50%; transform: translateY(-50%); left: 0px; right: 0px; height: 6px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 18%, var(--bg-elev)), color-mix(in oklab, var(--accent) 55%, transparent), color-mix(in oklab, var(--accent) 18%, var(--bg-elev)));"
+          style="position: absolute; top: 50%; transform: translateY(-50%); left: 0px; right: 0px; height: 12px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 18%, var(--bg-elev)), color-mix(in oklab, var(--accent) 55%, transparent), color-mix(in oklab, var(--accent) 18%, var(--bg-elev)));"
         />
         <div
           style="position: absolute; left: 0%; top: 50%; transform: translate(-50%, -50%); width: 1.5px; height: 14px; background: var(--ink); opacity: 0.18;"

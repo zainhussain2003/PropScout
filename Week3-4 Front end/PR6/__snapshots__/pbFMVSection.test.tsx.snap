@@ -89,10 +89,12 @@ exports[`PBFMVSection > matches snapshot 1`] = `
       </span>
     </div>
     <div
+      aria-label="Fair market value range: $845,000 to $925,000, median $880,000, asking $875,000"
+      role="img"
       style="position: relative; height: 32px; margin-top: 10px; margin-bottom: 18px;"
     >
       <div
-        style="position: absolute; top: 50%; transform: translateY(-50%); left: 0px; right: 0px; height: 6px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 18%, var(--bg-elev)), color-mix(in oklab, var(--accent) 55%, transparent), color-mix(in oklab, var(--accent) 18%, var(--bg-elev)));"
+        style="position: absolute; top: 50%; transform: translateY(-50%); left: 0px; right: 0px; height: 12px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 18%, var(--bg-elev)), color-mix(in oklab, var(--accent) 55%, transparent), color-mix(in oklab, var(--accent) 18%, var(--bg-elev)));"
       />
       <div
         style="position: absolute; left: 0%; top: 50%; transform: translate(-50%, -50%); width: 1.5px; height: 14px; background: var(--ink); opacity: 0.18;"

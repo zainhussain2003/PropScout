@@ -467,8 +467,7 @@ exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
   <p
     style="margin-top: 18px; font-size: 13px; color: var(--muted); max-width: 720px;"
   >
-    Every metric on this page recalculates from your slider above. P25/P50/P75 are the last 60 days of
-     
+    Every metric on this page recalculates from your slider above. P25/P50/P75 are the last 60 days of 
     <span
       class="tabular"
     >
