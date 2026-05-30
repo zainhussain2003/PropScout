@@ -33,6 +33,8 @@ export default defineConfig({
       '../../Week3-4 Front end/PR5/*.test.tsx',
       // PR6 — Personal Buyer + Landlord report tests
       '../../Week3-4 Front end/PR6/*.test.tsx',
+      // PR7 — Paywall, Account, Auth, States tests
+      '../../Week3-4 Front end/PR7/*.test.tsx',
     ],
   },
 })

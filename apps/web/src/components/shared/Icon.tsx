@@ -20,6 +20,7 @@ export type IconName =
   | 'plus'
   | 'minus'
   | 'dot'
+  | 'search'
 
 interface IconProps {
   name: IconName
@@ -162,6 +163,14 @@ export function Icon({ name, size = 16, stroke = 1.6 }: IconProps): JSX.Element 
       return (
         <svg {...props}>
           <circle cx="12" cy="12" r="3" fill="currentColor" />
+        </svg>
+      )
+
+    case 'search':
+      return (
+        <svg {...props}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
         </svg>
       )
 
