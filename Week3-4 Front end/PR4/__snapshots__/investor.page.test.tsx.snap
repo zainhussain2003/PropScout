@@ -17,6 +17,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
         >
           <div
             class="row gap-12"
+            data-testid="wordmark"
             style="height: 22px; display: inline-flex; align-items: center; gap: 10px;"
           >
             <svg
@@ -250,6 +251,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
             >
               <div
                 class="row gap-12"
+                data-testid="wordmark"
                 style="height: 26px; display: inline-flex; align-items: center; gap: 10px;"
               >
                 <svg
@@ -535,6 +537,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
         >
           <div
             class="row gap-12"
+            data-testid="wordmark"
             style="height: 22px; display: inline-flex; align-items: center; gap: 10px;"
           >
             <svg
@@ -2627,6 +2630,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </div>
           <div
             aria-label="Rental comps: low $2,700, mid $2,900, high $3,200, estimate $2,900"
+            data-testid="rental-comps-bar"
             role="region"
             style="padding: 20px 0px;"
           >
@@ -4893,6 +4897,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             >
               <div
                 class="row gap-12"
+                data-testid="wordmark"
                 style="height: 26px; display: inline-flex; align-items: center; gap: 10px;"
               >
                 <svg
@@ -5178,6 +5183,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
         >
           <div
             class="row gap-12"
+            data-testid="wordmark"
             style="height: 22px; display: inline-flex; align-items: center; gap: 10px;"
           >
             <svg
@@ -5374,6 +5380,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
             >
               <div
                 class="row gap-12"
+                data-testid="wordmark"
                 style="height: 26px; display: inline-flex; align-items: center; gap: 10px;"
               >
                 <svg

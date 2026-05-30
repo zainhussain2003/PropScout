@@ -32,6 +32,7 @@ export function RentalCompsBar({ low, mid, high, ask }: RentalCompsBarProps): JS
 
   return (
     <div
+      data-testid="rental-comps-bar"
       style={{ padding: '20px 0' }}
       role="region"
       aria-label={`Rental comps: low ${fmtDollar(low)}, mid ${fmtDollar(mid)}, high ${fmtDollar(high)}, estimate ${fmtDollar(ask)}`}

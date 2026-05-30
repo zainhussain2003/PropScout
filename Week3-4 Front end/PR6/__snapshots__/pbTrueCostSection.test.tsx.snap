@@ -1,0 +1,457 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PBTrueCostSection > matches snapshot 1`] = `
+<section
+  class="container tr-section"
+>
+  <div
+    class="tr-section-head"
+  >
+    <div
+      class="col gap-12"
+      style="max-width: 760px;"
+    >
+      <span
+        class="mono"
+        style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+      >
+        <span
+          style="color: var(--accent);"
+        >
+          § 
+          01
+        </span>
+        <span
+          style="margin-left: 12px; color: var(--muted);"
+        >
+          True monthly cost
+        </span>
+      </span>
+      <h2
+        class="serif"
+        style="text-wrap: balance;"
+      >
+        What will it 
+        <em>
+          really
+        </em>
+         cost to live here?
+      </h2>
+    </div>
+    <span
+      class="verdict-pill pass"
+    >
+      $6,057/mo · all-in
+    </span>
+  </div>
+  <div
+    style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 22px; align-items: flex-start;"
+  >
+    <div
+      class="card"
+      style="padding: 0px; overflow: hidden;"
+    >
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--line); align-items: center; background: transparent;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
+          >
+            Mortgage
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            20% down · 4.79% · 25-yr amort
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
+        >
+          $4,007
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--line); align-items: center; background: transparent;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
+          >
+            Property tax
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            $4,280/yr
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
+        >
+          $357
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--line); align-items: center; background: transparent;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
+          >
+            Condo fee
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            monthly maintenance fee
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
+        >
+          $0
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--line); align-items: center; background: transparent;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
+          >
+            Insurance
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            detached / semi estimate
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
+        >
+          $215
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--line); align-items: center; background: transparent;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
+          >
+            Utilities
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            hydro · gas · water · internet
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
+        >
+          $385
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 8px 22px 8px 38px; border-bottom: 1px solid var(--line); align-items: center; background: color-mix(in oklab, var(--bg-elev) 60%, var(--surface));"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 13px; color: var(--ink-2); font-weight: 500;"
+          >
+            Hydro
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            11¢/kWh · avg consumption
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-2);"
+        >
+          $145
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 8px 22px 8px 38px; border-bottom: 1px solid var(--line); align-items: center; background: color-mix(in oklab, var(--bg-elev) 60%, var(--surface));"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 13px; color: var(--ink-2); font-weight: 500;"
+          >
+            Gas
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            forced-air heating
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-2);"
+        >
+          $110
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 8px 22px 8px 38px; border-bottom: 1px solid var(--line); align-items: center; background: color-mix(in oklab, var(--bg-elev) 60%, var(--surface));"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 13px; color: var(--ink-2); font-weight: 500;"
+          >
+            Water
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            metered · municipal
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-2);"
+        >
+          $65
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 8px 22px 8px 38px; border-bottom: 1px solid var(--line); align-items: center; background: color-mix(in oklab, var(--bg-elev) 60%, var(--surface));"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 13px; color: var(--ink-2); font-weight: 500;"
+          >
+            Internet
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            1 Gbps · Rogers / Bell
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-2);"
+        >
+          $65
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: medium; align-items: center; background: transparent;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
+          >
+            Maintenance reserve
+          </span>
+          <span
+            class="mono"
+            style="font-size: 10px; color: var(--muted);"
+          >
+            1.5% of value / yr · pre-1980 build
+          </span>
+        </div>
+        <span
+          class="mono tabular"
+          style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
+        >
+          $1,094
+        </span>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 20px 22px; background: color-mix(in oklab, var(--accent) 6%, var(--bg-elev)); align-items: center;"
+      >
+        <div
+          class="col"
+          style="gap: 2px;"
+        >
+          <span
+            class="mono"
+            style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+          >
+            True monthly cost
+          </span>
+          <span
+            style="font-size: 13px; color: var(--ink-2);"
+          >
+            Including everything you pay to keep the keys
+          </span>
+        </div>
+        <span
+          class="serif tabular"
+          style="text-align: right; font-size: 30px; line-height: 1; color: var(--accent);"
+        >
+          $6,057
+          <span
+            style="font-size: 13px; color: var(--muted);"
+          >
+            /mo
+          </span>
+        </span>
+      </div>
+    </div>
+    <div
+      class="col"
+      style="gap: 16px;"
+    >
+      <div
+        class="card col"
+        style="padding: 24px; gap: 6px;"
+      >
+        <span
+          class="mono"
+          style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+        >
+          Mortgage vs. the rest
+        </span>
+        <div
+          class="row"
+          style="align-items: baseline; gap: 8px;"
+        >
+          <span
+            class="serif tabular"
+            style="font-size: 32px; line-height: 1;"
+          >
+            $4,007
+          </span>
+          <span
+            style="font-size: 13px; color: var(--muted);"
+          >
+            mortgage
+          </span>
+        </div>
+        <div
+          class="row"
+          style="align-items: baseline; gap: 8px; margin-top: 8px;"
+        >
+          <span
+            class="serif tabular"
+            style="font-size: 24px; line-height: 1; color: var(--accent);"
+          >
+            + 
+            $2,050
+          </span>
+          <span
+            style="font-size: 13px; color: var(--muted);"
+          >
+            everything else
+          </span>
+        </div>
+        <p
+          style="margin-top: 10px; font-size: 13px; color: var(--ink-2); line-height: 1.5;"
+        >
+          The number that catches first-time buyers off-guard. Taxes, insurance, utilities, and a real maintenance reserve add roughly
+           
+          <span
+            class="tabular"
+            style="color: var(--ink);"
+          >
+            34%
+          </span>
+           
+          on top of the mortgage every single month.
+        </p>
+      </div>
+      <div
+        class="card col"
+        style="padding: 24px; gap: 12px;"
+      >
+        <span
+          class="mono"
+          style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+        >
+          Affordability check
+        </span>
+        <p
+          style="font-size: 14px; color: var(--ink-2); line-height: 1.5;"
+        >
+          Lenders want shelter costs under
+           
+          <span
+            class="tabular"
+            style="color: var(--ink); font-weight: 500;"
+          >
+            32%
+          </span>
+           
+          of gross income. At 
+          $6,057
+          /mo, that implies a household income of at least
+           
+          <span
+            class="tabular"
+            style="color: var(--accent); font-weight: 500;"
+          >
+            $227,151
+          </span>
+          .
+        </p>
+        <div
+          class="row gap-12"
+          style="margin-top: 4px;"
+        >
+          <button
+            class="btn btn-ghost"
+            style="padding: 8px 12px; font-size: 12px;"
+          >
+            Adjust assumptions
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+`;

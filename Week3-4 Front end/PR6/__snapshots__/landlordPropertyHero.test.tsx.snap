@@ -1,0 +1,543 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LandlordPropertyHero > matches snapshot 1`] = `
+<section
+  class="container"
+  style="padding-top: 56px; padding-bottom: 48px;"
+>
+  <div
+    class="row gap-12"
+    style="margin-bottom: 28px; color: var(--muted); font-size: 13px;"
+  >
+    <a
+      href="#"
+      style="display: inline-flex; align-items: center; gap: 6px;"
+    >
+      <span
+        style="transform: rotate(180deg); display: inline-flex;"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+          viewBox="0 0 24 24"
+          width="13"
+        >
+          <path
+            d="M5 12h14M13 5l7 7-7 7"
+          />
+        </svg>
+      </span>
+      Analyze another listing
+    </a>
+    <span
+      style="opacity: 0.4;"
+    >
+      ·
+    </span>
+    <span
+      class="mono"
+      style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;"
+    >
+      Report · Landlord view
+    </span>
+    <span
+      style="opacity: 0.4;"
+    >
+      ·
+    </span>
+    <span
+      style="display: inline-flex; align-items: center; gap: 6px;"
+    >
+      <span
+        class="live-dot"
+        style="width: 6px; height: 6px; border-radius: 999px; background: var(--accent);"
+      />
+      You own this unit · listed 
+      38
+       days ago
+    </span>
+  </div>
+  <div
+    style="display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(28px, 3.5vw, 52px); align-items: flex-start;"
+  >
+    <div
+      class="col"
+      style="gap: 28px;"
+    >
+      <div
+        style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; height: 360px;"
+      >
+        <div
+          class="photo-ph"
+          style="border-radius: 18px; height: 100%;"
+        >
+          <span>
+            your unit · skyline view
+          </span>
+        </div>
+        <div
+          class="col"
+          style="gap: 8px;"
+        >
+          <div
+            class="photo-ph"
+            style="border-radius: 14px; flex: 1 1 0%;"
+          >
+            <span>
+              living
+            </span>
+          </div>
+          <div
+            class="photo-ph"
+            style="border-radius: 14px; flex: 1 1 0%;"
+          >
+            <span>
+              den
+            </span>
+          </div>
+          <div
+            class="photo-ph"
+            style="border-radius: 14px; flex: 1 1 0%; position: relative;"
+          >
+            <span>
+              bedroom
+            </span>
+            <div
+              class="mono"
+              style="position: absolute; right: 10px; bottom: 10px; font-size: 10px; letter-spacing: 0.1em; padding: 3px 8px; background: color-mix(in oklab, var(--surface) 90%, transparent); border-radius: 999px; color: var(--ink); backdrop-filter: blur(4px);"
+            >
+              + 18 more
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="col"
+        style="gap: 18px;"
+      >
+        <div
+          class="row gap-8"
+          style="flex-wrap: wrap;"
+        >
+          <span
+            class="chip"
+          >
+            Landlord · For rent
+          </span>
+          <span
+            class="chip"
+          >
+            Toronto · M5J
+          </span>
+          <span
+            class="chip"
+          >
+            Condo · 745 sqft
+          </span>
+          <span
+            class="chip"
+          >
+            Built 2018 · No rent control
+          </span>
+        </div>
+        <h1
+          class="serif"
+          style="text-wrap: balance; letter-spacing: -0.035em; margin-top: 4px;"
+        >
+          Unit 3208 · 88 Harbour Street
+        </h1>
+        <div
+          style="font-size: 16px; color: var(--muted);"
+        >
+          Toronto · M5J · South Core
+        </div>
+        <div
+          class="row gap-20"
+          style="flex-wrap: wrap; margin-top: 8px; font-size: 14px; color: var(--ink-2);"
+        >
+          <span
+            class="row gap-8"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="14"
+            >
+              <path
+                d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"
+              />
+            </svg>
+            1+den
+             · 
+            2
+             bath
+          </span>
+          <span
+            class="row gap-8"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="10"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="10"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                fill="currentColor"
+                r="3"
+              />
+            </svg>
+            745
+             sqft
+          </span>
+          <span
+            class="row gap-8"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="14"
+            >
+              <circle
+                cx="8"
+                cy="15"
+                r="4"
+              />
+              <path
+                d="M11 13l9-9M16 8l3 3"
+              />
+            </svg>
+            1 underground
+          </span>
+          <span
+            class="row gap-8"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="14"
+            >
+              <path
+                d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"
+              />
+            </svg>
+            Built 
+            2018
+          </span>
+        </div>
+        <div
+          class="row gap-12"
+          style="margin-top: 16px; padding: 14px 18px; border-radius: 14px; background: var(--bg-elev); border: 1px solid var(--line); flex-wrap: wrap;"
+        >
+          <div
+            class="col"
+            style="gap: 2px; min-width: 130px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Purchased
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 18px; line-height: 1;"
+            >
+              $720,000
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--muted);"
+              >
+                 
+                · 
+                2019
+              </span>
+            </span>
+          </div>
+          <div
+            style="width: 1px; align-self: stretch; background: var(--line);"
+          />
+          <div
+            class="col"
+            style="gap: 2px; min-width: 130px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Current value
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 18px; line-height: 1;"
+            >
+              $949,000
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--pass);"
+              >
+                 
+                · +
+                31.8%
+              </span>
+            </span>
+          </div>
+          <div
+            style="width: 1px; align-self: stretch; background: var(--line);"
+          />
+          <div
+            class="col"
+            style="gap: 2px; min-width: 130px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+            >
+              Mortgage balance
+            </span>
+            <span
+              class="serif tabular"
+              style="font-size: 18px; line-height: 1;"
+            >
+              $478,000
+              <span
+                class="mono"
+                style="font-size: 11px; color: var(--muted);"
+              >
+                 
+                · 
+                3.49%
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="card col"
+      style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
+    >
+      <div
+        class="col"
+        style="align-items: center; gap: 8px;"
+      >
+        <div
+          aria-label="Deal score: 2 out of 95"
+          style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
+        >
+          <div
+            style="position: relative; width: 180px; height: 180px;"
+          >
+            <svg
+              aria-hidden="true"
+              height="180"
+              role="img"
+              viewBox="0 0 180 180"
+              width="180"
+            >
+              <circle
+                cx="90"
+                cy="90"
+                fill="none"
+                r="82.5"
+                stroke="var(--line)"
+                stroke-width="15"
+              />
+              <circle
+                cx="90"
+                cy="90"
+                fill="none"
+                r="82.5"
+                stroke="var(--fail)"
+                stroke-dasharray="518.3627878423158"
+                stroke-dashoffset="518.3627878423158"
+                stroke-linecap="round"
+                stroke-width="15"
+                style="transition: stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1);"
+                transform="rotate(-90 90 90)"
+              />
+            </svg>
+            <div
+              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+            >
+              <span
+                class="serif tabular"
+                style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--fail);"
+              >
+                2
+              </span>
+              <span
+                class="mono"
+                style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+              >
+                Landlord score / 100
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="col"
+        style="text-align: center; align-items: center; gap: 8px;"
+      >
+        <div
+          class="mono"
+          style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fail);"
+        >
+          Hard pass
+        </div>
+        <div
+          class="serif"
+          style="font-size: 20px; line-height: 1.2; text-wrap: balance;"
+        >
+          Fails on multiple fundamentals.
+        </div>
+      </div>
+      <div
+        class="divider"
+      />
+      <div
+        class="col"
+        style="gap: 12px;"
+      >
+        <div
+          class="row"
+          style="justify-content: space-between; align-items: baseline;"
+        >
+          <span
+            class="mono"
+            style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+          >
+            Your asking rent
+          </span>
+          <span
+            class="serif tabular"
+            style="font-size: 32px; line-height: 1;"
+          >
+            $3,400
+            <span
+              style="font-size: 13px; color: var(--muted);"
+            >
+              /mo
+            </span>
+          </span>
+        </div>
+        <div
+          class="row"
+          style="justify-content: space-between; align-items: baseline; padding: 12px 14px; border-radius: 12px; background: color-mix(in oklab, var(--caution) 8%, transparent); border: 1px solid color-mix(in oklab, var(--caution) 25%, transparent);"
+        >
+          <span
+            class="mono"
+            style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--caution);"
+          >
+            Top of range
+          </span>
+          <span
+            class="serif tabular"
+            style="font-size: 22px; line-height: 1; color: var(--caution);"
+          >
+            +
+            $300
+          </span>
+        </div>
+      </div>
+      <div
+        class="divider"
+      />
+      <div
+        class="col"
+        style="gap: 10px;"
+      >
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            Net cash flow
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--fail);"
+          >
+            −$2,550
+            /mo
+          </span>
+        </div>
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            Cap rate
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--ink);"
+          >
+            1.64%
+          </span>
+        </div>
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            DSCR
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--ink);"
+          >
+            0.34
+            ×
+          </span>
+        </div>
+        <div
+          class="row"
+          style="justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+        >
+          <span>
+            Days on market
+          </span>
+          <span
+            class="mono tabular"
+            style="font-weight: 600; color: var(--fail);"
+          >
+            38
+             days
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+`;
