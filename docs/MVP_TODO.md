@@ -228,20 +228,91 @@ Reference: `Personal Buyer Report.html` + `Landlord Report.html`
 
 Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth & Billing Stubs.html`
 
-- [ ] `<ProBadge tier>` — inline Pro marker with lock icon
-- [ ] `<UpgradeCard headline sub ctaLabel dark>` — upgrade pitch card
-- [ ] `<LockedSection headline sub mockContent height>` — blurred content + upgrade overlay
-- [ ] `<TruncatedVerdict firstParagraph>` — AI verdict paragraph 2 blurred + inline upgrade strip
-- [ ] `<LockedButton label icon onClick>` — lock-icon button opening upgrade modal
-- [ ] `<UpgradeModal open onClose feature>` — 5 feature-specific variants
-- [ ] `<HardLimitGate onClose monthlyLimit used resetsIn>` — full-screen monthly limit blocker
-- [ ] `<BlockState>` — full-page error/gate state
-- [ ] `<ProvinceGate>` — non-Ontario waitlist
-- [ ] `<NoCompsInlineState>` — inline low-confidence callout
-- [ ] `<ScraperPartialInlineState>` — inline "X of Y fields" + missing-field inputs
-- [ ] Account dashboard `/account` — saved analyses, profile, plan, notifications tabs
-- [ ] Auth stubs: magic link confirm, password reset, email verified, Stripe welcome, Stripe cancelled
-- [ ] Wire all paywall components into every report
+- [x] `<ProBadge tier>` — inline Pro marker with lock icon
+- [x] `<UpgradeCard headline sub ctaLabel dark>` — upgrade pitch card
+- [x] `<LockedSection headline sub mockContent height>` — blurred content + upgrade overlay
+- [x] `<TruncatedVerdict firstParagraph>` — AI verdict paragraph 2 blurred + inline upgrade strip
+- [x] `<LockedButton label icon onClick>` — lock-icon button opening upgrade modal
+- [x] `<UpgradeModal open onClose feature>` — 5 feature-specific variants
+- [x] `<HardLimitGate onClose monthlyLimit used resetsIn>` — full-screen monthly limit blocker
+- [x] `<BlockState>` — full-page error/gate state
+- [x] `<ProvinceGate>` — non-Ontario waitlist
+- [x] `<NoCompsInlineState>` — inline low-confidence callout
+- [x] `<ScraperPartialInlineState>` — inline "X of Y fields" + missing-field inputs
+- [x] Account dashboard `/account` — saved analyses, profile, plan, notifications tabs
+- [x] Auth stubs: magic link confirm, password reset, email verified, Stripe welcome, Stripe cancelled
+- [x] Wire all paywall components into every report
+
+> **Additions made during PR7 implementation:**
+> During build and Chrome UI testing, the following were added
+> beyond the original spec. Each is noted with the reason it
+> was needed.
+
+> _Icon.tsx — 'search' icon added: NoCompsInlineState and
+> AccountPage search input required a search icon that did not
+> exist in the shared library. Added the standard magnifier
+> SVG (circle + diagonal line) to Icon.tsx and switched
+> NoCompsInlineState from 'flag' to 'search' for correct
+> semantics._
+
+- [x] `<Icon name="search">` — added to shared Icon library
+
+> _DevToolbar — permanent DEV-only test scaffold: Chrome UI
+> testing required manual triggers for UpgradeModal (generic +
+> sunscout variants) and HardLimitGate, which have no natural
+> entry point in the current MVP. Rather than deleting the
+> trigger buttons after each PR, a reusable DevToolbar
+> component was created so future PRs can add slots without
+> touching App.tsx. Returns null in prod via two-function
+> pattern (DevToolbarInner + DevToolbar shell)._
+
+- [x] `<DevToolbar slots>` — collapsible DEV-only toolbar,
+      null in prod, slots wired: all 5 UpgradeModal variants + HardLimitGate
+
+> _AccountPage dark mode bug: Chrome UI testing (TC-PR7-067)
+> found the dark mode toggle updated the icon state but never
+> set data-theme on document.documentElement. Fixed with a
+> dedicated handleToggleDark function and a mount sync
+> useEffect — same pattern used in all prior report pages._
+
+- [x] AccountPage dark mode fix — handleToggleDark +
+      mount sync useEffect in AccountTopNav
+
+> _UpgradeModal focus trap bug: Chrome UI testing (TC-PR7-097)
+> found Tab key escaped the modal to elements behind the
+> backdrop. Fixed with manual Tab/Shift+Tab interception via
+> useEffect + focus restore on close via triggerRef. No
+> external library used._
+
+- [x] UpgradeModal focus trap — Tab/Shift+Tab interception +
+      focus restore on close; modalRef + triggerRef added
+
+> _ProvinceGate internal state: automated testing required
+> the submit → confirmation transition to work without an
+> external submitted prop. Added internal isSubmitted state
+> alongside the existing prop (semi-controlled pattern)._
+
+- [x] ProvinceGate — internal isSubmitted state added
+      (semi-controlled alongside submitted prop)
+
+> _PersonalBuyerPage + LandlordPage verdict gating: the
+> paywallWiring integration tests caught that these two pages
+> were missing TruncatedVerdict gating in free tier. Added
+> to match InvestorPage and TenantPage._
+
+- [x] PersonalBuyerPage + LandlordPage — TruncatedVerdict
+      free-tier gating added (caught by paywallWiring tests)
+
+> _PaywallContext default tier set to 'pro': PR1-PR6 tests
+> render report pages without a PaywallContext.Provider. With
+> default 'free', those tests would see TruncatedVerdict and
+> LockedButton instead of the original components, causing
+> snapshot failures. Default 'pro' means no paywall UI outside
+> a Provider. App.tsx Provider passes MOCK_TIER='free' so all
+> gates are active in the running app._
+
+- [x] PaywallContext default tier — set to 'pro' to preserve
+      PR1-PR6 test behaviour outside Provider
 
 ### PR 8 — Legal + 404 + mobile pass
 

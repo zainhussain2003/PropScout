@@ -9,6 +9,8 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { Wordmark } from './Wordmark'
+import { LockedButton } from '../paywall/LockedButton'
+import { usePaywall } from '../paywall/PaywallContext'
 
 // ── Shared header shell ──────────────────────────────────────────
 
@@ -93,6 +95,7 @@ function ReportNav({
   reportLabel,
   addressSlug,
 }: ReportNavProps): JSX.Element {
+  const { tier, openUpgradeModal } = usePaywall()
   // Slug copy feedback — same 2-second revert pattern as NegotiationSection copy button.
   const [slugCopied, setSlugCopied] = useState(false)
 
@@ -145,9 +148,13 @@ function ReportNav({
           <button className="btn btn-ghost" onClick={onSignIn} style={{ padding: '10px 14px' }}>
             Sign in
           </button>
-          <button className="btn btn-primary" onClick={onSignIn}>
-            Save to account <Icon name="arrow" size={13} />
-          </button>
+          {tier === 'free' ? (
+            <LockedButton label="Save" icon="plus" onClick={() => openUpgradeModal('portfolio')} />
+          ) : (
+            <button className="btn btn-primary" onClick={onSignIn}>
+              Save to account <Icon name="arrow" size={13} />
+            </button>
+          )}
         </div>
       </div>
     </header>

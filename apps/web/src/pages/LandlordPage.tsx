@@ -27,6 +27,9 @@
  */
 
 import { useState, useMemo, useCallback } from 'react'
+import { LockedButton } from '../components/paywall/LockedButton'
+import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
+import { usePaywall } from '../components/paywall/PaywallContext'
 import {
   LL_PROPERTY,
   LL_RENT_COMPS,
@@ -152,6 +155,7 @@ const LANDLORD_CHECKLIST = [
 ] as const
 
 function LandlordChecklistSection(): JSX.Element {
+  const { tier, openUpgradeModal } = usePaywall()
   const [checked, setChecked] = useState<Set<number>>(new Set())
 
   const toggle = useCallback((i: number) => {
@@ -248,9 +252,17 @@ function LandlordChecklistSection(): JSX.Element {
             borderTop: '1px solid var(--line)',
           }}
         >
-          <button className="btn btn-primary">
-            <Icon name="doc" size={13} /> Export as PDF
-          </button>
+          {tier === 'free' ? (
+            <LockedButton
+              label="Export as PDF"
+              icon="doc"
+              onClick={() => openUpgradeModal('pdf')}
+            />
+          ) : (
+            <button className="btn btn-primary">
+              <Icon name="doc" size={13} /> Export as PDF
+            </button>
+          )}
           <button className="btn btn-ghost">
             <Icon name="link" size={13} /> Share with tenant agent
           </button>
@@ -262,7 +274,13 @@ function LandlordChecklistSection(): JSX.Element {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export function LandlordPage(): JSX.Element {
+interface LandlordPageProps {
+  /** User tier — controls PDF button gating in LandlordChecklistSection. */
+  tier?: string
+}
+
+export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
+  const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState(false)
   const [askingRent, setAskingRent] = useState(LL_PROPERTY.askingRent)
   const [financing, setFinancing] = useState<FinancingInputs>(LL_DEFAULT_FINANCING)
@@ -348,12 +366,21 @@ export function LandlordPage(): JSX.Element {
         score={score}
         positioning={positioning}
       />
-      <LandlordVerdictHero
-        property={LL_PROPERTY}
-        askingRent={askingRent}
-        positioning={positioning}
-        metrics={metrics}
-      />
+      {tier === 'free' ? (
+        <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
+          <TruncatedVerdict
+            firstParagraph={`You're above the building median, and ${LL_PROPERTY.ownership.daysOnMarket} days on market is telling you exactly what the tenants think of it.`}
+            onUnlock={() => openUpgradeModal('verdict')}
+          />
+        </section>
+      ) : (
+        <LandlordVerdictHero
+          property={LL_PROPERTY}
+          askingRent={askingRent}
+          positioning={positioning}
+          metrics={metrics}
+        />
+      )}
 
       {/* §01 Rent positioning */}
       <LandlordRentPositioningSection

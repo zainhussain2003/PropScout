@@ -22,6 +22,9 @@
  */
 
 import { useState } from 'react'
+import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
+import { LockedButton } from '../components/paywall/LockedButton'
+import { usePaywall } from '../components/paywall/PaywallContext'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { SectionHead } from '../components/shared/SectionHead'
@@ -70,6 +73,7 @@ interface TenantPropertyHeroProps {
 }
 
 function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): JSX.Element {
+  const { tier, openUpgradeModal } = usePaywall()
   const listing = CHARLES_LISTING
   const verdictColor =
     listing.scoreTone === 'pass'
@@ -374,12 +378,20 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
 
           {/* Actions */}
           <div className="col" style={{ gap: 8 }}>
-            <button
-              className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: 14 }}
-            >
-              Save to account <Icon name="arrow" size={14} />
-            </button>
+            {tier === 'free' ? (
+              <LockedButton
+                label="Save to account"
+                icon="arrow"
+                onClick={() => openUpgradeModal('portfolio')}
+              />
+            ) : (
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', padding: 14 }}
+              >
+                Save to account <Icon name="arrow" size={14} />
+              </button>
+            )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 className="btn btn-ghost"
@@ -387,12 +399,16 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
               >
                 <Icon name="link" size={13} /> Share
               </button>
-              <button
-                className="btn btn-ghost"
-                style={{ flex: 1, justifyContent: 'center', padding: '11px 12px', fontSize: 13 }}
-              >
-                <Icon name="doc" size={13} /> PDF
-              </button>
+              {tier === 'free' ? (
+                <LockedButton label="PDF" icon="doc" onClick={() => openUpgradeModal('pdf')} />
+              ) : (
+                <button
+                  className="btn btn-ghost"
+                  style={{ flex: 1, justifyContent: 'center', padding: '11px 12px', fontSize: 13 }}
+                >
+                  <Icon name="doc" size={13} /> PDF
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1178,7 +1194,17 @@ function ConversionBlock(): JSX.Element {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export function TenantReport(): JSX.Element {
+/** Plain-text first paragraph for TruncatedVerdict (free tier). */
+const TENANT_FIRST_PARA =
+  "Do not sign at $2,150. The room marketed as a second bedroom is a den with a sliding glass door — no privacy, no sound barrier, almost certainly no window. You're paying a 2-bedroom premium for a 1-bedroom with a study."
+
+interface TenantReportProps {
+  /** User tier — controls AIVerdictBlock (pro) vs TruncatedVerdict (free). */
+  tier?: string
+}
+
+export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
+  const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
 
@@ -1204,29 +1230,36 @@ export function TenantReport(): JSX.Element {
 
       {/* AI verdict */}
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
-        <AIVerdictBlock
-          eyebrow="Scout AI · tenant verdict"
-          headline={
-            <>
-              Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
-              marketed as a second bedroom is a den with a sliding glass door — no privacy, no sound
-              barrier, almost certainly no window. You're paying a 2-bedroom premium for a 1-bedroom
-              with a study.
-            </>
-          }
-          sub={
-            <>
-              Your negotiation target is{' '}
-              <span className="tabular" style={{ color: 'var(--accent)' }}>
-                $1,950–2,000
-              </span>
-              /mo. You have real leverage: 14 competing rentals in this building, the unit has been
-              listed for 22 days, and you have a documented misrepresentation to point to. Before
-              you go back, confirm two things in writing — does the den have a window, and is
-              parking included or extra.
-            </>
-          }
-        />
+        {tier === 'free' ? (
+          <TruncatedVerdict
+            firstParagraph={TENANT_FIRST_PARA}
+            onUnlock={() => openUpgradeModal('verdict')}
+          />
+        ) : (
+          <AIVerdictBlock
+            eyebrow="Scout AI · tenant verdict"
+            headline={
+              <>
+                Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
+                marketed as a second bedroom is a den with a sliding glass door — no privacy, no
+                sound barrier, almost certainly no window. You're paying a 2-bedroom premium for a
+                1-bedroom with a study.
+              </>
+            }
+            sub={
+              <>
+                Your negotiation target is{' '}
+                <span className="tabular" style={{ color: 'var(--accent)' }}>
+                  $1,950–2,000
+                </span>
+                /mo. You have real leverage: 14 competing rentals in this building, the unit has
+                been listed for 22 days, and you have a documented misrepresentation to point to.
+                Before you go back, confirm two things in writing — does the den have a window, and
+                is parking included or extra.
+              </>
+            }
+          />
+        )}
       </section>
 
       {/* §01 Rent positioning */}

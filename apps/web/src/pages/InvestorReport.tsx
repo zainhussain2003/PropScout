@@ -20,6 +20,8 @@
  */
 
 import { useState, useCallback, type ReactNode } from 'react'
+import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
+import { usePaywall } from '../components/paywall/PaywallContext'
 import { useInvestorReport } from '../hooks/useInvestorReport'
 import {
   VAUGHAN_LISTING,
@@ -746,7 +748,19 @@ function ErrorState({ message, onRetry }: ErrorStateProps): JSX.Element {
   )
 }
 
-// ── AI narrative helper ────────────────────────────────────────────────────────
+// ── AI narrative helpers ───────────────────────────────────────────────────────
+
+/** Returns a plain-text first paragraph for TruncatedVerdict (free tier). */
+function buildNarrativeFirstParaStr(listing: ListingData, dealLabel: string): string {
+  const verdict = dealLabel.toLowerCase()
+  if (verdict.includes('hard') || verdict.includes('do not')) {
+    return `At ${fmtMoney(listing.price)}, this property fails on the fundamentals — deeply negative cash flow and a DSCR far below investment grade.`
+  }
+  if (verdict.includes('strong') || verdict.includes('good')) {
+    return `A genuinely cash-flow positive rental at ${fmtMoney(listing.price)} — the numbers work without needing heroic rent assumptions.`
+  }
+  return `${listing.addressLine1} shows mixed signals — the deal carries real risk at current market rents.`
+}
 
 function buildNarrativeHeadline(listing: ListingData, dealLabel: string): ReactNode {
   const verdict = dealLabel.toLowerCase()
@@ -797,7 +811,13 @@ function buildNarrativeSub(
 
 // ── Main page component ────────────────────────────────────────────────────────
 
-export function InvestorReport(): JSX.Element {
+interface InvestorReportProps {
+  /** User tier — controls AIVerdictBlock (pro) vs TruncatedVerdict (free). */
+  tier?: string
+}
+
+export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Element {
+  const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState<boolean>(false)
   const { listing, rental, neighbourhood } = getDemoDataset()
 
@@ -860,11 +880,18 @@ export function InvestorReport(): JSX.Element {
             />
 
             <div className="container" style={{ marginBottom: 32 }}>
-              <AIVerdictBlock
-                eyebrow="Scout AI · investor verdict"
-                headline={buildNarrativeHeadline(listing, dealScore.label)}
-                sub={buildNarrativeSub(listing, metrics.capRate, metrics.cashFlowMonthly)}
-              />
+              {tier === 'free' ? (
+                <TruncatedVerdict
+                  firstParagraph={buildNarrativeFirstParaStr(listing, dealScore.label)}
+                  onUnlock={() => openUpgradeModal('verdict')}
+                />
+              ) : (
+                <AIVerdictBlock
+                  eyebrow="Scout AI · investor verdict"
+                  headline={buildNarrativeHeadline(listing, dealScore.label)}
+                  sub={buildNarrativeSub(listing, metrics.capRate, metrics.cashFlowMonthly)}
+                />
+              )}
             </div>
 
             {/* ── §01 Investment metrics ─────────────────────────────── */}

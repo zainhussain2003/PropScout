@@ -20,6 +20,9 @@
  */
 
 import { useState, useMemo, useCallback } from 'react'
+import { LockedButton } from '../components/paywall/LockedButton'
+import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
+import { usePaywall } from '../components/paywall/PaywallContext'
 import {
   PB_PROPERTY,
   PB_SCHOOLS,
@@ -330,9 +333,24 @@ interface PersonalVerdictHeroProps {
   monthly: PersonalMonthlyCost
 }
 
+const PB_FIRST_PARA =
+  'This is fairly priced for what it is — and the school catchment alone is reason enough to consider it seriously.'
+
 function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element {
+  const { tier, openUpgradeModal } = usePaywall()
   const property = PB_PROPERTY
   const extraCost = Math.round(monthly.total - monthly.mortgage)
+
+  if (tier === 'free') {
+    return (
+      <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
+        <TruncatedVerdict
+          firstParagraph={PB_FIRST_PARA}
+          onUnlock={() => openUpgradeModal('verdict')}
+        />
+      </section>
+    )
+  }
 
   return (
     <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
@@ -944,6 +962,7 @@ const CHECKLIST_ITEMS = [
 ] as const
 
 function ChecklistSection(): JSX.Element {
+  const { tier, openUpgradeModal } = usePaywall()
   const [checked, setChecked] = useState<Set<number>>(new Set())
 
   const toggle = useCallback((i: number) => {
@@ -1039,9 +1058,17 @@ function ChecklistSection(): JSX.Element {
             borderTop: '1px solid var(--line)',
           }}
         >
-          <button className="btn btn-primary">
-            <Icon name="doc" size={13} /> Export checklist as PDF
-          </button>
+          {tier === 'free' ? (
+            <LockedButton
+              label="Export checklist as PDF"
+              icon="doc"
+              onClick={() => openUpgradeModal('pdf')}
+            />
+          ) : (
+            <button className="btn btn-primary">
+              <Icon name="doc" size={13} /> Export checklist as PDF
+            </button>
+          )}
           <button className="btn btn-ghost">
             <Icon name="link" size={13} /> Email to my agent
           </button>
@@ -1160,7 +1187,12 @@ function ConversionSection(): JSX.Element {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export function PersonalBuyerPage(): JSX.Element {
+interface PersonalBuyerPageProps {
+  /** User tier — controls PDF button gating in ChecklistSection. */
+  tier?: string
+}
+
+export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProps): JSX.Element {
   const [dark, setDark] = useState(false)
 
   const financing = {
