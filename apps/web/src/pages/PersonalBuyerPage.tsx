@@ -19,7 +19,7 @@
  *   Conversion                   → "what if you rented it out?" + agent CTA
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
@@ -33,6 +33,7 @@ import {
 } from '../data/personalBuyerData'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
+import { StickyActionBar } from '../components/shared/StickyActionBar'
 import { SectionHead } from '../components/shared/SectionHead'
 import { Icon } from '../components/shared/Icon'
 import { Chip } from '../components/shared/Chip'
@@ -93,6 +94,7 @@ function PersonalPropertyHero({ score, monthly }: PersonalHeroProps): JSX.Elemen
       </div>
 
       <div
+        className="grid-1col-mobile hero-score-first"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr',
@@ -340,6 +342,14 @@ function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element
   const { tier, openUpgradeModal } = usePaywall()
   const property = PB_PROPERTY
   const extraCost = Math.round(monthly.total - monthly.mortgage)
+  const [expanded, setExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
+
+  useEffect(() => {
+    const handler = (): void => setIsMobile(window.innerWidth <= 480)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   if (tier === 'free') {
     return (
@@ -431,28 +441,52 @@ function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element
           the school catchment alone is reason enough to consider it seriously.
         </div>
 
-        <div
-          className="serif"
-          style={{
-            fontSize: 'clamp(17px, 1.7vw, 21px)',
-            lineHeight: 1.5,
-            color: 'rgba(255,255,255,0.78)',
-            marginTop: 22,
-            maxWidth: 880,
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          At <span className="tabular">${property.price.toLocaleString()}</span> the asking is
-          sitting almost exactly at the local median for a 3-bed semi on this lot size. Your true
-          monthly carry comes to{' '}
-          <span className="tabular" style={{ color: 'var(--accent)' }}>
-            {fmtMoney(monthly.total)}
-          </span>{' '}
-          — about <span className="tabular">${extraCost.toLocaleString()}</span> more than the
-          mortgage payment alone. The Tom Thomson catchment is the upside; the 1972 build and a Walk
-          Score of 64 are the trade-offs to consider.
-        </div>
+        {(!isMobile || expanded) && (
+          <div
+            className="serif"
+            style={{
+              fontSize: 'clamp(17px, 1.7vw, 21px)',
+              lineHeight: 1.5,
+              color: 'rgba(255,255,255,0.78)',
+              marginTop: 22,
+              maxWidth: 880,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            At <span className="tabular">${property.price.toLocaleString()}</span> the asking is
+            sitting almost exactly at the local median for a 3-bed semi on this lot size. Your true
+            monthly carry comes to{' '}
+            <span className="tabular" style={{ color: 'var(--accent)' }}>
+              {fmtMoney(monthly.total)}
+            </span>{' '}
+            — about <span className="tabular">${extraCost.toLocaleString()}</span> more than the
+            mortgage payment alone. The Tom Thomson catchment is the upside; the 1972 build and a
+            Walk Score of 64 are the trade-offs to consider.
+          </div>
+        )}
+
+        {isMobile && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              marginTop: 12,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--accent)',
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: 11,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              padding: 0,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            {expanded ? 'Show less' : 'Read full verdict →'}
+          </button>
+        )}
 
         <div
           className="row gap-16"
@@ -509,7 +543,10 @@ function SchoolsSection(): JSX.Element {
         tone="pass"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}
+      >
         <SchoolColumn label="Elementary" schools={schools.elementary} />
         <SchoolColumn label="Middle" schools={schools.middle} />
         <SchoolColumn label="High school" schools={schools.high} />
@@ -558,7 +595,10 @@ function NeighbourhoodSection(): JSX.Element {
         tone="pass"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}
+      >
         {/* Mobility scores */}
         <div className="card col" style={{ padding: 28, gap: 22 }}>
           <div
@@ -735,7 +775,10 @@ function SunScoutSection(): JSX.Element {
         tone="pass"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16 }}
+      >
         {/* Light score gauge */}
         <div
           className="card col"
@@ -1089,7 +1132,10 @@ function ConversionSection(): JSX.Element {
         paddingBottom: 'clamp(48px, 6vw, 80px)',
       }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}
+      >
         {/* What if you rented it out */}
         <div className="card col gap-16" style={{ padding: 32 }}>
           <span
@@ -1215,7 +1261,7 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
   const addressSlug = '248-mountcrest-burlington'
 
   return (
-    <div>
+    <div className="report-page-mobile-padding">
       <Nav
         variant="report"
         reportLabel="Personal buyer report"
@@ -1253,6 +1299,7 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
       <ConversionSection />
 
       <Footer />
+      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
     </div>
   )
 }

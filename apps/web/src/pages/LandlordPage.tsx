@@ -48,6 +48,7 @@ import type {
 import { enrichMetrics, computeDemoMetrics, fmtMoney, fmtPct } from '../lib/investorCalc'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
+import { StickyActionBar } from '../components/shared/StickyActionBar'
 import { SectionHead } from '../components/shared/SectionHead'
 import { Icon } from '../components/shared/Icon'
 import { LandlordPropertyHero } from '../components/landlord/LandlordPropertyHero'
@@ -340,7 +341,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
   const addressSlug = '3208-harbour-st-toronto'
 
   return (
-    <div>
+    <div className="report-page-mobile-padding">
       <Nav
         variant="report"
         reportLabel="Landlord report"
@@ -573,6 +574,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
       <LandlordChecklistSection />
 
       <Footer />
+      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
     </div>
   )
 }

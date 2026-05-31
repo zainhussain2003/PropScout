@@ -21,6 +21,8 @@ export type IconName =
   | 'minus'
   | 'dot'
   | 'search'
+  | 'bookmark'
+  | 'share'
 
 interface IconProps {
   name: IconName
@@ -171,6 +173,21 @@ export function Icon({ name, size = 16, stroke = 1.6 }: IconProps): JSX.Element 
         <svg {...props}>
           <circle cx="11" cy="11" r="7" />
           <path d="M21 21l-4.3-4.3" />
+        </svg>
+      )
+
+    case 'bookmark':
+      return (
+        <svg {...props}>
+          <path d="M4 3h16v20l-8-4-8 4z" />
+        </svg>
+      )
+
+    case 'share':
+      return (
+        <svg {...props}>
+          <path d="M4 19v-7a1 1 0 011-1h14a1 1 0 011 1v7" />
+          <path d="M12 2v13M8 6l4-4 4 4" />
         </svg>
       )
 

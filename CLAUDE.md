@@ -7,14 +7,14 @@ This file tells you everything you need to know to work effectively on this code
 
 ## Files you must know
 
-| File | Purpose |
-|---|---|
-| `propscout_platform_spec.md` | Single source of truth — architecture, features, formulas, prompts |
-| `CLAUDE.md` | This file — session instructions, coding standards, quick reference |
-| `TODO.md` | Full backlog across all phases |
-| `MVP_TODO.md` | MVP scope only — tick off as tasks are completed |
-| `TESTING.md` | Test for every feature, week by week — update when new features are added |
-| `SETUP.md` | Pre-development checklist — accounts, tooling, CI/CD, legal |
+| File                         | Purpose                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `propscout_platform_spec.md` | Single source of truth — architecture, features, formulas, prompts        |
+| `CLAUDE.md`                  | This file — session instructions, coding standards, quick reference       |
+| `TODO.md`                    | Full backlog across all phases                                            |
+| `MVP_TODO.md`                | MVP scope only — tick off as tasks are completed                          |
+| `TESTING.md`                 | Test for every feature, week by week — update when new features are added |
+| `SETUP.md`                   | Pre-development checklist — accounts, tooling, CI/CD, legal               |
 
 ---
 
@@ -26,20 +26,20 @@ If something is not in the spec, ask before building it.
 
 Key sections to reference by task:
 
-| Task | Spec section |
-|---|---|
-| Adding or changing a report type | Section 3, 6, 7, 8, 9 |
-| Changing pricing or feature access | Section 4 |
-| Changing the user flow or URL detection | Section 5 |
-| Changing investment calculations | Section 6, 10 |
-| Changing the scraper | Section 11.2 |
-| Changing the calc engine | Section 11.3 |
-| Changing the database schema | Section 11.5 |
-| Changing AI narrative prompts | Section 12 |
-| Adding or changing APIs | Section 13 |
-| Changing PDF output | Section 14 |
-| Changing SunScout | Section 17 |
-| Changing listing description extraction or flags | Section 19 |
+| Task                                             | Spec section          |
+| ------------------------------------------------ | --------------------- |
+| Adding or changing a report type                 | Section 3, 6, 7, 8, 9 |
+| Changing pricing or feature access               | Section 4             |
+| Changing the user flow or URL detection          | Section 5             |
+| Changing investment calculations                 | Section 6, 10         |
+| Changing the scraper                             | Section 11.2          |
+| Changing the calc engine                         | Section 11.3          |
+| Changing the database schema                     | Section 11.5          |
+| Changing AI narrative prompts                    | Section 12            |
+| Adding or changing APIs                          | Section 13            |
+| Changing PDF output                              | Section 14            |
+| Changing SunScout                                | Section 17            |
+| Changing listing description extraction or flags | Section 19            |
 
 ---
 
@@ -49,6 +49,7 @@ Any code block in the spec marked with **TEMPLATE CODE** is a reference implemen
 not locked production code. These are starting points that will evolve during development.
 
 Sections with TEMPLATE CODE markers:
+
 - Section 11.2 — Realtor.ca scraper (endpoint URLs and field mappings will shift)
 - Section 11.3 — Calc engine payload structure
 - Section 11.5 — Database schema (run changes as Supabase migrations)
@@ -63,21 +64,21 @@ so it stays accurate.
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React + TypeScript |
-| Backend API | Fastify (Node.js) |
-| Database | Supabase (Postgres + Auth + Storage) |
-| Scraping | Playwright on Railway |
-| Calc engine | Python FastAPI on Railway |
-| AI extraction | Claude Haiku (claude-haiku-4-5-20251001) |
-| AI narrative | Claude Sonnet (claude-sonnet-4-6) |
-| Maps | Mapbox GL JS |
-| Sun path | pvlib (runs locally, no API call) |
-| Payments | Stripe |
-| PDF | Puppeteer |
-| Frontend hosting | Vercel |
-| Backend hosting | Railway |
+| Layer            | Technology                               |
+| ---------------- | ---------------------------------------- |
+| Frontend         | React + TypeScript                       |
+| Backend API      | Fastify (Node.js)                        |
+| Database         | Supabase (Postgres + Auth + Storage)     |
+| Scraping         | Playwright on Railway                    |
+| Calc engine      | Python FastAPI on Railway                |
+| AI extraction    | Claude Haiku (claude-haiku-4-5-20251001) |
+| AI narrative     | Claude Sonnet (claude-sonnet-4-6)        |
+| Maps             | Mapbox GL JS                             |
+| Sun path         | pvlib (runs locally, no API call)        |
+| Payments         | Stripe                                   |
+| PDF              | Puppeteer                                |
+| Frontend hosting | Vercel                                   |
+| Backend hosting  | Railway                                  |
 
 ---
 
@@ -90,12 +91,14 @@ The first Claude Code session prompt is in `OPENING_PROMPT.md` — paste it verb
 **The designs are living documents.** They will be updated as the product evolves. Always check the latest version of the HTML file before building or modifying a component — never assume the version you saw previously is still current.
 
 **Before writing any frontend code:**
+
 1. Read `DESIGN_README.md` — covers the full design system
 2. Open the HTML files in a browser: `npx serve docs/design_handoff_propscout_mvp/designs/`
 3. Explore `Investor Report.html` and `Tenant Report.html` — the two most complex screens
 4. Copy `tokens.css` into `apps/web/src/styles/` before writing a single component
 
 **When a design changes:**
+
 - Component not built yet → build from the new design, nothing else to do
 - Component already built → update it to match; values come from tokens so most changes touch one file
 - Whole section redesigned → check `COMPONENT_MANIFEST.md` for which React component maps to it
@@ -120,16 +123,19 @@ Three fonts — load all three, use each only for its intended purpose:
 
 ```html
 <!-- In apps/web/index.html — load once -->
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link
+  href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+  rel="stylesheet"
+/>
 ```
 
-| Font | Use | Never use for |
-|---|---|---|
+| Font               | Use                                                      | Never use for           |
+| ------------------ | -------------------------------------------------------- | ----------------------- |
 | `Instrument Serif` | Display headings, section questions, italic accent words | Body copy, data, labels |
-| `Geist` | All body copy, UI labels, buttons, navigation | Data values, codes |
-| `Geist Mono` | Eyebrows, percentages, dollar amounts, codes, tags | Headings, body |
+| `Geist`            | All body copy, UI labels, buttons, navigation            | Data values, codes      |
+| `Geist Mono`       | Eyebrows, percentages, dollar amounts, codes, tags       | Headings, body          |
 
-**Italic is part of the brand.** Every section question uses Instrument Serif italic on the key noun — "Is the rent *fair*?", "Does the deal *pencil*?". Apply this consistently across all four report types.
+**Italic is part of the brand.** Every section question uses Instrument Serif italic on the key noun — "Is the rent _fair_?", "Does the deal _pencil_?". Apply this consistently across all four report types.
 
 ### Tokens — never hardcode values
 
@@ -144,8 +150,8 @@ border-radius: var(--radius-lg);
 box-shadow: var(--shadow-card);
 
 /* Wrong — never do this */
-background: #FFFFFF;
-color: #0E1320;
+background: #ffffff;
+color: #0e1320;
 border-radius: 22px;
 ```
 
@@ -153,27 +159,27 @@ Dark mode is handled entirely by the token system. Never write a `prefers-color-
 
 Key tokens to know by heart:
 
-| Token | Value (light) | Purpose |
-|---|---|---|
-| `--bg` | `#F1ECE2` | Page background — warm cream |
-| `--surface` | `#FFFFFF` | Card background |
-| `--ink` | `#0E1320` | Primary text and buttons |
-| `--accent` | `#D97757` | Terracotta — brand, Pro badge, CTAs, all hover states |
-| `--pass` | `#4F7A48` | Sage — good deal, positive flags |
-| `--caution` | `#B98724` | Amber — soft warnings |
-| `--fail` | `#B14A37` | Clay — hard pass, red flags |
+| Token       | Value (light) | Purpose                                               |
+| ----------- | ------------- | ----------------------------------------------------- |
+| `--bg`      | `#F1ECE2`     | Page background — warm cream                          |
+| `--surface` | `#FFFFFF`     | Card background                                       |
+| `--ink`     | `#0E1320`     | Primary text and buttons                              |
+| `--accent`  | `#D97757`     | Terracotta — brand, Pro badge, CTAs, all hover states |
+| `--pass`    | `#4F7A48`     | Sage — good deal, positive flags                      |
+| `--caution` | `#B98724`     | Amber — soft warnings                                 |
+| `--fail`    | `#B14A37`     | Clay — hard pass, red flags                           |
 
 ### Interactions — standard timing
 
 Every interactive element follows the same motion system. Never deviate:
 
-| Interaction | Timing | Effect |
-|---|---|---|
-| Hover (all interactive elements) | `0.15s ease` | Border + color → terracotta (`--accent`) |
-| Modal open | `0.25s` | Backdrop fade + card translates up 8px + scales 0.98→1 |
-| Deal score gauge animation | `1.4s cubic-bezier(.2,.7,.2,1)` | stroke-dashoffset from full → target |
-| Financing slider drag | Instant (synchronous) | Every metric on page recalculates live — no debounce |
-| Comp marker hover | Instant | Diamond scales 1.18× + turns `--accent`, tooltip fades in |
+| Interaction                      | Timing                          | Effect                                                    |
+| -------------------------------- | ------------------------------- | --------------------------------------------------------- |
+| Hover (all interactive elements) | `0.15s ease`                    | Border + color → terracotta (`--accent`)                  |
+| Modal open                       | `0.25s`                         | Backdrop fade + card translates up 8px + scales 0.98→1    |
+| Deal score gauge animation       | `1.4s cubic-bezier(.2,.7,.2,1)` | stroke-dashoffset from full → target                      |
+| Financing slider drag            | Instant (synchronous)           | Every metric on page recalculates live — no debounce      |
+| Comp marker hover                | Instant                         | Diamond scales 1.18× + turns `--accent`, tooltip fades in |
 
 ### Absolute UI rules
 
@@ -213,6 +219,7 @@ Follow them without being asked. Never deviate without a documented reason.
 **One responsibility per file.** A file that does two unrelated things should be two files.
 
 **Name files after what they do, not what they contain.**
+
 - `useAnalysis.ts` not `hooks.ts`
 - `realtorScraper.py` not `scraper.py`
 - `calculateDealScore.py` not `utils.py`
@@ -302,7 +309,7 @@ export async function generateNarrative(input: NarrativeInput): Promise<string> 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 600,
-    messages: [{ role: 'user', content: buildNarrativePrompt(input) }]
+    messages: [{ role: 'user', content: buildNarrativePrompt(input) }],
   })
   return response.content[0].text
 }
@@ -597,7 +604,7 @@ async function buildReport(listing: Listing): Promise<Report> {
   const [metrics, comps, narrative] = await Promise.allSettled([
     calcEngine.run(listing),
     compsService.query(listing.postalCode, listing.beds),
-    anthropicService.generateNarrative(listing)
+    anthropicService.generateNarrative(listing),
   ])
 
   return {
@@ -634,8 +641,8 @@ Use Fastify's `@fastify/rate-limit` plugin:
 import rateLimit from '@fastify/rate-limit'
 
 fastify.register(rateLimit, {
-  max: 10,              // 10 requests
-  timeWindow: '1 minute' // per minute per IP
+  max: 10, // 10 requests
+  timeWindow: '1 minute', // per minute per IP
 })
 ```
 
@@ -652,13 +659,10 @@ const event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIP
 
 ```typescript
 // Correct — parameterised
-const { data } = await supabase
-  .from('analyses')
-  .select('*')
-  .eq('user_id', userId)   // ← parameterised, safe
+const { data } = await supabase.from('analyses').select('*').eq('user_id', userId) // ← parameterised, safe
 
 // Wrong — never do this
-const query = `SELECT * FROM analyses WHERE user_id = '${userId}'`  // ← SQL injection risk
+const query = `SELECT * FROM analyses WHERE user_id = '${userId}'` // ← SQL injection risk
 ```
 
 ---
@@ -953,17 +957,17 @@ services/calc-engine/tests/
 
 #### When each test type is required
 
-| Situation | Unit | Functionality | Sanity | Regression |
-|---|---|---|---|---|
-| New calculation function added | ✅ Required | ✅ Required | ✅ Add check | ✅ Add case |
-| New risk flag added | ✅ Required | ✅ Required | — | ✅ Add to golden dataset |
-| New API service file added | ✅ Required | ✅ Required | — | — |
-| New React component added | — | ✅ Required | — | — |
-| New report section added | — | ✅ Required | — | ✅ Add case |
-| Extraction prompt changed | — | — | — | ✅ Run golden dataset |
-| Model version updated (Haiku/Sonnet) | — | — | — | ✅ Run both suites |
-| Scraper updated | ✅ Required | ✅ Required | — | — |
-| Database schema changed | — | ✅ Required | — | — |
+| Situation                            | Unit        | Functionality | Sanity       | Regression               |
+| ------------------------------------ | ----------- | ------------- | ------------ | ------------------------ |
+| New calculation function added       | ✅ Required | ✅ Required   | ✅ Add check | ✅ Add case              |
+| New risk flag added                  | ✅ Required | ✅ Required   | —            | ✅ Add to golden dataset |
+| New API service file added           | ✅ Required | ✅ Required   | —            | —                        |
+| New React component added            | —           | ✅ Required   | —            | —                        |
+| New report section added             | —           | ✅ Required   | —            | ✅ Add case              |
+| Extraction prompt changed            | —           | —             | —            | ✅ Run golden dataset    |
+| Model version updated (Haiku/Sonnet) | —           | —             | —            | ✅ Run both suites       |
+| Scraper updated                      | ✅ Required | ✅ Required   | —            | —                        |
+| Database schema changed              | —           | ✅ Required   | —            | —                        |
 
 ---
 
@@ -1164,9 +1168,12 @@ propscout/
 │   │           ├── auth.reset.tsx             # /auth/reset — Password reset request
 │   │           ├── auth.reset.confirm.tsx     # /auth/reset/confirm
 │   │           ├── auth.verified.tsx          # /auth/verified
-│   │           ├── privacy.tsx                # /privacy
-│   │           ├── terms.tsx                  # /terms
-│   │           └── 404.tsx                    # * catch-all
+│   │           ├── PrivacyPage.tsx            # /privacy — PIPEDA privacy policy with TOC
+│   │           ├── TermsPage.tsx              # /terms — Terms of Service with TOC
+│   │           ├── legal/
+│   │           │   ├── LegalShell.tsx         # Shared layout: sticky nav + TOC + scroll-spy
+│   │           │   └── legalContent.ts        # Pure data: PRIVACY_SECTIONS, TERMS_SECTIONS
+│   │           └── NotFoundPage.tsx           # * catch-all 404
 │   │
 │   └── api/                           # Fastify — hosted on Railway
 │       ├── tsconfig.json
@@ -1249,6 +1256,7 @@ propscout/
 A file that exists in the repo but not in this structure will confuse any developer (or Claude Code session) reading the project later.
 
 **Signs the structure is stale:**
+
 - A file exists in the repo but is not listed here
 - A listed file no longer exists
 - A new service was added but its folder is not shown
@@ -1262,12 +1270,12 @@ If you notice the structure is stale, fix it before doing anything else in that 
 
 Every URL a user pastes routes to one of four reports. Never mix their logic.
 
-| Mode | Trigger | Section |
-|---|---|---|
-| Report A — Investment purchase | For-sale URL + user selects "Investment" | Spec Section 6 |
-| Report B — Personal purchase | For-sale URL + user selects "Personal use" | Spec Section 7 |
-| Report C — Tenant evaluation | For-rent URL + user selects "I'm a tenant" | Spec Section 8 |
-| Report D — Landlord rental | For-rent URL + user selects "I'm a landlord" | Spec Section 9 |
+| Mode                           | Trigger                                      | Section        |
+| ------------------------------ | -------------------------------------------- | -------------- |
+| Report A — Investment purchase | For-sale URL + user selects "Investment"     | Spec Section 6 |
+| Report B — Personal purchase   | For-sale URL + user selects "Personal use"   | Spec Section 7 |
+| Report C — Tenant evaluation   | For-rent URL + user selects "I'm a tenant"   | Spec Section 8 |
+| Report D — Landlord rental     | For-rent URL + user selects "I'm a landlord" | Spec Section 9 |
 
 ---
 
@@ -1276,6 +1284,7 @@ Every URL a user pastes routes to one of four reports. Never mix their logic.
 **Never feed raw listing description text into the deal score calculation or the narrative prompt.**
 
 All unstructured text must pass through the extraction pipeline first (Section 19):
+
 1. Regex rules run first (deterministic, no AI)
 2. Claude Haiku extracts structured JSON flags
 3. Logic gate applies confidence thresholds
@@ -1283,6 +1292,7 @@ All unstructured text must pass through the extraction pipeline first (Section 1
 5. Only hard numbers reach the Sonnet narrative prompt
 
 Confidence thresholds:
+
 - 85%+ confidence → red flag, deducts from deal score
 - 60–84% confidence → amber soft warning only, no score deduction
 - Below 60% → not shown
@@ -1308,12 +1318,12 @@ Do not add province logic for BC or Alberta until Phase 3 is explicitly started.
 
 ## Pricing tiers
 
-| Tier | Price | Key unlock |
-|---|---|---|
-| Free | $0 | 10 analyses/month, full comps, basic AI narrative (1 paragraph) |
-| Investor Pro | $10/mo | Unlimited analyses, PDF, SunScout building obstruction, full AI narrative, portfolio tracker |
-| Professional | $59/mo | Everything in Pro + white-label PDF, client sharing, bulk analysis |
-| Team | $299+/mo | Everything in Professional + multi-user seats, API access |
+| Tier         | Price    | Key unlock                                                                                   |
+| ------------ | -------- | -------------------------------------------------------------------------------------------- |
+| Free         | $0       | 10 analyses/month, full comps, basic AI narrative (1 paragraph)                              |
+| Investor Pro | $10/mo   | Unlimited analyses, PDF, SunScout building obstruction, full AI narrative, portfolio tracker |
+| Professional | $59/mo   | Everything in Pro + white-label PDF, client sharing, bulk analysis                           |
+| Team         | $299+/mo | Everything in Professional + multi-user seats, API access                                    |
 
 Full matrix in spec Section 4. When in doubt about what a tier can access, check the matrix.
 
@@ -1321,10 +1331,10 @@ Full matrix in spec Section 4. When in doubt about what a tier can access, check
 
 ## AI narrative length by tier
 
-| Tier | Length |
-|---|---|
-| Free | 1 short paragraph, 4–5 sentences, 60–120 words |
-| Pro and above | Full narrative, 2–3 paragraphs, 150–320 words |
+| Tier          | Length                                         |
+| ------------- | ---------------------------------------------- |
+| Free          | 1 short paragraph, 4–5 sentences, 60–120 words |
+| Pro and above | Full narrative, 2–3 paragraphs, 150–320 words  |
 
 Gold-standard examples for each report type are in spec Section 12.
 If generated output doesn't match that quality, fix the prompt — not the examples.
@@ -1337,11 +1347,13 @@ When you build something that was not planned in the original spec, complete eve
 Do not skip steps. Do not ship until all steps are done.
 
 **Step 1 — Update the documentation**
+
 - Add it to `propscout_platform_spec.md` in the relevant section. If it does not fit an existing section, create a new one.
 - Add the build task to `TODO.md` under the correct phase.
 - If it is in MVP scope, add it to `MVP_TODO.md` and tick it off when done.
 
 **Step 2 — Add it to the manual test guide**
+
 - Add at least one test for it in `TESTING.md`.
 - Label it correctly: ✋ manual, 🔗 combined, or 🤖 automated.
 - Place it in the correct week block.
@@ -1366,12 +1378,14 @@ Every new feature requires all four test types. See Section 12 of this file for 
   - Re-run both suites and confirm they still pass before merging
 
 **Step 4 — API and service rules**
+
 - If the new feature calls an external API, create a dedicated service file for it.
   Never call an API inline inside a route, component, or calculation function.
 - If the feature reads from or writes to the database, all queries go through `supabaseService.ts`.
   Never call Supabase directly from a component or route handler.
 
 **Step 5 — Run the full test checklist before merging**
+
 ```
 [ ] Unit tests pass
 [ ] Functionality tests pass

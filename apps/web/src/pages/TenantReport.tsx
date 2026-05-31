@@ -27,6 +27,7 @@ import { LockedButton } from '../components/paywall/LockedButton'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
+import { StickyActionBar } from '../components/shared/StickyActionBar'
 import { SectionHead } from '../components/shared/SectionHead'
 import { SignInModal } from '../components/shared/SignInModal'
 import { Chip } from '../components/shared/Chip'
@@ -141,6 +142,7 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
 
       {/* Two-column hero */}
       <div
+        className="grid-1col-mobile hero-score-first"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr',
@@ -435,6 +437,7 @@ function RentPositioningSection(): JSX.Element {
       />
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.6fr 1fr',
@@ -462,6 +465,7 @@ function RentPositioningSection(): JSX.Element {
           </p>
 
           <div
+            className="grid-1col-mobile"
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
@@ -882,7 +886,10 @@ function UnitDetailsSection(): JSX.Element {
         </button>
 
         {open && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+          <div
+            className="grid-1col-mobile"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}
+          >
             {(
               [
                 { title: 'The unit', rows: UNIT_DETAIL_ROWS },
@@ -1086,7 +1093,10 @@ function ConversionBlock(): JSX.Element {
         paddingBottom: 'clamp(48px, 6vw, 80px)',
       }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}
+      >
         {/* Buy instead */}
         <div className="card col" style={{ padding: 32, gap: 16 }}>
           <span
@@ -1215,7 +1225,7 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
   }
 
   return (
-    <div>
+    <div className="report-page-mobile-padding">
       <Nav
         variant="report"
         reportLabel="Tenant report"
@@ -1319,6 +1329,7 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
       <Footer />
 
       <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
+      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
     </div>
   )
 }

@@ -16,6 +16,8 @@ import { EmailVerifiedPage } from './pages/EmailVerifiedPage'
 import { StripeWelcomePage } from './pages/StripeWelcomePage'
 import { StripeCancelledPage } from './pages/StripeCancelledPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { PrivacyPage } from './pages/PrivacyPage'
+import { TermsPage } from './pages/TermsPage'
 import { DevToolbar } from './components/dev/DevToolbar'
 
 /** Simulated tier for local development — swap to "pro" to preview Pro UI. */
@@ -46,6 +48,8 @@ function App(): JSX.Element {
           <Route path="/auth/verified" element={<EmailVerifiedPage />} />
           <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
           <Route path="/checkout/cancelled" element={<StripeCancelledPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           {/* Catch-all — must be last */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

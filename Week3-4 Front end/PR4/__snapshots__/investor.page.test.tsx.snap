@@ -3,6 +3,7 @@
 exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
 <div>
   <div
+    class="report-page-mobile-padding"
     style="min-height: 100vh; background: var(--bg);"
   >
     <header
@@ -523,6 +524,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
 exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaughan) 1`] = `
 <div>
   <div
+    class="report-page-mobile-padding"
     style="min-height: 100vh; background: var(--bg);"
   >
     <header
@@ -1254,7 +1256,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </div>
           <div
             class="card col"
-            style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
+            style="padding: 32px; gap: 24px; position: sticky; top: 84px; order: 0;"
           >
             <div
               class="col"
@@ -1726,6 +1728,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </span>
         </div>
         <div
+          class="grid-2col-mobile"
           style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;"
         >
           <div
@@ -4603,6 +4606,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           />
         </div>
         <div
+          class="grid-1col-mobile"
           style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;"
         >
           <div
@@ -5169,6 +5173,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
 exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] = `
 <div>
   <div
+    class="report-page-mobile-padding"
     style="min-height: 100vh; background: var(--bg);"
   >
     <header

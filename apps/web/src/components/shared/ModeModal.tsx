@@ -17,6 +17,7 @@
 
 import { useState, useEffect } from 'react'
 import { Icon } from './Icon'
+import { BottomSheet } from './BottomSheet'
 import type { ReportMode } from '../../types/analysis'
 
 // ── Mode option definitions ──────────────────────────────────────────
@@ -338,6 +339,72 @@ function ChoiceCard({ opt, selected, dimmed, onClick }: ChoiceCardProps): JSX.El
   )
 }
 
+// ── ModeModalBottomSheet — mobile-only bottom-sheet variant ─────────
+
+interface ModeModalBottomSheetProps {
+  open: boolean
+  onClose: () => void
+  listing: ListingPreviewData | null
+  options: [ModeOption, ModeOption]
+  question: React.ReactNode
+  selected: ReportMode | null
+  loading: boolean
+  onSelect: (k: ReportMode) => void
+}
+
+function ModeModalBottomSheet({
+  open,
+  onClose,
+  listing,
+  options,
+  question,
+  selected,
+  loading,
+  onSelect,
+}: ModeModalBottomSheetProps): JSX.Element {
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      <div style={{ padding: '18px 20px 24px' }}>
+        {listing !== null && (
+          <div style={{ marginBottom: 18 }}>
+            <ListingPreview listing={listing} />
+          </div>
+        )}
+
+        <div style={{ marginBottom: 16 }}>
+          <span className="section-tag" style={{ marginBottom: 10, display: 'flex' }}>
+            One quick question
+          </span>
+          <h2
+            className="serif"
+            style={{
+              fontSize: 22,
+              lineHeight: 1.12,
+              letterSpacing: '-0.025em',
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            {question}
+          </h2>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {options.map((opt) => (
+            <ChoiceCard
+              key={opt.key}
+              opt={opt}
+              selected={selected === opt.key}
+              dimmed={loading && selected !== opt.key}
+              onClick={() => !loading && onSelect(opt.key)}
+            />
+          ))}
+        </div>
+      </div>
+    </BottomSheet>
+  )
+}
+
 // ── ModeModal ────────────────────────────────────────────────────────
 
 export interface ModeModalProps {
@@ -360,6 +427,13 @@ export function ModeModal({
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [whyOpen, setWhyOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
+
+  useEffect(() => {
+    const handler = (): void => setIsMobile(window.innerWidth <= 480)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   // Reset state whenever the modal opens or listing changes
   useEffect(() => {
@@ -412,6 +486,21 @@ export function ModeModal({
         pricing it?
       </>
     )
+
+  if (isMobile) {
+    return (
+      <ModeModalBottomSheet
+        open={open}
+        onClose={onClose}
+        listing={listing}
+        options={options}
+        question={question}
+        selected={selected}
+        loading={loading}
+        onSelect={handleSelect}
+      />
+    )
+  }
 
   return (
     <div

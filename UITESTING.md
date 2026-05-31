@@ -870,3 +870,855 @@ BLOCK 4 — PR 3 LANDING + MODAL
 _Note: Three province gate tests and the scraper error state test may return N/A in the current build.
 Province detection and scraper error states require the live scraper pipeline, which is not connected until
 later PRs. If any of those four tests returns N/A, record it as N/A (not FAIL) in the results table._
+
+---
+
+## PR8 — Previously blocked TCs now retestable
+
+TC-084, TC-085, TC-086 were blocked in PR7 (routes did not exist).
+Retest all three now that /privacy, /terms, and the \* catch-all are live.
+
+TC-084: Footer Privacy link navigates to /privacy
+Steps: 1. Open http://localhost:5173 2. Scroll to footer 3. Right-click Privacy link → Copy link address 4. Confirm href is /privacy (relative, not # or external) 5. Click the Privacy link 6. Confirm /privacy loads — "Privacy Policy" heading visible 7. Zero console errors
+PASS: href="/privacy". Page loads with correct heading.
+Zero console errors.
+FAIL: href="#" or external URL. Page blank or crashes.
+Console errors on load.
+
+TC-085: Footer Terms link navigates to /terms
+Steps: 1. Open http://localhost:5173 2. Scroll to footer 3. Right-click Terms link → Copy link address 4. Confirm href is /terms (relative, not # or external) 5. Click the Terms link 6. Confirm /terms loads — "Terms of Service" heading visible 7. Zero console errors
+PASS: href="/terms". Page loads with correct heading.
+Zero console errors.
+FAIL: href="#" or external URL. Page blank or crashes.
+Console errors on load.
+
+TC-086: Unknown route renders 404 page
+Steps: 1. Navigate to http://localhost:5173/this-does-not-exist 2. Confirm eyebrow "404" visible 3. Confirm headline "Nothing here." visible 4. Confirm "Back to home" button/link present 5. Click "Back to home" — confirm navigates to / 6. Zero console errors throughout
+PASS: 404 content renders. "Back to home" returns to /.
+Zero console errors.
+FAIL: Blank screen. React crash. Wrong page renders.
+Stack trace visible.
+
+---
+
+## BLOCK 5 — PR8 PrivacyPage
+
+─────────────────────────────────────────
+TEST: PrivacyPage — page loads, heading, eyebrow chip, zero errors
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Confirm the page loads with no console errors (DevTools → Console → no red entries)
+3. Confirm the h1 heading reads exactly "Privacy Policy"
+4. Locate the eyebrow chip near the top of the page — confirm it reads "PIPEDA-compliant · effective May 24, 2026"
+5. Confirm the chip has a small terracotta dot before the text
+6. Confirm the "Back to PropScout" link is visible in the sticky nav header (top-right)
+7. Confirm the Footer is present at the bottom of the page
+   PASS: Page loads at /privacy with zero console errors. h1 "Privacy Policy" present. Eyebrow chip reads "PIPEDA-compliant · effective May 24, 2026" with a terracotta dot. "Back to PropScout" link visible in nav. Footer present.
+   FAIL: Console errors on load. h1 text is wrong or missing. Eyebrow chip absent or shows wrong text. "Back to PropScout" link absent. Page is blank or crashes.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — TOC renders exactly 9 sections with § numbers
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Locate the table of contents sidebar on the left side of the page
+3. Confirm the "On this page" label appears above the TOC list
+4. Count the number of TOC buttons — confirm exactly 9
+5. Confirm the buttons are numbered § 01 through § 09 (monospaced terracotta numbers)
+6. Confirm the following section titles appear in order:
+   § 01 What we collect
+   § 02 How we use it
+   § 03 Sharing & third parties
+   § 04 Data retention
+   § 05 Your rights under PIPEDA
+   § 06 Security
+   § 07 Cookies & tracking
+   § 08 Changes to this policy
+   § 09 Contact
+7. Confirm a `<nav aria-label="Table of contents">` element exists (DevTools → Elements Ctrl+F search)
+   PASS: Exactly 9 TOC buttons numbered § 01–§ 09 with correct titles in order. `<nav aria-label="Table of contents">` present in DOM. "On this page" label visible above the list.
+   FAIL: Fewer or more than 9 TOC buttons. § numbering missing or wrong. Section titles do not match the list. "On this page" label absent. `aria-label="Table of contents"` missing from the nav element.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — TOC click scrolls to section, heading visible below sticky nav, active state moves
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Click the TOC button "§ 05 Your rights under PIPEDA"
+3. Observe smooth scroll — page animates to the "Your rights under PIPEDA" section
+4. After scroll completes, confirm the "Your rights under PIPEDA" h2 heading is visible in the viewport and not hidden behind the sticky nav
+5. In the TOC sidebar, confirm button "§ 05 Your rights under PIPEDA" now has a dark/active background
+6. Confirm only one TOC button is in the active state — others remain muted
+7. Click "§ 01 What we collect" — confirm page scrolls up and § 01 becomes the active button
+   PASS: Clicking a TOC button triggers smooth scroll to the correct section. Target section heading is visible below the sticky nav after scroll. Clicked button gains the active/dark style. No more than one button is active at a time.
+   FAIL: Clicking a TOC button does nothing. Section heading scrolls to behind the sticky nav (hidden). No active state visible on any TOC button. Multiple buttons show the active style simultaneously.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — scroll-spy: active TOC item tracks scroll position in both directions
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Confirm TOC button "§ 01 What we collect" is initially active
+3. Slowly scroll the page downward past the "§ 02 How we use it" heading
+4. Confirm the active TOC button changes from § 01 to § 02 without any click
+5. Continue scrolling past "§ 03 Sharing & third parties" — confirm § 03 becomes active
+6. Scroll back upward past "§ 02 How we use it" — confirm active state returns to § 02
+7. At all times confirm only one TOC button is in the active state
+   PASS: Scrolling down automatically updates the active TOC button to match the current section. Scrolling up reverses the active state. Only one button active at any moment.
+   FAIL: Active TOC item does not change as user scrolls — stays locked on § 01. Multiple TOC items show the active state simultaneously. Active state only updates on click, not on scroll.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — page switch pill: click "Terms of Service" → URL changes to /terms, correct heading, page scrolls to top
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Locate the page switch pill below the h1 heading — two buttons: "PRIVACY POLICY" and "TERMS OF SERVICE"
+3. Confirm "PRIVACY POLICY" has the dark/active background style
+4. Confirm "TERMS OF SERVICE" is not active (lighter style)
+5. Click "TERMS OF SERVICE"
+6. Confirm the URL changes to /terms (check address bar)
+7. Confirm the page scrolls to the top
+8. Confirm the h1 now reads "Terms of Service"
+9. Confirm zero console errors during the transition
+   PASS: Clicking "TERMS OF SERVICE" navigates to /terms, h1 changes to "Terms of Service", page scrolls to top, zero console errors. Both pill buttons visible on the Privacy page with correct active state.
+   FAIL: Clicking the Terms button does nothing. URL stays at /privacy. h1 does not change. Console errors during transition. Pill buttons missing from the page.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — "Back to PropScout" link navigates to /
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Locate the "Back to PropScout" link in the sticky nav header (top-right area)
+3. Right-click it → Copy link address → confirm href is / (root path)
+4. Click "Back to PropScout"
+5. Confirm navigation returns to http://localhost:5173/ (landing page loads)
+6. Navigate back to /privacy and scroll to the article footer card at the bottom
+7. Confirm a second "Back to PropScout" link is present in the footer card with href="/"
+   PASS: "Back to PropScout" in the nav has href="/". Clicking it returns to the landing page with no errors. Footer card also contains "Back to PropScout" with href="/".
+   FAIL: Link has the wrong href (e.g., "#" or "/privacy"). Clicking navigates to the wrong page. Footer card "Back to PropScout" is absent.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — at 375px: TOC hidden, single column, no overflow, nav PDF button hidden, footer card buttons visible
+BLOCK: 5
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Open DevTools → set responsive mode to 375px
+3. Confirm the TOC sidebar (left column) is not visible — layout should collapse to single column
+4. Confirm the article content fills the full width with no horizontal scrollbar
+5. Scroll through the page — confirm all 9 section headings are readable with no clipped text
+6. In the sticky nav header, confirm the "Download as PDF" button is NOT visible (hidden at mobile)
+7. Confirm the "Back to PropScout" link is also NOT visible in the nav at 375px (nav actions collapse)
+8. Scroll to the article footer card — confirm "Download as PDF" (primary button) and "Back to PropScout" (ghost button) are both visible there
+9. Confirm zero console errors
+   PASS: TOC sidebar not visible at 375px. Single-column layout, no horizontal overflow. Nav "Download as PDF" and "Back to PropScout" are hidden. Footer card shows both buttons. No clipped text. Zero console errors.
+   FAIL: TOC sidebar still visible at 375px (causing horizontal overflow). Horizontal scrollbar appears. Nav PDF/Back buttons still visible at mobile. Footer card buttons absent.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: PrivacyPage — axe DevTools scan: zero violations
+BLOCK: 5
+CATEGORY: Accessibility
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/privacy
+2. Scroll through the full page once to ensure all content is rendered
+3. Open the axe DevTools extension panel
+4. Click "Scan ALL of my page"
+5. Wait for the scan to complete
+6. Confirm the Violations count is 0 across all severity levels
+   PASS: Axe reports zero violations on the PrivacyPage. No critical, serious, moderate, or minor violations.
+   FAIL: Axe reports one or more violations of any severity.
+   ─────────────────────────────────────────
+
+---
+
+## BLOCK 6 — PR8 TermsPage
+
+─────────────────────────────────────────
+TEST: TermsPage — page loads at /terms, correct heading and eyebrow
+BLOCK: 6
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/terms
+2. Confirm the page loads with zero console errors
+3. Confirm the h1 heading reads exactly "Terms of Service"
+4. Locate the eyebrow chip — confirm it reads "Effective May 24, 2026"
+5. Confirm the chip has a terracotta dot prefix
+6. Confirm the "Back to PropScout" link is visible in the sticky nav header
+   PASS: Page loads at /terms with zero errors. h1 "Terms of Service" present. Eyebrow chip reads "Effective May 24, 2026" with terracotta dot. Nav "Back to PropScout" link visible.
+   FAIL: Console errors on load. h1 wrong or missing. Eyebrow chip absent or shows wrong text (e.g., shows Privacy Policy eyebrow text). Page blank or crashes.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: TermsPage — TOC renders exactly 11 sections, "Not financial or legal advice" section present
+BLOCK: 6
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/terms
+2. Count the TOC buttons in the sidebar — confirm exactly 11
+3. Confirm all 11 sections are listed in order:
+   § 01 Acceptance
+   § 02 The service
+   § 03 Not financial or legal advice
+   § 04 Your account & security
+   § 05 Subscriptions, billing & cancellation
+   § 06 Acceptable use
+   § 07 Intellectual property
+   § 08 Limitation of liability
+   § 09 Governing law
+   § 10 Changes to these terms
+   § 11 Contact
+4. Click TOC button "§ 03 Not financial or legal advice" — scroll to that section
+5. Confirm the h2 heading reads "Not financial or legal advice"
+6. Confirm the section body contains the text "This is the most important section."
+   PASS: Exactly 11 TOC buttons. "Not financial or legal advice" appears as § 03. All 11 titles match the list. Section body contains "This is the most important section."
+   FAIL: Fewer or more than 11 TOC buttons. "Not financial or legal advice" section absent or at wrong position. Section body text empty or incorrect.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: TermsPage — page switch pill: click "Privacy Policy" → navigates to /privacy, correct heading, page at top
+BLOCK: 6
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/terms
+2. Locate the page switch pill below the h1 — two buttons: "PRIVACY POLICY" and "TERMS OF SERVICE"
+3. Confirm "TERMS OF SERVICE" has the dark/active style
+4. Click "PRIVACY POLICY"
+5. Confirm URL changes to /privacy
+6. Confirm the page scrolls to the top
+7. Confirm h1 now reads "Privacy Policy"
+8. Confirm zero console errors during the transition
+   PASS: Clicking "PRIVACY POLICY" from /terms navigates to /privacy, h1 changes to "Privacy Policy", page scrolls to top, zero console errors.
+   FAIL: Clicking Privacy Policy does nothing. URL stays at /terms. h1 does not change.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: TermsPage — "Download as PDF" button present in nav and footer card, click triggers print dialog, page intact after dismiss
+BLOCK: 6
+CATEGORY: Legal Pages
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/terms
+2. Locate the "Download as PDF" button in the sticky nav header (top-right)
+3. Confirm it is visible and has a doc icon
+4. Click "Download as PDF" — the browser print dialog should appear
+5. Dismiss the print dialog (click Cancel or press Escape)
+6. Confirm the page is still fully intact and readable after dismissing
+7. Confirm zero console errors before and after clicking
+8. Scroll to the article footer card — confirm a "Download as PDF" primary button is present there as well
+9. Click the footer card "Download as PDF" — confirm the print dialog appears and can be dismissed cleanly
+   PASS: "Download as PDF" button present in both nav and footer card. Clicking either triggers the browser print dialog. Page fully intact after dismissing. Zero console errors.
+   FAIL: "Download as PDF" button absent from nav or footer card. Clicking throws a JavaScript error. Page crashes or becomes unresponsive after dismissing the print dialog.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: TermsPage — axe DevTools scan: zero violations
+BLOCK: 6
+CATEGORY: Accessibility
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/terms
+2. Scroll through the full page to render all content
+3. Open the axe DevTools extension panel
+4. Click "Scan ALL of my page"
+5. Confirm zero violations across all severity levels
+   PASS: Axe reports zero violations on the TermsPage.
+   FAIL: Axe reports one or more violations of any severity.
+   ─────────────────────────────────────────
+
+---
+
+## BLOCK 7 — PR8 404 / NotFoundPage
+
+─────────────────────────────────────────
+TEST: NotFoundPage — unknown route renders 404 content, eyebrow "404", headline "Nothing here.", zero errors
+BLOCK: 7
+CATEGORY: Error States
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/this-does-not-exist
+2. Confirm the page does not crash or show a blank white screen
+3. Confirm the eyebrow text "404" is visible on the page
+4. Confirm the headline "Nothing here." is visible
+5. Confirm a button or link with label "Back to home" is present
+6. Open DevTools → Console — confirm zero red error entries
+   PASS: URL /this-does-not-exist renders the 404 page. Eyebrow "404" visible. Headline "Nothing here." visible. "Back to home" button present. Zero console errors.
+   FAIL: Page is blank or shows a React crash. Eyebrow or headline text wrong or missing. "Back to home" button absent. Console shows red errors.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: NotFoundPage — "Back to home" button navigates to /
+BLOCK: 7
+CATEGORY: Error States
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/this-does-not-exist
+2. Locate the "Back to home" button on the 404 page
+3. Confirm the button label is exactly "Back to home" (not "Back to PropScout" — that is the Legal pages text)
+4. Click "Back to home"
+5. Confirm the browser navigates to http://localhost:5173/ (the landing page)
+6. Confirm the landing page loads correctly with the URL input and Nav visible
+   PASS: Button label is exactly "Back to home". Clicking navigates to / (landing page). Landing page loads correctly.
+   FAIL: Button label reads "Back to PropScout" (wrong). Clicking does nothing or navigates to the wrong path. Landing page fails to load.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: NotFoundPage — /account route renders AccountPage, not the 404 page
+BLOCK: 7
+CATEGORY: Error States
+─────────────────────────────────────────
+Steps:
+
+1. Navigate to http://localhost:5173/account
+2. Confirm the 404 page does NOT appear — eyebrow "404" and headline "Nothing here." must be absent
+3. Confirm the AccountPage renders — look for account-specific content such as "Saved analyses"
+4. Confirm zero console errors
+5. Navigate to http://localhost:5173/privacy — confirm PrivacyPage renders (not 404)
+6. Navigate to http://localhost:5173/terms — confirm TermsPage renders (not 404)
+   PASS: /account renders AccountPage (not 404). /privacy renders PrivacyPage. /terms renders TermsPage. The catch-all 404 route fires only for truly unknown paths.
+   FAIL: /account shows the 404 page ("Nothing here." visible). /privacy or /terms shows the 404 page. Any defined route is swallowed by the catch-all.
+   ─────────────────────────────────────────
+
+---
+
+## BLOCK 8 — PR8 BottomSheet
+
+─────────────────────────────────────────
+TEST: BottomSheet — absent at 1280px: ModeModal opens as centred dialog, no drag handle, no slide-up animation
+BLOCK: 8
+CATEGORY: BottomSheet
+─────────────────────────────────────────
+Steps:
+
+1. Open http://localhost:5173
+2. Open DevTools → set responsive mode to 1280px
+3. Submit a valid for-sale URL: `https://www.realtor.ca/real-estate/27619830/146-east-19th-street-hamilton`
+4. Click "Analyze" — wait for the ModeModal to appear
+5. Confirm the modal opens as a centred overlay dialog, not sliding up from the bottom
+6. Confirm no drag handle (small horizontal pill) is visible at the top of the modal
+7. In DevTools → Elements, confirm `<button aria-label="Close">` (the × button) is present
+8. Confirm no `animation: sheet-up` is applied to the modal element (DevTools → Computed → check animation property)
+   PASS: At 1280px ModeModal opens as a centred dialog. Close (×) button present. No drag handle. No slide-up animation from the bottom edge.
+   FAIL: At 1280px a BottomSheet drag handle is visible. Modal slides up from the bottom. No close (×) button. Modal renders from the bottom edge instead of the centre.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: BottomSheet — at 375px: sheet slides up from bottom, drag handle pill visible, backdrop visible
+BLOCK: 8
+CATEGORY: BottomSheet
+─────────────────────────────────────────
+Steps:
+
+1. Open http://localhost:5173
+2. Open DevTools → set responsive mode to 375px
+3. Submit a valid for-sale URL and click "Analyze" to open the ModeModal
+4. Confirm the sheet animates upward from the bottom edge of the screen (not instant pop)
+5. Confirm a drag handle (small horizontal pill, approximately 36px wide × 4px tall) is visible at the top of the sheet
+6. Confirm a dark semi-transparent backdrop covers the area above the sheet
+7. In DevTools → Elements, confirm the backdrop element has `role="dialog"` and `aria-modal="true"`
+   PASS: At 375px ModeModal renders as a bottom sheet with visible slide-up animation. Drag handle pill visible at top of sheet. Semi-transparent backdrop present. `role="dialog"` and `aria-modal="true"` on the backdrop element.
+   FAIL: No slide-up animation — sheet appears instantly. Drag handle absent. Backdrop not visible. `role="dialog"` or `aria-modal="true"` missing.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: BottomSheet — at 375px: choice cards stack vertically, full width, not side by side
+BLOCK: 8
+CATEGORY: BottomSheet
+─────────────────────────────────────────
+Steps:
+
+1. Open http://localhost:5173 at 375px (DevTools responsive mode)
+2. Submit a valid for-sale URL and open the ModeModal bottom sheet
+3. Observe the two choice cards ("Investment" and "Personal Use") inside the sheet
+4. Confirm the cards are stacked vertically — one above the other, not side by side
+5. Confirm each card spans the full width of the sheet
+6. Try with a for-rent URL — confirm "Tenant" and "Landlord" cards also stack vertically
+   PASS: Both choice cards stacked vertically at 375px. Each card spans the full available sheet width. Cards not arranged side by side.
+   FAIL: Cards appear side by side at 375px (causing overflow or tight spacing). Cards do not fill the width of the sheet.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: BottomSheet — backdrop click closes the sheet
+BLOCK: 8
+CATEGORY: BottomSheet
+─────────────────────────────────────────
+Steps:
+
+1. Open http://localhost:5173 at 375px (DevTools responsive mode)
+2. Open the ModeModal bottom sheet by submitting a valid URL
+3. Click on the dark backdrop area above the sheet (not on the sheet itself)
+4. Confirm the sheet closes and the backdrop disappears completely
+5. Confirm the URL input on the landing page is accessible after close
+   PASS: Clicking the dark backdrop above the sheet closes it completely. Backdrop overlay fully removed. Landing page accessible after close.
+   FAIL: Clicking the backdrop does nothing — sheet stays open. Sheet closes but a transparent overlay remains blocking page interaction.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: BottomSheet — Escape key closes the sheet
+BLOCK: 8
+CATEGORY: BottomSheet
+─────────────────────────────────────────
+Steps:
+
+1. Open http://localhost:5173 at 375px (DevTools responsive mode)
+2. Open the ModeModal bottom sheet by submitting a valid URL
+3. With the sheet open, press the Escape key
+4. Confirm the sheet closes and the backdrop is removed
+5. Confirm zero console errors
+   PASS: Pressing Escape closes the bottom sheet. Backdrop removed. Zero console errors.
+   FAIL: Escape does nothing — sheet stays open. Sheet closes visually but a transparent overlay remains.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: BottomSheet — clicking sheet content does NOT close the sheet
+BLOCK: 8
+CATEGORY: BottomSheet
+─────────────────────────────────────────
+Steps:
+
+1. Open http://localhost:5173 at 375px (DevTools responsive mode)
+2. Open the ModeModal bottom sheet by submitting a valid URL
+3. Click on the heading text or descriptive text inside the sheet (not on a choice card button)
+4. Confirm the sheet remains open
+5. Click on the drag handle pill at the top of the sheet — confirm the sheet remains open
+6. Click on whitespace/padding inside the sheet — confirm the sheet still open
+   PASS: Clicking inside the sheet (text, heading, drag handle, padding) does not close it. Click event is stopped from reaching the backdrop handler. Sheet remains fully open.
+   FAIL: Clicking anywhere inside the sheet causes it to close. Clicking the drag handle closes the sheet.
+   ─────────────────────────────────────────
+
+---
+
+## BLOCK 9 — PR8 StickyActionBar
+
+─────────────────────────────────────────
+TEST: StickyActionBar — absent at 1280px on all report pages
+BLOCK: 9
+CATEGORY: StickyActionBar
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 1280px
+2. Navigate to http://localhost:5173/investor-report
+3. Scroll from top to bottom — confirm no fixed bottom bar with "Save", "Share", "PDF" labels appears
+4. Repeat for:
+   http://localhost:5173/tenant-report
+   http://localhost:5173/personal-report
+   http://localhost:5173/landlord-report
+5. Confirm none of the 4 report pages show a StickyActionBar at 1280px
+   PASS: StickyActionBar absent from all 4 report pages at 1280px. No fixed bottom bar with Save/Share/PDF visible.
+   FAIL: A fixed bottom bar with Save/Share/PDF appears on any report page at 1280px.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: StickyActionBar — at 375px: fixed bar at bottom with Save, Share, PDF labels
+BLOCK: 9
+CATEGORY: StickyActionBar
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Confirm a fixed bar appears at the very bottom of the viewport
+4. Confirm the bar contains three buttons with these exact labels: "Save", "Share", "PDF"
+5. Confirm each button has an icon above its label text
+6. In DevTools → Elements, find the fixed bar → Computed → confirm position is "fixed" and bottom is "0"
+7. Confirm the bar spans the full width of the viewport
+8. Note: to distinguish from other "Share" text elsewhere on the page, inspect the fixed-position element containing all three buttons together
+   PASS: At 375px a fixed bottom bar appears with "Save", "Share", and "PDF" buttons, each with an icon. Bar is position:fixed, bottom:0, full viewport width.
+   FAIL: No fixed bottom bar appears. Bar is in the page flow (not fixed). Button labels differ from "Save", "Share", "PDF". Bar is not full width.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: StickyActionBar — content clears bar, last section visible above bar
+BLOCK: 9
+CATEGORY: StickyActionBar
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Scroll to the very bottom of the report page
+4. Confirm the last visible content section is fully visible above the sticky bar — no content hidden behind the bar
+5. In DevTools → Elements, find the outermost wrapper div of the report page
+6. Confirm it has a class matching "report-page-mobile-padding"
+7. In Computed, check the padding-bottom value — it should be set (approximately 56px or more) to account for the bar height of 56px
+   PASS: Last content section fully visible above the sticky bar. Outermost wrapper has "report-page-mobile-padding" class. padding-bottom accounts for the bar height.
+   FAIL: Last content section partially or fully hidden behind the sticky bar. Outermost wrapper has no "report-page-mobile-padding" class or no padding-bottom.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: StickyActionBar — present on all 4 report pages at 375px
+BLOCK: 9
+CATEGORY: StickyActionBar
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Check each report page for the fixed bottom bar:
+   a. http://localhost:5173/investor-report — confirm Save/Share/PDF bar present
+   b. http://localhost:5173/tenant-report — confirm Save/Share/PDF bar present
+   c. http://localhost:5173/personal-report — confirm Save/Share/PDF bar present
+   d. http://localhost:5173/landlord-report — confirm Save/Share/PDF bar present
+3. Confirm zero console errors on any of the 4 pages
+   PASS: All 4 report pages show the StickyActionBar at 375px. Fixed bottom bar with Save/Share/PDF present on each. Zero console errors.
+   FAIL: StickyActionBar missing from one or more report pages. Console errors on any page.
+   ─────────────────────────────────────────
+
+---
+
+## BLOCK 10 — PR8 AIVerdictBlock mobile collapse
+
+> **IMPORTANT — TIER REQUIREMENT FOR BLOCK 10:**
+> AIVerdictBlock only renders at pro/investor tier.
+> At free tier, TruncatedVerdict (paywall) renders instead — this is correct product behaviour.
+> Before running any test in BLOCK 10, use the DevToolbar (DEV tab, bottom-left) to set
+> tier="investor" (or "pro"). Do NOT use tier="free" for these tests.
+
+─────────────────────────────────────────
+TEST: AIVerdictBlock — at 375px: only headline visible, full body hidden, expand button present
+BLOCK: 10
+CATEGORY: AIVerdictBlock
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Scroll to the AI Verdict section (dark full-bleed card with "Scout AI · investor verdict" eyebrow)
+4. Confirm the large headline text is visible (e.g., "Hard pass." or whatever verdict text appears)
+5. Confirm the sub-paragraph body text is NOT visible — it should be hidden in the collapsed state
+6. Confirm a button with text "Read full verdict →" is visible below the headline
+7. Confirm no "Show less" button is present in the collapsed state
+   PASS: At 375px, AIVerdictBlock headline visible, sub-paragraph body hidden, "Read full verdict →" button present, no "Show less" button.
+   FAIL: Body text visible without clicking (not collapsed). No expand button appears. Body absent but expand button also absent. Both "Read full verdict →" and "Show less" visible simultaneously.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: AIVerdictBlock — clicking "Read full verdict →" shows full text, "Show less" button appears
+BLOCK: 10
+CATEGORY: AIVerdictBlock
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Find the AI Verdict dark card — confirm "Read full verdict →" button is present
+4. Click "Read full verdict →"
+5. Confirm the sub-paragraph body text is now visible below the headline
+6. Confirm the button label has changed to "Show less"
+7. Confirm the "Read full verdict →" text is no longer visible
+   PASS: Clicking "Read full verdict →" reveals the body text. Button changes to "Show less". "Read full verdict →" text disappears. Body content is readable.
+   FAIL: Clicking does nothing. Body text does not appear. Both labels appear simultaneously. Button label does not change.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: AIVerdictBlock — clicking "Show less" collapses back to headline only
+BLOCK: 10
+CATEGORY: AIVerdictBlock
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Expand the AI Verdict by clicking "Read full verdict →"
+4. Confirm body text visible and "Show less" present
+5. Click "Show less"
+6. Confirm the body text is hidden again
+7. Confirm the button label returns to "Read full verdict →"
+   PASS: Clicking "Show less" hides the body text and restores the "Read full verdict →" button. Component returns to collapsed state.
+   FAIL: Clicking "Show less" does nothing. Body text remains visible. Button does not change back to "Read full verdict →".
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: AIVerdictBlock — at 1280px: full text visible, no expand or collapse button
+BLOCK: 10
+CATEGORY: AIVerdictBlock
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 1280px
+2. Navigate to http://localhost:5173/investor-report
+3. Scroll to the AI Verdict dark card
+4. Confirm both the headline and the full sub-paragraph body text are visible without any interaction
+5. Confirm no "Read full verdict →" button is present
+6. Confirm no "Show less" button is present
+   PASS: At 1280px, full AI Verdict content (headline + body) visible by default. No expand or collapse button of any kind.
+   FAIL: Body text hidden at 1280px. "Read full verdict →" button appears at desktop width. Body only visible after clicking a button.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: AIVerdictBlock — mobile collapse present and functional on all 4 report pages at 375px
+BLOCK: 10
+CATEGORY: AIVerdictBlock
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Check each report page:
+   a. http://localhost:5173/investor-report — confirm "Read full verdict →" present, click it, body appears
+   b. http://localhost:5173/tenant-report — confirm "Read full verdict →" present on the tenant verdict card, click to expand
+   c. http://localhost:5173/personal-report — confirm "Read full verdict →" present, click to expand
+   d. http://localhost:5173/landlord-report — confirm "Read full verdict →" present, click to expand
+3. Confirm zero console errors on all pages
+   PASS: All 4 report pages show "Read full verdict →" on their AIVerdictBlock at 375px. Clicking each expands the body text. Zero console errors.
+   FAIL: Any report page shows body text without a click at 375px. "Read full verdict →" absent on any page. Expanding causes a console error.
+   ─────────────────────────────────────────
+
+---
+
+## BLOCK 11 — PR8 Report pages mobile layout pass
+
+─────────────────────────────────────────
+TEST: Report pages — score card above photo grid at 375px on investor report (CSS order: -1 applied)
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Scroll to the property hero at the top (photo grid + score card area)
+4. Confirm the DealScore / score card appears ABOVE the photo grid in visual order
+5. In DevTools → Elements, select the score card element → Computed → check the "order" property — it should be -1 at 375px
+6. Switch responsive mode to 1280px — confirm the score card appears to the RIGHT of the photo grid (order resets)
+   PASS: At 375px, score card is visually first (above photos). CSS order: -1 on the score card. At 1280px, score card is beside the photos.
+   FAIL: Score card appears below the photos at 375px. CSS order is not -1. At 1280px, score card still stacked vertically.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — DealScore gauge is small size (≤84px wide) at 375px
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Locate the DealScore radial gauge in the hero/score card area
+4. Right-click the gauge SVG → Inspect → Computed → check the computed width
+5. Confirm the computed width is 84px or less (the "sm" size)
+6. Switch to 1280px → check computed width again — it should be noticeably larger (the "lg" size)
+   PASS: At 375px DealScore gauge is ≤84px wide. At 1280px gauge is larger. Size prop changes between mobile and desktop.
+   FAIL: DealScore gauge is the same large size at both 375px and 1280px. Gauge overflows its container at 375px.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — no horizontal overflow at 375px on landing, legal, and all report pages
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. For each page below, navigate and confirm NO horizontal scrollbar and no content beyond the 375px viewport:
+   a. http://localhost:5173 (landing)
+   b. http://localhost:5173/privacy
+   c. http://localhost:5173/terms
+   d. http://localhost:5173/investor-report
+   e. http://localhost:5173/tenant-report
+   f. http://localhost:5173/personal-report
+   g. http://localhost:5173/landlord-report
+   h. http://localhost:5173/account
+3. For each page, run in DevTools Console: `document.documentElement.scrollWidth` and compare to `document.documentElement.clientWidth` — they should be equal
+   PASS: No horizontal scrollbar on any of the 8 pages. `scrollWidth` equals `clientWidth` on each page. All content within 375px viewport.
+   FAIL: Any page shows a horizontal scrollbar. Any element extends beyond the viewport right edge. `scrollWidth > clientWidth` on any page.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — two-column layouts collapsed to single column at 375px
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report → scroll to the due diligence checklist section → confirm items stack in a single column (not two columns)
+3. Navigate to http://localhost:5173/tenant-report:
+   a. Rent comparable bar section — confirm bar and labels not side by side in a way that clips text
+   b. Unit details grid — confirm details stack vertically rather than in 2+ columns
+4. Navigate to http://localhost:5173/personal-report:
+   a. Schools section — confirm school cards NOT in a 3-column grid (collapse to fewer columns)
+   b. Mobility/walkability scores — confirm scores stack vertically or in 2-column max
+5. Confirm zero horizontal overflow on all checked sections
+   PASS: All multi-column sections collapse to single or 2-column at 375px. No text clipping. No horizontal overflow from any section.
+   FAIL: Any section still shows 3 or 4 columns at 375px, causing overflow or very tight text. Any section causes a horizontal scrollbar.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — investment metric tiles collapse from 4-col to 2-col at 375px (grid-2col-mobile)
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report
+3. Scroll to the investment metrics section (Cap rate, Monthly cash flow, Cash-on-cash, DSCR, and more)
+4. Confirm the tiles are arranged in 2 columns — pairs of tiles side by side, rows of 2
+5. In DevTools → Elements, find the metrics grid wrapper div → confirm it has class "grid-2col-mobile"
+6. Switch responsive mode to 1280px → confirm tiles return to a 4-column layout
+   PASS: At 375px, metric tiles are in 2 columns. Grid wrapper has class "grid-2col-mobile". At 1280px, tiles display in 4 columns.
+   FAIL: Tiles still in 4 columns at 375px (each tile very narrow, overflowing). "grid-2col-mobile" class absent. At 375px, tiles in a single column when 2 would fit.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — score card above photo on tenant report and personal buyer at 375px (hero-score-first)
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/tenant-report
+3. Scroll to the property hero section
+4. Confirm the score/verdict card appears ABOVE the photo grid in visual order
+5. In DevTools → Elements, find the hero grid wrapper div → confirm it has class "hero-score-first"
+6. Navigate to http://localhost:5173/personal-report
+7. Repeat the same checks — score card above photos, "hero-score-first" class on hero grid wrapper
+8. Switch to 1280px — confirm both pages show normal side-by-side layout
+   PASS: At 375px, tenant and personal buyer hero areas show score card above photos. Both pages have "hero-score-first" class on hero grid. At 1280px, layout reverts to normal.
+   FAIL: Score card appears below photos on either page at 375px. "hero-score-first" class missing from either page. At 1280px, score card still stacked vertically.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — all 4 pages render cleanly at 375px: no errors, no blank sections, no overlapping elements
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 375px
+2. Navigate to http://localhost:5173/investor-report → scroll from top to bottom
+3. Confirm: zero console errors, no blank/missing sections, no text overlapping other elements, no clipped content, all interactive elements visible and usable
+4. Repeat for http://localhost:5173/tenant-report
+5. Repeat for http://localhost:5173/personal-report
+6. Repeat for http://localhost:5173/landlord-report
+   PASS: All 4 report pages scroll cleanly at 375px with zero console errors. No sections blank. No text overlaps. No content clipped at viewport edge. All interactive controls visible and usable.
+   FAIL: Any page shows a console error at 375px. Any section is completely blank. Any text element overlaps another. Any control hidden behind other content or the viewport edge.
+   ─────────────────────────────────────────
+
+─────────────────────────────────────────
+TEST: Report pages — at 1280px: all mobile changes invisible, desktop layout fully restored
+BLOCK: 11
+CATEGORY: Mobile Layout
+─────────────────────────────────────────
+Steps:
+
+1. Open DevTools → set responsive mode to 1280px
+2. Navigate to http://localhost:5173/investor-report — confirm:
+   - StickyActionBar absent
+   - Metric tiles in 4 columns (not 2)
+   - Score card beside photos (not above)
+   - AI Verdict body visible without any expand button
+   - Hero grid is 2-column (photo + score side by side)
+3. Repeat for http://localhost:5173/tenant-report — StickyActionBar absent, "Read full verdict →" button absent
+4. Repeat for http://localhost:5173/personal-report — hero layout side by side, no StickyActionBar
+5. Repeat for http://localhost:5173/landlord-report
+6. Confirm zero console errors at 1280px on all 4 pages
+   PASS: All 4 report pages show desktop layout at 1280px. No StickyActionBar. Metric tiles in 4 columns. Score card beside photos. AI Verdict body visible without expand button. No mobile-specific UI elements.
+   FAIL: Any mobile element (StickyActionBar, "Read full verdict →" button) appears at 1280px. Metric tiles still in 2 columns at desktop. Score card stacked vertically at desktop.
+   ─────────────────────────────────────────
+
+---
+
+## Results Table — PR8 additions
+
+Append the following to the Results Table checklist:
+
+```
+RETEST — PR7 BLOCKED TCS
+  [ ] TC-084  Footer Privacy link → /privacy
+  [ ] TC-085  Footer Terms link → /terms
+  [ ] TC-086  Unknown route → 404 page
+
+BLOCK 5 — PR8 PRIVACYPAGE
+  [ ] PrivacyPage — loads correctly, heading and eyebrow chip
+  [ ] PrivacyPage — TOC 9 sections with § numbers
+  [ ] PrivacyPage — TOC click scrolls to section, active state moves
+  [ ] PrivacyPage — scroll-spy tracks scroll in both directions
+  [ ] PrivacyPage — page switch pill → Terms of Service → /terms
+  [ ] PrivacyPage — Back to PropScout navigates to /
+  [ ] PrivacyPage — 375px: TOC hidden, single column, nav actions hidden, footer card buttons visible
+  [ ] PrivacyPage — axe scan 0 violations
+
+BLOCK 6 — PR8 TERMSPAGE
+  [ ] TermsPage — loads correctly at /terms, heading and eyebrow chip
+  [ ] TermsPage — TOC 11 sections, "Not financial or legal advice" present
+  [ ] TermsPage — page switch pill → Privacy Policy → /privacy
+  [ ] TermsPage — Download as PDF triggers print dialog, page intact after dismiss
+  [ ] TermsPage — axe scan 0 violations
+
+BLOCK 7 — PR8 404 / NOTFOUNDPAGE
+  [ ] NotFoundPage — unknown route renders eyebrow "404", headline "Nothing here."
+  [ ] NotFoundPage — "Back to home" button navigates to /
+  [ ] /account not swallowed by catch-all — AccountPage renders
+
+BLOCK 8 — PR8 BOTTOMSHEET
+  [ ] BottomSheet — absent at 1280px, ModeModal is centred dialog
+  [ ] BottomSheet — at 375px: slide-up animation, drag handle, backdrop
+  [ ] BottomSheet — cards stack vertically at 375px
+  [ ] BottomSheet — backdrop click closes sheet
+  [ ] BottomSheet — Escape closes sheet
+  [ ] BottomSheet — sheet content click does NOT close sheet
+
+BLOCK 9 — PR8 STICKYACTIONBAR
+  [ ] StickyActionBar — absent at 1280px on all 4 report pages
+  [ ] StickyActionBar — at 375px: fixed bar with Save, Share, PDF labels
+  [ ] StickyActionBar — content clears bar, report-page-mobile-padding class present
+  [ ] StickyActionBar — present on all 4 report pages at 375px
+
+BLOCK 10 — PR8 AIVERDICTBLOCK MOBILE COLLAPSE  (requires tier="investor" in DevToolbar)
+  [ ] AIVerdictBlock — at 375px: collapsed, body hidden, "Read full verdict →" present  (requires tier="investor")
+  [ ] AIVerdictBlock — clicking expand shows body, "Show less" appears  (requires tier="investor")
+  [ ] AIVerdictBlock — clicking "Show less" collapses back  (requires tier="investor")
+  [ ] AIVerdictBlock — at 1280px: full text visible, no expand/collapse button  (requires tier="investor")
+  [ ] AIVerdictBlock — collapse functional on all 4 report pages at 375px  (requires tier="investor")
+
+BLOCK 11 — PR8 REPORT PAGES MOBILE LAYOUT PASS
+  [ ] Score card above photo grid at 375px on investor report (order: -1)
+  [ ] DealScore gauge ≤84px wide at 375px
+  [ ] No horizontal overflow at 375px on all 8 pages (landing, legal, 4 reports, account)
+  [ ] Two-column layouts collapsed at 375px (investor checklist, tenant grid, personal schools)
+  [ ] Metric tiles 4-col → 2-col at 375px (grid-2col-mobile class present)
+  [ ] Score card above photo on tenant report and personal buyer (hero-score-first class)
+  [ ] All 4 report pages clean at 375px: no errors, no blank sections, no overlapping elements
+  [ ] At 1280px: all mobile changes invisible, desktop layout fully restored on all 4 pages
+```

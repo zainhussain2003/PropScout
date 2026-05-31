@@ -318,15 +318,19 @@ Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth 
 
 Reference: `Legal Pages.html` + `Mobile Pass.html`
 
-- [ ] Privacy policy `/privacy` with TOC sidebar
-- [ ] Terms of service `/terms` with TOC sidebar
-- [ ] 404 catch-all
-- [ ] Mobile responsive pass — all routes at 380px
-- [ ] Modal → bottom-sheet on mobile (slides up with drag handle)
-- [ ] Two-column reports collapse to single-column
-- [ ] Sticky bottom action bar (Save/Share/PDF)
-- [ ] AI verdict headline-only on mobile with "Read full verdict" expand
-- [ ] Score card moves above content on mobile (gauge shrinks to ~84px)
+- [x] Privacy policy `/privacy` with TOC sidebar
+- [x] Terms of service `/terms` with TOC sidebar
+- [x] 404 catch-all
+- [x] Mobile responsive pass — all routes at 380px
+- [x] Modal → bottom-sheet on mobile (slides up with drag handle)
+- [x] Two-column reports collapse to single-column
+- [x] Sticky bottom action bar (Save/Share/PDF)
+- [x] AI verdict headline-only on mobile with "Read full verdict" expand
+- [x] Score card moves above content on mobile (gauge shrinks to ~84px)
+
+> Accessibility: footer .chip contrast fixed (WCAG AA).
+> btn-primary contrast (terracotta bg, 3.12:1) is a known
+> sitewide issue — fix in a dedicated a11y PR before launch.
 
 ---
 
