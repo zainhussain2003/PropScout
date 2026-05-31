@@ -8,6 +8,7 @@
  * Design source: landlord-sections.jsx > LandlordVerdictHero
  */
 
+import { useState, useEffect } from 'react'
 import type { LandlordProperty, RentPositioning } from '../../types/landlord'
 import type { ComputedInvestorMetrics } from '../../types/analysis'
 import { ScoutMark } from '../shared/ScoutMark'
@@ -28,6 +29,14 @@ export function LandlordVerdictHero({
   metrics,
 }: LandlordVerdictHeroProps): JSX.Element {
   const dailyVacancyCost = Math.round(askingRent / 30)
+  const [expanded, setExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
+
+  useEffect(() => {
+    const handler = (): void => setIsMobile(window.innerWidth <= 480)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   return (
     <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
@@ -121,31 +130,55 @@ export function LandlordVerdictHero({
         </div>
 
         {/* Body */}
-        <div
-          className="serif"
-          style={{
-            fontSize: 'clamp(17px, 1.7vw, 21px)',
-            lineHeight: 1.5,
-            color: 'rgba(255,255,255,0.78)',
-            marginTop: 22,
-            maxWidth: 880,
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          Two comparable 1+1 units in your building rented inside 11 days at{' '}
-          <span className="tabular">$3,050</span> and <span className="tabular">$3,100</span>.
-          Dropping your ask to{' '}
-          <span style={{ color: 'var(--accent)' }} className="tabular">
-            $3,150
-          </span>{' '}
-          puts you at the top of the range and probably fills the unit inside two weeks. Holding at{' '}
-          <span className="tabular">${askingRent.toLocaleString()}</span> costs you roughly{' '}
-          <span style={{ color: 'var(--accent)' }} className="tabular">
-            {fmtMoney(dailyVacancyCost, { decimals: 0 })}
-          </span>{' '}
-          in lost rent every day the unit sits empty.
-        </div>
+        {(!isMobile || expanded) && (
+          <div
+            className="serif"
+            style={{
+              fontSize: 'clamp(17px, 1.7vw, 21px)',
+              lineHeight: 1.5,
+              color: 'rgba(255,255,255,0.78)',
+              marginTop: 22,
+              maxWidth: 880,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            Two comparable 1+1 units in your building rented inside 11 days at{' '}
+            <span className="tabular">$3,050</span> and <span className="tabular">$3,100</span>.
+            Dropping your ask to{' '}
+            <span style={{ color: 'var(--accent)' }} className="tabular">
+              $3,150
+            </span>{' '}
+            puts you at the top of the range and probably fills the unit inside two weeks. Holding
+            at <span className="tabular">${askingRent.toLocaleString()}</span> costs you roughly{' '}
+            <span style={{ color: 'var(--accent)' }} className="tabular">
+              {fmtMoney(dailyVacancyCost, { decimals: 0 })}
+            </span>{' '}
+            in lost rent every day the unit sits empty.
+          </div>
+        )}
+
+        {isMobile && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              marginTop: 12,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--accent)',
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: 11,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              padding: 0,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            {expanded ? 'Show less' : 'Read full verdict →'}
+          </button>
+        )}
 
         {/* Source attribution */}
         <div

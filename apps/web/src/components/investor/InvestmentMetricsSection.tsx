@@ -149,8 +149,9 @@ export function InvestmentMetricsSection({
         tone={verdictTone}
       />
 
-      {/* 8-tile grid */}
+      {/* 8-tile grid — 4-col desktop, 2-col mobile */}
       <div
+        className="grid-2col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',

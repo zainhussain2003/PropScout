@@ -1037,7 +1037,7 @@ exports[`PropertyHero > matches snapshot 1`] = `
     </div>
     <div
       class="card col"
-      style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
+      style="padding: 32px; gap: 24px; position: sticky; top: 84px; order: 0;"
     >
       <div
         class="col"

@@ -9,7 +9,7 @@
  *   - compact=true: reduced padding, smaller type
  */
 
-import type { ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { ScoutMark } from '../shared/ScoutMark'
 
 interface AIVerdictBlockProps {
@@ -25,6 +25,20 @@ export function AIVerdictBlock({
   sub,
   compact = false,
 }: AIVerdictBlockProps): JSX.Element {
+  const [expanded, setExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
+
+  useEffect(() => {
+    const handler = (): void => setIsMobile(window.innerWidth <= 480)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  // Reset expanded state when headline content changes (new verdict loaded)
+  useEffect(() => {
+    setExpanded(false)
+  }, [headline])
+
   return (
     <div
       style={{
@@ -117,21 +131,46 @@ export function AIVerdictBlock({
         {headline}
       </div>
 
-      {/* Sub paragraph */}
-      <div
-        className="serif"
-        style={{
-          fontSize: compact ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(17px, 1.7vw, 21px)',
-          lineHeight: 1.5,
-          color: 'color-mix(in oklab, var(--bg) 78%, transparent)',
-          marginTop: 22,
-          maxWidth: 880,
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        {sub}
-      </div>
+      {/* Sub paragraph — on mobile: hidden until expanded */}
+      {(!isMobile || expanded) && (
+        <div
+          className="serif"
+          style={{
+            fontSize: compact ? 'clamp(14px, 1.4vw, 18px)' : 'clamp(17px, 1.7vw, 21px)',
+            lineHeight: 1.5,
+            color: 'color-mix(in oklab, var(--bg) 78%, transparent)',
+            marginTop: 22,
+            maxWidth: 880,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          {sub}
+        </div>
+      )}
+
+      {/* Mobile expand / collapse */}
+      {isMobile && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            marginTop: 12,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--accent)',
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: 11,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            padding: 0,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          {expanded ? 'Show less' : 'Read full verdict →'}
+        </button>
+      )}
     </div>
   )
 }

@@ -1,7 +1,9 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`LandlordPage — snapshot > matches shallow snapshot (SVGs blanked for stability) 1`] = `
-<div>
+<div
+  class="report-page-mobile-padding"
+>
   <header
     style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
   >
@@ -1293,6 +1295,7 @@ exports[`LandlordPage — snapshot > matches shallow snapshot (SVGs blanked for 
       </span>
     </div>
     <div
+      class="grid-2col-mobile"
       style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;"
     >
       <div

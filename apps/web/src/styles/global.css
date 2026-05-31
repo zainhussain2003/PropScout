@@ -280,6 +280,13 @@ img {
   background: var(--accent);
 }
 
+/* Chips inside the dark footer need inverted colours for contrast */
+footer .chip {
+  color: var(--bg);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 /* ── Cards ───────────────────────────────────────────────────── */
 
 .card {
@@ -707,4 +714,113 @@ body::-webkit-scrollbar {
 body::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: 999px;
+}
+
+/* ── Legal pages — body typography ──────────────────────────── */
+
+.legal-body-content p {
+  margin: 0 0 16px;
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+.legal-body-content p:last-child {
+  margin-bottom: 0;
+}
+.legal-body-content strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.legal-body-content em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  color: var(--ink);
+}
+.legal-body-content ul {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  color: var(--ink-2);
+}
+.legal-body-content li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.legal-body-content li::marker {
+  color: var(--ink);
+}
+.legal-body-content a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.15s ease;
+}
+.legal-body-content a:hover {
+  opacity: 0.75;
+}
+.legal-body-content code {
+  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  background: var(--bg-elev);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+/* ── Legal page — mobile responsive (≤ 480px) ───────────────── */
+
+@media (max-width: 480px) {
+  /* Collapse two-column grid to single column */
+  .legal-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hide TOC sidebar on small screens */
+  .legal-toc {
+    display: none !important;
+  }
+
+  /* Hide nav action buttons (Download as PDF + Back to PropScout) */
+  .legal-nav-pdf {
+    display: none !important;
+  }
+  .legal-nav-back {
+    display: none !important;
+  }
+}
+
+/* ── Bottom-sheet animation ──────────────────────────────────── */
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ── Report page — clear StickyActionBar on mobile ───────────── */
+
+.report-page-mobile-padding {
+  padding-bottom: 72px;
+}
+
+@media (min-width: 481px) {
+  .report-page-mobile-padding {
+    padding-bottom: 0;
+  }
+}
+
+/* ── Mobile grid collapse helpers ────────────────────────────── */
+
+@media (max-width: 480px) {
+  .grid-1col-mobile {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-2col-mobile {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  /* Puts the last child (score card column) above content on mobile */
+  .hero-score-first > *:last-child {
+    order: -1;
+  }
 }

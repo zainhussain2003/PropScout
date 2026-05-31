@@ -35,6 +35,7 @@ import type { ListingData, NeighbourhoodData, FinancingInputs } from '../types/a
 import type { RentalInput } from '../types/api'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
+import { StickyActionBar } from '../components/shared/StickyActionBar'
 import { SectionHead } from '../components/shared/SectionHead'
 import { Icon } from '../components/shared/Icon'
 import { Chip } from '../components/shared/Chip'
@@ -171,6 +172,7 @@ function DueDiligenceSection(): JSX.Element {
       </div>
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
@@ -848,7 +850,10 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
     .replace(/(^-|-$)/g, '')
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div
+      className="report-page-mobile-padding"
+      style={{ minHeight: '100vh', background: 'var(--bg)' }}
+    >
       <Nav
         variant="report"
         dark={dark}
@@ -981,6 +986,7 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
       </main>
 
       <Footer />
+      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
     </div>
   )
 }

@@ -431,6 +431,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     </span>
   </div>
   <div
+    class="grid-2col-mobile"
     style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;"
   >
     <div

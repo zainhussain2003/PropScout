@@ -9,6 +9,7 @@
  * Chips come from listing.chips (set by scraper or demo data).
  */
 
+import { useState, useEffect } from 'react'
 import type { ListingData, DealScoreData } from '../../types/analysis'
 import { DealScore } from './DealScore'
 import { MiniMap } from './MiniMap'
@@ -37,6 +38,14 @@ export function PropertyHero({
   dscr,
   onBack,
 }: PropertyHeroProps): JSX.Element {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
+
+  useEffect(() => {
+    const handler = (): void => setIsMobile(window.innerWidth <= 480)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
   const verdictColor =
     score.tone === 'pass'
       ? 'var(--pass)'
@@ -110,11 +119,11 @@ export function PropertyHero({
         </span>
       </div>
 
-      {/* Two-column hero */}
+      {/* Two-column hero — single column on mobile, score card first */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1.5fr 1fr',
+          gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr',
           gap: 'clamp(28px, 3.5vw, 52px)',
           alignItems: 'flex-start',
         }}
@@ -280,11 +289,19 @@ export function PropertyHero({
           />
         </div>
 
-        {/* RIGHT — sticky score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
-          {/* Gauge */}
+        {/* RIGHT — sticky score card (order: -1 on mobile to appear above photo grid) */}
+        <div
+          className="card col"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84, order: isMobile ? -1 : 0 }}
+        >
+          {/* Gauge — capped at 84px on mobile */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
-            <DealScore score={score.total} size="lg" label="Deal score / 95" animate />
+            <DealScore
+              score={score.total}
+              size={isMobile ? 'sm' : 'lg'}
+              label="Deal score / 95"
+              animate
+            />
           </div>
 
           {/* Verdict label + tagline */}
