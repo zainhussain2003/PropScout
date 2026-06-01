@@ -332,6 +332,28 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 > btn-primary contrast (terracotta bg, 3.12:1) is a known
 > sitewide issue — fix in a dedicated a11y PR before launch.
 
+### PR 9 — Route wiring (end-to-end integration)
+
+- [ ] `.env.example` updated — WALKSCORE_API_KEY, MAPBOX_TOKEN, SCRAPER_URL confirmed present alongside existing vars
+- [ ] Supabase migration — `analyses` table with id, token, listing_id, user_id, mode, status, analysis, created_at, expires_at
+- [ ] `saveAnalysis`, `updateAnalysisStatus`, `getAnalysisByToken` implemented in supabaseService.ts
+- [ ] Realtor.ca scraper — `services/scrapers/realtor_scraper.py` with ScrapedListing dataclass, rate limiting, unit tests
+- [ ] `POST /scrape` Fastify route — calls scraper, province gate (Ontario FSA check), writes to Supabase, returns token
+- [ ] Mapbox geocoding service — `apps/api/src/services/mapboxService.ts`, returns lat/lng or null
+- [ ] Walk Score service — `apps/api/src/services/walkScoreService.ts`, returns WalkScoreResult or null
+- [ ] `extractListingFlags` — Claude Haiku step in anthropicService.ts, description in → structured flags out
+- [ ] Claude narrative — `generateNarrative` in anthropicService.ts, free (1 para) and pro (2–3 para) tiers
+- [ ] `POST /analysis` expanded to full orchestrator — 9-step pipeline, writes complete analysis on finish
+- [ ] `GET /analysis/:token` — returns pending/processing status or full analysis, 404/410 on miss/expiry
+- [ ] `analysisService.ts` — scrapeUrl, triggerAnalysis, fetchReport implemented with real API calls
+- [ ] `LandingPage.tsx` — real scrapeUrl call replaces runDemo(), province gate and scraper-fail paths wired
+- [ ] `ModeModal` → navigates to `/analyzing?token=[token]&mode=[mode]` on mode selection
+- [ ] `/analyzing` page — triggerAnalysis on mount, polls fetchReport every 2s, navigates to /r/[token] on complete
+- [ ] `/r/[token]` report page — fetches real analysis, routes to correct report component, replaces fixture data
+- [ ] Integration test — mock scraper → real calc engine → mock Claude + Walk Score → assert token roundtrip
+- [ ] All existing analysis route tests and useAnalysis hook tests pass
+- [ ] Golden dataset regression passes 95%+
+
 ---
 
 ## Week 4–5 — School and neighbourhood data
