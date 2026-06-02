@@ -356,7 +356,7 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 
 ---
 
-## Week 4–5 — School and neighbourhood data
+## Week 4–5 — School, neighbourhood, and sun data
 
 - [ ] Load EQAO dataset into Supabase `schools` table (download from eqao.on.ca)
 - [ ] Scrape Fraser Institute school rankings (fraserinstitute.org/school-performance)
@@ -369,6 +369,18 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [ ] Statistics Canada — demographics by postal code (household income, population growth)
 - [ ] CMHC vacancy rate by city (public API, refresh quarterly) — service stub exists (`cmhc_service.py`)
 - [ ] Neighbourhood intelligence module assembled from above sources
+
+### SunScout (moved from Week 5–6 — location intelligence block, fits here alongside Walk Score)
+
+- [x] pvlib installed in Python calc engine
+- [ ] `window_sun_hours_by_month()` function fully implemented (`sun_path.py` is a stub)
+- [ ] `annual_light_score()` function
+- [ ] Window direction input UI (compass direction dropdown per window)
+- [ ] Monthly sun hours grid output (Dec / Mar / Jun / Sep columns)
+- [ ] Sun arc SVG visualization (summer vs winter day)
+- [ ] Score interpretation labels (80–100 excellent, etc.)
+- [ ] SunScout section rendering in all 4 report types
+- [ ] `STATIC_LIGHT_SCORE` placeholder replaced with real pvlib output in PersonalBuyerPage home score
 
 ---
 
@@ -391,17 +403,6 @@ All tasks reference spec Section 19.
 - [ ] **Golden dataset — 50 real Ontario listing descriptions collected and labelled**
 - [x] Pytest regression test suite written for golden dataset (framework in place, 1 test passing)
 - [ ] Accuracy at or above 95% before proceeding to Week 6 (pending Haiku implementation)
-
-### SunScout
-
-- [x] pvlib installed in Python calc engine
-- [ ] `window_sun_hours_by_month()` function fully implemented (`sun_path.py` is a stub)
-- [ ] `annual_light_score()` function
-- [ ] Window direction input UI (compass direction dropdown per window)
-- [ ] Monthly sun hours grid output (Dec / Mar / Jun / Sep columns)
-- [ ] Sun arc SVG visualization (summer vs winter day)
-- [ ] Score interpretation labels (80–100 excellent, etc.)
-- [ ] SunScout section rendering in all 4 report types
 
 ---
 
