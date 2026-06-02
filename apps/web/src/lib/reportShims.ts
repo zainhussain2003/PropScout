@@ -16,6 +16,11 @@ import type {
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 import type { PersonalProperty, PersonalNeighbourhood } from '../types/personal'
+import {
+  FINANCING_DEFAULTS,
+  PROPERTY_COST_ESTIMATES,
+  formatPropertyType,
+} from '../constants/defaults'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -57,9 +62,11 @@ function buildPersonalChips(listing: Listing): string[] {
   const chips: string[] = ['Personal use · For sale']
   chips.push(`${listing.city} · ${listing.postalCode}`)
   if (listing.sqft) {
-    chips.push(`${listing.propertyType} · ${listing.sqft.toLocaleString()} sqft`)
+    chips.push(
+      `${formatPropertyType(listing.propertyType)} · ${listing.sqft.toLocaleString()} sqft`
+    )
   } else {
-    chips.push(listing.propertyType)
+    chips.push(formatPropertyType(listing.propertyType))
   }
   if (listing.yearBuilt) chips.push(`Built ${listing.yearBuilt}`)
   return chips
@@ -68,13 +75,12 @@ function buildPersonalChips(listing: Listing): string[] {
 // ── Public shims ──────────────────────────────────────────────────────────────
 
 /**
- * Maps a real Listing + Analysis to the PersonalProperty shape used by
- * PersonalBuyerPage and its sub-components.
+ * Converts a real API Listing + Analysis into the PersonalProperty
+ * shape expected by PersonalBuyerPage.
  *
- * Fields not available from the API (lotSize, daysOnMarket, priceChange)
- * are zeroed/empty. FMV is estimated as ±5% of asking price — rendered
- * with a visual "Estimated" label in PBFMVSection when isEstimated=true.
- * Utility estimates are scaled by sqft when available.
+ * @param listing - scraped listing data from Supabase
+ * @param _analysis - reserved for when dealScore or riskFlags feed
+ *   into the personal report score (Week 4-5). Unused for MVP.
  */
 export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): PersonalProperty {
   const { line1 } = parseAddress(listing.address)
@@ -87,9 +93,9 @@ export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): P
       : 'None'
 
   // Sqft-scaled utility estimates — more accurate than flat rates for varied property sizes
-  const sqftBasis = sqft > 0 ? sqft : 800
-  const hydro = Math.round(sqftBasis * 0.08)
-  const gas = Math.round(sqftBasis * 0.06)
+  const sqftBasis = sqft > 0 ? sqft : PROPERTY_COST_ESTIMATES.SQFT_FALLBACK
+  const hydro = Math.round(sqftBasis * PROPERTY_COST_ESTIMATES.HYDRO_PER_SQFT)
+  const gas = Math.round(sqftBasis * PROPERTY_COST_ESTIMATES.GAS_PER_SQFT)
 
   return {
     addressLine1: line1,
@@ -109,8 +115,13 @@ export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): P
     priceChange: { abs: 0, direction: null },
     annualTaxes: listing.annualTaxes ?? 0,
     condoFeeMonthly: listing.condoFeeMonthly ?? 0,
-    utilityEstMonthly: { hydro, gas, water: 60, internet: 65 },
-    insuranceMonthlyEst: Math.round((price * 0.0035) / 12),
+    utilityEstMonthly: {
+      hydro,
+      gas,
+      water: PROPERTY_COST_ESTIMATES.WATER_MONTHLY,
+      internet: PROPERTY_COST_ESTIMATES.INTERNET_MONTHLY,
+    },
+    insuranceMonthlyEst: Math.round((price * PROPERTY_COST_ESTIMATES.INSURANCE_RATE_ANNUAL) / 12),
     chips: buildPersonalChips(listing),
     fmv: {
       low: Math.round(price * 0.95),
@@ -118,9 +129,9 @@ export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): P
       high: Math.round(price * 1.05),
       askingVsMid: 0,
     },
-    defaultDownPct: 0.2,
-    defaultRate: 0.0479,
-    defaultAmort: 25,
+    defaultDownPct: FINANCING_DEFAULTS.DOWN_PAYMENT_PCT,
+    defaultRate: FINANCING_DEFAULTS.MORTGAGE_RATE,
+    defaultAmort: FINANCING_DEFAULTS.AMORTIZATION_YEARS,
   }
 }
 
