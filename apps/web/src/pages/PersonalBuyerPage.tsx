@@ -31,6 +31,7 @@ import {
   computeMonthlyCost,
   computeHomeScore,
 } from '../data/personalBuyerData'
+import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -59,8 +60,6 @@ import type { Listing } from '../types/property'
 const STATIC_LIGHT_SCORE = 76
 
 // ── Empty schools — used when isReal to give 0 pts without fixture data ────────
-// TODO: Task 5 will wire isReal and use this constant
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
 
 // ── RealPhoto — img with fallback to placeholder on CDN hotlink block ──────────
@@ -1412,21 +1411,41 @@ export function PersonalBuyerPage({
 }: PersonalBuyerPageProps): JSX.Element {
   const [dark, setDark] = useState(false)
 
+  const isReal = !!(realAnalysis && realListing)
+
+  const property = useMemo(
+    () => (isReal ? shimToPersonalProperty(realListing!, realAnalysis!) : PB_PROPERTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isReal]
+  )
+
+  const neighbourhood = useMemo(
+    () => (isReal ? shimToPersonalNeighbourhood(realAnalysis!) : PB_NEIGHBOURHOOD),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isReal]
+  )
+
   const financing = {
-    downPct: PB_PROPERTY.defaultDownPct,
-    rate: PB_PROPERTY.defaultRate,
-    amort: PB_PROPERTY.defaultAmort,
+    downPct: property.defaultDownPct,
+    rate: property.defaultRate,
+    amort: property.defaultAmort,
   }
 
   const monthly = useMemo(
-    () => computeMonthlyCost(PB_PROPERTY, financing),
+    () => computeMonthlyCost(property, financing),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [property]
   )
 
+  // When isReal: pass 0 for schools and light — score reflects only what's known.
+  // Week 4-5 will replace these with real EQAO data and pvlib sun output.
+  const schoolsForScore = isReal ? EMPTY_SCHOOLS : PB_SCHOOLS
+  const lightScore = isReal ? 0 : STATIC_LIGHT_SCORE
+
   const score = useMemo(
-    () => computeHomeScore(PB_PROPERTY, PB_SCHOOLS, PB_NEIGHBOURHOOD, STATIC_LIGHT_SCORE),
-    []
+    () => computeHomeScore(property, schoolsForScore, neighbourhood, lightScore),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [property, neighbourhood, lightScore]
   )
 
   const addressSlug = realListing
@@ -1455,22 +1474,44 @@ export function PersonalBuyerPage({
         }}
       />
 
-      <PersonalPropertyHero score={score} monthly={monthly} />
+      <PersonalPropertyHero
+        property={property}
+        score={score}
+        monthly={monthly}
+        photoUrls={
+          isReal ? (realListing!.photos.length > 0 ? realListing!.photos : undefined) : undefined
+        }
+      />
+      {isReal && (
+        <div className="container" style={{ marginTop: -24, marginBottom: 8 }}>
+          <p
+            className="mono"
+            style={{
+              fontSize: 11,
+              color: 'var(--muted)',
+              letterSpacing: '0.12em',
+            }}
+          >
+            School and sun data · available in Phase 2
+          </p>
+        </div>
+      )}
       <PersonalVerdictHero monthly={monthly} narrative={realAnalysis?.narrative} />
 
-      <PBTrueCostSection property={PB_PROPERTY} monthly={monthly} />
+      <PBTrueCostSection property={property} monthly={monthly} />
       <PBFMVSection
-        property={PB_PROPERTY}
+        property={property}
         score={score}
-        compCount={PB_COMPS.length}
-        avgDOM={12}
-        medianPPSqft={538}
+        compCount={isReal ? undefined : PB_COMPS.length}
+        avgDOM={isReal ? undefined : 12}
+        medianPPSqft={isReal ? undefined : 538}
+        isEstimated={isReal}
       />
-      <PBSalesSection comps={PB_COMPS} />
-      <SchoolsSection />
-      <NeighbourhoodSection />
+      <PBSalesSection comps={PB_COMPS} isSampleData={isReal} />
+      <SchoolsSection isReal={isReal} />
+      <NeighbourhoodSection neigh={neighbourhood} />
       <SunScoutSection />
-      <RisksSection />
+      <RisksSection flags={isReal ? realAnalysis!.riskFlags : undefined} />
       <ChecklistSection />
       <ConversionSection />
 
