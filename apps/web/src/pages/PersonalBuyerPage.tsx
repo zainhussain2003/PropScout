@@ -45,20 +45,84 @@ import { PBFMVSection } from '../components/personal/PBFMVSection'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
-import type { HomeScore, PersonalMonthlyCost } from '../types/personal'
+import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
+import type {
+  HomeScore,
+  PersonalMonthlyCost,
+  PersonalSchools,
+  PersonalProperty,
+  PersonalNeighbourhood,
+} from '../types/personal'
+import type { Analysis } from '../types/analysis'
+import type { Listing } from '../types/property'
 
 // ── Static light score (Phase 2 will compute this from sun-path data) ─────────
 const STATIC_LIGHT_SCORE = 76
 
+// ── Empty schools — used when isReal to give 0 pts without fixture data ────────
+export const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
+
+// ── RealPhoto — img with fallback to placeholder on CDN hotlink block ──────────
+
+interface RealPhotoProps {
+  url: string
+  style: React.CSSProperties
+  extra?: string
+}
+
+function RealPhoto({ url, style, extra }: RealPhotoProps): JSX.Element {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return <div className="photo-ph" style={style} />
+  }
+
+  return (
+    <div style={{ ...style, position: 'relative', overflow: 'hidden', background: 'var(--line)' }}>
+      <img
+        src={url}
+        alt=""
+        onError={() => setFailed(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+      {extra && (
+        <div
+          className="mono"
+          style={{
+            position: 'absolute',
+            right: 10,
+            bottom: 10,
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            padding: '3px 8px',
+            background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
+            borderRadius: 999,
+            color: 'var(--ink)',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          {extra}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Personal property hero ────────────────────────────────────────────────────
 
 interface PersonalHeroProps {
+  property: PersonalProperty
   score: HomeScore
   monthly: PersonalMonthlyCost
+  photoUrls?: string[]
 }
 
-function PersonalPropertyHero({ score, monthly }: PersonalHeroProps): JSX.Element {
-  const property = PB_PROPERTY
+function PersonalPropertyHero({
+  property,
+  score,
+  monthly,
+  photoUrls,
+}: PersonalHeroProps): JSX.Element {
   const verdictColor =
     score.verdict.tone === 'pass'
       ? 'var(--pass)'
@@ -83,14 +147,18 @@ function PersonalPropertyHero({ score, monthly }: PersonalHeroProps): JSX.Elemen
         >
           Report · Personal view
         </span>
-        <span style={{ opacity: 0.4 }}>·</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span
-            className="live-dot"
-            style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
-          />
-          Listed {property.daysOnMarket} days ago
-        </span>
+        {property.daysOnMarket > 0 && (
+          <>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span
+                className="live-dot"
+                style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
+              />
+              Listed {property.daysOnMarket} days ago
+            </span>
+          </>
+        )}
       </div>
 
       <div
@@ -105,37 +173,68 @@ function PersonalPropertyHero({ score, monthly }: PersonalHeroProps): JSX.Elemen
         {/* LEFT — photos + chips + address + meta */}
         <div className="col" style={{ gap: 28 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, height: 360 }}>
-            <div className="photo-ph" style={{ borderRadius: 18, height: '100%' }}>
-              <span>front · curb view</span>
-            </div>
-            <div className="col" style={{ gap: 8 }}>
-              <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
-                <span>living room</span>
-              </div>
-              <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
-                <span>kitchen</span>
-              </div>
-              <div className="photo-ph" style={{ borderRadius: 14, flex: 1, position: 'relative' }}>
-                <span>backyard</span>
-                <div
-                  className="mono"
-                  style={{
-                    position: 'absolute',
-                    right: 10,
-                    bottom: 10,
-                    fontSize: 10,
-                    letterSpacing: '0.1em',
-                    padding: '3px 8px',
-                    background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-                    borderRadius: 999,
-                    color: 'var(--ink)',
-                    backdropFilter: 'blur(4px)',
-                  }}
-                >
-                  + 28 more
+            {photoUrls && photoUrls.length > 0 ? (
+              <>
+                {/* Realtor.ca CDN may block hotlink requests from localhost.
+                    onError falls back to placeholder silently. */}
+                <RealPhoto url={photoUrls[0]} style={{ borderRadius: 18, height: '100%' }} />
+                <div className="col" style={{ gap: 8 }}>
+                  {[1, 2, 3].map((i) =>
+                    photoUrls[i] ? (
+                      <RealPhoto
+                        key={i}
+                        url={photoUrls[i]}
+                        style={{ borderRadius: 14, flex: 1 }}
+                        extra={
+                          i === 3 && photoUrls.length > 4
+                            ? `+ ${photoUrls.length - 4} more`
+                            : undefined
+                        }
+                      />
+                    ) : (
+                      <div key={i} className="photo-ph" style={{ borderRadius: 14, flex: 1 }} />
+                    )
+                  )}
                 </div>
-              </div>
-            </div>
+              </>
+            ) : (
+              <>
+                <div className="photo-ph" style={{ borderRadius: 18, height: '100%' }}>
+                  <span>front · curb view</span>
+                </div>
+                <div className="col" style={{ gap: 8 }}>
+                  <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
+                    <span>living room</span>
+                  </div>
+                  <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
+                    <span>kitchen</span>
+                  </div>
+                  <div
+                    className="photo-ph"
+                    style={{ borderRadius: 14, flex: 1, position: 'relative' }}
+                  >
+                    <span>backyard</span>
+                    <div
+                      className="mono"
+                      style={{
+                        position: 'absolute',
+                        right: 10,
+                        bottom: 10,
+                        fontSize: 10,
+                        letterSpacing: '0.1em',
+                        padding: '3px 8px',
+                        background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
+                        borderRadius: 999,
+                        color: 'var(--ink)',
+                        backdropFilter: 'blur(4px)',
+                      }}
+                    >
+                      + 28 more
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="col" style={{ gap: 18 }}>
@@ -333,12 +432,14 @@ function PersonalPropertyHero({ score, monthly }: PersonalHeroProps): JSX.Elemen
 
 interface PersonalVerdictHeroProps {
   monthly: PersonalMonthlyCost
+  /** Real AI narrative — when provided replaces the demo verdict text. */
+  narrative?: string | null
 }
 
 const PB_FIRST_PARA =
   'This is fairly priced for what it is — and the school catchment alone is reason enough to consider it seriously.'
 
-function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element {
+function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const property = PB_PROPERTY
   const extraCost = Math.round(monthly.total - monthly.mortgage)
@@ -355,7 +456,7 @@ function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element
     return (
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         <TruncatedVerdict
-          firstParagraph={PB_FIRST_PARA}
+          firstParagraph={narrative ? narrative.split('. ')[0] + '.' : PB_FIRST_PARA}
           onUnlock={() => openUpgradeModal('verdict')}
         />
       </section>
@@ -437,8 +538,14 @@ function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element
             } as React.CSSProperties
           }
         >
-          This is <span style={{ color: 'var(--accent)' }}>fairly priced</span> for what it is — and
-          the school catchment alone is reason enough to consider it seriously.
+          {narrative ? (
+            narrative.split('. ')[0] + '.'
+          ) : (
+            <>
+              This is <span style={{ color: 'var(--accent)' }}>fairly priced</span> for what it is —
+              and the school catchment alone is reason enough to consider it seriously.
+            </>
+          )}
         </div>
 
         {(!isMobile || expanded) && (
@@ -519,7 +626,11 @@ function PersonalVerdictHero({ monthly }: PersonalVerdictHeroProps): JSX.Element
 
 // ── §04 Schools section ───────────────────────────────────────────────────────
 
-function SchoolsSection(): JSX.Element {
+interface SchoolsSectionProps {
+  isReal: boolean
+}
+
+function SchoolsSection({ isReal }: SchoolsSectionProps): JSX.Element {
   const schools = PB_SCHOOLS
   const topRanked = [...schools.elementary, ...schools.middle, ...schools.high]
     .filter((s) => s.inCatchment)
@@ -542,6 +653,19 @@ function SchoolsSection(): JSX.Element {
         verdict={verdictLabel}
         tone="pass"
       />
+      {isReal && (
+        <p
+          className="mono"
+          style={{
+            fontSize: 11,
+            color: 'var(--muted)',
+            letterSpacing: '0.12em',
+            marginBottom: 16,
+          }}
+        >
+          School catchment data · real lookup in Phase 2
+        </p>
+      )}
 
       <div
         className="grid-1col-mobile"
@@ -572,9 +696,11 @@ function SchoolsSection(): JSX.Element {
 
 // ── §05 Neighbourhood section ─────────────────────────────────────────────────
 
-function NeighbourhoodSection(): JSX.Element {
-  const neigh = PB_NEIGHBOURHOOD
+interface NeighbourhoodSectionProps {
+  neigh: PersonalNeighbourhood
+}
 
+function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element {
   const mobilityItems = [
     { label: 'Walk Score', val: neigh.walkScore, sub: neigh.walkSub },
     { label: 'Transit Score', val: neigh.transitScore, sub: neigh.transitSub },
@@ -938,7 +1064,52 @@ const RISK_FLAGS = [
   },
 ]
 
-function RisksSection(): JSX.Element {
+interface RisksSectionProps {
+  flags?: Array<{ severity: 'red' | 'amber'; label: string; evidence?: string | null }>
+}
+
+function RisksSection({ flags }: RisksSectionProps): JSX.Element {
+  // Real flags path: use API data. Demo path (flags undefined): use RISK_FLAGS fixture.
+  if (flags !== undefined) {
+    const redCount = flags.filter((f) => f.severity === 'red').length
+    const amberCount = flags.filter((f) => f.severity === 'amber').length
+    const verdict =
+      flags.length === 0
+        ? 'No flags detected'
+        : `${amberCount + redCount} flagged · ${redCount > 0 ? redCount + ' critical' : 'none critical'}`
+
+    return (
+      <section className="container tr-section">
+        <SectionHead
+          n="07"
+          topic="Risks & conditions"
+          question={
+            <>
+              What should the <em>inspector</em> look at?
+            </>
+          }
+          verdict={verdict}
+          tone={flags.length === 0 ? 'pass' : 'caution'}
+        />
+        <div className="col gap-12">
+          {flags.length === 0 ? (
+            <RiskRow tone="green" label="No flags detected in this listing" detail="" />
+          ) : (
+            flags.map((f) => (
+              <RiskRow key={f.label} tone="amber" label={f.label} detail={f.evidence ?? ''} />
+            ))
+          )}
+        </div>
+        <p style={{ marginTop: 22, fontSize: 13, color: 'var(--muted)', maxWidth: 720 }}>
+          Risks above come from listing description parsing, municipal open data (flood overlays,
+          conservation), and PropScout's pre-1980 build heuristics. Use them to scope your
+          inspection and your conditional period — not as a final word.
+        </p>
+      </section>
+    )
+  }
+
+  // Demo path — fixture data
   const amberCount = RISK_FLAGS.filter((f) => f.tone === 'amber').length
   const clearCount = RISK_FLAGS.filter((f) => f.tone === 'green').length
 
@@ -955,7 +1126,6 @@ function RisksSection(): JSX.Element {
         verdict={`${amberCount} to verify · ${clearCount} clear`}
         tone="caution"
       />
-
       <div className="col gap-12">
         {RISK_FLAGS.map((f) => (
           <RiskRow
@@ -966,15 +1136,7 @@ function RisksSection(): JSX.Element {
           />
         ))}
       </div>
-
-      <p
-        style={{
-          marginTop: 22,
-          fontSize: 13,
-          color: 'var(--muted)',
-          maxWidth: 720,
-        }}
-      >
+      <p style={{ marginTop: 22, fontSize: 13, color: 'var(--muted)', maxWidth: 720 }}>
         Risks above come from listing description parsing, municipal open data (flood overlays,
         conservation), and PropScout's pre-1980 build heuristics. Use them to scope your inspection
         and your conditional period — not as a final word.
@@ -1236,9 +1398,17 @@ function ConversionSection(): JSX.Element {
 interface PersonalBuyerPageProps {
   /** User tier — controls PDF button gating in ChecklistSection. */
   tier?: string
+  /** Real analysis from the API — when provided, live data replaces fixtures. */
+  analysis?: Analysis | null
+  /** Real listing from the API — used for address slug and narrative. */
+  listing?: Listing | null
 }
 
-export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProps): JSX.Element {
+export function PersonalBuyerPage({
+  tier: _tier = 'pro',
+  analysis: realAnalysis,
+  listing: realListing,
+}: PersonalBuyerPageProps): JSX.Element {
   const [dark, setDark] = useState(false)
 
   const financing = {
@@ -1258,7 +1428,17 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
     []
   )
 
-  const addressSlug = '248-mountcrest-burlington'
+  // Task 5 will wire these shims into the component tree.
+  // Computed and voided here so the import resolves before Task 5 lands.
+  void (realListing && realAnalysis ? shimToPersonalProperty(realListing, realAnalysis) : null)
+  void (realAnalysis ? shimToPersonalNeighbourhood(realAnalysis) : null)
+
+  const addressSlug = realListing
+    ? (realListing.address
+        .split(',')[0]
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-') ?? '248-mountcrest-burlington')
+    : '248-mountcrest-burlington'
 
   return (
     <div className="report-page-mobile-padding">
@@ -1280,7 +1460,7 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
       />
 
       <PersonalPropertyHero score={score} monthly={monthly} />
-      <PersonalVerdictHero monthly={monthly} />
+      <PersonalVerdictHero monthly={monthly} narrative={realAnalysis?.narrative} />
 
       <PBTrueCostSection property={PB_PROPERTY} monthly={monthly} />
       <PBFMVSection
