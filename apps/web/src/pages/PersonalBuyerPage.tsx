@@ -1285,7 +1285,7 @@ function ChecklistSection(): JSX.Element {
 
 // ── Conversion section ────────────────────────────────────────────────────────
 
-function ConversionSection(): JSX.Element {
+function ConversionSection({ city }: { city: string }): JSX.Element {
   return (
     <section
       className="container"
@@ -1369,8 +1369,8 @@ function ConversionSection(): JSX.Element {
             Want a <em style={{ color: 'var(--accent)' }}>second opinion</em> from a local agent?
           </h3>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)' }}>
-            We'll send this report to a verified Burlington agent who knows the Roseland area. No
-            obligation — they reach out only if you reply.
+            We'll send this report to a verified {city} agent who knows the area. No obligation —
+            they reach out only if you reply.
           </p>
           <div className="row gap-12">
             <button className="btn btn-accent">
@@ -1513,7 +1513,7 @@ export function PersonalBuyerPage({
       {!isReal && <SunScoutSection />}
       <RisksSection flags={isReal ? realAnalysis!.riskFlags : undefined} />
       <ChecklistSection />
-      <ConversionSection />
+      <ConversionSection city={isReal ? realListing!.city : 'Burlington'} />
 
       <Footer />
       <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />

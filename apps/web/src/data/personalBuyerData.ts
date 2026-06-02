@@ -336,17 +336,21 @@ export function computeHomeScore(
   else if (askVsMid <= 0.03) pricing = 14
   else if (askVsMid <= 0.06) pricing = 8
 
-  // 2. Schools — average EQAO of in-catchment schools
-  const inCatch = [...schools.elementary, ...schools.middle, ...schools.high].filter(
-    (s) => s.inCatchment
-  )
-  const avgEqao = inCatch.length ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length : 7.5
+  // 2. Schools — average EQAO of in-catchment schools.
+  // When no school data is available (EMPTY_SCHOOLS passed for real listings),
+  // all arrays are empty so inCatch.length === 0 → schoolPts = 0, not 7.5 fallback.
+  const allSchools = [...schools.elementary, ...schools.middle, ...schools.high]
+  const inCatch = allSchools.filter((s) => s.inCatchment)
   let schoolPts = 0
-  if (avgEqao >= 9.0) schoolPts = 20
-  else if (avgEqao >= 8.5) schoolPts = 17
-  else if (avgEqao >= 8.0) schoolPts = 14
-  else if (avgEqao >= 7.0) schoolPts = 10
-  else schoolPts = 5
+  let avgEqao = 0
+  if (allSchools.length > 0) {
+    avgEqao = inCatch.length ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length : 7.5
+    if (avgEqao >= 9.0) schoolPts = 20
+    else if (avgEqao >= 8.5) schoolPts = 17
+    else if (avgEqao >= 8.0) schoolPts = 14
+    else if (avgEqao >= 7.0) schoolPts = 10
+    else schoolPts = 5
+  }
 
   // 3. Light score
   let lightPts = 0
