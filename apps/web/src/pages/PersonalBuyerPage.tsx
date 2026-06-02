@@ -45,12 +45,12 @@ import { PBFMVSection } from '../components/personal/PBFMVSection'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
-import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
 import type {
   HomeScore,
   PersonalMonthlyCost,
   PersonalProperty,
   PersonalNeighbourhood,
+  PersonalSchools,
 } from '../types/personal'
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
@@ -60,7 +60,8 @@ const STATIC_LIGHT_SCORE = 76
 
 // ── Empty schools — used when isReal to give 0 pts without fixture data ────────
 // TODO: Task 5 will wire isReal and use this constant
-// const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
 
 // ── RealPhoto — img with fallback to placeholder on CDN hotlink block ──────────
 
