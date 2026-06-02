@@ -233,6 +233,7 @@ export function computeEquityCurve(
 // ── Maintenance reserve rate ───────────────────────────────────────────────────
 
 function maintenanceRate(yearBuilt: number): number {
+  if (yearBuilt === 0) return 0.01 // 1.0% — unknown year, matches Python calc engine default
   if (yearBuilt >= 2010) return 0.005 // 0.5%
   if (yearBuilt >= 1980) return 0.01 // 1.0%
   return 0.015 // 1.5%

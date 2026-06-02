@@ -86,8 +86,8 @@ export function InvestmentMetricsSection({
     },
     {
       label: 'GRM',
-      value: metrics.grm.toFixed(1),
-      sub: 'Gross Rent Multiplier',
+      value: metrics.grm > 0 ? metrics.grm.toFixed(1) : '—',
+      sub: metrics.grm > 0 ? 'Gross Rent Multiplier' : 'No comps available',
       status: 'neutral',
     },
     {
@@ -98,8 +98,8 @@ export function InvestmentMetricsSection({
     },
     {
       label: 'Gross yield',
-      value: fmtPct(grossYield),
-      sub: 'before expenses',
+      value: grossYield > 0 ? fmtPct(grossYield) : '—',
+      sub: grossYield > 0 ? 'before expenses' : 'No comps available',
       status: 'neutral',
     },
   ]
