@@ -23,6 +23,11 @@ interface PBFMVSectionProps {
   avgDOM?: number
   /** Median $/sqft from comps. Default computed from property price / sqft. */
   medianPPSqft?: number
+  /**
+   * When true, FMV values are ±5% estimates rather than comp-derived.
+   * Renders ~ prefix on all three values and an "Estimated range" footnote.
+   */
+  isEstimated?: boolean
 }
 
 function getFMVVerdict(
@@ -44,6 +49,7 @@ export function PBFMVSection({
   compCount = 8,
   avgDOM = 12,
   medianPPSqft,
+  isEstimated = false,
 }: PBFMVSectionProps): JSX.Element {
   const { fmv } = property
   const range = fmv.high - fmv.low
@@ -66,6 +72,20 @@ export function PBFMVSection({
         verdict={verdictLabel}
         tone={verdictTone}
       />
+
+      {isEstimated && (
+        <p
+          className="mono"
+          style={{
+            fontSize: 11,
+            color: 'var(--muted)',
+            letterSpacing: '0.12em',
+            marginBottom: 16,
+          }}
+        >
+          Estimated range · real comps in Phase 2
+        </p>
+      )}
 
       <div className="card" style={{ padding: 28 }}>
         {/* Header row — asking price + % vs P50 */}
@@ -189,6 +209,7 @@ export function PBFMVSection({
                 className="mono tabular"
                 style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}
               >
+                {isEstimated ? '~' : ''}
                 {fmtMoney(t.val)}
               </div>
             </div>
