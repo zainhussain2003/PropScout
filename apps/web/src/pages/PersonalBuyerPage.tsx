@@ -45,11 +45,11 @@ import { PBFMVSection } from '../components/personal/PBFMVSection'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
-import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
+// Task 5: These will be wired into the component tree
+// import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
 import type {
   HomeScore,
   PersonalMonthlyCost,
-  PersonalSchools,
   PersonalProperty,
   PersonalNeighbourhood,
 } from '../types/personal'
@@ -60,7 +60,8 @@ import type { Listing } from '../types/property'
 const STATIC_LIGHT_SCORE = 76
 
 // ── Empty schools — used when isReal to give 0 pts without fixture data ────────
-export const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
+// TODO: Task 5 will wire isReal and use this constant
+// const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
 
 // ── RealPhoto — img with fallback to placeholder on CDN hotlink block ──────────
 
@@ -1427,11 +1428,6 @@ export function PersonalBuyerPage({
     () => computeHomeScore(PB_PROPERTY, PB_SCHOOLS, PB_NEIGHBOURHOOD, STATIC_LIGHT_SCORE),
     []
   )
-
-  // Task 5 will wire these shims into the component tree.
-  // Computed and voided here so the import resolves before Task 5 lands.
-  void (realListing && realAnalysis ? shimToPersonalProperty(realListing, realAnalysis) : null)
-  void (realAnalysis ? shimToPersonalNeighbourhood(realAnalysis) : null)
 
   const addressSlug = realListing
     ? (realListing.address
