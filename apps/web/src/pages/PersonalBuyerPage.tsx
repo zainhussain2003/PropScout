@@ -45,8 +45,7 @@ import { PBFMVSection } from '../components/personal/PBFMVSection'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
-// Task 5: These will be wired into the component tree
-// import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
+import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
 import type {
   HomeScore,
   PersonalMonthlyCost,
