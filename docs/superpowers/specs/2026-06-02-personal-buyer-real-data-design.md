@@ -1,7 +1,7 @@
 # PersonalBuyerPage — Real Data Wiring Design
 
 **Date:** 2026-06-02
-**Branch:** feat/report-real-data (to be created)
+**Branch:** feat/route-wiring
 **Scope:** Wire real `Analysis` + `Listing` data into PersonalBuyerPage (Report B). Demo path unchanged.
 
 ---
