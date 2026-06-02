@@ -13,9 +13,15 @@ import { fmtMoney } from '../../lib/investorCalc'
 
 interface PBSalesSectionProps {
   comps: PersonalComp[]
+  /**
+   * When true, renders a "Sample comparables · real sales data in Phase 2"
+   * label above the comps table to indicate the data is not derived from
+   * the current listing's location.
+   */
+  isSampleData?: boolean
 }
 
-export function PBSalesSection({ comps }: PBSalesSectionProps): JSX.Element {
+export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionProps): JSX.Element {
   // Median by sold price (middle value of sorted array)
   const sorted = [...comps].sort((a, b) => a.sold - b.sold)
   const mid = Math.floor(sorted.length / 2)
@@ -40,6 +46,20 @@ export function PBSalesSection({ comps }: PBSalesSectionProps): JSX.Element {
         verdict={`${comps.length} sales · last 6 mo`}
         tone="pass"
       />
+
+      {isSampleData && (
+        <p
+          className="mono"
+          style={{
+            fontSize: 11,
+            color: 'var(--muted)',
+            letterSpacing: '0.12em',
+            marginBottom: 16,
+          }}
+        >
+          Sample comparables · real sales data in Phase 2
+        </p>
+      )}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {/* Header */}
