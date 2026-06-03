@@ -16,6 +16,7 @@ import type {
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 import type { PersonalProperty, PersonalNeighbourhood } from '../types/personal'
+import type { LandlordProperty } from '../types/landlord'
 import {
   FINANCING_DEFAULTS,
   PROPERTY_COST_ESTIMATES,
@@ -253,5 +254,67 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     targetHigh,
     chips: buildTenantChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
+  }
+}
+
+/**
+ * Maps a real Listing + Analysis to the LandlordProperty shape used by
+ * LandlordPage and its sub-components.
+ *
+ * Fields specific to the landlord's purchase history (purchasedFor, purchasedYear,
+ * appreciation) are zeroed — these aren't in the scraped listing data.
+ */
+export function shimToLandlordProperty(listing: Listing, analysis: Analysis): LandlordProperty {
+  const { line1, line2 } = parseAddress(listing.address)
+  const price = listing.price ?? 0
+  const parking =
+    listing.parkingSpots > 0
+      ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
+      : 'None'
+
+  return {
+    id: listing.id,
+    addressLine1: line1,
+    addressLine2: line2 || `${listing.city}, ${listing.province}`,
+    postal: listing.postalCode,
+    province: listing.province,
+    toronto: listing.city.toLowerCase() === 'toronto',
+    propertyType: formatPropertyType(listing.propertyType),
+    beds: String(listing.beds),
+    baths: String(listing.baths),
+    sqft: listing.sqft ?? 0,
+    parking,
+    yearBuilt: listing.yearBuilt ?? 0,
+    rentControl: true, // conservative Ontario default
+    price,
+    purchasedFor: 0, // not in scraped data
+    purchasedYear: 0, // not in scraped data
+    appreciation: 0, // not in scraped data
+    annualTaxes: listing.annualTaxes ?? 0,
+    condoFeeMonthly: listing.condoFeeMonthly ?? 0,
+    askingRent: listing.rentMonthly ?? 0,
+    rentEstimate: analysis.rentalComps?.mid ?? 0,
+    rentLow: analysis.rentalComps?.low ?? 0,
+    rentHigh: analysis.rentalComps?.high ?? 0,
+    compCount: analysis.rentalComps?.compCount ?? 0,
+    compConfidence: analysis.rentalComps?.confidence ?? 'low',
+    market: { cmhcVacancy: 0.03, rentalDOM: 14, rentTrend: 'flat' },
+    ownership: {
+      owned: false,
+      mortgageBalance: 0,
+      contractRate: FINANCING_DEFAULTS.MORTGAGE_RATE,
+      yearsLeftOnAmort: FINANCING_DEFAULTS.AMORTIZATION_YEARS,
+      daysOnMarket: 0,
+      priceChanges: 0,
+      lastDropAmount: 0,
+    },
+    riskFlags: analysis.riskFlags.map((f) => ({
+      id: f.id,
+      tone: f.severity === 'red' ? 'red' : ('amber' as 'red' | 'amber'),
+      label: f.label,
+      detail: f.evidence ?? '',
+      deduct: 0,
+    })),
+    chips: buildInvestorChips(listing),
   }
 }

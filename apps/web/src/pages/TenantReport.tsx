@@ -58,7 +58,14 @@ import {
   CHARLES_COST_LINES,
   CHARLES_CHECKLIST,
 } from '../constants/tenantDemoData'
-import type { TenantChecklistItem, TenantCostLine } from '../types/analysis'
+import type {
+  Analysis,
+  TenantChecklistItem,
+  TenantCostLine,
+  TenantListingData,
+} from '../types/analysis'
+import type { Listing } from '../types/property'
+import { shimToTenantListingData } from '../lib/reportShims'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -71,11 +78,17 @@ function fmtCAD(n: number): string {
 interface TenantPropertyHeroProps {
   dark: boolean
   onBack?: () => void
+  /** Real listing data — when provided replaces the CHARLES_LISTING fixture. */
+  listing?: TenantListingData
 }
 
-function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): JSX.Element {
+function TenantPropertyHero({
+  dark: _dark,
+  onBack,
+  listing: listingProp,
+}: TenantPropertyHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
-  const listing = CHARLES_LISTING
+  const listing = listingProp ?? CHARLES_LISTING
   const verdictColor =
     listing.scoreTone === 'pass'
       ? 'var(--pass)'
@@ -1211,12 +1224,28 @@ const TENANT_FIRST_PARA =
 interface TenantReportProps {
   /** User tier — controls AIVerdictBlock (pro) vs TruncatedVerdict (free). */
   tier?: string
+  /** Real analysis from the API — when provided, live data replaces fixtures. */
+  analysis?: Analysis | null
+  /** Real listing from the API — required alongside analysis to activate live mode. */
+  listing?: Listing | null
 }
 
-export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
+export function TenantReport({
+  tier = 'pro',
+  analysis: realAnalysis,
+  listing: realListing,
+}: TenantReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
+
+  // Shim: when real data is provided, derive TenantListingData from it
+  const tenantListing: TenantListingData | undefined =
+    realAnalysis && realListing ? shimToTenantListingData(realListing, realAnalysis) : undefined
+
+  const addressSlug = tenantListing
+    ? tenantListing.addressLine1.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    : '3705-charles-st-e'
 
   function toggleDark(): void {
     const next = !dark
@@ -1229,44 +1258,58 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
       <Nav
         variant="report"
         reportLabel="Tenant report"
-        addressSlug="3705-charles-st-e"
+        addressSlug={addressSlug}
         dark={dark}
         onToggleDark={toggleDark}
         onSignIn={() => setShowSignIn(true)}
       />
 
-      {/* Property hero */}
-      <TenantPropertyHero dark={dark} onBack={() => window.history.back()} />
+      {/* Property hero — passes real listing data when available */}
+      <TenantPropertyHero
+        dark={dark}
+        onBack={() => window.history.back()}
+        listing={tenantListing}
+      />
 
       {/* AI verdict */}
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         {tier === 'free' ? (
           <TruncatedVerdict
-            firstParagraph={TENANT_FIRST_PARA}
+            firstParagraph={
+              realAnalysis?.narrative
+                ? realAnalysis.narrative.split('. ')[0] + '.'
+                : TENANT_FIRST_PARA
+            }
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
           <AIVerdictBlock
             eyebrow="Scout AI · tenant verdict"
             headline={
-              <>
-                Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
-                marketed as a second bedroom is a den with a sliding glass door — no privacy, no
-                sound barrier, almost certainly no window. You're paying a 2-bedroom premium for a
-                1-bedroom with a study.
-              </>
+              realAnalysis?.narrative ? (
+                realAnalysis.narrative.split('. ')[0] + '.'
+              ) : (
+                <>
+                  Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
+                  marketed as a second bedroom is a den with a sliding glass door — no privacy, no
+                  sound barrier, almost certainly no window. You&apos;re paying a 2-bedroom premium
+                  for a 1-bedroom with a study.
+                </>
+              )
             }
             sub={
-              <>
-                Your negotiation target is{' '}
-                <span className="tabular" style={{ color: 'var(--accent)' }}>
-                  $1,950–2,000
-                </span>
-                /mo. You have real leverage: 14 competing rentals in this building, the unit has
-                been listed for 22 days, and you have a documented misrepresentation to point to.
-                Before you go back, confirm two things in writing — does the den have a window, and
-                is parking included or extra.
-              </>
+              realAnalysis?.narrative ?? (
+                <>
+                  Your negotiation target is{' '}
+                  <span className="tabular" style={{ color: 'var(--accent)' }}>
+                    $1,950–2,000
+                  </span>
+                  /mo. You have real leverage: 14 competing rentals in this building, the unit has
+                  been listed for 22 days, and you have a documented misrepresentation to point to.
+                  Before you go back, confirm two things in writing — does the den have a window,
+                  and is parking included or extra.
+                </>
+              )
             }
           />
         )}
@@ -1281,10 +1324,10 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
       {/* §03 Listed vs Reality (hidden when zero mismatches) */}
       <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />
 
-      {/* §04 Negotiation */}
+      {/* §04 Negotiation — use real comp targets when available */}
       <NegotiationSection
-        targetLow={CHARLES_LISTING.targetLow}
-        targetHigh={CHARLES_LISTING.targetHigh}
+        targetLow={tenantListing?.targetLow ?? CHARLES_LISTING.targetLow}
+        targetHigh={tenantListing?.targetHigh ?? CHARLES_LISTING.targetHigh}
         leverageFactors={CHARLES_LEVERAGE_FACTORS}
         suggestedMessage={CHARLES_SUGGESTED_MESSAGE}
         messageReasons={CHARLES_MESSAGE_REASONS}
@@ -1303,9 +1346,36 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
 
       {/* §07 Location & commute */}
       <LocationCommuteSection
-        mobilityScores={CHARLES_MOBILITY_SCORES}
+        mobilityScores={
+          realAnalysis?.walkScore
+            ? [
+                {
+                  label: 'Walk Score',
+                  val: realAnalysis.walkScore.walk,
+                  sub: realAnalysis.walkScore.description,
+                  tone: realAnalysis.walkScore.walk >= 70 ? 'pass' : 'caution',
+                },
+                {
+                  label: 'Transit Score',
+                  val: realAnalysis.walkScore.transit ?? 0,
+                  sub: 'Public transit',
+                  tone: (realAnalysis.walkScore.transit ?? 0) >= 50 ? 'pass' : 'caution',
+                },
+                {
+                  label: 'Bike Score',
+                  val: realAnalysis.walkScore.bike ?? 0,
+                  sub: 'Bikeable',
+                  tone: (realAnalysis.walkScore.bike ?? 0) >= 50 ? 'pass' : 'caution',
+                },
+              ]
+            : CHARLES_MOBILITY_SCORES
+        }
         distances={CHARLES_DISTANCES}
-        verdict="Excellent transit · limited walk"
+        verdict={
+          realAnalysis?.walkScore
+            ? `Walk ${realAnalysis.walkScore.walk} · Transit ${realAnalysis.walkScore.transit ?? 0}`
+            : 'Excellent transit · limited walk'
+        }
       />
 
       {/* §08 Schools */}

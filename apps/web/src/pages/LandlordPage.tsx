@@ -45,7 +45,16 @@ import type {
   NeighbourhoodData,
   InvestorRiskFlag,
 } from '../types/analysis'
-import { enrichMetrics, computeDemoMetrics, fmtMoney, fmtPct } from '../lib/investorCalc'
+import {
+  enrichMetrics,
+  computeDemoMetrics,
+  toDealScoreData,
+  fmtMoney,
+  fmtPct,
+} from '../lib/investorCalc'
+import type { Analysis } from '../types/analysis'
+import type { Listing } from '../types/property'
+import { shimToListingData, shimToNeighbourhood, shimToLandlordProperty } from '../lib/reportShims'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -278,28 +287,68 @@ function LandlordChecklistSection(): JSX.Element {
 interface LandlordPageProps {
   /** User tier — controls PDF button gating in LandlordChecklistSection. */
   tier?: string
+  /** Real analysis from the API — when provided, live data replaces fixtures. */
+  analysis?: Analysis | null
+  /** Real listing from the API — required alongside analysis to activate live mode. */
+  listing?: Listing | null
 }
 
-export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
+export function LandlordPage({
+  tier = 'pro',
+  analysis: realAnalysis,
+  listing: realListing,
+}: LandlordPageProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState(false)
-  const [askingRent, setAskingRent] = useState(LL_PROPERTY.askingRent)
+  const isReal = !!(realAnalysis && realListing)
+
+  const [askingRent, setAskingRent] = useState(realListing?.rentMonthly ?? LL_PROPERTY.askingRent)
   const [financing, setFinancing] = useState<FinancingInputs>(LL_DEFAULT_FINANCING)
 
-  // Convert LandlordProperty → ListingData for shared investor components
-  const listing = useMemo(() => toListing(LL_PROPERTY, askingRent), [askingRent])
+  // Real property shape for hero/verdict — shimmed when live, fixture when demo
+  const property = useMemo(
+    () => (isReal ? shimToLandlordProperty(realListing!, realAnalysis!) : LL_PROPERTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isReal]
+  )
+
+  // Convert to ListingData: prefer real data via shim, fall back to demo conversion
+  const listing = useMemo(
+    () =>
+      isReal ? shimToListingData(realListing!, realAnalysis!) : toListing(LL_PROPERTY, askingRent),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isReal, askingRent]
+  )
+
+  // Neighbourhood: prefer real data
+  const neighbourhood = useMemo(
+    () => (realAnalysis ? shimToNeighbourhood(realAnalysis) : HARBOUR_NEIGHBOURHOOD),
+    [realAnalysis]
+  )
 
   // Stable NOI-level metrics (change only with rent or expense toggles)
   const stable = useMemo(
-    () => computeLandlordStable(LL_PROPERTY, askingRent, financing.includeManagementFee),
-    [askingRent, financing.includeManagementFee]
+    () => computeLandlordStable(property, askingRent, financing.includeManagementFee),
+    [property, askingRent, financing.includeManagementFee]
   )
 
-  // Core InvestmentMetrics (changes with financing or rent)
-  const coreMetrics = useMemo(
-    () => computeDemoMetrics(stable, listing, financing),
-    [stable, listing, financing]
-  )
+  // Core InvestmentMetrics: recompute financing-dependent metrics so sliders work.
+  // Use stored NOI/capRate as stable base, recompute payment/cashFlow/DSCR with current financing.
+  const coreMetrics = useMemo(() => {
+    if (isReal && realAnalysis?.metrics) {
+      return computeDemoMetrics(
+        {
+          noi: realAnalysis.metrics.noi,
+          capRate: realAnalysis.metrics.capRate,
+          grm: realAnalysis.metrics.grm,
+          closingCostsTotal: realAnalysis.metrics.closingCostsTotal,
+        },
+        listing,
+        financing
+      )
+    }
+    return computeDemoMetrics(stable, listing, financing)
+  }, [isReal, realAnalysis?.metrics, stable, listing, financing])
 
   // Fully enriched ComputedInvestorMetrics (adds LTT, OSFI, equity curve, expenses)
   const metrics = useMemo(
@@ -307,29 +356,32 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
     [coreMetrics, listing, financing]
   )
 
-  // Deal score from landlord-specific algorithm
+  // Deal score: use real API score when available, fall back to landlord algorithm
   const score = useMemo(
     () =>
-      computeLandlordDealScore(
-        {
-          capRate: metrics.capRate,
-          cashFlowMonthly: metrics.cashFlowMonthly,
-          cashOnCashReturn: metrics.cashOnCashReturn,
-          dscr: metrics.dscr,
-        },
-        {
-          market: LL_PROPERTY.market,
-          riskFlags: LL_PROPERTY.riskFlags,
-        }
-      ),
-    [metrics]
+      realAnalysis?.dealScore
+        ? toDealScoreData(realAnalysis.dealScore)
+        : computeLandlordDealScore(
+            {
+              capRate: metrics.capRate,
+              cashFlowMonthly: metrics.cashFlowMonthly,
+              cashOnCashReturn: metrics.cashOnCashReturn,
+              dscr: metrics.dscr,
+            },
+            {
+              market: LL_PROPERTY.market,
+              riskFlags: LL_PROPERTY.riskFlags,
+            }
+          ),
+    [realAnalysis?.dealScore, metrics]
   )
 
   // Rent positioning (updates live with slider)
   const positioning = useMemo(() => computeRentPositioning(askingRent, LL_RENT_COMPS), [askingRent])
 
-  const redFlags = LL_PROPERTY.riskFlags.filter((f) => f.tone === 'red')
-  const amberFlags = LL_PROPERTY.riskFlags.filter((f) => f.tone === 'amber')
+  const activeRiskFlags = isReal ? property.riskFlags : LL_PROPERTY.riskFlags
+  const redFlags = activeRiskFlags.filter((f) => f.tone === 'red')
+  const amberFlags = activeRiskFlags.filter((f) => f.tone === 'amber')
   const riskVerdictLabel =
     redFlags.length > 0
       ? `${redFlags.length} red · ${amberFlags.length} amber`
@@ -338,7 +390,12 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
         : 'No red flags'
   const riskVerdictTone = redFlags.length > 1 ? 'fail' : redFlags.length === 1 ? 'caution' : 'pass'
 
-  const addressSlug = '3208-harbour-st-toronto'
+  const addressSlug = isReal
+    ? (realListing!.address
+        .split(',')[0]
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-') ?? '88-harbour-st-toronto')
+    : '3208-harbour-st-toronto'
 
   return (
     <div className="report-page-mobile-padding">
@@ -361,7 +418,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
 
       {/* Hero + verdict */}
       <LandlordPropertyHero
-        property={LL_PROPERTY}
+        property={property}
         askingRent={askingRent}
         metrics={metrics}
         score={score}
@@ -370,13 +427,17 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
       {tier === 'free' ? (
         <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
           <TruncatedVerdict
-            firstParagraph={`You're above the building median, and ${LL_PROPERTY.ownership.daysOnMarket} days on market is telling you exactly what the tenants think of it.`}
+            firstParagraph={
+              realAnalysis?.narrative
+                ? realAnalysis.narrative.split('. ')[0] + '.'
+                : `You're above the building median, and ${property.ownership.daysOnMarket} days on market is telling you exactly what the tenants think of it.`
+            }
             onUnlock={() => openUpgradeModal('verdict')}
           />
         </section>
       ) : (
         <LandlordVerdictHero
-          property={LL_PROPERTY}
+          property={property}
           askingRent={askingRent}
           positioning={positioning}
           metrics={metrics}
@@ -385,7 +446,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
 
       {/* §01 Rent positioning */}
       <LandlordRentPositioningSection
-        property={LL_PROPERTY}
+        property={property}
         askingRent={askingRent}
         onRentChange={setAskingRent}
         positioning={positioning}
@@ -410,7 +471,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
         />
         <FinancingSliders
           financing={financing}
-          price={LL_PROPERTY.price}
+          price={property.price}
           onChange={(f) => setFinancing(f)}
         />
       </section>
@@ -425,7 +486,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
               What will tenants <em>actually</em> pay?
             </>
           }
-          verdict={`${LL_PROPERTY.compCount} comps · ${LL_PROPERTY.compConfidence} confidence`}
+          verdict={`${property.compCount} comps · ${property.compConfidence} confidence`}
           tone="pass"
         />
         <div className="card" style={{ padding: 28 }}>
@@ -449,7 +510,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
                   color: 'var(--muted)',
                 }}
               >
-                Market rent range · {LL_PROPERTY.compCount} comparable rentals
+                Market rent range · {property.compCount} comparable rentals
               </span>
             </div>
             <span
@@ -457,22 +518,21 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
               style={{
                 fontSize: 11,
                 color:
-                  LL_PROPERTY.compConfidence === 'high'
+                  property.compConfidence === 'high'
                     ? 'var(--pass)'
-                    : LL_PROPERTY.compConfidence === 'medium'
+                    : property.compConfidence === 'medium'
                       ? 'var(--caution)'
                       : 'var(--fail)',
               }}
             >
-              {LL_PROPERTY.compConfidence.charAt(0).toUpperCase() +
-                LL_PROPERTY.compConfidence.slice(1)}{' '}
+              {property.compConfidence.charAt(0).toUpperCase() + property.compConfidence.slice(1)}{' '}
               confidence
             </span>
           </div>
           <RentalCompsBar
-            low={LL_PROPERTY.rentLow}
-            mid={LL_PROPERTY.rentEstimate}
-            high={LL_PROPERTY.rentHigh}
+            low={property.rentLow}
+            mid={property.rentEstimate}
+            high={property.rentHigh}
             ask={askingRent}
           />
         </div>
@@ -496,7 +556,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
           )}
           tone="pass"
         />
-        <LTTTable ltt={metrics.ltt} price={LL_PROPERTY.price} toronto={financing.isToronto} />
+        <LTTTable ltt={metrics.ltt} price={property.price} toronto={financing.isToronto} />
       </section>
 
       {/* §06 OSFI stress test */}
@@ -529,7 +589,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
           tone={riskVerdictTone}
         />
         <div className="col gap-12">
-          {LL_PROPERTY.riskFlags.map((f) => (
+          {activeRiskFlags.map((f) => (
             <RiskRow
               key={f.id}
               tone={f.tone === 'red' ? 'red' : 'amber'}
@@ -538,7 +598,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
             />
           ))}
         </div>
-        {LL_PROPERTY.riskFlags.length === 0 && (
+        {activeRiskFlags.length === 0 && (
           <p style={{ fontSize: 14, color: 'var(--muted)' }}>
             No risk flags detected for this property.
           </p>
@@ -565,7 +625,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
       </section>
 
       {/* §09 Neighbourhood */}
-      <NeighbourhoodSection listing={listing} neighbourhood={HARBOUR_NEIGHBOURHOOD} />
+      <NeighbourhoodSection listing={listing} neighbourhood={neighbourhood} />
 
       {/* §10 SunScout / STR — Phase 2 placeholders */}
       <STRPlaceholderSection listing={listing} />
