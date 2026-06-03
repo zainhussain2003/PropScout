@@ -718,8 +718,8 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
           </>
         }
         verdict={
-          neigh.walkScore > 0
-            ? `Walk ${neigh.walkScore} · Transit ${neigh.transitScore}`
+          neigh.walkSub
+            ? `${neigh.walkSub} · Transit ${neigh.transitScore}`
             : 'Quiet · GO-connected'
         }
         tone={neigh.walkScore >= 70 ? 'pass' : 'caution'}
