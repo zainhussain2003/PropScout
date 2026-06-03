@@ -861,10 +861,26 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
       >
         {(
           [
-            ['Median household income', fmtMoney(neigh.avgIncome), 'StatsCan 2021'],
-            ['5-year population growth', fmtPct(neigh.popGrowth5y, 1), 'StatsCan'],
-            ['Price per sqft trend', neigh.ppsqftTrend, 'last 12 months'],
-            ['5-year price appreciation', '+' + fmtPct(neigh.appreciation5y, 1), 'Teranet HPI'],
+            [
+              'Median household income',
+              neigh.avgIncome > 0 ? fmtMoney(neigh.avgIncome) : '—',
+              'StatsCan 2021',
+            ],
+            [
+              '5-year population growth',
+              neigh.popGrowth5y !== 0 ? fmtPct(neigh.popGrowth5y, 1) : '—',
+              'StatsCan',
+            ],
+            [
+              'Price per sqft trend',
+              neigh.ppsqftTrend !== 'N/A' ? neigh.ppsqftTrend : '—',
+              'last 12 months',
+            ],
+            [
+              '5-year price appreciation',
+              neigh.appreciation5y !== 0 ? '+' + fmtPct(neigh.appreciation5y, 1) : '—',
+              'Teranet HPI',
+            ],
           ] as [string, string, string][]
         ).map(([k, v, sub]) => (
           <div key={k} className="card col" style={{ padding: '18px 22px', gap: 4 }}>
