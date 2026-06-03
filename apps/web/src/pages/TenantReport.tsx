@@ -1532,8 +1532,21 @@ export function TenantReport({
       {/* §10 Comps map */}
       <CompsMapSection />
 
-      {/* §11 Unit & building details */}
-      <UnitDetailsSection />
+      {/* §11 Unit & building details — requires extraction pipeline for room-level detail */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="11"
+          topic="Unit & building details"
+          question={
+            <>
+              What exactly are you <em>getting</em>?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <UnitDetailsSection />
+      )}
 
       {/* §12 Confirm before signing */}
       <ConfirmChecklist items={CHARLES_CHECKLIST} />
