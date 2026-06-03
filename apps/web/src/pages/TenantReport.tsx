@@ -1215,6 +1215,40 @@ function ConversionBlock(): JSX.Element {
   )
 }
 
+// ── Placeholder card for sections not yet populated by extraction pipeline ────
+
+function SectionPlaceholder({
+  n,
+  topic,
+  question,
+  week,
+}: {
+  n: string
+  topic: string
+  question: JSX.Element
+  week: string
+}): JSX.Element {
+  return (
+    <section className="container tr-section">
+      <SectionHead
+        n={n}
+        topic={topic}
+        question={question}
+        verdict={`Available ${week}`}
+        tone="caution"
+      />
+      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+        <p
+          className="mono"
+          style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}
+        >
+          {topic} · {week}
+        </p>
+      </div>
+    </section>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 /** Plain-text first paragraph for TruncatedVerdict (free tier). */
@@ -1240,8 +1274,11 @@ export function TenantReport({
   const [showSignIn, setShowSignIn] = useState(false)
 
   // Shim: when real data is provided, derive TenantListingData from it
-  const tenantListing: TenantListingData | undefined =
-    realAnalysis && realListing ? shimToTenantListingData(realListing, realAnalysis) : undefined
+  const isReal = !!(realAnalysis && realListing)
+
+  const tenantListing: TenantListingData | undefined = isReal
+    ? shimToTenantListingData(realListing!, realAnalysis!)
+    : undefined
 
   const addressSlug = tenantListing
     ? tenantListing.addressLine1.toLowerCase().replace(/[^a-z0-9]+/g, '-')
@@ -1316,35 +1353,130 @@ export function TenantReport({
       </section>
 
       {/* §01 Rent positioning */}
-      <RentPositioningSection />
+      {isReal ? (
+        <section className="container tr-section" data-section="01">
+          <SectionHead
+            n="01"
+            topic="Rent positioning"
+            question={
+              <>
+                Is the rent <em>fair</em>?
+              </>
+            }
+            verdict={
+              tenantListing
+                ? `Asking $${tenantListing.asking.toLocaleString()}/mo`
+                : 'Fetching comps…'
+            }
+            tone="caution"
+          />
+          <div className="card" style={{ padding: 28 }}>
+            <RentalCompsBar
+              low={tenantListing?.targetLow ?? 0}
+              mid={tenantListing?.targetHigh ?? 0}
+              high={tenantListing?.targetHigh ?? 0}
+              ask={tenantListing?.asking ?? 0}
+            />
+            <p
+              className="mono"
+              style={{
+                fontSize: 11,
+                color: 'var(--muted)',
+                letterSpacing: '0.12em',
+                marginTop: 16,
+              }}
+            >
+              Rental comps · available Week 4–5 · nightly scraper
+            </p>
+          </div>
+        </section>
+      ) : (
+        <RentPositioningSection />
+      )}
 
-      {/* §02 Listing accuracy */}
-      <ListingAccuracySection />
+      {/* §02 Listing accuracy — real flags when available, fixture for demo */}
+      {isReal ? (
+        realAnalysis!.riskFlags.length > 0 ? (
+          <ListingAccuracySection />
+        ) : (
+          <SectionPlaceholder
+            n="02"
+            topic="Listing accuracy"
+            question={
+              <>
+                Does this listing <em>tell the truth</em>?
+              </>
+            }
+            week="Week 5–6 · extraction pipeline"
+          />
+        )
+      ) : (
+        <ListingAccuracySection />
+      )}
 
-      {/* §03 Listed vs Reality (hidden when zero mismatches) */}
-      <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />
+      {/* §03 Listed vs Reality — only show for demo; requires extraction pipeline */}
+      {!isReal && <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />}
 
-      {/* §04 Negotiation — use real comp targets when available */}
-      <NegotiationSection
-        targetLow={tenantListing?.targetLow ?? CHARLES_LISTING.targetLow}
-        targetHigh={tenantListing?.targetHigh ?? CHARLES_LISTING.targetHigh}
-        leverageFactors={CHARLES_LEVERAGE_FACTORS}
-        suggestedMessage={CHARLES_SUGGESTED_MESSAGE}
-        messageReasons={CHARLES_MESSAGE_REASONS}
-      />
+      {/* §04 Negotiation — requires extraction pipeline for leverage analysis */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="04"
+          topic="Negotiation"
+          question={
+            <>
+              What's your <em>leverage</em>?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <NegotiationSection
+          targetLow={CHARLES_LISTING.targetLow}
+          targetHigh={CHARLES_LISTING.targetHigh}
+          leverageFactors={CHARLES_LEVERAGE_FACTORS}
+          suggestedMessage={CHARLES_SUGGESTED_MESSAGE}
+          messageReasons={CHARLES_MESSAGE_REASONS}
+        />
+      )}
 
-      {/* §05 Monthly cost */}
-      <CostBreakdownSection lines={CHARLES_COST_LINES} />
+      {/* §05 Monthly cost — requires extraction to know what's included */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="05"
+          topic="Monthly cost"
+          question={
+            <>
+              What does it <em>really</em> cost?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <CostBreakdownSection lines={CHARLES_COST_LINES} />
+      )}
 
-      {/* §06 What's included */}
-      <WhatsIncludedSection
-        amenities={CHARLES_AMENITIES}
-        askingRent={CHARLES_LISTING.asking}
-        estimatedValue="~$320/mo"
-        adjustedRent="$1,830/mo"
-      />
+      {/* §06 What's included — requires extraction pipeline */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="06"
+          topic="What's included"
+          question={
+            <>
+              What does the rent <em>cover</em>?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <WhatsIncludedSection
+          amenities={CHARLES_AMENITIES}
+          askingRent={CHARLES_LISTING.asking}
+          estimatedValue="~$320/mo"
+          adjustedRent="$1,830/mo"
+        />
+      )}
 
-      {/* §07 Location & commute */}
+      {/* §07 Location & commute — walk scores real, distances Week 4-5 */}
       <LocationCommuteSection
         mobilityScores={
           realAnalysis?.walkScore
@@ -1370,7 +1502,7 @@ export function TenantReport({
               ]
             : CHARLES_MOBILITY_SCORES
         }
-        distances={CHARLES_DISTANCES}
+        distances={isReal ? [] : CHARLES_DISTANCES}
         verdict={
           realAnalysis?.walkScore
             ? `Walk ${realAnalysis.walkScore.walk} · Transit ${realAnalysis.walkScore.transit ?? 0}`
@@ -1378,8 +1510,21 @@ export function TenantReport({
         }
       />
 
-      {/* §08 Schools */}
-      <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
+      {/* §08 Schools — requires Google Places + EQAO data */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="08"
+          topic="Schools"
+          question={
+            <>
+              What schools are <em>nearby</em>?
+            </>
+          }
+          week="Week 4–5 · Google Places + EQAO"
+        />
+      ) : (
+        <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
+      )}
 
       {/* §09 SunScout placeholder */}
       <TenantSunScoutPlaceholder />
