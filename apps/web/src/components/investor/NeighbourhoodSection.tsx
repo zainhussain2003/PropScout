@@ -27,16 +27,33 @@ export function NeighbourhoodSection({
   const n = neighbourhood
 
   const statTiles: Array<[string, string, string]> = [
-    ['Median income (FSA)', fmtMoney(n.avgIncome), 'StatsCan 2021'],
-    ['5-year pop. growth', fmtPct(n.popGrowth5y, 1), 'StatsCan'],
-    ['Walk Score', String(n.walkScore), n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable'],
-    ['Transit Score', String(n.transitScore), n.transitScore >= 80 ? 'Excellent' : 'Some transit'],
-    ['Active building permits', String(n.buildingPermits), 'in 1km radius'],
-    ['Price per sqft trend', n.ppsqftTrend, 'last 12 months'],
+    ['Median income (FSA)', n.avgIncome > 0 ? fmtMoney(n.avgIncome) : '—', 'StatsCan 2021'],
+    ['5-year pop. growth', n.popGrowth5y !== 0 ? fmtPct(n.popGrowth5y, 1) : '—', 'StatsCan'],
+    [
+      'Walk Score',
+      n.walkScore > 0 ? String(n.walkScore) : '—',
+      n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable',
+    ],
+    [
+      'Transit Score',
+      n.transitScore > 0 ? String(n.transitScore) : '—',
+      n.transitScore >= 80 ? 'Excellent' : 'Some transit',
+    ],
+    [
+      'Active building permits',
+      n.buildingPermits > 0 ? String(n.buildingPermits) : '—',
+      'in 1km radius',
+    ],
+    ['Price per sqft trend', n.ppsqftTrend !== 'N/A' ? n.ppsqftTrend : '—', 'last 12 months'],
   ]
 
   const verdictTone = n.appreciation5y >= 0.2 ? 'pass' : 'caution'
-  const verdictLabel = n.appreciation5y >= 0.2 ? 'Strong appreciation' : 'Modest growth'
+  const verdictLabel =
+    n.appreciation5y > 0
+      ? n.appreciation5y >= 0.2
+        ? 'Strong appreciation'
+        : 'Modest growth'
+      : 'Modest growth'
 
   return (
     <section className="container tr-section" data-section="08">
@@ -185,7 +202,7 @@ export function NeighbourhoodSection({
                 color: 'var(--accent)',
               }}
             >
-              +{fmtPct(n.appreciation5y, 1)}
+              {n.appreciation5y !== 0 ? `+${fmtPct(n.appreciation5y, 1)}` : '—'}
             </span>
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
               5-year median sale price
