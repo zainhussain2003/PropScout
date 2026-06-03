@@ -908,7 +908,108 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
   )
 }
 
-// ── §06 SunScout placeholder ──────────────────────────────────────────────────
+// ── §06 SunScout Phase 2 placeholder (shown for real listings) ───────────────
+
+function SunScoutPlaceholderSection(): JSX.Element {
+  return (
+    <section className="container tr-section">
+      <SectionHead
+        n="06"
+        topic="SunScout"
+        question={
+          <>
+            Which rooms will the <em>light</em> reach?
+          </>
+        }
+        verdict="Modeling · Phase 2"
+        tone="caution"
+      />
+      <div
+        className="card col"
+        style={{ padding: 40, gap: 20, alignItems: 'center', textAlign: 'center' }}
+      >
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 999,
+            background: 'color-mix(in oklab, var(--caution) 14%, transparent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon name="sun" size={28} />
+        </div>
+        <div className="col" style={{ gap: 8, maxWidth: 560 }}>
+          <Chip>Coming Phase 2</Chip>
+          <h4 className="serif" style={{ fontSize: 24 }}>
+            Solar path analysis — shipping Q3 2026.
+          </h4>
+          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+            SunScout will use NASA NREL sun-path data and building-height obstruction modelling to
+            show you peak sun hours by season and window orientation. Ideal for evaluating
+            south-facing condos and adding solar panels.
+          </p>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 12,
+            marginTop: 8,
+            width: '100%',
+            filter: 'blur(2px)',
+            opacity: 0.5,
+            pointerEvents: 'none',
+          }}
+          aria-hidden="true"
+        >
+          {(['Dec', 'Mar', 'Jun', 'Sep'] as const).map((month) => (
+            <div
+              key={month}
+              className="col"
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                background: 'var(--bg-elev)',
+                border: '1px solid var(--line)',
+                gap: 4,
+              }}
+            >
+              <span
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                {month}
+              </span>
+              <span className="serif tabular" style={{ fontSize: 22, lineHeight: 1 }}>
+                {month === 'Jun'
+                  ? '6.8'
+                  : month === 'Sep'
+                    ? '5.1'
+                    : month === 'Mar'
+                      ? '4.4'
+                      : '2.9'}
+                h
+              </span>
+              <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
+                peak sun / day
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── §06 SunScout fixture (shown for demo listings only) ───────────────────────
 
 function SunScoutSection(): JSX.Element {
   const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const
@@ -1538,7 +1639,7 @@ export function PersonalBuyerPage({
       <PBSalesSection comps={PB_COMPS} isSampleData={isReal} />
       <SchoolsSection isReal={isReal} />
       <NeighbourhoodSection neigh={neighbourhood} />
-      <SunScoutSection />
+      {isReal ? <SunScoutPlaceholderSection /> : <SunScoutSection />}
       <RisksSection flags={isReal ? realAnalysis!.riskFlags : undefined} />
       <ChecklistSection />
       <ConversionSection city={isReal ? realListing!.city : 'Burlington'} />
