@@ -717,8 +717,12 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
             What's it like to <em>live</em> here?
           </>
         }
-        verdict="Quiet · GO-connected"
-        tone="pass"
+        verdict={
+          neigh.walkScore > 0
+            ? `Walk ${neigh.walkScore} · Transit ${neigh.transitScore}`
+            : 'Quiet · GO-connected'
+        }
+        tone={neigh.walkScore >= 70 ? 'pass' : 'caution'}
       />
 
       <div
@@ -800,6 +804,14 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
           >
             From this address
           </div>
+          {neigh.distances.length === 0 && (
+            <p
+              className="mono"
+              style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}
+            >
+              Distance data · available in Phase 2
+            </p>
+          )}
           {neigh.distances.map((d, i, arr) => (
             <div
               key={d.k}
