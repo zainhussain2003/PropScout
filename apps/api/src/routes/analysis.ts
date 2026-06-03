@@ -1,13 +1,7 @@
 /**
- * Analysis route — accepts camelCase input from the React frontend,
- * converts it to snake_case before forwarding to the Python calc engine,
- * transforms the snake_case response into camelCase, and returns it.
- *
- * Input format handled:
- *   - camelCase (from React frontend via analysisService.ts)
- *     e.g. { propertyData: { annualTaxes: 3326 }, financing: { downPaymentPct: 0.2 } }
- *   - snake_case (legacy / direct callers, passed through unchanged)
- *     e.g. { property_data: { annual_taxes: 3326 }, financing: { down_payment_pct: 0.2 } }
+ * Analysis route — accepts { token, mode } from the frontend, runs the
+ * full 9-step pipeline (flags → calc engine → geocode → walk score →
+ * narrative → assemble), and returns { token, analysis }.
  *
  * Registered in app.ts with prefix "/analysis":
  *   await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
@@ -16,129 +10,33 @@
 
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
-import type { InvestmentMetrics, DealScore, DealScoreBreakdown, Analysis } from '../types/analysis'
+import type {
+  InvestmentMetrics,
+  DealScore,
+  DealScoreBreakdown,
+  Analysis,
+  ReportMode,
+  WalkScoreResult,
+} from '../types/analysis'
+import { getListingByToken, updateAnalysisStatus, saveAnalysis } from '../services/supabaseService'
+import {
+  extractListingFlags,
+  generateNarrative,
+  type NarrativeInput,
+} from '../services/anthropicService'
+import { geocodeAddress } from '../services/mapboxService'
+import { getWalkScore } from '../services/walkScoreService'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
-// ── Frontend camelCase input types ────────────────────────────────────────────
-
-interface CamelPropertyData {
-  address: string
-  province?: string
-  price: number
-  annualTaxes: number
-  condoFeeMonthly?: number | null
-  condoFeeKnown?: boolean
-  beds: number
-  baths: number
-  sqft?: number | null
-  yearBuilt?: number | null
-  propertyType?: string
-  isToronto?: boolean
+const FINANCING_DEFAULTS = {
+  down_payment_pct: 0.2,
+  mortgage_rate: 0.0479,
+  amortization_years: 25,
+  include_management_fee: false,
 }
 
-interface CamelFinancing {
-  downPaymentPct: number
-  mortgageRate: number
-  amortizationYears: number
-  includeManagementFee?: boolean
-}
-
-interface CamelRental {
-  low: number
-  mid: number
-  high: number
-  compCount: number
-  confidence: 'low' | 'medium' | 'high'
-  postalCode: string
-}
-
-interface CamelAnalysisRequest {
-  propertyData: CamelPropertyData
-  financing: CamelFinancing
-  rental: CamelRental
-}
-
-// ── Python snake_case types (sent to calc engine) ─────────────────────────────
-
-interface SnakePropertyData {
-  address: string
-  province: string
-  price: number
-  annual_taxes: number
-  condo_fee_monthly: number | null
-  condo_fee_known: boolean
-  beds: number
-  baths: number
-  sqft: number | null
-  year_built: number | null
-  property_type: string
-  is_toronto: boolean
-}
-
-interface SnakeFinancing {
-  down_payment_pct: number
-  mortgage_rate: number
-  amortization_years: number
-  include_management_fee: boolean
-}
-
-interface SnakeRental {
-  low: number
-  mid: number
-  high: number
-  comp_count: number
-  confidence: 'low' | 'medium' | 'high'
-  postal_code: string
-}
-
-interface SnakeAnalysisRequest {
-  property_data: SnakePropertyData
-  financing: SnakeFinancing
-  rental: SnakeRental
-}
-
-// ── camelCase → snake_case input conversion ───────────────────────────────────
-
-function isCamelCaseRequest(body: unknown): body is CamelAnalysisRequest {
-  return typeof body === 'object' && body !== null && 'propertyData' in body
-}
-
-function toSnakeRequest(body: CamelAnalysisRequest): SnakeAnalysisRequest {
-  const p = body.propertyData
-  const f = body.financing
-  const r = body.rental
-  return {
-    property_data: {
-      address: p.address,
-      province: p.province ?? 'ON',
-      price: p.price,
-      annual_taxes: p.annualTaxes,
-      condo_fee_monthly: p.condoFeeMonthly ?? null,
-      condo_fee_known: p.condoFeeKnown ?? false,
-      beds: p.beds,
-      baths: p.baths,
-      sqft: p.sqft ?? null,
-      year_built: p.yearBuilt ?? null,
-      property_type: p.propertyType ?? 'condo',
-      is_toronto: p.isToronto ?? false,
-    },
-    financing: {
-      down_payment_pct: f.downPaymentPct,
-      mortgage_rate: f.mortgageRate,
-      amortization_years: f.amortizationYears,
-      include_management_fee: f.includeManagementFee ?? false,
-    },
-    rental: {
-      low: r.low,
-      mid: r.mid,
-      high: r.high,
-      comp_count: r.compCount,
-      confidence: r.confidence,
-      postal_code: r.postalCode,
-    },
-  }
-}
+const VALID_MODES: readonly string[] = ['investor', 'personal', 'tenant', 'landlord']
 
 // ── Python response types (snake_case from calc engine) ───────────────────────
 
@@ -256,80 +154,177 @@ function toDealScore(py: PyDealScore): DealScore {
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post('/', async (req, reply) => {
-    // Detect format: camelCase frontend input is converted to snake_case
-    // before forwarding; snake_case input (legacy / direct) passes through.
-    const snakeBody: unknown = isCamelCaseRequest(req.body) ? toSnakeRequest(req.body) : req.body
+  fastify.post<{ Body: { token?: string; mode?: string } }>('/', async (req, reply) => {
+    const { token, mode: modeRaw } = req.body ?? {}
 
-    let pyResponse: Response
-    try {
-      pyResponse = await fetch(`${CALC_ENGINE_URL}/analysis/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(snakeBody),
-      })
-    } catch (err) {
-      fastify.log.error({ err }, 'Calc engine unreachable')
+    // Step 1 — validate input
+    if (!token) {
       return reply
-        .code(503)
+        .code(400)
+        .send(makeError('MISSING_TOKEN', 'A token is required to run analysis.'))
+    }
+
+    if (!modeRaw || !VALID_MODES.includes(modeRaw)) {
+      return reply
+        .code(400)
         .send(
-          makeError(
-            'CALC_ENGINE_UNAVAILABLE',
-            'Analysis service is temporarily unavailable — try again in a moment.',
-            String(err)
-          )
+          makeError('INVALID_MODE', 'Mode must be one of: investor, personal, tenant, landlord.')
         )
     }
 
-    if (!pyResponse.ok) {
-      const raw = await pyResponse.text().catch(() => '')
-      fastify.log.error({ status: pyResponse.status, body: raw }, 'Calc engine returned error')
+    const mode = modeRaw as ReportMode
 
-      if (pyResponse.status === 422) {
+    try {
+      // Step 2 — look up listing
+      const listing = await getListingByToken(token)
+      if (!listing) {
+        return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
+      }
+
+      // Step 3 — mark processing
+      await updateAnalysisStatus(token, 'processing')
+
+      // Step 4 — extract listing flags (never throws — result feeds the calc engine in a future step)
+      if (listing.description) {
+        await extractListingFlags(listing.description)
+      }
+
+      // Step 5 — build calc engine payload
+      // For for-rent listings (tenant/landlord modes), listing.price is null.
+      // Estimate property value from monthly rent at a ~6% gross yield proxy
+      // so the calc engine can produce a deal score without failing validation.
+      const estimatedPrice = listing.price ?? Math.round((listing.rentMonthly ?? 1500) * 200)
+
+      const calcPayload = {
+        property_data: {
+          address: listing.address,
+          province: listing.province,
+          price: estimatedPrice,
+          annual_taxes: listing.annualTaxes ?? 0,
+          condo_fee_monthly: listing.condoFeeMonthly,
+          condo_fee_known: listing.condoFeeKnown,
+          beds: listing.beds,
+          baths: listing.baths,
+          sqft: listing.sqft,
+          year_built: listing.yearBuilt,
+          property_type: listing.propertyType,
+          is_toronto: listing.city === 'Toronto',
+        },
+        financing: FINANCING_DEFAULTS,
+        rental: {
+          low: 0,
+          mid: 0,
+          high: 0,
+          comp_count: 0,
+          confidence: 'low',
+          postal_code: listing.postalCode,
+        },
+      }
+
+      // Step 6 — call calc engine
+      let pyResponse: Response
+      try {
+        pyResponse = await fetch(`${CALC_ENGINE_URL}/analysis/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(calcPayload),
+        })
+      } catch (err) {
+        fastify.log.error({ err }, 'Calc engine unreachable')
+        await updateAnalysisStatus(token, 'failed')
         return reply
-          .code(422)
+          .code(503)
           .send(
             makeError(
-              'INVALID_ANALYSIS_INPUT',
-              'One or more input values are invalid — check the property details and try again.',
-              raw
+              'CALC_ENGINE_UNAVAILABLE',
+              'Analysis service is temporarily unavailable — try again in a moment.'
             )
           )
       }
 
-      return reply
-        .code(500)
-        .send(
-          makeError(
-            'CALC_ENGINE_ERROR',
-            'Analysis failed due to an internal error — try again shortly.',
-            raw
+      if (!pyResponse.ok) {
+        const raw = await pyResponse.text().catch(() => '')
+        fastify.log.error({ status: pyResponse.status, body: raw }, 'Calc engine returned error')
+        await updateAnalysisStatus(token, 'failed')
+        return reply
+          .code(500)
+          .send(
+            makeError(
+              'CALC_ENGINE_ERROR',
+              'Analysis failed due to an internal error — try again shortly.'
+            )
           )
-        )
+      }
+
+      const pyData = (await pyResponse.json()) as PyAnalysisOutput
+
+      // Step 7 — geocode then walk score (sequential — walk score requires coordinates)
+      const coords = await geocodeAddress(listing.address)
+      const walkScore: WalkScoreResult | null = coords
+        ? await getWalkScore(listing.address, coords.lat, coords.lng)
+        : null
+
+      // Step 8 — generate narrative (never throws)
+      const flagLabels = pyData.risk_flags
+        .map((f) => String(f.label ?? ''))
+        .filter(Boolean)
+        .join(', ')
+
+      const narrativeInput: NarrativeInput = {
+        mode,
+        tier: 'free',
+        address: listing.address,
+        price: listing.price,
+        capRate: pyData.metrics.cap_rate,
+        cashFlowMonthly: pyData.metrics.cash_flow_monthly,
+        cashFlowAnnual: pyData.metrics.cash_flow_annual,
+        cashOnCash: pyData.metrics.cash_on_cash_return,
+        dscr: pyData.metrics.dscr,
+        dealScore: pyData.deal_score.total,
+        dealVerdict: pyData.deal_score.verdict,
+        rentMid: 0,
+        compCount: 0,
+        rentConfidence: 'low',
+        breakEvenRent: pyData.metrics.break_even_rent,
+        condoFeeMonthly: listing.condoFeeMonthly,
+        condoFeeKnown: listing.condoFeeKnown,
+        rentTrend: 'flat',
+        vacancyRate: 0.02,
+        riskFlagSummary: flagLabels || undefined,
+      }
+
+      const narrative = await generateNarrative(narrativeInput)
+
+      // Step 9 — assemble Analysis object
+      const analysis: Analysis = {
+        id: token,
+        token,
+        mode,
+        createdAt: new Date().toISOString(),
+        metrics: toMetrics(pyData.metrics),
+        dealScore: toDealScore(pyData.deal_score),
+        rentalComps: null,
+        riskFlags: pyData.risk_flags.map((f) => ({
+          id: String(f.id ?? ''),
+          severity: (f.severity as 'red' | 'amber') ?? 'amber',
+          label: String(f.label ?? ''),
+          evidence: (f.evidence as string | null) ?? null,
+          confidence: Number(f.confidence ?? 0),
+        })),
+        narrative,
+        walkScore,
+        neighbourhood: null,
+        hasSanityWarnings: pyData.has_sanity_warnings,
+      }
+
+      // Step 10 — save and return
+      await saveAnalysis(analysis, listing, null)
+      return reply.send({ token, analysis })
+    } catch (err) {
+      fastify.log.error({ err }, 'Unexpected error in POST /analysis')
+      await updateAnalysisStatus(token, 'failed').catch(() => {})
+      return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
     }
-
-    const pyData = (await pyResponse.json()) as PyAnalysisOutput
-
-    const analysis: Analysis = {
-      id: '', // populated by Supabase when persistence is wired
-      token: '', // populated when share-link generation is wired
-      mode: 'investor',
-      createdAt: new Date().toISOString(),
-      metrics: toMetrics(pyData.metrics),
-      dealScore: toDealScore(pyData.deal_score),
-      rentalComps: null, // populated when comps are wired
-      riskFlags: pyData.risk_flags.map((f) => ({
-        id: String(f.id ?? ''),
-        severity: (f.severity as 'red' | 'amber') ?? 'amber',
-        label: String(f.label ?? ''),
-        evidence: (f.evidence as string | null) ?? null,
-        confidence: Number(f.confidence ?? 0),
-      })),
-      narrative: null, // populated when AI narrative is wired
-      hasSanityWarnings: pyData.has_sanity_warnings,
-    }
-
-    return reply.send(analysis)
   })
 }
 
