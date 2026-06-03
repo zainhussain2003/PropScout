@@ -1538,7 +1538,7 @@ export function PersonalBuyerPage({
       <PBSalesSection comps={PB_COMPS} isSampleData={isReal} />
       <SchoolsSection isReal={isReal} />
       <NeighbourhoodSection neigh={neighbourhood} />
-      {!isReal && <SunScoutSection />}
+      <SunScoutSection />
       <RisksSection flags={isReal ? realAnalysis!.riskFlags : undefined} />
       <ChecklistSection />
       <ConversionSection city={isReal ? realListing!.city : 'Burlington'} />
