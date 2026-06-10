@@ -1240,13 +1240,26 @@ propscout/
 │   │           └── test_extraction.py # Accuracy gate — must pass 95%+ before merging
 │   │
 │   └── scrapers/                      # Playwright workers — Railway scheduled jobs
-│       ├── realtor_scraper.py + realtor_scraper_test.py
-│       ├── zillow_scraper.py + zillow_scraper_test.py
-│       └── rental_comps_scraper.py + rental_comps_scraper_test.py  # Runs nightly at 2am ET
+│       ├── requirements.txt           # playwright, supabase, httpx, pytest
+│       ├── railway.json               # Nightly cron config — 0 6 * * * UTC (2am ET)
+│       ├── conftest.py                # Pytest path setup
+│       ├── constants.py               # Rent bounds, dedupe window, target cities, politeness delays
+│       ├── realtor_scraper.py         # STUB — Week 1–2, not yet implemented
+│       ├── rental_comps_scraper.py + rental_comps_scraper_test.py  # Nightly pipeline orchestrator
+│       ├── normalization.py + normalization_test.py  # Rent/beds/postal parsing — pure functions
+│       ├── dedupe.py + dedupe_test.py # Same address + rent + beds within 7 days = one record
+│       ├── sources/                   # One module per rental site (selectors are TEMPLATE)
+│       │   ├── browser.py             # Shared Playwright launch + politeness delay
+│       │   ├── rentals_ca.py
+│       │   ├── kijiji.py
+│       │   └── padmapper.py
+│       └── services/                  # Service layer — external calls never inline
+│           ├── supabase_service.py    # Dedupe-key fetch + insert-only writes
+│           └── mapbox_service.py      # Geocoding, non-fatal on failure
 │
 ├── supabase/
 │   └── migrations/                    # All schema changes — never edit DB directly in dashboard
-│       └── YYYYMMDD_description.sql   # e.g. 20260523_add_flag_overrides_table.sql
+│       └── 20260610_initial_schema.sql  # All 10 tables + RLS + comp-query/dedupe indexes
 │
 └── Week3-4 Front end/                 # External test suites — referenced from vite.config.ts includes
     ├── PR4/                           # Investor report + shared component tests

@@ -10,6 +10,11 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ## Week 1–2 — Data pipeline (nothing else works without this)
 
+### Database schema
+
+- [x] Initial Supabase migration (`20260610_initial_schema.sql`) — users, subscriptions, listings, rental_listings, schools, analyses, portfolio_properties, waitlist, flag_overrides, sanity_failures + RLS policies + comp-query/dedupe indexes
+- [ ] Migration run against production Supabase project (Week 8–10 deploy step)
+
 ### Realtor.ca scraper
 
 - [ ] Extract listing ID from Realtor.ca URL
@@ -43,15 +48,16 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Rental comps scraper (nightly job)
 
-- [ ] Playwright scraper for Rentals.ca
-- [ ] Playwright scraper for Kijiji (rental category)
-- [ ] Playwright scraper for PadMapper
-- [ ] Normalise: geocode address to lat/lng
-- [ ] Normalise: convert weekly rents to monthly
-- [ ] Normalise: parse beds to integer
-- [ ] Deduplicate: same address + rent + beds within 7 days = one record
-- [ ] Store to `rental_listings` table with timestamp
-- [ ] Schedule as nightly Railway job at 2am ET
+- [x] Playwright scraper for Rentals.ca (`sources/rentals_ca.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Playwright scraper for Kijiji (rental category) (`sources/kijiji.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Playwright scraper for PadMapper (`sources/padmapper.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Normalise: geocode address to lat/lng (`services/mapbox_service.py` — non-fatal on failure)
+- [x] Normalise: convert weekly rents to monthly (×4.33, daily rates discarded)
+- [x] Normalise: parse beds to integer (Studio/Bachelor → 0, dens never counted)
+- [x] Deduplicate: same address + rent + beds within 7 days = one record (in-batch + against stored rows)
+- [x] Store to `rental_listings` table with timestamp (insert-only — historical rows never deleted)
+- [ ] Schedule as nightly Railway job at 2am ET (`railway.json` cron config written — Railway deploy + first-run confirmation pending)
+- [x] Unit + functionality tests — 50 passing (normalization, dedupe, full pipeline with mocked sources/storage/geocoding)
 
 ### Province detection
 
