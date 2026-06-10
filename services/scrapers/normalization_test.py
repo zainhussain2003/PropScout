@@ -47,6 +47,20 @@ class TestParseRentMonthly:
         assert parse_rent_monthly("$400") == 400
         assert parse_rent_monthly("$15,000") == 15000
 
+    def test_full_word_month_suffix(self):
+        assert parse_rent_monthly("$2,150/month") == 2150
+
+    def test_no_dollar_sign(self):
+        assert parse_rent_monthly("2,150/mo") == 2150
+
+    def test_empty_string_returns_none(self):
+        assert parse_rent_monthly("") is None
+
+    def test_mid_range_unlabelled_below_monthly_floor_discarded(self):
+        # 250 > DAILY_RENT_THRESHOLD (200) so not caught by threshold guard,
+        # but 250 < RENT_MONTHLY_MIN (400) so it fails the sanity bounds check.
+        assert parse_rent_monthly("$250") is None
+
 
 # ── parse_beds ────────────────────────────────────────────────────────────────
 
@@ -69,6 +83,19 @@ class TestParseBeds:
 
     def test_implausible_count_discarded(self):
         assert parse_beds("250 beds") is None
+
+    def test_toronto_plus_den_format(self):
+        # "1+1" is a common Toronto listing format — den is not counted
+        assert parse_beds("1+1") == 1
+
+    def test_empty_string_returns_none(self):
+        assert parse_beds("") is None
+
+    def test_singular_bed(self):
+        assert parse_beds("1 Bed") == 1
+
+    def test_abbreviated_bd_suffix(self):
+        assert parse_beds("3 bd") == 3
 
 
 # ── parse_baths / parse_sqft ──────────────────────────────────────────────────

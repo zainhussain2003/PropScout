@@ -136,6 +136,47 @@ async def test_geocode_failure_is_non_fatal(mock_pipeline):
 
 
 @pytest.mark.asyncio
+async def test_empty_scrape_inserts_nothing(mock_pipeline):
+    sources, _, insert, _ = mock_pipeline
+    sources.return_value = []
+
+    inserted = await rental_comps_scraper.run_nightly_scrape()
+
+    assert inserted == 0
+    assert insert.call_args[0][0] == []
+
+
+@pytest.mark.asyncio
+async def test_geocode_called_once_per_new_listing(mock_pipeline):
+    sources, _, _, geocode = mock_pipeline
+    sources.return_value = [
+        _raw(address="5 Buttermill Ave, Vaughan, ON L4K 5W4"),
+        _raw(address="10 Main St, Toronto, ON M5V 1J1", source="kijiji"),
+    ]
+
+    await rental_comps_scraper.run_nightly_scrape()
+
+    assert geocode.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_partial_geocode_failure_all_listings_still_inserted(mock_pipeline):
+    sources, _, insert, geocode = mock_pipeline
+    sources.return_value = [
+        _raw(address="5 Buttermill Ave, Vaughan, ON L4K 5W4"),
+        _raw(address="10 Main St, Toronto, ON M5V 1J1", source="kijiji"),
+    ]
+    geocode.side_effect = [(43.79, -79.53), None]
+
+    inserted = await rental_comps_scraper.run_nightly_scrape()
+
+    assert inserted == 2
+    stored = insert.call_args[0][0]
+    assert stored[0].lat == 43.79 and stored[0].lng == -79.53
+    assert stored[1].lat is None and stored[1].lng is None
+
+
+@pytest.mark.asyncio
 async def test_failed_source_never_kills_run():
     """A source module that raises contributes nothing but the run continues."""
     failing = AsyncMock(side_effect=RuntimeError("blocked"))
