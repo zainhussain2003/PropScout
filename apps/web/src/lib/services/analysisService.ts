@@ -93,7 +93,11 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
     return { success: false, listing: null, error }
   }
 
-  const data = (await response.json()) as { success: boolean; listing: Record<string, unknown> | null; error: string | null }
+  const data = (await response.json()) as {
+    success: boolean
+    listing: Record<string, unknown> | null
+    error: string | null
+  }
   if (!data.success || data.listing == null) {
     return { success: false, listing: null, error: data.error ?? 'SCRAPE_FAILED' }
   }
@@ -181,4 +185,29 @@ export async function runAnalysis(
   }
 
   return response.json() as Promise<Analysis>
+}
+
+// ── Get saved analysis by share token ─────────────────────────────────────────
+
+export interface GetAnalysisResult {
+  analysis: Analysis
+  listing: import('../../types/property').Listing
+}
+
+/**
+ * Fetch a saved analysis by its share token.
+ * Returns null if not found or expired.
+ */
+export async function getAnalysisByToken(token: string): Promise<GetAnalysisResult | null> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`)
+  } catch {
+    return null
+  }
+
+  if (response.status === 404) return null
+  if (!response.ok) return null
+
+  return response.json() as Promise<GetAnalysisResult>
 }

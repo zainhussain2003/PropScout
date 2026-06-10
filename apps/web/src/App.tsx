@@ -16,6 +16,7 @@ import { PasswordResetConfirmPage } from './pages/PasswordResetConfirmPage'
 import { EmailVerifiedPage } from './pages/EmailVerifiedPage'
 import { StripeWelcomePage } from './pages/StripeWelcomePage'
 import { StripeCancelledPage } from './pages/StripeCancelledPage'
+import { ReportPage } from './pages/ReportPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
@@ -43,6 +44,7 @@ function App(): JSX.Element {
           <Route path="/tenant-report" element={<TenantReport tier={MOCK_TIER} />} />
           <Route path="/personal-report" element={<PersonalBuyerPage tier={MOCK_TIER} />} />
           <Route path="/landlord-report" element={<LandlordPage tier={MOCK_TIER} />} />
+          <Route path="/r/:token" element={<ReportPage tier={MOCK_TIER} />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
           <Route path="/auth/reset" element={<PasswordResetRequestPage />} />
