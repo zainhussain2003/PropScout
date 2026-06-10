@@ -18,6 +18,7 @@ from models.schemas import (
     ComponentMaxes,
 )
 from constants.rates import get_maintenance_rate
+from constants.thresholds import CONFIDENCE_RED_FLAG_MIN
 from calculations.mortgage import calculate_monthly_payment
 from calculations.closing_costs import estimate_closing_costs
 from calculations.investment import (
@@ -31,6 +32,9 @@ from calculations.investment import (
 )
 from calculations.deal_score import calculate_deal_score
 from calculations.sanity import sanity_check_metrics
+from extraction.regex_rules import extract_regex_flags
+from extraction.haiku_extraction import extract_flags_with_haiku
+from extraction.logic_gate import merge_flags
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +45,9 @@ _DEFAULT_CMHC_VACANCY_RATE: float = 0.02
 _DEFAULT_RENTAL_DOM: int = 21
 _DEFAULT_RENT_TREND: str = "flat"
 
+# Points deducted from the deal score per confirmed red flag
+_DEDUCTION_PER_RED_FLAG: int = 5
+
 
 class AnalysisRequest(BaseModel):
     """Combined request body for the analysis endpoint."""
@@ -48,6 +55,7 @@ class AnalysisRequest(BaseModel):
     property_data: PropertyInput
     financing: FinancingInput
     rental: RentalEstimate
+    description: str | None = None  # raw listing description; run through extraction pipeline
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -145,6 +153,26 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         include_management=fin.include_management_fee,
     )
 
+    # ── 3b. Listing description extraction pipeline ───────────────────────────
+    # Runs regex first (deterministic), then Haiku for gray areas.
+    # Logic gate merges and applies confidence thresholds.
+    # Only validated red flags (85%+ confidence) deduct from the deal score.
+    merged_flags: list = []
+    risk_flag_deductions: float = 0.0
+
+    if body.description:
+        try:
+            regex_flags = extract_regex_flags(body.description)
+            haiku_flags = await extract_flags_with_haiku(body.description)
+            merged_flags = merge_flags(regex_flags, haiku_flags)
+
+            red_flag_count = sum(1 for f in merged_flags if f.severity == "red")
+            risk_flag_deductions = float(red_flag_count * _DEDUCTION_PER_RED_FLAG)
+        except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
+            logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
+            merged_flags = []
+            risk_flag_deductions = 0.0
+
     # ── 4. Deal score ─────────────────────────────────────────────────────────
     score_result = calculate_deal_score(
         cap_rate=cap_rate,
@@ -154,7 +182,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         cmhc_vacancy_rate=_DEFAULT_CMHC_VACANCY_RATE,
         rental_days_on_market=_DEFAULT_RENTAL_DOM,
         rent_trend=_DEFAULT_RENT_TREND,
-        risk_flag_deductions=0,  # extraction pipeline wired in Week 5–6
+        risk_flag_deductions=risk_flag_deductions,
     )
 
     br = score_result["breakdown"]
@@ -215,9 +243,21 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         has_sanity_warnings=has_sanity_warnings,
     )
 
+    # Serialise merged flags into the response — only flags above amber threshold
+    serialised_flags: list[dict[str, object]] = [
+        {
+            "flag_id": f.flag_id,
+            "severity": f.severity,
+            "confidence": f.confidence,
+            "evidence": f.evidence,
+            "source": f.source,
+        }
+        for f in merged_flags
+    ]
+
     return AnalysisOutput(
         metrics=metrics,
         deal_score=deal_score,
-        risk_flags=[],  # extraction pipeline wired in Week 5–6
+        risk_flags=serialised_flags,
         has_sanity_warnings=has_sanity_warnings,
     )

@@ -4,6 +4,7 @@ import { PaywallContext } from './components/paywall/PaywallContext'
 import { UpgradeModal } from './components/paywall/UpgradeModal'
 import { HardLimitGate } from './components/paywall/HardLimitGate'
 import { LandingPage } from './pages/LandingPage'
+import { AnalyzingPage } from './pages/AnalyzingPage'
 import { InvestorReport } from './pages/InvestorReport'
 import { TenantReport } from './pages/TenantReport'
 import { PersonalBuyerPage } from './pages/PersonalBuyerPage'
@@ -37,6 +38,7 @@ function App(): JSX.Element {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/analyzing" element={<AnalyzingPage />} />
           <Route path="/investor-report" element={<InvestorReport tier={MOCK_TIER} />} />
           <Route path="/tenant-report" element={<TenantReport tier={MOCK_TIER} />} />
           <Route path="/personal-report" element={<PersonalBuyerPage tier={MOCK_TIER} />} />

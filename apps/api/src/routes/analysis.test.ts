@@ -2,18 +2,27 @@
  * Functionality tests for the Fastify analysis route.
  *
  * Covers:
- *   - snake_case → camelCase transformation of calc engine responses
- *   - snake_case input body forwarded to calc engine unchanged
- *   - camelCase input converted to snake_case before forwarding to calc engine
  *   - camelCase input returns fully camelCase response (round-trip)
+ *   - camelCase input converted to snake_case before forwarding to calc engine
  *   - 503 when the calc engine is unreachable (ECONNREFUSED)
  *   - 422 when the calc engine rejects the input
  *   - 500 when the calc engine returns an unexpected server error
  *   - Nested component_maxes mapped to componentMaxes
  *   - has_sanity_warnings flag passed through correctly
+ *   - 400 when the request body is not camelCase
  *
  * The global `fetch` is mocked in every test — no real network calls are made.
+ * supabaseService is mocked to avoid needing SUPABASE_URL at import time.
  */
+
+// ── Mock @supabase/supabase-js before any imports ──────────────────────────────
+jest.mock('../services/supabaseService', () => ({
+  fetchRentalComps: jest.fn().mockResolvedValue(null),
+  saveAnalysis: jest.fn().mockResolvedValue('test-token-abc123'),
+  getAnalysisByToken: jest.fn().mockResolvedValue(null),
+  logSanityFailure: jest.fn().mockResolvedValue(undefined),
+  getSupabase: jest.fn(),
+}))
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import analysisRoutes from './analysis'
@@ -66,6 +75,30 @@ const CALC_ENGINE_RESPONSE = {
   has_sanity_warnings: false,
 } as const
 
+// Minimal valid camelCase request body used across error-path tests
+const MINIMAL_CAMEL_BODY = {
+  propertyData: {
+    address: '5702 Buttermill Ave',
+    price: 729900,
+    annualTaxes: 3326,
+    beds: 3,
+    baths: 2,
+  },
+  financing: {
+    downPaymentPct: 0.2,
+    mortgageRate: 0.0479,
+    amortizationYears: 25,
+  },
+  rental: {
+    low: 2700,
+    mid: 2900,
+    high: 3200,
+    compCount: 0,
+    confidence: 'low' as const,
+    postalCode: 'L4K',
+  },
+}
+
 // ── Fetch mock helpers ────────────────────────────────────────────────────────
 
 function mockCalcEngineOK(body: object): void {
@@ -116,16 +149,35 @@ describe('POST / — analysis route', () => {
 
   // ── Test 1 ─────────────────────────────────────────────────────────────────
 
-  it('transforms snake_case to camelCase', async () => {
+  it('returns 200 and fully camelCase response for valid camelCase input', async () => {
     mockCalcEngineOK(CALC_ENGINE_RESPONSE)
 
     const response = await fastify.inject({
       method: 'POST',
       url: '/',
       payload: {
-        property_data: { address: '5702 Buttermill Ave', price: 729900 },
-        financing: { down_payment_pct: 0.2, mortgage_rate: 0.0479, amortization_years: 25 },
-        rental: { rent_mid: 2900 },
+        propertyData: {
+          address: '5702 Buttermill Ave',
+          price: 729900,
+          annualTaxes: 3326,
+          condoFeeMonthly: 761,
+          condoFeeKnown: true,
+          beds: 3,
+          baths: 2,
+        },
+        financing: {
+          downPaymentPct: 0.2,
+          mortgageRate: 0.0479,
+          amortizationYears: 25,
+        },
+        rental: {
+          low: 2700,
+          mid: 2900,
+          high: 3200,
+          compCount: 8,
+          confidence: 'medium' as const,
+          postalCode: 'L4K',
+        },
       },
     })
 
@@ -161,35 +213,6 @@ describe('POST / — analysis route', () => {
   })
 
   // ── Test 2 ─────────────────────────────────────────────────────────────────
-
-  it('forwards snake_case body to calc engine unchanged', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const requestBody = {
-      property_data: { address: 'test', price: 500000 },
-      financing: {},
-      rental: {},
-    }
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: requestBody,
-    })
-
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-
-    const [calledUrl, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { method: string; headers: Record<string, string>; body: string },
-    ]
-
-    expect(calledUrl).toContain('/analysis/')
-    // snake_case input passes through without modification
-    expect(calledOptions.body).toBe(JSON.stringify(requestBody))
-  })
-
-  // ── Test 2b ────────────────────────────────────────────────────────────────
 
   it('converts camelCase input to snake_case before forwarding to calc engine', async () => {
     mockCalcEngineOK(CALC_ENGINE_RESPONSE)
@@ -266,65 +289,6 @@ describe('POST / — analysis route', () => {
     expect(rental).not.toHaveProperty('compCount')
   })
 
-  // ── Test 2c ────────────────────────────────────────────────────────────────
-
-  it('returns 200 and fully camelCase response for camelCase input (round-trip)', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        propertyData: {
-          address: '5702 Buttermill Ave',
-          price: 729900,
-          annualTaxes: 3326,
-          condoFeeMonthly: 761,
-          condoFeeKnown: true,
-          beds: 3,
-          baths: 2,
-          yearBuilt: 2005,
-          propertyType: 'condo',
-          isToronto: false,
-        },
-        financing: {
-          downPaymentPct: 0.2,
-          mortgageRate: 0.0479,
-          amortizationYears: 25,
-          includeManagementFee: false,
-        },
-        rental: {
-          low: 2700,
-          mid: 2900,
-          high: 3200,
-          compCount: 8,
-          confidence: 'medium' as const,
-          postalCode: 'L4K',
-        },
-      },
-    })
-
-    expect(response.statusCode).toBe(200)
-
-    const body = response.json() as Analysis
-    const metrics = body.metrics as NonNullable<Analysis['metrics']>
-
-    // Response is fully camelCase — no snake_case keys
-    const metricKeys = Object.keys(metrics)
-    const snakeCaseKeys = metricKeys.filter((k) => k.includes('_'))
-    expect(snakeCaseKeys).toHaveLength(0)
-
-    // Key camelCase fields present
-    expect(metrics).toHaveProperty('cashFlowMonthly')
-    expect(metrics).toHaveProperty('mortgagePaymentMonthly')
-    expect(metrics).toHaveProperty('lttProvincial')
-    expect(metrics).toHaveProperty('amortizationYears', 25)
-
-    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
-    expect(dealScore.breakdown.componentMaxes).toBeDefined()
-    expect(dealScore.breakdown.componentMaxes.capRate).toBe(25)
-  })
-
   // ── Test 3 ─────────────────────────────────────────────────────────────────
 
   it('returns 503 when calc engine is unreachable', async () => {
@@ -333,7 +297,7 @@ describe('POST / — analysis route', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: MINIMAL_CAMEL_BODY,
     })
 
     expect(response.statusCode).toBe(503)
@@ -351,7 +315,7 @@ describe('POST / — analysis route', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: MINIMAL_CAMEL_BODY,
     })
 
     expect(response.statusCode).toBe(422)
@@ -368,7 +332,7 @@ describe('POST / — analysis route', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: MINIMAL_CAMEL_BODY,
     })
 
     expect(response.statusCode).toBe(500)
@@ -385,7 +349,7 @@ describe('POST / — analysis route', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: MINIMAL_CAMEL_BODY,
     })
 
     expect(response.statusCode).toBe(200)
@@ -416,12 +380,27 @@ describe('POST / — analysis route', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: MINIMAL_CAMEL_BODY,
     })
 
     expect(response.statusCode).toBe(200)
 
     const body = response.json() as Analysis
     expect(body.hasSanityWarnings).toBe(true)
+  })
+
+  // ── Test 8 ─────────────────────────────────────────────────────────────────
+
+  it('returns 400 when the request body is not camelCase', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: { property_data: {}, financing: {}, rental: {} },
+    })
+
+    expect(response.statusCode).toBe(400)
+
+    const body = response.json() as ApiError
+    expect(body.code).toBe('INVALID_REQUEST')
   })
 })

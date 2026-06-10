@@ -27,6 +27,8 @@ async function main(): Promise<void> {
 
   await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
 
+  await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
+
   // Routes registered as each is built:
   // await fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })
 

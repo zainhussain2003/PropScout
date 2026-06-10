@@ -376,11 +376,8 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
 
   const handleAnalyze = (): void => {
     if (stage === 'done') {
-      // Open the mode modal with the current listing preview.
-      // Detect kind from the actual URL in the input so that a typed URL
-      // overrides the sample's preset kind.
       const sample = SAMPLE_LISTINGS[sampleIdx]
-      onOpenModal({ ...sample.preview, kind: detectKindFromUrl(url) })
+      onOpenModal({ ...sample.preview, kind: detectKindFromUrl(url), sourceUrl: url })
       return
     }
     runDemo()
@@ -2143,10 +2140,9 @@ export function LandingPage(): JSX.Element {
 
   const handleModeSelect = (mode: ReportMode): void => {
     setModalOpen(false)
-    // Navigate to the analyzing page once it's built (PR 5+).
-    // For now, navigate to a placeholder.
     const kind = pendingListing?.kind ?? 'sale'
-    navigate(`/analyzing?mode=${mode}&kind=${kind}`)
+    const sourceUrl = pendingListing?.sourceUrl ?? ''
+    navigate(`/analyzing?mode=${mode}&kind=${kind}&url=${encodeURIComponent(sourceUrl)}`)
   }
 
   return (

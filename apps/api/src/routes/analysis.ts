@@ -1,13 +1,15 @@
 /**
- * Analysis route — accepts camelCase input from the React frontend,
- * converts it to snake_case before forwarding to the Python calc engine,
- * transforms the snake_case response into camelCase, and returns it.
+ * Analysis routes — POST /analysis and GET /analysis/:token
  *
- * Input format handled:
- *   - camelCase (from React frontend via analysisService.ts)
- *     e.g. { propertyData: { annualTaxes: 3326 }, financing: { downPaymentPct: 0.2 } }
- *   - snake_case (legacy / direct callers, passed through unchanged)
- *     e.g. { property_data: { annual_taxes: 3326 }, financing: { down_payment_pct: 0.2 } }
+ * POST /analysis
+ *   Accepts camelCase input from the React frontend, converts it to snake_case
+ *   before forwarding to the Python calc engine, fetches rental comps from
+ *   Supabase, persists the result, and returns a camelCase analysis with a
+ *   share token.
+ *
+ * GET /analysis/:token
+ *   Retrieves a saved analysis by its share token. Returns 404 if not found
+ *   or expired.
  *
  * Registered in app.ts with prefix "/analysis":
  *   await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
@@ -17,6 +19,8 @@
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
 import type { InvestmentMetrics, DealScore, DealScoreBreakdown, Analysis } from '../types/analysis'
+import { saveAnalysis, getAnalysisByToken, fetchRentalComps } from '../services/supabaseService'
+import type { Listing } from '../types/property'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -35,6 +39,9 @@ interface CamelPropertyData {
   yearBuilt?: number | null
   propertyType?: string
   isToronto?: boolean
+  postalCode?: string
+  sourceUrl?: string
+  listingType?: 'for-sale' | 'for-rent'
 }
 
 interface CamelFinancing {
@@ -57,6 +64,8 @@ interface CamelAnalysisRequest {
   propertyData: CamelPropertyData
   financing: CamelFinancing
   rental: CamelRental
+  mode?: string
+  userId?: string
 }
 
 // ── Python snake_case types (sent to calc engine) ─────────────────────────────
@@ -104,10 +113,10 @@ function isCamelCaseRequest(body: unknown): body is CamelAnalysisRequest {
   return typeof body === 'object' && body !== null && 'propertyData' in body
 }
 
-function toSnakeRequest(body: CamelAnalysisRequest): SnakeAnalysisRequest {
+function toSnakeRequest(body: CamelAnalysisRequest, rentalOverride?: CamelAnalysisRequest['rental']): SnakeAnalysisRequest {
   const p = body.propertyData
   const f = body.financing
-  const r = body.rental
+  const r = rentalOverride ?? body.rental
   return {
     property_data: {
       address: p.address,
@@ -253,13 +262,73 @@ function toDealScore(py: PyDealScore): DealScore {
   }
 }
 
-// ── Route ─────────────────────────────────────────────────────────────────────
+/**
+ * Build a minimal Listing object from the analysis request for persistence.
+ */
+function buildListingFromRequest(body: CamelAnalysisRequest): Listing {
+  const p = body.propertyData
+  return {
+    id: '',
+    url: p.sourceUrl ?? `manual:${encodeURIComponent(p.address)}`,
+    listingType: (p.listingType ?? 'for-sale') as Listing['listingType'],
+    address: p.address,
+    city: '',
+    province: (p.province ?? 'ON') as Listing['province'],
+    postalCode: p.postalCode ?? body.rental.postalCode ?? '',
+    price: p.price,
+    rentMonthly: null,
+    beds: p.beds,
+    baths: p.baths,
+    sqft: p.sqft ?? null,
+    propertyType: (p.propertyType ?? 'condo') as Listing['propertyType'],
+    yearBuilt: p.yearBuilt ?? null,
+    parkingSpots: 0,
+    condoFeeMonthly: p.condoFeeMonthly ?? null,
+    condoFeeKnown: p.condoFeeKnown ?? false,
+    annualTaxes: p.annualTaxes,
+    description: null,
+    photos: [],
+    scrapedAt: new Date().toISOString(),
+  }
+}
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 
 async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
+  // ── POST / — run analysis ──────────────────────────────────────────────────
   fastify.post('/', async (req, reply) => {
-    // Detect format: camelCase frontend input is converted to snake_case
-    // before forwarding; snake_case input (legacy / direct) passes through.
-    const snakeBody: unknown = isCamelCaseRequest(req.body) ? toSnakeRequest(req.body) : req.body
+    if (!isCamelCaseRequest(req.body)) {
+      return reply
+        .code(400)
+        .send(makeError('INVALID_REQUEST', 'Request must use camelCase property names.'))
+    }
+
+    const body = req.body
+    const postalCode = body.rental.postalCode
+    const beds = body.propertyData.beds
+
+    // Attempt to fetch live rental comps from Supabase.
+    // If none are found, fall back to the manually provided rental estimates.
+    let comps: CamelAnalysisRequest['rental'] | null = null
+    try {
+      const dbComps = await fetchRentalComps(postalCode, beds)
+      if (dbComps != null) {
+        comps = {
+          low: dbComps.low,
+          mid: dbComps.mid,
+          high: dbComps.high,
+          compCount: dbComps.compCount,
+          confidence: dbComps.confidence,
+          postalCode,
+        }
+      }
+    } catch (err) {
+      // Non-fatal — fall back to manual estimates
+      fastify.log.warn({ err }, 'fetchRentalComps failed — using manual rental estimates')
+    }
+
+    const rentalForCalcEngine = comps ?? body.rental
+    const snakeBody = toSnakeRequest(body, rentalForCalcEngine)
 
     let pyResponse: Response
     try {
@@ -310,14 +379,25 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
     const pyData = (await pyResponse.json()) as PyAnalysisOutput
 
+    const reportMode = (body.mode as Analysis['mode']) ?? 'investor'
+
     const analysis: Analysis = {
-      id: '', // populated by Supabase when persistence is wired
-      token: '', // populated when share-link generation is wired
-      mode: 'investor',
+      id: '',
+      token: '',
+      mode: reportMode,
       createdAt: new Date().toISOString(),
       metrics: toMetrics(pyData.metrics),
       dealScore: toDealScore(pyData.deal_score),
-      rentalComps: null, // populated when comps are wired
+      rentalComps: comps
+        ? {
+            low: comps.low,
+            mid: comps.mid,
+            high: comps.high,
+            compCount: comps.compCount,
+            confidence: comps.confidence,
+            postalCode: comps.postalCode,
+          }
+        : null,
       riskFlags: pyData.risk_flags.map((f) => ({
         id: String(f.id ?? ''),
         severity: (f.severity as 'red' | 'amber') ?? 'amber',
@@ -325,11 +405,40 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         evidence: (f.evidence as string | null) ?? null,
         confidence: Number(f.confidence ?? 0),
       })),
-      narrative: null, // populated when AI narrative is wired
+      narrative: null,
       hasSanityWarnings: pyData.has_sanity_warnings,
     }
 
+    // Persist to Supabase — non-fatal; analysis still returns even if save fails.
+    const userId = body.userId ?? null
+    const listing = buildListingFromRequest(body)
+    const token = await saveAnalysis(analysis, listing, userId)
+    if (token != null) {
+      analysis.token = token
+    }
+
     return reply.send(analysis)
+  })
+
+  // ── GET /:token — retrieve saved analysis by share token ───────────────────
+  fastify.get<{ Params: { token: string } }>('/:token', async (req, reply) => {
+    const { token } = req.params
+
+    if (typeof token !== 'string' || token.trim().length === 0) {
+      return reply
+        .code(400)
+        .send(makeError('INVALID_TOKEN', 'A valid token is required.'))
+    }
+
+    const result = await getAnalysisByToken(token)
+
+    if (result == null) {
+      return reply
+        .code(404)
+        .send(makeError('ANALYSIS_NOT_FOUND', 'This report has expired or does not exist.'))
+    }
+
+    return reply.send(result)
   })
 }
 
