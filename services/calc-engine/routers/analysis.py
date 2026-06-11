@@ -230,11 +230,14 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     if prop.lat is not None and prop.lng is not None:
         try:
             ss = calculate_sun_hours(prop.lat, prop.lng)
+            bedroom_main = ss.window_hours.get("bedroom_main", {})
+            monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
             sun_scout_result = SunScoutOutput(
                 annual_peak_sun_hours=ss.annual_peak_sun_hours,
                 summer_daily_hours=ss.summer_daily_hours,
                 winter_daily_hours=ss.winter_daily_hours,
                 seasonal_grid=ss.seasonal_grid,
+                monthly_hours=monthly_hours,
                 sun_score=ss.sun_score,
                 verdict=ss.verdict,
             )

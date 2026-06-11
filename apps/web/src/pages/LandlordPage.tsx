@@ -62,6 +62,7 @@ import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
+import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
 
@@ -567,7 +568,10 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
       {/* §09 Neighbourhood */}
       <NeighbourhoodSection listing={listing} neighbourhood={HARBOUR_NEIGHBOURHOOD} />
 
-      {/* §10 SunScout / STR — Phase 2 placeholders */}
+      {/* §10 SunScout */}
+      <SunScoutPanel sunScout={null} sectionNumber="10" />
+
+      {/* §11 STR placeholder */}
       <STRPlaceholderSection listing={listing} />
 
       {/* §11 Landlord checklist */}

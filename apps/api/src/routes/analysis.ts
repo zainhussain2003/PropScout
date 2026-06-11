@@ -273,6 +273,7 @@ interface PySunScout {
   summer_daily_hours: number
   winter_daily_hours: number
   seasonal_grid: Record<string, number>
+  monthly_hours: number[]
   sun_score: number
   verdict: string
 }
@@ -623,6 +624,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             summerDailyHours: pyData.sun_scout.summer_daily_hours,
             winterDailyHours: pyData.sun_scout.winter_daily_hours,
             seasonalGrid: pyData.sun_scout.seasonal_grid as SunScoutResult['seasonalGrid'],
+            monthlyHours: pyData.sun_scout.monthly_hours,
             sunScore: pyData.sun_scout.sun_score,
             verdict: pyData.sun_scout.verdict as SunScoutResult['verdict'],
           } satisfies SunScoutResult)

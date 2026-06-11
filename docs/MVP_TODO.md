@@ -379,13 +379,19 @@ All tasks reference spec Section 19.
 ### SunScout
 
 - [x] pvlib installed in Python calc engine
-- [ ] `window_sun_hours_by_month()` function fully implemented (`sun_path.py` is a stub)
-- [ ] `annual_light_score()` function
-- [ ] Window direction input UI (compass direction dropdown per window)
-- [ ] Monthly sun hours grid output (Dec / Mar / Jun / Sep columns)
-- [ ] Sun arc SVG visualization (summer vs winter day)
-- [ ] Score interpretation labels (80–100 excellent, etc.)
-- [ ] SunScout section rendering in all 4 report types
+- [x] `window_sun_hours_by_month()` — NREL SPA via pvlib, 1-hour resolution, sample 15th of each month × days_in_month
+- [x] `annual_light_score()` — weighted benchmark scoring (bedroom_main 40%, living 35%, others 25%)
+- [x] Score interpretation labels (excellent / good / average / below_average / poor)
+- [x] `calculate_sun_hours()` — main entry point returning `SunScoutResult` dataclass
+- [x] 22 unit tests in `sun_path_test.py` (physics assertions, sanity ranges, score calibration)
+- [x] `SunScoutOutput` Pydantic model + `sun_scout` field on `AnalysisOutput` in calc engine
+- [x] Calc engine router calls `calculate_sun_hours()` when lat/lng present (non-fatal)
+- [x] `SunScoutResult` TypeScript interface in both API and web type trees
+- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase
+- [ ] Window direction input UI (compass direction dropdown per window) — Phase 2
+- [ ] Monthly sun hours grid output wired to real data (SeasonalGrid component exists, needs Analysis.sunScout)
+- [ ] Sun arc SVG visualization wired to real data (SunArcViz component exists, needs summer/winter hours)
+- [ ] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data
 
 ---
 

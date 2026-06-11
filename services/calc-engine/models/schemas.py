@@ -111,6 +111,9 @@ class SunScoutOutput(BaseModel):
     summer_daily_hours: float
     winter_daily_hours: float
     seasonal_grid: dict[str, float]
+    monthly_hours: list[
+        float
+    ]  # 12 values, index 0 = Jan, index 11 = Dec (bedroom_main window)
     sun_score: float
     verdict: str
 

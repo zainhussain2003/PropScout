@@ -43,6 +43,7 @@ import { WhatsIncludedSection } from '../components/tenant/WhatsIncludedSection'
 import { LocationCommuteSection } from '../components/tenant/LocationCommuteSection'
 import { NegotiationSection } from '../components/tenant/NegotiationSection'
 import { TenantSchoolsSection } from '../components/tenant/TenantSchoolsSection'
+import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import {
   CHARLES_LISTING,
   CHARLES_FLAGS,
@@ -674,63 +675,6 @@ function CostBreakdownSection({ lines }: { lines: TenantCostLine[] }): JSX.Eleme
   )
 }
 
-// ── §09 SunScout placeholder ──────────────────────────────────────────────────
-
-function TenantSunScoutPlaceholder(): JSX.Element {
-  return (
-    <section className="container tr-section" data-section="09">
-      <SectionHead
-        n="09"
-        topic="SunScout"
-        question={
-          <>
-            How much <em>light</em> will you actually get?
-          </>
-        }
-        verdict="Solar path analysis · Phase 2"
-        tone="caution"
-      />
-
-      <div className="card col" style={{ padding: 32, gap: 16, alignItems: 'flex-start' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <span
-            className="mono"
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-            }}
-          >
-            Sun hours analysis
-          </span>
-          <Chip highlight>Coming Phase 2</Chip>
-        </div>
-        <h3 className="serif" style={{ fontSize: 22 }}>
-          Window-by-window solar path modeling — shipping Q3 2026.
-        </h3>
-        <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 680 }}>
-          SunScout calculates exactly how many hours of direct sunlight each window in this unit
-          receives, month by month, based on floor, orientation, and nearby buildings. For a 37th
-          floor south-facing unit, the projected score is{' '}
-          <span style={{ color: 'var(--ink)' }}>84/100 (Excellent)</span> — but this will be
-          confirmed once the module ships.
-        </p>
-        <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }}>
-          Notify me when SunScout ships <Icon name="arrow" size={13} />
-        </button>
-      </div>
-    </section>
-  )
-}
-
 // ── §10 Comps map ─────────────────────────────────────────────────────────────
 
 function CompsMapSection(): JSX.Element {
@@ -1311,8 +1255,8 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
       {/* §08 Schools */}
       <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
 
-      {/* §09 SunScout placeholder */}
-      <TenantSunScoutPlaceholder />
+      {/* §09 SunScout */}
+      <SunScoutPanel sunScout={null} sectionNumber="09" />
 
       {/* §10 Comps map */}
       <CompsMapSection />
