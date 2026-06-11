@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Icon } from './Icon'
 import { ScoutMark } from './ScoutMark'
+import { useAuth } from '../../hooks/useAuth'
 
 interface SignInModalProps {
   open: boolean
@@ -41,7 +42,11 @@ function GoogleLogo(): JSX.Element {
 export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | null {
   const [mode, setMode] = useState<ModalMode>('signin')
   const [email, setEmail] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const { signIn, signInGoogle } = useAuth()
 
   // Escape key, scroll lock, and initial focus
   useEffect(() => {
@@ -65,6 +70,38 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
       cancelAnimationFrame(frame)
     }
   }, [open, onClose])
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setSubmitted(false)
+      setSubmitError(null)
+      setEmail('')
+      setSubmitting(false)
+    }
+  }, [open])
+
+  const handleEmailSubmit = async (): Promise<void> => {
+    if (!email.trim() || submitting) return
+    setSubmitting(true)
+    setSubmitError(null)
+    const { error } = await signIn(email.trim())
+    setSubmitting(false)
+    if (error != null) {
+      setSubmitError(error)
+    } else {
+      setSubmitted(true)
+    }
+  }
+
+  const handleGoogleSignIn = async (): Promise<void> => {
+    setSubmitError(null)
+    const { error } = await signInGoogle()
+    if (error != null) {
+      setSubmitError(error)
+    }
+    // On success, the browser is redirected — no further action needed
+  }
 
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
     if (e.key !== 'Tab' || !cardRef.current) return
@@ -90,6 +127,61 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
   }
 
   if (!open) return null
+
+  // "Check your email" confirmation state after magic link is sent
+  if (submitted) {
+    return (
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 2147483640,
+          background: 'rgba(10, 13, 20, 0.55)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Magic link sent"
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            maxWidth: 460,
+            background: 'var(--surface)',
+            color: 'var(--ink)',
+            borderRadius: 22,
+            border: '1px solid var(--line)',
+            padding: 32,
+            boxShadow: 'var(--shadow-pop)',
+            textAlign: 'center',
+          }}
+        >
+          <ScoutMark size={36} />
+          <h3 className="serif" style={{ fontSize: 28, marginTop: 14, marginBottom: 8 }}>
+            Check your email
+          </h3>
+          <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24 }}>
+            We sent a sign-in link to <strong>{email}</strong>. It expires in 10 minutes. Check spam
+            if it does not arrive.
+          </p>
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%', justifyContent: 'center', padding: 14 }}
+            onClick={onClose}
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     /* Backdrop */
@@ -201,6 +293,7 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
           {/* Google OAuth */}
           <button
             className="btn"
+            onClick={() => void handleGoogleSignIn()}
             style={{
               width: '100%',
               justifyContent: 'center',
@@ -254,11 +347,19 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
           {/* Submit */}
           <button
             className="btn btn-primary"
+            onClick={() => void handleEmailSubmit()}
+            disabled={submitting}
             style={{ width: '100%', justifyContent: 'center', padding: 14 }}
           >
-            {mode === 'signin' ? 'Send magic link' : 'Create account'}{' '}
-            <Icon name="arrow" size={14} />
+            {submitting ? 'Sending…' : mode === 'signin' ? 'Send magic link' : 'Create account'}{' '}
+            {!submitting && <Icon name="arrow" size={14} />}
           </button>
+
+          {submitError != null && (
+            <p style={{ fontSize: 13, color: 'var(--fail)', textAlign: 'center', margin: 0 }}>
+              {submitError}
+            </p>
+          )}
         </div>
 
         {/* Mode toggle */}

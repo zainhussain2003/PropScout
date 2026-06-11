@@ -20,6 +20,8 @@ import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
 import type { InvestmentMetrics, DealScore, DealScoreBreakdown, Analysis } from '../types/analysis'
 import { saveAnalysis, getAnalysisByToken, fetchRentalComps } from '../services/supabaseService'
+import { generateNarrative } from '../services/anthropicService'
+import type { NarrativeInput } from '../services/anthropicService'
 import type { Listing } from '../types/property'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
@@ -113,7 +115,10 @@ function isCamelCaseRequest(body: unknown): body is CamelAnalysisRequest {
   return typeof body === 'object' && body !== null && 'propertyData' in body
 }
 
-function toSnakeRequest(body: CamelAnalysisRequest, rentalOverride?: CamelAnalysisRequest['rental']): SnakeAnalysisRequest {
+function toSnakeRequest(
+  body: CamelAnalysisRequest,
+  rentalOverride?: CamelAnalysisRequest['rental']
+): SnakeAnalysisRequest {
   const p = body.propertyData
   const f = body.financing
   const r = rentalOverride ?? body.rental
@@ -409,6 +414,34 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       hasSanityWarnings: pyData.has_sanity_warnings,
     }
 
+    // Generate AI narrative — non-fatal: if it fails, analysis still returns with narrative: null.
+    // Always generate free-tier narrative at MVP; Pro gating wired when auth is complete.
+    if (analysis.metrics != null && analysis.dealScore != null) {
+      const narrativeInput: NarrativeInput = {
+        address: body.propertyData.address,
+        price: body.propertyData.price,
+        propertyType: body.propertyData.propertyType ?? 'condo',
+        beds: body.propertyData.beds,
+        baths: body.propertyData.baths,
+        sqft: body.propertyData.sqft ?? null,
+        rentLow: rentalForCalcEngine.low,
+        rentMid: rentalForCalcEngine.mid,
+        rentHigh: rentalForCalcEngine.high,
+        capRate: analysis.metrics.capRate,
+        cashFlowMonthly: analysis.metrics.cashFlowMonthly,
+        dscr: analysis.metrics.dscr,
+        dealScore: analysis.dealScore.total,
+        dealVerdict: analysis.dealScore.verdict,
+        riskFlags: analysis.riskFlags,
+        tier: 'free',
+      }
+
+      const [narrativeResult] = await Promise.allSettled([generateNarrative(narrativeInput)])
+      if (narrativeResult.status === 'fulfilled' && narrativeResult.value != null) {
+        analysis.narrative = narrativeResult.value
+      }
+    }
+
     // Persist to Supabase — non-fatal; analysis still returns even if save fails.
     const userId = body.userId ?? null
     const listing = buildListingFromRequest(body)
@@ -425,9 +458,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     const { token } = req.params
 
     if (typeof token !== 'string' || token.trim().length === 0) {
-      return reply
-        .code(400)
-        .send(makeError('INVALID_TOKEN', 'A valid token is required.'))
+      return reply.code(400).send(makeError('INVALID_TOKEN', 'A valid token is required.'))
     }
 
     const result = await getAnalysisByToken(token)

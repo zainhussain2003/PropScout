@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './hooks/useAuth'
 import { PaywallContext } from './components/paywall/PaywallContext'
 import { UpgradeModal } from './components/paywall/UpgradeModal'
 import { HardLimitGate } from './components/paywall/HardLimitGate'
@@ -35,67 +36,69 @@ function App(): JSX.Element {
   const closeHardGate = (): void => setShowHardGate(false)
 
   return (
-    <PaywallContext.Provider value={{ tier: MOCK_TIER, openUpgradeModal, openHardGate }}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/analyzing" element={<AnalyzingPage />} />
-          <Route path="/investor-report" element={<InvestorReport tier={MOCK_TIER} />} />
-          <Route path="/tenant-report" element={<TenantReport tier={MOCK_TIER} />} />
-          <Route path="/personal-report" element={<PersonalBuyerPage tier={MOCK_TIER} />} />
-          <Route path="/landlord-report" element={<LandlordPage tier={MOCK_TIER} />} />
-          <Route path="/r/:token" element={<ReportPage tier={MOCK_TIER} />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
-          <Route path="/auth/reset" element={<PasswordResetRequestPage />} />
-          <Route path="/auth/reset/confirm" element={<PasswordResetConfirmPage />} />
-          <Route path="/auth/verified" element={<EmailVerifiedPage />} />
-          <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
-          <Route path="/checkout/cancelled" element={<StripeCancelledPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          {/* Catch-all — must be last */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
+    <AuthProvider>
+      <PaywallContext.Provider value={{ tier: MOCK_TIER, openUpgradeModal, openHardGate }}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/analyzing" element={<AnalyzingPage />} />
+            <Route path="/investor-report" element={<InvestorReport tier={MOCK_TIER} />} />
+            <Route path="/tenant-report" element={<TenantReport tier={MOCK_TIER} />} />
+            <Route path="/personal-report" element={<PersonalBuyerPage tier={MOCK_TIER} />} />
+            <Route path="/landlord-report" element={<LandlordPage tier={MOCK_TIER} />} />
+            <Route path="/r/:token" element={<ReportPage tier={MOCK_TIER} />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
+            <Route path="/auth/reset" element={<PasswordResetRequestPage />} />
+            <Route path="/auth/reset/confirm" element={<PasswordResetConfirmPage />} />
+            <Route path="/auth/verified" element={<EmailVerifiedPage />} />
+            <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
+            <Route path="/checkout/cancelled" element={<StripeCancelledPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            {/* Catch-all — must be last */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
 
-      {/* Global paywall modals — mounted outside the router so they overlay everything */}
-      <UpgradeModal
-        open={upgradeModal !== null}
-        onClose={closeUpgradeModal}
-        feature={upgradeModal ?? 'generic'}
-      />
-      {showHardGate && (
-        <HardLimitGate onClose={closeHardGate} monthlyLimit={10} used={10} resetsIn="32 days" />
-      )}
+        {/* Global paywall modals — mounted outside the router so they overlay everything */}
+        <UpgradeModal
+          open={upgradeModal !== null}
+          onClose={closeUpgradeModal}
+          feature={upgradeModal ?? 'generic'}
+        />
+        {showHardGate && (
+          <HardLimitGate onClose={closeHardGate} monthlyLimit={10} used={10} resetsIn="32 days" />
+        )}
 
-      <DevToolbar
-        slots={[
-          {
-            label: 'UpgradeModal: generic',
-            onClick: () => openUpgradeModal('generic'),
-            color: 'orange',
-          },
-          {
-            label: 'UpgradeModal: sunscout',
-            onClick: () => openUpgradeModal('sunscout'),
-            color: 'orange',
-          },
-          { label: 'UpgradeModal: pdf', onClick: () => openUpgradeModal('pdf'), color: 'orange' },
-          {
-            label: 'UpgradeModal: portfolio',
-            onClick: () => openUpgradeModal('portfolio'),
-            color: 'orange',
-          },
-          {
-            label: 'UpgradeModal: verdict',
-            onClick: () => openUpgradeModal('verdict'),
-            color: 'orange',
-          },
-          { label: 'HardLimitGate', onClick: () => openHardGate(), color: 'red' },
-        ]}
-      />
-    </PaywallContext.Provider>
+        <DevToolbar
+          slots={[
+            {
+              label: 'UpgradeModal: generic',
+              onClick: () => openUpgradeModal('generic'),
+              color: 'orange',
+            },
+            {
+              label: 'UpgradeModal: sunscout',
+              onClick: () => openUpgradeModal('sunscout'),
+              color: 'orange',
+            },
+            { label: 'UpgradeModal: pdf', onClick: () => openUpgradeModal('pdf'), color: 'orange' },
+            {
+              label: 'UpgradeModal: portfolio',
+              onClick: () => openUpgradeModal('portfolio'),
+              color: 'orange',
+            },
+            {
+              label: 'UpgradeModal: verdict',
+              onClick: () => openUpgradeModal('verdict'),
+              color: 'orange',
+            },
+            { label: 'HardLimitGate', onClick: () => openHardGate(), color: 'red' },
+          ]}
+        />
+      </PaywallContext.Provider>
+    </AuthProvider>
   )
 }
 
