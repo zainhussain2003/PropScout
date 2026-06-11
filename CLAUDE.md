@@ -1031,6 +1031,7 @@ propscout/
 │   ├── DESIGN_README.md               # Design system — typography, tokens, interactions
 │   ├── COMPONENT_MANIFEST.md          # Every design surface → React component + build order
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
+│   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
 │   └── design_handoff_propscout_mvp/  # Design files — living documents, will be updated
 │       ├── tokens.css                 # CSS variables — copy to apps/web/src/styles/tokens.css
 │       └── designs/                   # 13 pixel-final HTML prototypes + JSX source
