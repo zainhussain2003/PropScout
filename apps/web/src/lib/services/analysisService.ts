@@ -195,6 +195,24 @@ export async function runAnalysis(
   return response.json() as Promise<Analysis>
 }
 
+// ── Province waitlist ─────────────────────────────────────────────────────────
+
+/**
+ * Submit an email to the province waitlist. Non-fatal — failure is silently
+ * swallowed so the ProvinceGate still shows the confirmation screen.
+ */
+export async function postWaitlist(email: string, province: string): Promise<void> {
+  try {
+    await fetch(`${BASE_URL}/waitlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, province }),
+    })
+  } catch {
+    // Non-fatal — user sees confirmation screen regardless
+  }
+}
+
 // ── Get saved analysis by share token ─────────────────────────────────────────
 
 export interface GetAnalysisResult {

@@ -549,4 +549,13 @@ export async function getMonthlyAnalysisCount(userId: string): Promise<number> {
   return count ?? 0
 }
 
+export async function addToWaitlist(email: string, province: string): Promise<void> {
+  const { error } = await db()
+    .from('waitlist')
+    .upsert({ email, province }, { onConflict: 'email,province' })
+  if (error) {
+    console.error('[supabaseService] addToWaitlist error:', error)
+  }
+}
+
 export { db as getSupabase }

@@ -17,13 +17,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Wordmark } from '../components/shared/Wordmark'
 import { Icon } from '../components/shared/Icon'
 import { ProvinceGate } from '../components/states/ProvinceGate'
+import { HardLimitGate } from '../components/paywall/HardLimitGate'
 import {
   scrapeUrl,
   runAnalysis,
+  postWaitlist,
   type ScrapedListing,
   ApiRequestError,
 } from '../lib/services/analysisService'
 import { useAuth } from '../hooks/useAuth'
+import { FREE_TIER } from '../constants/tiers'
 import type { ReportMode } from '../types/analysis'
 import type { PropertyInput, FinancingInput, RentalInput } from '../types/api'
 
@@ -62,7 +65,7 @@ const STEPS = [
   { label: 'Generating Scout AI verdict', threshold: 96 },
 ] as const
 
-type View = 'progress' | 'manual' | 'done' | 'province_gate'
+type View = 'progress' | 'manual' | 'done' | 'province_gate' | 'limit_gate'
 
 // ── Form state ────────────────────────────────────────────────────────────────
 
@@ -1016,6 +1019,12 @@ export function AnalyzingPage(): JSX.Element {
           setView('province_gate')
           return
         }
+        // Free tier monthly limit — show upgrade overlay without falling back to manual
+        if (err instanceof ApiRequestError && err.code === 'FREE_LIMIT_REACHED') {
+          if (timerRef.current != null) clearInterval(timerRef.current)
+          setView('limit_gate')
+          return
+        }
         const msg =
           err instanceof ApiRequestError ? err.message : 'Analysis failed — please try again.'
         if (view === 'manual') {
@@ -1115,7 +1124,20 @@ export function AnalyzingPage(): JSX.Element {
           />
         )}
 
-        {view === 'province_gate' && <ProvinceGate />}
+        {view === 'province_gate' && (
+          <ProvinceGate
+            onSubmit={(email) => void postWaitlist(email, scrape?.province ?? 'other')}
+          />
+        )}
+
+        {view === 'limit_gate' && (
+          <HardLimitGate
+            onClose={() => navigate('/')}
+            monthlyLimit={FREE_TIER.MONTHLY_ANALYSIS_LIMIT}
+            used={FREE_TIER.MONTHLY_ANALYSIS_LIMIT}
+            resetsIn="end of month"
+          />
+        )}
       </div>
     </>
   )
