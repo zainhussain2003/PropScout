@@ -957,8 +957,13 @@ export function AnalyzingPage(): JSX.Element {
   const { session } = useAuth()
 
   const sourceUrl = decodeURIComponent(searchParams.get('url') ?? '')
-  const mode = (searchParams.get('mode') ?? 'investor') as ReportMode
-  const kind = (searchParams.get('kind') ?? 'sale') as 'sale' | 'rent'
+  const VALID_MODES: ReportMode[] = ['investor', 'personal', 'tenant', 'landlord']
+  const rawMode = searchParams.get('mode') ?? 'investor'
+  const mode: ReportMode = VALID_MODES.includes(rawMode as ReportMode)
+    ? (rawMode as ReportMode)
+    : 'investor'
+  const rawKind = searchParams.get('kind') ?? 'sale'
+  const kind: 'sale' | 'rent' = rawKind === 'rent' ? 'rent' : 'sale'
 
   const [view, setView] = useState<View>('progress')
   const [pct, setPct] = useState(0)

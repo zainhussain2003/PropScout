@@ -653,7 +653,10 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+        <div
+          className="grid-1col-mobile"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
+        >
           {filtered.map((a) => (
             <ReportCard key={a.id} item={a} />
           ))}

@@ -188,8 +188,8 @@ function findRequestProblem(body: CamelAnalysisRequest): string | null {
   if (p == null || typeof p !== 'object') return 'propertyData is required'
   if (typeof p.address !== 'string' || p.address.trim() === '')
     return 'propertyData.address is required'
-  if (typeof p.price !== 'number' || !Number.isFinite(p.price))
-    return 'propertyData.price must be a number'
+  if (typeof p.price !== 'number' || !Number.isFinite(p.price) || p.price <= 0)
+    return 'propertyData.price must be a positive number'
   if (typeof p.annualTaxes !== 'number' || !Number.isFinite(p.annualTaxes))
     return 'propertyData.annualTaxes must be a number'
   if (typeof p.beds !== 'number') return 'propertyData.beds must be a number'
@@ -197,12 +197,18 @@ function findRequestProblem(body: CamelAnalysisRequest): string | null {
 
   if (f == null || typeof f !== 'object') return 'financing is required'
   if (typeof f.downPaymentPct !== 'number') return 'financing.downPaymentPct must be a number'
+  if ((f.downPaymentPct as number) < 0 || (f.downPaymentPct as number) > 1)
+    return 'financing.downPaymentPct must be between 0 and 1'
   if (typeof f.mortgageRate !== 'number') return 'financing.mortgageRate must be a number'
+  if ((f.mortgageRate as number) <= 0 || (f.mortgageRate as number) >= 1)
+    return 'financing.mortgageRate must be between 0 and 1 (e.g. 0.0479 for 4.79%)'
   if (typeof f.amortizationYears !== 'number') return 'financing.amortizationYears must be a number'
 
   if (r == null || typeof r !== 'object') return 'rental is required'
   if (typeof r.low !== 'number' || typeof r.mid !== 'number' || typeof r.high !== 'number')
     return 'rental.low, rental.mid, and rental.high must be numbers'
+  if ((r.low as number) > (r.mid as number) || (r.mid as number) > (r.high as number))
+    return 'rental estimates must satisfy: low ≤ mid ≤ high'
   if (typeof r.postalCode !== 'string') return 'rental.postalCode is required'
 
   return null
@@ -579,7 +585,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
     const pyData = (await pyResponse.json()) as PyAnalysisOutput
 
-    const reportMode = (body.mode as Analysis['mode']) ?? 'investor'
+    const VALID_MODES = ['investor', 'personal', 'tenant', 'landlord'] as const
+    const rawMode = body.mode
+    const reportMode: Analysis['mode'] = VALID_MODES.includes(rawMode as Analysis['mode'])
+      ? (rawMode as Analysis['mode'])
+      : 'investor'
 
     // Build calc-engine risk flags first.
     // The calc engine serialises ids as `flag_id` and omits labels — map both.

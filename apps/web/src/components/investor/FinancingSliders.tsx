@@ -95,6 +95,7 @@ export function FinancingSliders({
 
       {/* Three sliders */}
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',

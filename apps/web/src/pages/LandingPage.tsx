@@ -1185,6 +1185,7 @@ function ReportsSection(): JSX.Element {
         </SectionHeader>
 
         <div
+          className="grid-1col-mobile"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
@@ -1509,6 +1510,7 @@ function CoverageSection(): JSX.Element {
         </SectionHeader>
 
         <div
+          className="grid-1col-mobile"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
@@ -1804,6 +1806,7 @@ function PricingSection(): JSX.Element {
         </div>
 
         <div
+          className="grid-2col-mobile"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',

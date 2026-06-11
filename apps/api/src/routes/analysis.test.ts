@@ -483,6 +483,97 @@ describe('POST / — analysis route', () => {
     expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
   })
 
+  it('returns 400 when propertyData.price is zero', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, price: 0 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when propertyData.price is negative', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, price: -100 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when financing.downPaymentPct is greater than 1', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        financing: { ...MINIMAL_CAMEL_BODY.financing, downPaymentPct: 1.5 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when financing.downPaymentPct is negative', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        financing: { ...MINIMAL_CAMEL_BODY.financing, downPaymentPct: -0.1 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when financing.mortgageRate is >= 1 (100%+)', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        financing: { ...MINIMAL_CAMEL_BODY.financing, mortgageRate: 5 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when rental.low > rental.mid (ordering violated)', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        rental: { ...MINIMAL_CAMEL_BODY.rental, low: 3000, mid: 2000, high: 4000 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when rental.mid > rental.high (ordering violated)', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        rental: { ...MINIMAL_CAMEL_BODY.rental, low: 2000, mid: 4000, high: 3000 },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
   // ── Description forwarding — red flags must deduct from the deal score ─────
 
   it('forwards listingDescription to the calc engine as description', async () => {
