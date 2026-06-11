@@ -61,9 +61,9 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Province detection
 
-- [ ] Parse postal code from scraped address
-- [ ] Ontario FSA check (starts with K, L, M, N, P)
-- [ ] Non-Ontario → return province code, block analysis, trigger waitlist flow
+- [x] Parse postal code from scraped address (`isOntarioPostalCode()` in provinces.ts + frontend `isOntarioPostal()` in AnalyzingPage)
+- [x] Ontario FSA check (starts with K, L, M, N, P) — backend `isOntarioPostalCode()` + frontend early check
+- [x] Non-Ontario → return province code, block analysis, trigger waitlist flow — backend 400 PROVINCE_NOT_SUPPORTED + frontend `province_gate` view + POST /waitlist endpoint
 
 ---
 
@@ -362,11 +362,11 @@ All tasks reference spec Section 19.
 
 - [x] Deterministic regex rules (`regex_rules.py`) — patterns for 7 flag types, Phase 1
 - [x] Logic gate (`logic_gate.py`) — merges regex + AI results, 85%/60% confidence thresholds
-- [ ] Claude Haiku extraction — full implementation (`haiku_extraction.py` is a stub)
-- [ ] JSON parse validation with fallback (all-false on parse error, log failure)
-- [ ] Red flag threshold: 85%+ → red, deducts score
-- [ ] Amber flag threshold: 60–84% → amber, no score deduction
-- [ ] Below 60% → not shown
+- [x] Claude Haiku extraction — `extractListingFlags()` in anthropicService.ts (Fastify layer) + `haiku_extraction.py` in Python layer
+- [x] JSON parse validation with fallback (all-false on parse error, returns null non-fatally)
+- [x] Red flag threshold: 85%+ → red, deducts score (CONFIDENCE.RED_FLAG_MIN in analysis route)
+- [x] Amber flag threshold: 60–84% → amber, no score deduction
+- [x] Below 60% → not shown (filtered out before merge in analysis route)
 - [ ] `flag_overrides` table in Supabase
 - [ ] User override toggle component in React
 - [ ] Override triggers instant deal score recalculation (no page reload)
@@ -393,15 +393,15 @@ All tasks reference spec Section 19.
 
 ### Claude Sonnet narratives
 
-- [ ] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
-- [ ] Report A / D investment prompt — Pro tier (3 paragraphs, 150–320 words)
-- [ ] Report B personal prompt — free tier
-- [ ] Report B personal prompt — Pro tier
-- [ ] Report C tenant prompt — free tier
-- [ ] Report C tenant prompt — Pro tier
-- [ ] Output validation: word count, banned phrases, dollar figure requirement
-- [ ] Regenerate once on validation failure, log and show fallback on second failure
-- [ ] Calibrate against gold-standard examples in spec Section 12
+- [x] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
+- [x] Report A / D investment prompt — Pro tier (3 paragraphs, 150–280 words)
+- [x] Report B personal prompt — free tier
+- [x] Report B personal prompt — Pro tier
+- [x] Report C tenant prompt — free tier
+- [x] Report C tenant prompt — Pro tier
+- [x] Output validation: word count, banned phrases, dollar figure requirement
+- [x] Regenerate once on validation failure, log and show fallback on second failure
+- [ ] Calibrate against gold-standard examples in spec Section 12 (manual QA step at launch)
 
 ### PDF export
 
@@ -424,8 +424,8 @@ All tasks reference spec Section 19.
 - [ ] Stripe — subscription checkout flow
 - [ ] Stripe — webhook handling (subscription created, updated, cancelled)
 - [ ] Tier stored on `users` table, updated via webhook
-- [ ] Free tier: 10 analyses/month counter enforced
-- [ ] Free tier: analysis limit gate screen with upgrade prompt
+- [x] Free tier: 10 analyses/month counter enforced (backend 429 FREE_LIMIT_REACHED via JWT auth + getMonthlyAnalysisCount)
+- [x] Free tier: analysis limit gate screen with upgrade prompt (HardLimitGate wired into AnalyzingPage via limit_gate view)
 - [ ] Free tier: PDF button locked with upgrade prompt
 - [ ] Free tier: SunScout building obstruction locked (Phase 2 — show placeholder)
 - [ ] Free tier: portfolio tracker locked
@@ -433,7 +433,7 @@ All tasks reference spec Section 19.
 - [ ] Pro tier: all above unlocked
 - [ ] Shareable link generation (UUID token stored in `analyses.share_token`)
 - [ ] Shareable link viewer (no login, shows full report, 30-day expiry)
-- [ ] Province waitlist — email capture stored to `waitlist` table with province tag
+- [x] Province waitlist — email capture stored to `waitlist` table with province tag (POST /waitlist + addToWaitlist() + ProvinceGate onSubmit wired)
 - [ ] Guest analysis — 1 free analysis without login, email capture at end
 
 ---
