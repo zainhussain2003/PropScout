@@ -228,30 +228,64 @@ function selectPrompt(input: NarrativeInput): string {
   }
 }
 
+// ── Corrective retry helpers ──────────────────────────────────────────────────
+
+/**
+ * Build a targeted corrective message based on which validation rule the text
+ * violated. Used in the retry prompt so Sonnet knows exactly what to fix.
+ */
+function buildCorrective(text: string, tier: NarrativeTier, mode: NarrativeInput['mode']): string {
+  // Check in priority order: banned phrases → word count → dollar amount.
+  // Word count is checked before dollar amount because a 2-word response is
+  // better described as "too short" than "missing a dollar figure".
+  if (BANNED_PHRASES.some((p) => text.includes(p))) {
+    return 'Your response included a prohibited phrase. Do not write "as an AI", "I cannot", "PropScout", or "language model". Rewrite the verdict without these phrases.'
+  }
+  const words = countWords(text)
+  const [minWords, maxWords] = ((): [number, number] => {
+    if (tier === 'free') return [60, 120]
+    if (mode === 'tenant') return [150, 180]
+    if (mode === 'personal') return [150, 240]
+    return [150, 320]
+  })()
+  if (words < minWords) {
+    return `Your response was ${words} words but must be at least ${minWords}. Please expand the verdict with more specific analysis.`
+  }
+  if (words > maxWords) {
+    return `Your response was ${words} words but must be no more than ${maxWords}. Please shorten it.`
+  }
+  if (!DOLLAR_RE.test(text)) {
+    return 'Your response did not include a specific dollar amount. Include at least one dollar figure (e.g. $2,400/mo or $729,900). Rewrite the verdict with concrete figures.'
+  }
+  return 'Your previous response did not meet the formatting requirements. Please rewrite the verdict.'
+}
+
 /**
  * Generate an AI narrative for a property analysis report.
  *
  * Free tier: 1 paragraph, 60–120 words.
  * Pro and above: 2–3 paragraphs (length varies by mode).
  *
- * Validates output and retries once on failure.
- * Returns null if both attempts fail — narrative failure must never crash the report.
+ * Validates output and retries once with a targeted corrective message and
+ * temperature=0.3. Returns null when both attempts fail — the report must
+ * never show unvalidated content.
  */
 export async function generateNarrative(input: NarrativeInput): Promise<string | null> {
   const prompt = selectPrompt(input)
   const maxTokens = input.tier === 'free' ? 200 : 700
 
-  async function attempt(): Promise<string | null> {
+  async function attempt(corrective?: string, temperature = 0): Promise<string | null> {
+    const userContent = corrective != null ? `${prompt}\n\n${corrective}` : prompt
     try {
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: maxTokens,
-        temperature: 0,
+        temperature,
         system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: userContent }],
       })
       const block = response.content[0]
-      if (block.type !== 'text') return null
+      if (!block || block.type !== 'text') return null
       return block.text.trim()
     } catch {
       return null
@@ -261,12 +295,17 @@ export async function generateNarrative(input: NarrativeInput): Promise<string |
   const first = await attempt()
   if (first != null && validateNarrative(first, input.tier, input.mode)) return first
 
-  // Retry once on validation failure or API error
-  const second = await attempt()
+  // Always retry at temperature=0.3 so the model can produce different output.
+  // Also append a targeted corrective when the first attempt returned text —
+  // if the API threw (first=null), there is no text to diagnose, so no corrective.
+  const corrective = first != null ? buildCorrective(first, input.tier, input.mode) : undefined
+  const second = await attempt(corrective, 0.3)
   if (second != null && validateNarrative(second, input.tier, input.mode)) return second
 
-  // Return whatever we have rather than null, so the report has something to show
-  return second ?? first
+  // Both attempts failed validation — return null so the report shows nothing
+  // rather than shipping bad content. The frontend handles null gracefully.
+  console.warn('[anthropicService] generateNarrative: both attempts failed validation')
+  return null
 }
 
 // ── Flag types returned by Haiku extraction ──────────────────────────────────
@@ -325,7 +364,10 @@ export async function extractListingFlags(
 ): Promise<FlagExtractionResult | null> {
   if (!description.trim()) return null
 
-  const prompt = EXTRACTION_PROMPT_TEMPLATE.replace('{{DESCRIPTION}}', description.slice(0, 4000))
+  // Use a function replacement to prevent JS from expanding $& / $1 / etc.
+  // in the listing description as String.replace() special sequences.
+  const desc = description.slice(0, 4000)
+  const prompt = EXTRACTION_PROMPT_TEMPLATE.replace('{{DESCRIPTION}}', () => desc)
 
   try {
     const response = await client.messages.create({

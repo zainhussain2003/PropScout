@@ -191,16 +191,19 @@ def calculate_sun_hours(
     score = annual_light_score(window_hours)
     verdict = _verdict_from_score(score)
 
-    # Weighted daily hours for each seasonal month (divide monthly total by days)
+    # Weighted daily hours for each seasonal month — proper weighted average so
+    # the result is in real hours/day, consistent with summer_daily/winter_daily.
+    # Dividing by total_weight prevents underflow when weights sum to < 1.0.
+    total_weight = sum(WINDOW_WEIGHTS.get(wn, DEFAULT_WEIGHT) for wn in window_hours)
     seasonal_grid: dict[str, float] = {}
     for season_label, month_num in SEASONAL_MONTHS.items():
         days = DAYS_PER_MONTH[month_num]
-        weighted_day = sum(
+        weighted_sum = sum(
             (window_hours[wn][month_num] / days)
             * WINDOW_WEIGHTS.get(wn, DEFAULT_WEIGHT)
             for wn in window_hours
         )
-        seasonal_grid[season_label] = round(weighted_day, 1)
+        seasonal_grid[season_label] = round(weighted_sum / total_weight, 1)
 
     # Annual peak hours = total annual hours for the bedroom_main window
     bedroom_main_hours = window_hours.get("bedroom_main", {})

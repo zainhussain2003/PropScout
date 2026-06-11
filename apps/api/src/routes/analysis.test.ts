@@ -728,6 +728,72 @@ describe('POST / — analysis route', () => {
     expect(body.code).toBe('PROVINCE_NOT_SUPPORTED')
   })
 
+  // ── Fix 8 — Extraction completes before narrative so flags reach Sonnet ───
+
+  it('passes extracted flags to generateNarrative after extraction completes', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+    mockExtractListingFlags.mockResolvedValueOnce({
+      flags: [
+        {
+          flagId: 'power_of_sale',
+          present: true,
+          confidence: 95,
+          evidence: 'power of sale listing',
+        },
+      ],
+      rawResponse: '[...]',
+    })
+
+    await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        listingDescription: 'Power of sale listing.',
+      },
+    })
+
+    expect(mockGenerateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({
+        riskFlags: expect.arrayContaining([
+          expect.objectContaining({ id: 'power_of_sale', severity: 'red' }),
+        ]),
+      })
+    )
+  })
+
+  it('narrative still runs with calc-engine flags when extraction fails', async () => {
+    mockCalcEngineOK({
+      ...CALC_ENGINE_RESPONSE,
+      risk_flags: [
+        {
+          flag_id: 'as_is_where_is',
+          severity: 'red',
+          confidence: 90,
+          evidence: 'Sold as-is.',
+        },
+      ],
+    })
+    // Extraction throws — should not prevent narrative from running
+    mockExtractListingFlags.mockRejectedValueOnce(new Error('Haiku timeout'))
+
+    await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        listingDescription: 'Sold as-is, no representations.',
+      },
+    })
+
+    // Narrative called with calc-engine flag even though extraction failed
+    expect(mockGenerateNarrative).toHaveBeenCalledWith(
+      expect.objectContaining({
+        riskFlags: expect.arrayContaining([expect.objectContaining({ id: 'as_is_where_is' })]),
+      })
+    )
+  })
+
   // ── Test 17 — Pro tier used for narrative ──────────────────────────────────
 
   it('passes pro tier to generateNarrative when user is pro', async () => {

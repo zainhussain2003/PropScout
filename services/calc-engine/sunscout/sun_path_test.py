@@ -196,3 +196,46 @@ def test_sanity_winter_hours_reasonable(toronto_south: SunScoutResult):
     """Toronto December: south-facing window should get 4–12 hrs of sun.
     The low winter sun keeps south-facing windows illuminated most of the day."""
     assert 4 <= toronto_south.winter_daily_hours <= 12
+
+
+# ── Fix 11 — seasonal_grid weighted average ───────────────────────────────────
+
+
+def test_seasonal_grid_values_are_valid_daily_hours(toronto_south: SunScoutResult):
+    """seasonal_grid values must be in hours/day (0–16) after the weighted-average fix.
+    Before the fix, the values were fractional weighted sums (<= 6h) not real hours,
+    which made them incomparable to summer_daily_hours and winter_daily_hours."""
+    for season, hours in toronto_south.seasonal_grid.items():
+        assert 0 <= hours <= 16, (
+            f"seasonal_grid[{season}]={hours} is not a valid daily hours value. "
+            f"Expected 0–16 (hours/day). Got a fractional weighted sum instead?"
+        )
+
+
+def test_seasonal_grid_jun_comparable_to_summer_daily_hours(
+    toronto_south: SunScoutResult,
+):
+    """Jun seasonal_grid value should be in the same ballpark as summer_daily_hours.
+    Both represent daily sun hours — Jun is the weighted average of bedroom_main
+    and living windows, while summer_daily is bedroom_main only.
+    Before the fix, seasonal_grid values were ~40% lower than summer_daily due to
+    the missing /total_weight division, making them physically meaningless."""
+    jun_weighted_avg = toronto_south.seasonal_grid["Jun"]
+    bedroom_june = toronto_south.summer_daily_hours
+    # Weighted average of two windows should be within 50% of the primary window
+    assert abs(jun_weighted_avg - bedroom_june) <= bedroom_june * 0.5, (
+        f"Jun seasonal_grid={jun_weighted_avg:.1f} is too far from "
+        f"summer_daily_hours={bedroom_june:.1f}. Weighted average may not be normalised."
+    )
+
+
+def test_seasonal_grid_dec_comparable_to_winter_daily_hours(
+    toronto_south: SunScoutResult,
+):
+    """Dec seasonal_grid should be comparable to winter_daily_hours (same unit check)."""
+    dec_weighted_avg = toronto_south.seasonal_grid["Dec"]
+    bedroom_dec = toronto_south.winter_daily_hours
+    assert abs(dec_weighted_avg - bedroom_dec) <= bedroom_dec * 0.5, (
+        f"Dec seasonal_grid={dec_weighted_avg:.1f} is too far from "
+        f"winter_daily_hours={bedroom_dec:.1f}."
+    )

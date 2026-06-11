@@ -579,11 +579,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
     const pyData = (await pyResponse.json()) as PyAnalysisOutput
 
-    // ── Haiku flag extraction (parallel with narrative) ────────────────────
-    // Run extraction and narrative concurrently — both are non-fatal.
     const reportMode = (body.mode as Analysis['mode']) ?? 'investor'
 
-    // Build calc-engine risk flags before merging.
+    // Build calc-engine risk flags first.
     // The calc engine serialises ids as `flag_id` and omits labels — map both.
     const calcEngineFlags: RiskFlag[] = pyData.risk_flags.map((f) => {
       const flagId = String(f.flag_id ?? f.id ?? '')
@@ -599,6 +597,38 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     const metricsResult = toMetrics(pyData.metrics)
     const dealScoreResult = toDealScore(pyData.deal_score)
 
+    // ── Haiku extraction (must complete before narrative) ──────────────────
+    // Extracted flags are fed into the Sonnet narrative prompt so the AI can
+    // reference specific risk factors from the listing description (spec §19).
+    // Running in parallel meant flags never reached Sonnet — fixed by awaiting first.
+    let extractedFlags: RiskFlag[] = []
+    if (body.listingDescription?.trim()) {
+      const extractionResult = await extractListingFlags(body.listingDescription).catch(() => null)
+      if (extractionResult != null) {
+        extractedFlags = extractionResult.flags
+          .filter((f) => f.present && f.confidence >= CONFIDENCE.AMBER_FLAG_MIN)
+          .map(
+            (f): RiskFlag => ({
+              id: f.flagId,
+              severity: f.confidence >= CONFIDENCE.RED_FLAG_MIN ? 'red' : 'amber',
+              label: FLAG_LABELS[f.flagId] ?? f.flagId,
+              evidence: f.evidence || null,
+              confidence: f.confidence,
+            })
+          )
+      }
+    }
+
+    // Merge extracted Haiku flags with calc-engine flags.
+    // Extracted flags take priority — if Haiku and the calc engine both fire
+    // the same flagId, the Haiku version (with evidence) wins.
+    const extractedIds = new Set(extractedFlags.map((f) => f.id))
+    const mergedFlags: RiskFlag[] = [
+      ...extractedFlags,
+      ...calcEngineFlags.filter((f) => !extractedIds.has(f.id)),
+    ]
+
+    // ── Narrative (runs after extraction so merged flags reach Sonnet) ─────
     const narrativeInput: NarrativeInput = {
       mode: reportMode,
       address: body.propertyData.address,
@@ -623,40 +653,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       condoFeeMonthly: body.propertyData.condoFeeMonthly ?? null,
       dealScore: dealScoreResult.total,
       dealVerdict: dealScoreResult.verdict,
-      riskFlags: calcEngineFlags,
+      riskFlags: mergedFlags,
       tier: userTier === 'free' ? 'free' : 'pro',
     }
 
-    const [narrativeSettled, extractionSettled] = await Promise.allSettled([
-      generateNarrative(narrativeInput),
-      body.listingDescription?.trim()
-        ? extractListingFlags(body.listingDescription)
-        : Promise.resolve(null),
-    ])
-
-    // Merge extracted Haiku flags with calc-engine flags.
-    // Extracted flags take priority — if Haiku and the calc engine both fire
-    // the same flagId, the Haiku version (with evidence) wins.
-    let extractedFlags: RiskFlag[] = []
-    if (extractionSettled.status === 'fulfilled' && extractionSettled.value != null) {
-      extractedFlags = extractionSettled.value.flags
-        .filter((f) => f.present && f.confidence >= CONFIDENCE.AMBER_FLAG_MIN)
-        .map(
-          (f): RiskFlag => ({
-            id: f.flagId,
-            severity: f.confidence >= CONFIDENCE.RED_FLAG_MIN ? 'red' : 'amber',
-            label: FLAG_LABELS[f.flagId] ?? f.flagId,
-            evidence: f.evidence || null,
-            confidence: f.confidence,
-          })
-        )
-    }
-
-    const extractedIds = new Set(extractedFlags.map((f) => f.id))
-    const mergedFlags: RiskFlag[] = [
-      ...extractedFlags,
-      ...calcEngineFlags.filter((f) => !extractedIds.has(f.id)),
-    ]
+    const narrative = await generateNarrative(narrativeInput).catch(() => null)
 
     const analysis: Analysis = {
       id: '',
@@ -676,10 +677,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           }
         : null,
       riskFlags: mergedFlags,
-      narrative:
-        narrativeSettled.status === 'fulfilled' && narrativeSettled.value != null
-          ? narrativeSettled.value
-          : null,
+      narrative,
       hasSanityWarnings: pyData.has_sanity_warnings,
       sunScout: pyData.sun_scout
         ? ({

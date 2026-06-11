@@ -4,10 +4,13 @@
  * Covers:
  *   - Returns a string on success (passes validation)
  *   - Calls the Anthropic API with claude-sonnet-4-6
- *   - Returns fallback text (non-null) when the API throws on both attempts
+ *   - Returns null when both API attempts throw (no text to show)
  *   - Free tier uses smaller max_tokens than pro tier
- *   - Validates output and falls back to unvalidated text when both attempts fail validation
+ *   - Returns null when both attempts fail validation (never ships bad content)
+ *   - Retry uses temperature=0.3 (not 0) so output differs from first attempt
+ *   - Retry prompt includes a targeted corrective message (word count / dollar / banned phrase)
  *   - extractListingFlags — Haiku model, JSON parsing, confidence clamping
+ *   - $ sequences in listing description are passed literally (not expanded by String.replace)
  */
 
 // Mock @anthropic-ai/sdk before importing the service so the client is never instantiated
@@ -110,12 +113,11 @@ describe('generateNarrative', () => {
     expect(callArgs.model).toBe('claude-sonnet-4-6')
   })
 
-  it('returns fallback text (non-null) when both API attempts throw', async () => {
+  it('returns null when both API attempts throw (no fallback text to show)', async () => {
     getMockCreate().mockRejectedValue(new Error('API rate limit exceeded'))
 
     const result = await generateNarrative(FREE_INPUT)
 
-    // Both attempts fail — returns null since there is no fallback text
     expect(result).toBeNull()
   })
 
@@ -134,14 +136,95 @@ describe('generateNarrative', () => {
     expect(freeTokens).toBeLessThan(proTokens)
   })
 
-  it('returns fallback (unvalidated) text when both attempts fail validation', async () => {
+  it('returns null when both attempts fail validation (never ships unvalidated content)', async () => {
     const tooShort = 'Too short.'
     getMockCreate().mockResolvedValue(makeAnthropicResponse(tooShort))
 
     const result = await generateNarrative(FREE_INPUT)
 
-    // Returns the fallback unvalidated text rather than null — better than nothing
-    expect(result).toBe(tooShort)
+    expect(result).toBeNull()
+  })
+
+  // ── Fix 7 — corrective retry ───────────────────────────────────────────────
+
+  it('retry uses temperature 0.3 (not 0) so output can differ from first attempt', async () => {
+    const tooShort = 'Too short.'
+    getMockCreate()
+      .mockResolvedValueOnce(makeAnthropicResponse(tooShort))
+      .mockResolvedValueOnce(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    const result = await generateNarrative(FREE_INPUT)
+
+    expect(result).toBe(VALID_FREE_NARRATIVE)
+    expect(getMockCreate()).toHaveBeenCalledTimes(2)
+
+    const firstCall = getMockCreate().mock.calls[0][0] as { temperature: number }
+    const secondCall = getMockCreate().mock.calls[1][0] as { temperature: number }
+    expect(firstCall.temperature).toBe(0)
+    expect(secondCall.temperature).toBe(0.3)
+  })
+
+  it('retry prompt includes word-count corrective when text is too short', async () => {
+    const tooShort = 'Too short.'
+    getMockCreate()
+      .mockResolvedValueOnce(makeAnthropicResponse(tooShort))
+      .mockResolvedValueOnce(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    await generateNarrative(FREE_INPUT)
+
+    const retryContent = (getMockCreate().mock.calls[1][0] as { messages: { content: string }[] })
+      .messages[0]!.content
+    // Must mention the actual word count and the minimum
+    expect(retryContent).toMatch(/\b2\s+words?\b/i)
+    expect(retryContent).toMatch(/at least 60/i)
+  })
+
+  it('retry prompt includes dollar-amount corrective when no dollar figure present', async () => {
+    // 68 words, no dollar sign — fails on missing dollar amount
+    const noDollar =
+      'This property has severely negative cash flow and the numbers do not support investment at any level. The cap rate sits well below the market benchmark for comparable properties in this neighbourhood. Before making an offer, confirm the current tenant situation and review the condo corporation financials in detail. The break-even point is far above what comparable units actually rent for in this market. Pass.'
+    getMockCreate()
+      .mockResolvedValueOnce(makeAnthropicResponse(noDollar))
+      .mockResolvedValueOnce(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    await generateNarrative(FREE_INPUT)
+
+    const retryContent = (getMockCreate().mock.calls[1][0] as { messages: { content: string }[] })
+      .messages[0]!.content
+    expect(retryContent).toContain('dollar')
+  })
+
+  it('retry prompt includes banned-phrase corrective when response contains a banned phrase', async () => {
+    // Contains "as an AI" — exactly as it appears in BANNED_PHRASES
+    const hasBanned =
+      'I think as an AI this property at $2,400/mo shows poor fundamentals. The numbers do not support this investment at current market rates.'
+    getMockCreate()
+      .mockResolvedValueOnce(makeAnthropicResponse(hasBanned))
+      .mockResolvedValueOnce(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    await generateNarrative(FREE_INPUT)
+
+    const retryContent = (getMockCreate().mock.calls[1][0] as { messages: { content: string }[] })
+      .messages[0]!.content
+    expect(retryContent).toContain('prohibited phrase')
+  })
+
+  it('skips corrective when the first attempt returned null (API threw)', async () => {
+    // First attempt: API throws → first=null → no corrective can be built
+    // Second attempt: API throws again → returns null
+    getMockCreate()
+      .mockRejectedValueOnce(new Error('Rate limit'))
+      .mockRejectedValueOnce(new Error('Rate limit'))
+
+    const result = await generateNarrative(FREE_INPUT)
+
+    expect(result).toBeNull()
+    // Second call should use temperature 0.3 but no corrective in the prompt
+    const secondCall = getMockCreate().mock.calls[1][0] as {
+      temperature: number
+      messages: { content: string }[]
+    }
+    expect(secondCall.temperature).toBe(0.3)
   })
 
   it('returns null when both API attempts return no text block', async () => {
@@ -298,5 +381,23 @@ describe('extractListingFlags', () => {
     const result = await extractListingFlags('Near a major highway.')
 
     expect(result!.flags[0]!.confidence).toBe(100)
+  })
+
+  // ── Fix 9 — $ literal replacement ────────────────────────────────────────
+
+  it('passes $ special sequences in description literally (not as JS replacement patterns)', async () => {
+    getMockCreate().mockResolvedValueOnce({
+      content: [{ type: 'text', text: '[]' }],
+      model: 'claude-haiku-4-5-20251001',
+    })
+
+    // $& is the matched substring in String.replace — must not be expanded.
+    // $1 is the first capture group — must not be expanded.
+    const tricky = 'Rent is $1,200/mo. Some $& utilities included.'
+    await extractListingFlags(tricky)
+
+    const callArgs = getMockCreate().mock.calls[0][0] as { messages: { content: string }[] }
+    const sentContent = callArgs.messages[0]!.content as string
+    expect(sentContent).toContain('Rent is $1,200/mo. Some $& utilities included.')
   })
 })

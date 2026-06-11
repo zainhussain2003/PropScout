@@ -162,11 +162,7 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09' }: Props): JSX.El
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 110 }}>
             {sunScout.monthlyHours.map((h, i) => (
-              <div
-                key={MONTH_LABELS[i]}
-                className="col"
-                style={{ flex: 1, alignItems: 'center', gap: 5 }}
-              >
+              <div key={i} className="col" style={{ flex: 1, alignItems: 'center', gap: 5 }}>
                 <span
                   className="mono tabular"
                   style={{ fontSize: 9, color: 'var(--muted)', lineHeight: 1 }}
