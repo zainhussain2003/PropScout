@@ -33,6 +33,7 @@ interface AnalysisRequestBody {
   financing: FinancingInput
   rental: RentalInput
   mode?: string
+  listingDescription?: string
 }
 
 // ── Scrape types ──────────────────────────────────────────────────────────────
@@ -147,20 +148,27 @@ export async function runAnalysis(
   property: PropertyInput,
   financing: FinancingInput,
   rental: RentalInput,
-  mode?: string
+  mode?: string,
+  options?: { accessToken?: string; listingDescription?: string }
 ): Promise<Analysis> {
   const body: AnalysisRequestBody = {
     propertyData: property,
     financing,
     rental,
     ...(mode != null ? { mode } : {}),
+    ...(options?.listingDescription ? { listingDescription: options.listingDescription } : {}),
+  }
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (options?.accessToken) {
+    headers['Authorization'] = `Bearer ${options.accessToken}`
   }
 
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/analysis/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     })
   } catch (err) {

@@ -48,6 +48,7 @@ import type { NarrativeInput } from '../services/anthropicService'
 import type { Listing } from '../types/property'
 import { FREE_TIER } from '../constants/tiers'
 import { CONFIDENCE } from '../constants/thresholds'
+import { isOntarioPostalCode } from '../constants/provinces'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -392,7 +393,23 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       }
     }
 
+    // ── Province gate — MVP: Ontario only ─────────────────────────────────────
+    const province = body.propertyData.province ?? 'ON'
     const postalCode = body.rental.postalCode
+    if (
+      province.toUpperCase() !== 'ON' ||
+      (postalCode.length > 0 && !isOntarioPostalCode(postalCode))
+    ) {
+      return reply
+        .code(400)
+        .send(
+          makeError(
+            'PROVINCE_NOT_SUPPORTED',
+            "PropScout currently covers Ontario only. We'll notify you when your province goes live."
+          )
+        )
+    }
+
     const beds = body.propertyData.beds
 
     // Attempt to fetch live rental comps from Supabase.

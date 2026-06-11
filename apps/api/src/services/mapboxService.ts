@@ -12,9 +12,7 @@ export interface GeocodingResult {
 /**
  * Geocode a property address to lat/lng coordinates.
  */
-export async function geocodeAddress(
-  _address: string
-): Promise<GeocodingResult | null> {
+export async function geocodeAddress(_address: string): Promise<GeocodingResult | null> {
   // TODO: implement — requires MAPBOX_TOKEN
-  throw new Error('geocodeAddress: not yet implemented')
+  return null
 }

@@ -16,14 +16,22 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Wordmark } from '../components/shared/Wordmark'
 import { Icon } from '../components/shared/Icon'
+import { ProvinceGate } from '../components/states/ProvinceGate'
 import {
   scrapeUrl,
   runAnalysis,
   type ScrapedListing,
   ApiRequestError,
 } from '../lib/services/analysisService'
+import { useAuth } from '../hooks/useAuth'
 import type { ReportMode } from '../types/analysis'
 import type { PropertyInput, FinancingInput, RentalInput } from '../types/api'
+
+// Ontario FSA prefix check — K, L, M, N, P
+function isOntarioPostal(postalCode: string | null): boolean {
+  if (!postalCode) return true // unknown → assume Ontario, let backend decide
+  return ['K', 'L', 'M', 'N', 'P'].includes(postalCode.trim().toUpperCase().charAt(0))
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -54,7 +62,7 @@ const STEPS = [
   { label: 'Generating Scout AI verdict', threshold: 96 },
 ] as const
 
-type View = 'progress' | 'manual' | 'done'
+type View = 'progress' | 'manual' | 'done' | 'province_gate'
 
 // ── Form state ────────────────────────────────────────────────────────────────
 
@@ -943,6 +951,7 @@ function FormSelect({ label, value, onChange, options }: FormSelectProps): JSX.E
 export function AnalyzingPage(): JSX.Element {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { session } = useAuth()
 
   const sourceUrl = decodeURIComponent(searchParams.get('url') ?? '')
   const mode = (searchParams.get('mode') ?? 'investor') as ReportMode
@@ -996,9 +1005,17 @@ export function AnalyzingPage(): JSX.Element {
         postalCode: scrapeResult?.postalCode ?? '',
       }
       try {
-        const analysis = await runAnalysis(property, DEFAULT_FINANCING, rental, mode)
+        const analysis = await runAnalysis(property, DEFAULT_FINANCING, rental, mode, {
+          accessToken: session?.access_token,
+          listingDescription: scrapeResult?.description ?? undefined,
+        })
         navigateToReport(analysis.token ?? '')
       } catch (err) {
+        // Province gate — show waitlist screen without falling back to manual
+        if (err instanceof ApiRequestError && err.code === 'PROVINCE_NOT_SUPPORTED') {
+          setView('province_gate')
+          return
+        }
         const msg =
           err instanceof ApiRequestError ? err.message : 'Analysis failed — please try again.'
         if (view === 'manual') {
@@ -1011,7 +1028,7 @@ export function AnalyzingPage(): JSX.Element {
         }
       }
     },
-    [kind, sourceUrl, mode, navigateToReport, view]
+    [kind, sourceUrl, mode, navigateToReport, view, session]
   )
 
   // ── Start the progress animation + background API calls ──────────────────
@@ -1040,6 +1057,13 @@ export function AnalyzingPage(): JSX.Element {
       }
 
       setScrape(result.listing)
+
+      // Province gate — block non-Ontario listings before hitting the API
+      if (result.listing.province !== 'ON' || !isOntarioPostal(result.listing.postalCode)) {
+        if (timerRef.current != null) clearInterval(timerRef.current)
+        setView('province_gate')
+        return
+      }
 
       await runFullAnalysis(result.listing)
     }
@@ -1090,6 +1114,8 @@ export function AnalyzingPage(): JSX.Element {
             onSubmit={() => void handleFormSubmit()}
           />
         )}
+
+        {view === 'province_gate' && <ProvinceGate />}
       </div>
     </>
   )

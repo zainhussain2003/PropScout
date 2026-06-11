@@ -4,10 +4,10 @@
  */
 
 export interface WalkScoreResult {
-  walkScore: number       // 0–100
-  transitScore: number    // 0–100
-  bikeScore: number       // 0–100
-  description: string     // e.g. "Walker's Paradise"
+  walkScore: number // 0–100
+  transitScore: number // 0–100
+  bikeScore: number // 0–100
+  description: string // e.g. "Walker's Paradise"
 }
 
 /**
@@ -19,5 +19,5 @@ export async function getWalkScore(
   _lng: number
 ): Promise<WalkScoreResult | null> {
   // TODO: implement — requires WALKSCORE_API_KEY
-  throw new Error('getWalkScore: not yet implemented')
+  return null
 }

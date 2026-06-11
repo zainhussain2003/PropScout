@@ -587,7 +587,42 @@ describe('POST / — analysis route', () => {
     expect(body.riskFlags.find((f) => f.id === 'grow_op_history')).toBeUndefined()
   })
 
-  // ── Test 14 — Pro tier used for narrative ──────────────────────────────────
+  // ── Test 14 — Province gate ────────────────────────────────────────────────
+
+  it('returns 400 PROVINCE_NOT_SUPPORTED for non-Ontario postal codes', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        rental: { ...MINIMAL_CAMEL_BODY.rental, postalCode: 'V5K' }, // BC postal code
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    const body = response.json() as ApiError
+    expect(body.code).toBe('PROVINCE_NOT_SUPPORTED')
+    // Calc engine should not have been called
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 PROVINCE_NOT_SUPPORTED when province field is non-Ontario', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, province: 'BC' },
+        rental: { ...MINIMAL_CAMEL_BODY.rental, postalCode: '' },
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    const body = response.json() as ApiError
+    expect(body.code).toBe('PROVINCE_NOT_SUPPORTED')
+  })
+
+  // ── Test 17 — Pro tier used for narrative ──────────────────────────────────
 
   it('passes pro tier to generateNarrative when user is pro', async () => {
     mockCalcEngineOK(CALC_ENGINE_RESPONSE)
