@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Analysis, ReportMode } from '../types/analysis'
