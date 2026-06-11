@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Analysis, ReportMode } from '../types/analysis'
@@ -130,11 +131,9 @@ function rowToListing(row: ListingRow): Listing {
  */
 function rowToAnalysis(row: AnalysisRow): Analysis {
   const metrics = row.calculated_metrics as Analysis['metrics']
-  const dealScore = (row.market_data as { dealScore?: Analysis['dealScore'] } | null)
-    ?.dealScore ?? null
-  const riskFlags = Array.isArray(row.risk_flags)
-    ? (row.risk_flags as Analysis['riskFlags'])
-    : []
+  const dealScore =
+    (row.market_data as { dealScore?: Analysis['dealScore'] } | null)?.dealScore ?? null
+  const riskFlags = Array.isArray(row.risk_flags) ? (row.risk_flags as Analysis['riskFlags']) : []
   const rentalEstimate = row.rental_estimate as Analysis['rentalComps']
 
   // report_mode in DB uses 'investment', frontend uses 'investor'
@@ -223,9 +222,7 @@ export async function saveAnalysis(
 
     // Guests get a 30-day expiry; authenticated users get no expiry.
     const expiresAt =
-      userId == null
-        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        : null
+      userId == null ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null
 
     // Map frontend mode ('investor') to DB enum ('investment')
     const modeMap: Record<ReportMode, string> = {
@@ -250,9 +247,7 @@ export async function saveAnalysis(
       share_expires_at: expiresAt,
     }
 
-    const { error: analysisError } = await db()
-      .from('analyses')
-      .insert(analysisPayload)
+    const { error: analysisError } = await db().from('analyses').insert(analysisPayload)
 
     if (analysisError != null) {
       console.error('[supabaseService] saveAnalysis: analysis insert failed', analysisError)
@@ -409,10 +404,7 @@ export async function fetchRentalComps(
  * Log a sanity check failure for review.
  * Never silently return wrong numbers — log first, then return with warning flag.
  */
-export async function logSanityFailure(
-  address: string,
-  failures: string[]
-): Promise<void> {
+export async function logSanityFailure(address: string, failures: string[]): Promise<void> {
   const { error } = await db()
     .from('sanity_failures')
     .insert({ address, failures, logged_at: new Date().toISOString() })
@@ -420,6 +412,116 @@ export async function logSanityFailure(
   if (error) {
     // Don't throw — sanity logging must never crash the analysis pipeline
     console.error('Failed to log sanity failure:', error)
+  }
+}
+
+// ── User management (called by billing routes and webhooks) ───────────────────
+
+export interface UserRow {
+  id: string
+  email: string
+  tier: 'free' | 'pro' | 'professional' | 'team'
+  stripe_customer_id: string | null
+  created_at: string
+}
+
+/**
+ * Fetch a user row by Supabase user ID.
+ * Returns null if not found.
+ */
+export async function getUserById(userId: string): Promise<UserRow | null> {
+  const { data, error } = await db().from('users').select('*').eq('id', userId).maybeSingle()
+  if (error) {
+    console.error('getUserById error:', error)
+    return null
+  }
+  return (data as UserRow | null) ?? null
+}
+
+/**
+ * Upsert a user row when a new Supabase auth user signs up.
+ * Safe to call multiple times — on conflict does nothing.
+ */
+export async function upsertUser(userId: string, email: string): Promise<void> {
+  const { error } = await db()
+    .from('users')
+    .upsert({ id: userId, email, tier: 'free' }, { onConflict: 'id', ignoreDuplicates: true })
+  if (error) {
+    console.error('upsertUser error:', error)
+  }
+}
+
+/**
+ * Update a user's tier and Stripe customer ID after a successful subscription.
+ */
+export async function updateUserTier(
+  userId: string,
+  tier: 'free' | 'pro' | 'professional' | 'team',
+  stripeCustomerId?: string
+): Promise<void> {
+  const patch: Partial<UserRow> = { tier }
+  if (stripeCustomerId) patch.stripe_customer_id = stripeCustomerId
+
+  const { error } = await db().from('users').update(patch).eq('id', userId)
+  if (error) {
+    console.error('updateUserTier error:', error)
+  }
+}
+
+/**
+ * Upsert a subscription row after a Stripe checkout.completed event.
+ */
+export async function upsertSubscription(
+  userId: string,
+  tier: 'pro' | 'professional' | 'team',
+  stripeSubscriptionId: string,
+  status: string,
+  currentPeriodEnd: Date | null
+): Promise<void> {
+  const { error } = await db()
+    .from('subscriptions')
+    .upsert(
+      {
+        user_id: userId,
+        tier,
+        stripe_subscription_id: stripeSubscriptionId,
+        status,
+        current_period_end: currentPeriodEnd?.toISOString() ?? null,
+      },
+      { onConflict: 'stripe_subscription_id' }
+    )
+  if (error) {
+    console.error('upsertSubscription error:', error)
+  }
+}
+
+/**
+ * Update subscription status (e.g., when cancelled or past_due).
+ * Also downgrades the user's tier to 'free' when the subscription is cancelled.
+ */
+export async function updateSubscriptionStatus(
+  stripeSubscriptionId: string,
+  status: string,
+  currentPeriodEnd: Date | null
+): Promise<void> {
+  const { data, error } = await db()
+    .from('subscriptions')
+    .update({
+      status,
+      current_period_end: currentPeriodEnd?.toISOString() ?? null,
+    })
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+    .select('user_id')
+    .maybeSingle()
+
+  if (error) {
+    console.error('updateSubscriptionStatus error:', error)
+    return
+  }
+
+  if (status === 'canceled' && data) {
+    const row = data as { user_id: string }
+    await updateUserTier(row.user_id, 'free')
   }
 }
 

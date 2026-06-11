@@ -253,7 +253,15 @@ function ProgressView({ pct, url, scrape }: ProgressViewProps): JSX.Element {
           marginBottom: 32,
         }}
       >
-        <span style={{ width: 7, height: 7, borderRadius: 999, background: 'var(--pass)', flexShrink: 0 }} />
+        <span
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: 999,
+            background: 'var(--pass)',
+            flexShrink: 0,
+          }}
+        />
         <span
           className="mono"
           style={{
@@ -304,7 +312,10 @@ function ProgressView({ pct, url, scrape }: ProgressViewProps): JSX.Element {
             marginBottom: 8,
           }}
         >
-          <span className="mono" style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}>
+          <span
+            className="mono"
+            style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}
+          >
             {pct}% complete
           </span>
           <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -376,7 +387,8 @@ function ProgressView({ pct, url, scrape }: ProgressViewProps): JSX.Element {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {STEPS.map((step, i) => {
-              const active = pct >= step.threshold && (i === STEPS.length - 1 || pct < STEPS[i + 1].threshold)
+              const active =
+                pct >= step.threshold && (i === STEPS.length - 1 || pct < STEPS[i + 1].threshold)
               const done = pct >= (STEPS[i + 1]?.threshold ?? 100)
               const status = done ? 'done' : active ? 'active' : 'pending'
               return (
@@ -421,10 +433,7 @@ function ProgressView({ pct, url, scrape }: ProgressViewProps): JSX.Element {
             {scrape != null ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ fontSize: 14, fontWeight: 500 }}>{scrape.address}</div>
-                <div
-                  className="mono"
-                  style={{ fontSize: 12, color: 'var(--muted)' }}
-                >
+                <div className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
                   {scrape.beds != null && `${scrape.beds} bed`}
                   {scrape.baths != null && ` · ${scrape.baths} bath`}
                   {scrape.sqft != null && ` · ${scrape.sqft.toLocaleString()} sqft`}
@@ -501,19 +510,17 @@ function ProgressView({ pct, url, scrape }: ProgressViewProps): JSX.Element {
           flexWrap: 'wrap',
         }}
       >
-        {[
-          'Realtor.ca · live data',
-          'No data leaves your account',
-          'Takes ~12 seconds',
-        ].map((text) => (
-          <span
-            key={text}
-            className="mono"
-            style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
-          >
-            {text}
-          </span>
-        ))}
+        {['Realtor.ca · live data', 'No data leaves your account', 'Takes ~12 seconds'].map(
+          (text) => (
+            <span
+              key={text}
+              className="mono"
+              style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.1em' }}
+            >
+              {text}
+            </span>
+          )
+        )}
       </div>
     </div>
   )
@@ -556,9 +563,11 @@ function ManualView({
             color: filled > 0 ? 'var(--pass)' : 'var(--muted)',
             padding: '4px 10px',
             borderRadius: 999,
-            background: filled > 0 ? 'color-mix(in oklab, var(--pass) 10%, transparent)' : 'var(--bg-elev)',
+            background:
+              filled > 0 ? 'color-mix(in oklab, var(--pass) 10%, transparent)' : 'var(--bg-elev)',
             border: '1px solid',
-            borderColor: filled > 0 ? 'color-mix(in oklab, var(--pass) 30%, transparent)' : 'var(--line)',
+            borderColor:
+              filled > 0 ? 'color-mix(in oklab, var(--pass) 30%, transparent)' : 'var(--line)',
             marginBottom: 12,
           }}
         >
@@ -581,7 +590,7 @@ function ManualView({
         >
           {filled > 0
             ? 'We pre-filled what we could — confirm and run'
-            : 'We couldn\'t read that listing automatically'}
+            : "We couldn't read that listing automatically"}
         </h1>
         {filled === 0 && (
           <p style={{ marginTop: 8, color: 'var(--ink-2)', fontSize: 14 }}>
@@ -791,9 +800,7 @@ function FormCard({ title, children }: { title: string; children: React.ReactNod
       >
         {title}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {children}
-      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
     </div>
   )
 }
@@ -825,9 +832,7 @@ function FormField({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <label style={{ fontSize: 12, color: 'var(--ink-2)', fontWeight: 500 }}>{label}</label>
-        {required === true && (
-          <span style={{ fontSize: 11, color: 'var(--muted)' }}>required</span>
-        )}
+        {required === true && <span style={{ fontSize: 11, color: 'var(--muted)' }}>required</span>}
         {warn === true && value === '' && (
           <span
             className="mono"
@@ -984,7 +989,7 @@ export function AnalyzingPage(): JSX.Element {
 
   const runFullAnalysis = useCallback(
     async (scrapeResult: ScrapedListing | null, formOverride?: FormState): Promise<void> => {
-      const f = formOverride ?? fromScrape(scrapeResult ?? blankForm())
+      const f = formOverride ?? (scrapeResult != null ? fromScrape(scrapeResult) : blankForm())
       const property = buildPropertyInput(f, kind, scrapeResult, sourceUrl)
       const rental: RentalInput = {
         ...DEFAULT_RENTAL,
@@ -995,15 +1000,13 @@ export function AnalyzingPage(): JSX.Element {
         navigateToReport(analysis.token ?? '')
       } catch (err) {
         const msg =
-          err instanceof ApiRequestError
-            ? err.message
-            : 'Analysis failed — please try again.'
+          err instanceof ApiRequestError ? err.message : 'Analysis failed — please try again.'
         if (view === 'manual') {
           setFormError(msg)
           setSubmitting(false)
         } else {
           setView('manual')
-          setForm(fromScrape(scrapeResult ?? blankForm()))
+          setForm(scrapeResult != null ? fromScrape(scrapeResult) : blankForm())
           setFormError(msg)
         }
       }
@@ -1074,9 +1077,7 @@ export function AnalyzingPage(): JSX.Element {
       <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
         <MiniNav onCancel={handleCancel} />
 
-        {view === 'progress' && (
-          <ProgressView pct={pct} url={sourceUrl} scrape={scrape} />
-        )}
+        {view === 'progress' && <ProgressView pct={pct} url={sourceUrl} scrape={scrape} />}
 
         {view === 'manual' && (
           <ManualView
