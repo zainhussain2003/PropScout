@@ -1,14 +1,21 @@
 /**
  * PasswordResetConfirmPage — two states:
- *   State 1 (default) — new-password form with mismatch validation
+ *   State 1 (default) — new-password form with validation
  *   State 2 (success) — confirmation with "Sign in" primary
  * Route: /auth/reset/confirm
  * Design source: auth-stubs.jsx::PasswordResetConfirm
+ *
+ * Supabase auto-detects the recovery code in the URL on client init
+ * (detectSessionInUrl: true). Once a PASSWORD_RECOVERY session is active,
+ * updateUser({ password }) sets the new password.
  */
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { StubState } from '../components/states/StubState'
+import { updatePassword } from '../lib/services/authService'
+
+const MIN_PASSWORD_LENGTH = 8
 
 export function PasswordResetConfirmPage(): JSX.Element {
   const navigate = useNavigate()
@@ -16,13 +23,25 @@ export function PasswordResetConfirmPage(): JSX.Element {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(): void {
+  async function handleSubmit(): Promise<void> {
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`)
+      return
+    }
     if (password !== confirm) {
       setError("Passwords don't match")
       return
     }
     setError('')
+    setLoading(true)
+    const result = await updatePassword(password)
+    setLoading(false)
+    if (result.error != null) {
+      setError(result.error)
+      return
+    }
     setSubmitted(true)
   }
 
@@ -96,9 +115,10 @@ export function PasswordResetConfirmPage(): JSX.Element {
           <button
             className="btn btn-primary"
             style={{ justifyContent: 'center' }}
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
+            disabled={loading}
           >
-            Set new password
+            {loading ? 'Updating…' : 'Set new password'}
           </button>
         </div>
       </div>

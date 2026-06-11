@@ -15,6 +15,7 @@ import {
   signInWithGoogle,
   signOut,
   resetPasswordForEmail,
+  updatePassword,
 } from './authService'
 
 describe('authService without Supabase env configured', () => {
@@ -52,6 +53,11 @@ describe('authService without Supabase env configured', () => {
 
   it('resetPasswordForEmail returns a friendly error', async () => {
     const result = await resetPasswordForEmail('user@example.com')
+    expect(result.error).toMatch(/unavailable/i)
+  })
+
+  it('updatePassword returns a friendly error when auth is not configured', async () => {
+    const result = await updatePassword('newpassword123')
     expect(result.error).toMatch(/unavailable/i)
   })
 })

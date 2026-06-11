@@ -157,3 +157,21 @@ export async function resetPasswordForEmail(email: string): Promise<{ error: str
   }
   return { error: null }
 }
+
+/**
+ * Update the current user's password.
+ * Only valid when the user has an active password-recovery session
+ * (i.e. they clicked the reset-password link from their email and landed
+ * on /auth/reset/confirm, where Supabase auto-detected the recovery code).
+ *
+ * @returns { error: null } on success, { error: message } on failure
+ */
+export async function updatePassword(newPassword: string): Promise<{ error: string | null }> {
+  const client = getClient()
+  if (client == null) return { error: AUTH_UNAVAILABLE }
+  const { error } = await client.auth.updateUser({ password: newPassword })
+  if (error != null) {
+    return { error: error.message }
+  }
+  return { error: null }
+}
