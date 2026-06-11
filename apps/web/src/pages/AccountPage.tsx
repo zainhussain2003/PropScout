@@ -8,13 +8,16 @@
  */
 
 import type { ReactNode } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/shared/Icon'
 import type { IconName } from '../components/shared/Icon'
 import { Wordmark } from '../components/shared/Wordmark'
 import { Footer } from '../components/shared/Footer'
 import { VerdictPill } from '../components/shared/VerdictPill'
+import { useAuth } from '../hooks/useAuth'
+import { usePaywall } from '../components/paywall/PaywallContext'
+import { startCheckout, openBillingPortal } from '../lib/services/billingService'
 
 // ── Domain types ──────────────────────────────────────────────────────
 
@@ -789,9 +792,11 @@ function ProfileView(): JSX.Element {
 interface PlanViewProps {
   tier: string
   onUpgrade: () => void
+  onManagePlan?: () => void
+  billingError?: string | null
 }
 
-function PlanView({ tier, onUpgrade }: PlanViewProps): JSX.Element {
+function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps): JSX.Element {
   const isFree = tier === 'free'
   const tierKey = safeTierKey(tier)
   const tierDetail = TIER_DETAILS[tierKey]
@@ -886,6 +891,7 @@ function PlanView({ tier, onUpgrade }: PlanViewProps): JSX.Element {
               </button>
             ) : (
               <button
+                onClick={onManagePlan}
                 className="btn"
                 style={{
                   background: 'transparent',
@@ -900,6 +906,9 @@ function PlanView({ tier, onUpgrade }: PlanViewProps): JSX.Element {
           </div>
         </div>
       </div>
+      {billingError != null && (
+        <p style={{ fontSize: 13, color: 'var(--fail)', margin: 0 }}>{billingError}</p>
+      )}
 
       {/* Usage */}
       <SettingsCard title="This month's usage">
@@ -1281,6 +1290,10 @@ export function AccountPage(): JSX.Element {
     document.documentElement.setAttribute('data-theme', newDark ? 'dark' : 'light')
   }
 
+  const { session } = useAuth()
+  const { tier, openUpgradeModal } = usePaywall()
+  const [billingError, setBillingError] = useState<string | null>(null)
+
   const rawView = searchParams.get('view')
   const activeTab: TabKey = isValidTab(rawView) ? rawView : 'saved'
 
@@ -1288,8 +1301,24 @@ export function AccountPage(): JSX.Element {
     setSearchParams({ view: tab })
   }
 
-  // no-op for now — will be wired to global UpgradeModal in Step 5
-  const handleUpgrade = (): void => {}
+  const handleUpgrade = useCallback((): void => {
+    if (!session) {
+      openUpgradeModal('generic')
+      return
+    }
+    setBillingError(null)
+    void startCheckout('pro', session.access_token).catch((err: Error) => {
+      setBillingError(err.message)
+    })
+  }, [session, openUpgradeModal])
+
+  const handleManagePlan = useCallback((): void => {
+    if (!session) return
+    setBillingError(null)
+    void openBillingPortal(session.access_token).catch((err: Error) => {
+      setBillingError(err.message)
+    })
+  }, [session])
 
   let view: JSX.Element
   switch (activeTab) {
@@ -1297,18 +1326,34 @@ export function AccountPage(): JSX.Element {
       view = <ProfileView />
       break
     case 'plan':
-      view = <PlanView tier="free" onUpgrade={handleUpgrade} />
+      view = (
+        <PlanView
+          tier={tier as 'free' | 'pro' | 'professional' | 'team'}
+          onUpgrade={handleUpgrade}
+          onManagePlan={handleManagePlan}
+          billingError={billingError}
+        />
+      )
       break
     case 'notifications':
       view = <NotificationsView />
       break
     default:
-      view = <SavedAnalysesView tier="free" onUpgrade={handleUpgrade} />
+      view = (
+        <SavedAnalysesView
+          tier={tier as 'free' | 'pro' | 'professional' | 'team'}
+          onUpgrade={handleUpgrade}
+        />
+      )
   }
 
   return (
     <div>
-      <AccountTopNav dark={dark} onToggleDark={handleToggleDark} tier="free" />
+      <AccountTopNav
+        dark={dark}
+        onToggleDark={handleToggleDark}
+        tier={tier as 'free' | 'pro' | 'professional' | 'team'}
+      />
 
       <div className="container" style={{ padding: '40px var(--gutter)' }}>
         <div
