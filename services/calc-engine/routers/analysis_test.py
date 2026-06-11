@@ -347,6 +347,109 @@ def test_analysis_management_fee_toggle() -> None:
     )
 
 
+def test_condo_unknown_fee_emits_amber_flag() -> None:
+    """
+    Fix I — a condo with condo_fee_known=False must return a 'condo_fee_unknown'
+    amber flag in risk_flags.
+
+    The calc engine silently uses $0 when condo_fee_monthly is not provided.
+    For condos this can understate carrying costs by hundreds per month.
+    The structural flag surfaces this assumption so the user can correct it.
+    """
+    payload: dict = {
+        "property_data": {
+            "address": "200 Rideau St, Ottawa, ON",
+            "province": "ON",
+            "price": 450000,
+            "annual_taxes": 2800,
+            "condo_fee_monthly": None,
+            "condo_fee_known": False,
+            "beds": 2,
+            "baths": 1.0,
+            "sqft": 800,
+            "year_built": 2010,
+            "property_type": "condo",
+            "is_toronto": False,
+        },
+        "financing": {
+            "down_payment_pct": 0.20,
+            "mortgage_rate": 0.0479,
+            "amortization_years": 25,
+            "include_management_fee": False,
+        },
+        "rental": {
+            "low": 2000,
+            "mid": 2200,
+            "high": 2500,
+            "comp_count": 5,
+            "confidence": "medium",
+            "postal_code": "K1N",
+        },
+    }
+
+    response = client.post("/analysis/", json=payload)
+
+    assert (
+        response.status_code == 200
+    ), f"Expected 200 OK, got {response.status_code}: {response.text}"
+
+    flags = response.json()["risk_flags"]
+    condo_fee_flags = [f for f in flags if f["flag_id"] == "condo_fee_unknown"]
+
+    assert len(condo_fee_flags) == 1, (
+        f"Expected exactly 1 'condo_fee_unknown' flag, got {len(condo_fee_flags)}. "
+        f"All flags: {[f['flag_id'] for f in flags]}"
+    )
+
+    flag = condo_fee_flags[0]
+    assert (
+        flag["severity"] == "amber"
+    ), f"'condo_fee_unknown' flag must be amber (informational), got '{flag['severity']}'"
+    assert flag["evidence"] is not None, "Flag must include evidence text"
+
+
+def test_condo_known_fee_does_not_emit_flag() -> None:
+    """
+    Fix I — when condo_fee_known=True the flag must NOT appear.
+    The Vaughan Buttermill calibration condo has a known fee of $761/mo.
+    """
+    response = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
+
+    assert (
+        response.status_code == 200
+    ), f"Expected 200 OK, got {response.status_code}: {response.text}"
+
+    flags = response.json()["risk_flags"]
+    condo_fee_flags = [f for f in flags if f["flag_id"] == "condo_fee_unknown"]
+
+    assert len(condo_fee_flags) == 0, (
+        f"Expected no 'condo_fee_unknown' flag when fee is known, "
+        f"but got {len(condo_fee_flags)}"
+    )
+
+
+def test_detached_unknown_fee_does_not_emit_flag() -> None:
+    """
+    Fix I — the condo_fee_unknown flag must NOT fire for non-condo properties
+    even when condo_fee_known=False.
+
+    The Hamilton duplex is a detached property — it has no condo fee.
+    """
+    response = client.post("/analysis/", json=_HAMILTON_PAYLOAD)
+
+    assert (
+        response.status_code == 200
+    ), f"Expected 200 OK, got {response.status_code}: {response.text}"
+
+    flags = response.json()["risk_flags"]
+    condo_fee_flags = [f for f in flags if f["flag_id"] == "condo_fee_unknown"]
+
+    assert len(condo_fee_flags) == 0, (
+        f"Expected no 'condo_fee_unknown' flag for detached property, "
+        f"but got {len(condo_fee_flags)}"
+    )
+
+
 def test_analysis_response_has_all_required_fields() -> None:
     """
     The /analysis/ response must include every field defined in AnalysisOutput,

@@ -43,7 +43,7 @@ jest.mock('../services/anthropicService', () => ({
 }))
 
 import Fastify, { type FastifyInstance } from 'fastify'
-import analysisRoutes from './analysis'
+import analysisRoutes, { humaniseFlagId } from './analysis'
 import type { Analysis } from '../types/analysis'
 import type { ApiError } from '../types/api'
 import { getSupabase, getUserById, getMonthlyAnalysisCount } from '../services/supabaseService'
@@ -914,5 +914,86 @@ describe('POST / — analysis route', () => {
     })
 
     expect(mockGenerateNarrative).toHaveBeenCalledWith(expect.objectContaining({ tier: 'pro' }))
+  })
+
+  // ── Fix H — unknown flag ID gets humanised label, not raw snake_case ──────
+
+  it('humanises unknown flag IDs from the calc engine instead of rendering raw', async () => {
+    mockCalcEngineOK({
+      ...CALC_ENGINE_RESPONSE,
+      risk_flags: [
+        {
+          flag_id: 'water_damage_history',
+          severity: 'red',
+          confidence: 90,
+          evidence: 'evidence of past flooding',
+          source: 'regex',
+        },
+      ],
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: MINIMAL_CAMEL_BODY,
+    })
+
+    const body = response.json() as { riskFlags: Array<{ id: string; label: string }> }
+    expect(body.riskFlags).toHaveLength(1)
+    expect(body.riskFlags[0]!.id).toBe('water_damage_history')
+    expect(body.riskFlags[0]!.label).toBe('Water Damage History')
+  })
+
+  it('humanises unknown Haiku-extracted flag IDs instead of rendering raw', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+    mockExtractListingFlags.mockResolvedValueOnce({
+      flags: [
+        {
+          flagId: 'mould_disclosure',
+          present: true,
+          confidence: 90,
+          evidence: 'seller discloses mould',
+        },
+      ],
+      rawResponse: '[...]',
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        listingDescription: 'Seller discloses past mould.',
+      },
+    })
+
+    const body = response.json() as { riskFlags: Array<{ id: string; label: string }> }
+    const flag = body.riskFlags.find((f) => f.id === 'mould_disclosure')
+    expect(flag).toBeDefined()
+    expect(flag?.label).toBe('Mould Disclosure')
+  })
+})
+
+// ── humaniseFlagId — unit tests ───────────────────────────────────────────────
+
+describe('humaniseFlagId', () => {
+  it('converts a multi-word snake_case ID to Title Case', () => {
+    expect(humaniseFlagId('grow_op_history')).toBe('Grow Op History')
+  })
+
+  it('converts a two-word ID', () => {
+    expect(humaniseFlagId('noise_concern')).toBe('Noise Concern')
+  })
+
+  it('handles a single-word ID', () => {
+    expect(humaniseFlagId('flooding')).toBe('Flooding')
+  })
+
+  it('handles the condo_fee_unknown structural flag', () => {
+    expect(humaniseFlagId('condo_fee_unknown')).toBe('Condo Fee Unknown')
+  })
+
+  it('handles a novel unknown ID from a future extraction rule', () => {
+    expect(humaniseFlagId('radon_disclosure_required')).toBe('Radon Disclosure Required')
   })
 })

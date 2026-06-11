@@ -71,6 +71,19 @@ const FLAG_LABELS: Record<string, string> = {
   remediation_done: 'Remediation completed',
   flooding_history: 'Flooding history',
   noise_concern: 'Noise concern',
+  condo_fee_unknown: 'Condo fee not disclosed',
+}
+
+/**
+ * Converts a snake_case flag ID to Title Case for display.
+ * Fallback for flag IDs not present in FLAG_LABELS so unknown IDs render
+ * as "Water Damage" instead of "water_damage".
+ */
+export function humaniseFlagId(id: string): string {
+  return id
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
 // ── Frontend camelCase input types ────────────────────────────────────────────
@@ -598,7 +611,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       return {
         id: flagId,
         severity: (f.severity as 'red' | 'amber') ?? 'amber',
-        label: String(f.label ?? FLAG_LABELS[flagId] ?? flagId),
+        label: String(f.label ?? FLAG_LABELS[flagId] ?? humaniseFlagId(flagId)),
         evidence: (f.evidence as string | null) ?? null,
         confidence: Number(f.confidence ?? 0),
       }
@@ -621,7 +634,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             (f): RiskFlag => ({
               id: f.flagId,
               severity: f.confidence >= CONFIDENCE.RED_FLAG_MIN ? 'red' : 'amber',
-              label: FLAG_LABELS[f.flagId] ?? f.flagId,
+              label: FLAG_LABELS[f.flagId] ?? humaniseFlagId(f.flagId),
               evidence: f.evidence || null,
               confidence: f.confidence,
             })

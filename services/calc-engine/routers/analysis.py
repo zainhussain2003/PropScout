@@ -35,7 +35,7 @@ from calculations.deal_score import calculate_deal_score
 from calculations.sanity import sanity_check_metrics
 from extraction.regex_rules import extract_regex_flags
 from extraction.haiku_extraction import extract_flags_with_haiku
-from extraction.logic_gate import merge_flags
+from extraction.logic_gate import merge_flags, MergedFlag
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +175,21 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
             merged_flags = []
             risk_flag_deductions = 0.0
+
+    # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
+    # The calculation uses $0 when condo_fee_monthly is not provided, which may
+    # silently understate carrying costs by hundreds per month for condos.
+    # Surface an amber warning so the user can correct it in the financing sliders.
+    if prop.property_type == "condo" and not prop.condo_fee_known:
+        condo_fee_flag = MergedFlag(
+            flag_id="condo_fee_unknown",
+            severity="amber",
+            confidence=100,
+            evidence="Condo fee not provided — costs calculated assuming $0/month",
+            source="structural",
+        )
+        if not any(f.flag_id == "condo_fee_unknown" for f in merged_flags):
+            merged_flags.append(condo_fee_flag)
 
     # ── 4. Deal score ─────────────────────────────────────────────────────────
     score_result = calculate_deal_score(

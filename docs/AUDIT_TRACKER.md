@@ -17,8 +17,8 @@
 | 3   | **C — Infinity guard on break-even rent** | 🟡 `b6e9536` | **Done:** `fmtMoney`/`fmtPct` return `—` for NaN/±Infinity — protects every money/pct display. **Remaining (low priority):** `investment.py:190` still returns `float("inf")` when `net_factor ≤ 0`. Unreachable with current constants (vacancy 5% + mgmt 8% → net_factor ≈ 0.87), but a sanity-check clamp in the calc engine would be belt-and-braces. |
 | 4   | **D/E — Input bounds validation**         | 🟡 `a2b6bde` | **Done:** price > 0, downPaymentPct 0–1, mortgageRate (0,1), rent low ≤ mid ≤ high — 7 new API tests. **Remaining:** realistic rent bounds (e.g. $500–$10,000/mo) not enforced — only ordering. Decide if wanted.                                                                                                                                         |
 | 5   | ~~**G — FRONTEND_URL in .env.example**~~  | ✅ `a2b6bde` | Added `FRONTEND_URL=http://localhost:5173`. Used by `stripeService.ts` for checkout redirects.                                                                                                                                                                                                                                                            |
-| 6   | **H — Flag label fallback cleanup**       | ⬜           | Any `flag_id` missing from `FLAG_LABELS` in `apps/api/src/routes/analysis.ts` renders its raw ID (e.g. "grow_op_history"). Fix: humanise unknown IDs (snake_case → Title Case) as fallback.                                                                                                                                                               |
-| 7   | **I — Condo fee consistency**             | ⬜           | Calc engine does `float(prop.condo_fee_monthly or 0)` — silently understates costs for condos with unknown fees. Fix: when `property_type == 'condo'` and `condo_fee_known == false`, surface a warning flag instead of silently assuming $0.                                                                                                             |
+| 6   | ~~**H — Flag label fallback cleanup**~~   | ✅ TBD       | `humaniseFlagId(id)` exported from `analysis.ts` — snake_case → Title Case fallback. Both calc-engine and Haiku label paths now use it. `condo_fee_unknown` added to `FLAG_LABELS` with explicit label. 5 unit tests + 2 route tests added.                                                                                                               |
+| 7   | ~~**I — Condo fee consistency**~~         | ✅ TBD       | `routers/analysis.py` now appends a `condo_fee_unknown` amber `MergedFlag` (source=`structural`, confidence=100) when `property_type=='condo'` and `condo_fee_known==False`. Propagates via existing serialisation to Fastify. 3 new router tests added.                                                                                                  |
 
 ## Phase 2 — Blocked on user input 🔒
 
@@ -45,8 +45,8 @@
 
 | Suite              | Count | Command                                               |
 | ------------------ | ----- | ----------------------------------------------------- |
-| Python calc-engine | 283   | `python3 -m pytest services/calc-engine/ -q`          |
-| API (Jest)         | 116   | `npm test --workspace=apps/api`                       |
+| Python calc-engine | 286   | `python3 -m pytest services/calc-engine/ -q`          |
+| API (Jest)         | 123   | `npm test --workspace=apps/api`                       |
 | Web (Vitest)       | 779   | `cd apps/web && npx vitest run`                       |
 | Typecheck          | clean | `npm run typecheck --workspace=apps/web` / `apps/api` |
 
@@ -56,4 +56,4 @@
 
 - Branch: `claude/codebase-status-next-b2uufc` (PR #16). Never push elsewhere.
 - After every item: run affected suites + typecheck, update this file, commit, push.
-- Next up when user gives green light: **items 6 & 7 (H + I)**, then decide on the two 🟡 remainders (Python inf clamp, realistic rent bounds).
+- All Phase 1 items done. Next: decide on the two 🟡 remainders (Python inf clamp in `investment.py:190`, realistic rent bounds enforcement).
