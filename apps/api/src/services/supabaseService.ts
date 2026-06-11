@@ -525,4 +525,28 @@ export async function updateSubscriptionStatus(
   }
 }
 
+/**
+ * Count how many analyses the given user has run in the current calendar month.
+ * Used to enforce the free tier limit of 10 analyses/month.
+ * Returns 0 on error so the analysis is allowed through (fail-open).
+ */
+export async function getMonthlyAnalysisCount(userId: string): Promise<number> {
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
+
+  const { count, error } = await db()
+    .from('analyses')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', startOfMonth.toISOString())
+
+  if (error) {
+    console.error('[supabaseService] getMonthlyAnalysisCount error:', error)
+    return 0
+  }
+
+  return count ?? 0
+}
+
 export { db as getSupabase }

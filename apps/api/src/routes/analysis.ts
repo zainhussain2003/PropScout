@@ -7,6 +7,16 @@
  *   Supabase, persists the result, and returns a camelCase analysis with a
  *   share token.
  *
+ *   Optional JWT auth (Authorization: Bearer <token>):
+ *   - Identifies the user and applies free-tier analysis limits (10/month).
+ *   - Determines narrative tier (free = 1 paragraph, pro = full narrative).
+ *   - Unauthenticated requests are treated as guest (no limit, no save to user).
+ *
+ *   Optional Haiku extraction (listingDescription in body):
+ *   - Runs Claude Haiku flag extraction on the raw description.
+ *   - Applies confidence thresholds: ≥85% → red flag, 60–84% → amber, <60% → ignored.
+ *   - Merges with calc-engine risk_flags.
+ *
  * GET /analysis/:token
  *   Retrieves a saved analysis by its share token. Returns 404 if not found
  *   or expired.
@@ -18,13 +28,47 @@
 
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
-import type { InvestmentMetrics, DealScore, DealScoreBreakdown, Analysis } from '../types/analysis'
-import { saveAnalysis, getAnalysisByToken, fetchRentalComps } from '../services/supabaseService'
-import { generateNarrative } from '../services/anthropicService'
+import type {
+  InvestmentMetrics,
+  DealScore,
+  DealScoreBreakdown,
+  Analysis,
+  RiskFlag,
+} from '../types/analysis'
+import {
+  saveAnalysis,
+  getAnalysisByToken,
+  fetchRentalComps,
+  getUserById,
+  getMonthlyAnalysisCount,
+  getSupabase,
+} from '../services/supabaseService'
+import { generateNarrative, extractListingFlags } from '../services/anthropicService'
 import type { NarrativeInput } from '../services/anthropicService'
 import type { Listing } from '../types/property'
+import { FREE_TIER } from '../constants/tiers'
+import { CONFIDENCE } from '../constants/thresholds'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
+
+// Human-readable labels for Haiku-extracted flag IDs
+const FLAG_LABELS: Record<string, string> = {
+  basement_suite: 'Basement suite',
+  short_term_rental: 'Short-term rental setup',
+  shared_laundry: 'Shared laundry',
+  coin_laundry: 'Coin laundry',
+  street_parking_only: 'Street parking only',
+  first_floor_unit: 'Ground floor unit',
+  condo_fee_includes_utilities: 'Condo fee includes utilities',
+  tenant_occupied: 'Tenant occupied',
+  power_of_sale: 'Power of sale',
+  as_is_where_is: 'Sold as-is',
+  no_representation: 'No seller representation',
+  grow_op_history: 'Grow-op history',
+  remediation_done: 'Remediation completed',
+  flooding_history: 'Flooding history',
+  noise_concern: 'Noise concern',
+}
 
 // ── Frontend camelCase input types ────────────────────────────────────────────
 
@@ -67,6 +111,9 @@ interface CamelAnalysisRequest {
   financing: CamelFinancing
   rental: CamelRental
   mode?: string
+  /** Raw listing description text — run through Haiku extraction pipeline. */
+  listingDescription?: string
+  /** @deprecated Pass JWT via Authorization header instead. */
   userId?: string
 }
 
@@ -291,7 +338,7 @@ function buildListingFromRequest(body: CamelAnalysisRequest): Listing {
     condoFeeMonthly: p.condoFeeMonthly ?? null,
     condoFeeKnown: p.condoFeeKnown ?? false,
     annualTaxes: p.annualTaxes,
-    description: null,
+    description: body.listingDescription ?? null,
     photos: [],
     scrapedAt: new Date().toISOString(),
   }
@@ -309,6 +356,42 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     const body = req.body
+
+    // ── Optional JWT auth ──────────────────────────────────────────────────
+    // Reads userId and tier from Supabase JWT. Unauthenticated requests run
+    // as guest (no user limit applied, analysis saved without user_id).
+    let userId: string | null = null
+    let userTier: 'free' | 'pro' | 'professional' | 'team' = 'free'
+
+    const authHeader = req.headers.authorization
+    if (authHeader?.startsWith('Bearer ')) {
+      const jwtToken = authHeader.slice(7)
+      const { data: authData, error: authError } = await getSupabase().auth.getUser(jwtToken)
+      if (!authError && authData.user) {
+        userId = authData.user.id
+
+        const userRow = await getUserById(userId)
+        if (userRow) {
+          userTier = userRow.tier
+
+          // Enforce free tier monthly analysis limit
+          if (userTier === 'free') {
+            const monthlyCount = await getMonthlyAnalysisCount(userId)
+            if (monthlyCount >= FREE_TIER.MONTHLY_ANALYSIS_LIMIT) {
+              return reply
+                .code(429)
+                .send(
+                  makeError(
+                    'FREE_LIMIT_REACHED',
+                    `You have used all ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} free analyses this month. Upgrade to Pro for unlimited analyses.`
+                  )
+                )
+            }
+          }
+        }
+      }
+    }
+
     const postalCode = body.rental.postalCode
     const beds = body.propertyData.beds
 
@@ -384,15 +467,79 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
     const pyData = (await pyResponse.json()) as PyAnalysisOutput
 
+    // ── Haiku flag extraction (parallel with narrative) ────────────────────
+    // Run extraction and narrative concurrently — both are non-fatal.
     const reportMode = (body.mode as Analysis['mode']) ?? 'investor'
+
+    // Build calc-engine risk flags before merging
+    const calcEngineFlags: RiskFlag[] = pyData.risk_flags.map((f) => ({
+      id: String(f.id ?? ''),
+      severity: (f.severity as 'red' | 'amber') ?? 'amber',
+      label: String(f.label ?? ''),
+      evidence: (f.evidence as string | null) ?? null,
+      confidence: Number(f.confidence ?? 0),
+    }))
+
+    const metricsResult = toMetrics(pyData.metrics)
+    const dealScoreResult = toDealScore(pyData.deal_score)
+
+    const narrativeInput: NarrativeInput = {
+      address: body.propertyData.address,
+      price: body.propertyData.price,
+      propertyType: body.propertyData.propertyType ?? 'condo',
+      beds: body.propertyData.beds,
+      baths: body.propertyData.baths,
+      sqft: body.propertyData.sqft ?? null,
+      rentLow: rentalForCalcEngine.low,
+      rentMid: rentalForCalcEngine.mid,
+      rentHigh: rentalForCalcEngine.high,
+      capRate: metricsResult.capRate,
+      cashFlowMonthly: metricsResult.cashFlowMonthly,
+      dscr: metricsResult.dscr,
+      dealScore: dealScoreResult.total,
+      dealVerdict: dealScoreResult.verdict,
+      riskFlags: calcEngineFlags,
+      tier: userTier === 'free' ? 'free' : 'pro',
+    }
+
+    const [narrativeSettled, extractionSettled] = await Promise.allSettled([
+      generateNarrative(narrativeInput),
+      body.listingDescription?.trim()
+        ? extractListingFlags(body.listingDescription)
+        : Promise.resolve(null),
+    ])
+
+    // Merge extracted Haiku flags with calc-engine flags.
+    // Extracted flags take priority — if Haiku and the calc engine both fire
+    // the same flagId, the Haiku version (with evidence) wins.
+    let extractedFlags: RiskFlag[] = []
+    if (extractionSettled.status === 'fulfilled' && extractionSettled.value != null) {
+      extractedFlags = extractionSettled.value.flags
+        .filter((f) => f.present && f.confidence >= CONFIDENCE.AMBER_FLAG_MIN)
+        .map(
+          (f): RiskFlag => ({
+            id: f.flagId,
+            severity: f.confidence >= CONFIDENCE.RED_FLAG_MIN ? 'red' : 'amber',
+            label: FLAG_LABELS[f.flagId] ?? f.flagId,
+            evidence: f.evidence || null,
+            confidence: f.confidence,
+          })
+        )
+    }
+
+    const extractedIds = new Set(extractedFlags.map((f) => f.id))
+    const mergedFlags: RiskFlag[] = [
+      ...extractedFlags,
+      ...calcEngineFlags.filter((f) => !extractedIds.has(f.id)),
+    ]
 
     const analysis: Analysis = {
       id: '',
       token: '',
       mode: reportMode,
       createdAt: new Date().toISOString(),
-      metrics: toMetrics(pyData.metrics),
-      dealScore: toDealScore(pyData.deal_score),
+      metrics: metricsResult,
+      dealScore: dealScoreResult,
       rentalComps: comps
         ? {
             low: comps.low,
@@ -403,47 +550,15 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             postalCode: comps.postalCode,
           }
         : null,
-      riskFlags: pyData.risk_flags.map((f) => ({
-        id: String(f.id ?? ''),
-        severity: (f.severity as 'red' | 'amber') ?? 'amber',
-        label: String(f.label ?? ''),
-        evidence: (f.evidence as string | null) ?? null,
-        confidence: Number(f.confidence ?? 0),
-      })),
-      narrative: null,
+      riskFlags: mergedFlags,
+      narrative:
+        narrativeSettled.status === 'fulfilled' && narrativeSettled.value != null
+          ? narrativeSettled.value
+          : null,
       hasSanityWarnings: pyData.has_sanity_warnings,
     }
 
-    // Generate AI narrative — non-fatal: if it fails, analysis still returns with narrative: null.
-    // Always generate free-tier narrative at MVP; Pro gating wired when auth is complete.
-    if (analysis.metrics != null && analysis.dealScore != null) {
-      const narrativeInput: NarrativeInput = {
-        address: body.propertyData.address,
-        price: body.propertyData.price,
-        propertyType: body.propertyData.propertyType ?? 'condo',
-        beds: body.propertyData.beds,
-        baths: body.propertyData.baths,
-        sqft: body.propertyData.sqft ?? null,
-        rentLow: rentalForCalcEngine.low,
-        rentMid: rentalForCalcEngine.mid,
-        rentHigh: rentalForCalcEngine.high,
-        capRate: analysis.metrics.capRate,
-        cashFlowMonthly: analysis.metrics.cashFlowMonthly,
-        dscr: analysis.metrics.dscr,
-        dealScore: analysis.dealScore.total,
-        dealVerdict: analysis.dealScore.verdict,
-        riskFlags: analysis.riskFlags,
-        tier: 'free',
-      }
-
-      const [narrativeResult] = await Promise.allSettled([generateNarrative(narrativeInput)])
-      if (narrativeResult.status === 'fulfilled' && narrativeResult.value != null) {
-        analysis.narrative = narrativeResult.value
-      }
-    }
-
     // Persist to Supabase — non-fatal; analysis still returns even if save fails.
-    const userId = body.userId ?? null
     const listing = buildListingFromRequest(body)
     const token = await saveAnalysis(analysis, listing, userId)
     if (token != null) {

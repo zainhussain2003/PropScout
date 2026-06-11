@@ -10,24 +10,50 @@
  *   - Nested component_maxes mapped to componentMaxes
  *   - has_sanity_warnings flag passed through correctly
  *   - 400 when the request body is not camelCase
+ *   - 429 FREE_LIMIT_REACHED when authenticated free user exceeds 10 analyses/month
+ *   - Haiku extraction skipped when no listingDescription provided
+ *   - Haiku extraction fires and flags are merged when listingDescription provided
+ *   - Pro user tier passed to narrative generator
  *
  * The global `fetch` is mocked in every test — no real network calls are made.
- * supabaseService is mocked to avoid needing SUPABASE_URL at import time.
+ * supabaseService and anthropicService are mocked to avoid needing API keys.
  */
 
-// ── Mock @supabase/supabase-js before any imports ──────────────────────────────
+// ── Mocks (must precede imports) ───────────────────────────────────────────────
+
 jest.mock('../services/supabaseService', () => ({
   fetchRentalComps: jest.fn().mockResolvedValue(null),
   saveAnalysis: jest.fn().mockResolvedValue('test-token-abc123'),
   getAnalysisByToken: jest.fn().mockResolvedValue(null),
   logSanityFailure: jest.fn().mockResolvedValue(undefined),
-  getSupabase: jest.fn(),
+  getSupabase: jest.fn().mockReturnValue({
+    auth: {
+      getUser: jest
+        .fn()
+        .mockResolvedValue({ data: { user: null }, error: { message: 'no token' } }),
+    },
+  }),
+  getUserById: jest.fn().mockResolvedValue(null),
+  getMonthlyAnalysisCount: jest.fn().mockResolvedValue(0),
+}))
+
+jest.mock('../services/anthropicService', () => ({
+  generateNarrative: jest.fn().mockResolvedValue(null),
+  extractListingFlags: jest.fn().mockResolvedValue(null),
 }))
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import analysisRoutes from './analysis'
 import type { Analysis } from '../types/analysis'
 import type { ApiError } from '../types/api'
+import { getSupabase, getUserById, getMonthlyAnalysisCount } from '../services/supabaseService'
+import { extractListingFlags, generateNarrative } from '../services/anthropicService'
+
+const mockGetSupabase = getSupabase as jest.Mock
+const mockGetUserById = getUserById as jest.Mock
+const mockGetMonthlyCount = getMonthlyAnalysisCount as jest.Mock
+const mockExtractListingFlags = extractListingFlags as jest.Mock
+const mockGenerateNarrative = generateNarrative as jest.Mock
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
@@ -141,6 +167,14 @@ describe('POST / — analysis route', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     global.fetch = jest.fn()
+    // Default: unauthenticated (no valid token)
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: null }, error: { message: 'no token' } }),
+      },
+    })
   })
 
   afterAll(async () => {
@@ -402,5 +436,185 @@ describe('POST / — analysis route', () => {
 
     const body = response.json() as ApiError
     expect(body.code).toBe('INVALID_REQUEST')
+  })
+
+  // ── Test 9 — Free tier limit ───────────────────────────────────────────────
+
+  it('returns 429 FREE_LIMIT_REACHED when free user has hit their monthly limit', async () => {
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'user-free', email: 'free@example.com' } },
+          error: null,
+        }),
+      },
+    })
+    mockGetUserById.mockResolvedValue({
+      id: 'user-free',
+      email: 'free@example.com',
+      tier: 'free',
+      stripe_customer_id: null,
+      created_at: '',
+    })
+    mockGetMonthlyCount.mockResolvedValue(10)
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      headers: { authorization: 'Bearer valid-free-token' },
+      payload: MINIMAL_CAMEL_BODY,
+    })
+
+    expect(response.statusCode).toBe(429)
+    const body = response.json() as ApiError
+    expect(body.code).toBe('FREE_LIMIT_REACHED')
+    // Calc engine should not have been called
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  // ── Test 10 — Pro user bypasses limit ─────────────────────────────────────
+
+  it('does not apply limit check for pro users', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'user-pro', email: 'pro@example.com' } },
+          error: null,
+        }),
+      },
+    })
+    mockGetUserById.mockResolvedValue({
+      id: 'user-pro',
+      email: 'pro@example.com',
+      tier: 'pro',
+      stripe_customer_id: 'cus_pro',
+      created_at: '',
+    })
+    // Even if count is high, pro users are not blocked
+    mockGetMonthlyCount.mockResolvedValue(999)
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      headers: { authorization: 'Bearer valid-pro-token' },
+      payload: MINIMAL_CAMEL_BODY,
+    })
+
+    expect(response.statusCode).toBe(200)
+  })
+
+  // ── Test 11 — No extraction when no description ────────────────────────────
+
+  it('skips Haiku extraction when no listingDescription is provided', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+
+    await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: MINIMAL_CAMEL_BODY,
+    })
+
+    expect(mockExtractListingFlags).not.toHaveBeenCalled()
+  })
+
+  // ── Test 12 — Extraction fires and flags are merged ────────────────────────
+
+  it('runs Haiku extraction and merges flags into riskFlags when description is provided', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+    mockExtractListingFlags.mockResolvedValueOnce({
+      flags: [
+        { flagId: 'basement_suite', present: true, confidence: 90, evidence: 'finished basement' },
+        { flagId: 'noise_concern', present: true, confidence: 70, evidence: 'near highway' },
+        { flagId: 'short_term_rental', present: false, confidence: 20, evidence: '' },
+      ],
+      rawResponse: '[...]',
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        listingDescription: 'Renovated unit with finished basement. Near a major highway.',
+      },
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(mockExtractListingFlags).toHaveBeenCalledWith(
+      'Renovated unit with finished basement. Near a major highway.'
+    )
+
+    const body = response.json() as Analysis
+
+    // basement_suite has 90% confidence → red flag
+    const basementFlag = body.riskFlags.find((f) => f.id === 'basement_suite')
+    expect(basementFlag).toBeDefined()
+    expect(basementFlag?.severity).toBe('red')
+    expect(basementFlag?.label).toBe('Basement suite')
+    expect(basementFlag?.evidence).toBe('finished basement')
+
+    // noise_concern has 70% confidence → amber flag
+    const noiseFlag = body.riskFlags.find((f) => f.id === 'noise_concern')
+    expect(noiseFlag).toBeDefined()
+    expect(noiseFlag?.severity).toBe('amber')
+
+    // short_term_rental is not present → not included
+    const strFlag = body.riskFlags.find((f) => f.id === 'short_term_rental')
+    expect(strFlag).toBeUndefined()
+  })
+
+  // ── Test 13 — Flags below threshold excluded ───────────────────────────────
+
+  it('excludes extracted flags below 60% confidence', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+    mockExtractListingFlags.mockResolvedValueOnce({
+      flags: [{ flagId: 'grow_op_history', present: true, confidence: 45, evidence: 'possible' }],
+      rawResponse: '[...]',
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        listingDescription: 'Possible history.',
+      },
+    })
+
+    expect(response.statusCode).toBe(200)
+    const body = response.json() as Analysis
+    expect(body.riskFlags.find((f) => f.id === 'grow_op_history')).toBeUndefined()
+  })
+
+  // ── Test 14 — Pro tier used for narrative ──────────────────────────────────
+
+  it('passes pro tier to generateNarrative when user is pro', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'user-pro', email: 'pro@example.com' } },
+          error: null,
+        }),
+      },
+    })
+    mockGetUserById.mockResolvedValue({
+      id: 'user-pro',
+      email: 'pro@example.com',
+      tier: 'pro',
+      stripe_customer_id: 'cus_pro',
+      created_at: '',
+    })
+    mockGetMonthlyCount.mockResolvedValue(5)
+
+    await fastify.inject({
+      method: 'POST',
+      url: '/',
+      headers: { authorization: 'Bearer valid-pro-token' },
+      payload: MINIMAL_CAMEL_BODY,
+    })
+
+    expect(mockGenerateNarrative).toHaveBeenCalledWith(expect.objectContaining({ tier: 'pro' }))
   })
 })
