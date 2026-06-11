@@ -22,6 +22,7 @@ class ScrapedListing(BaseModel):
     """
 
     address: str
+    postal_code: str
     price: int
     annual_taxes: int
     tax_known: bool

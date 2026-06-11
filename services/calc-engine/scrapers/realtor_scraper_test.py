@@ -26,7 +26,9 @@ class TestExtractPropertyId:
     """Tests for _extract_property_id()."""
 
     def test_standard_url(self) -> None:
-        url = "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
+        url = (
+            "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
+        )
         assert _extract_property_id(url) == "27154381"
 
     def test_url_with_trailing_slash(self) -> None:
@@ -227,10 +229,25 @@ class TestParseListing:
         listing = _parse_listing(self._condo_payload())
         assert listing.listing_type == "for_sale"
 
+    def test_postal_code_included_in_result(self) -> None:
+        listing = _parse_listing(self._condo_payload())
+        assert listing.postal_code == "L4K5W4"
+
+    def test_postal_code_empty_when_missing(self) -> None:
+        payload = self._condo_payload()
+        payload["Property"]["Address"]["PostalCode"] = ""
+        payload["Property"]["Address"][
+            "AddressText"
+        ] = "5702-5 Buttermill Ave|Vaughan ON"
+        listing = _parse_listing(payload)
+        assert listing.postal_code == ""
+
     def test_toronto_postal_code_sets_is_toronto(self) -> None:
         payload = self._condo_payload()
         payload["Property"]["Address"]["PostalCode"] = "M5V2T6"
-        payload["Property"]["Address"]["AddressText"] = "100 King St W|Toronto ON  M5V2T6"
+        payload["Property"]["Address"][
+            "AddressText"
+        ] = "100 King St W|Toronto ON  M5V2T6"
         listing = _parse_listing(payload)
         assert listing.is_toronto is True
 
@@ -314,7 +331,9 @@ class TestScrapeListing:
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.get = AsyncMock(return_value=mock_response)
 
-        with patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
+        ):
             result = await scrape_listing(
                 "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
             )
@@ -324,6 +343,7 @@ class TestScrapeListing:
         assert result.price == 729900
         assert result.beds == 3
         assert result.province == "ON"
+        assert result.postal_code == "L4K5W4"
 
     @pytest.mark.asyncio
     async def test_invalid_url_returns_none(self) -> None:
@@ -347,7 +367,9 @@ class TestScrapeListing:
             )
         )
 
-        with patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
+        ):
             result = await scrape_listing(
                 "https://www.realtor.ca/real-estate/12345678/some-property"
             )
@@ -365,7 +387,9 @@ class TestScrapeListing:
             side_effect=httpx.ConnectError("Connection refused")
         )
 
-        with patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
+        ):
             result = await scrape_listing(
                 "https://www.realtor.ca/real-estate/12345678/some-property"
             )
@@ -387,7 +411,9 @@ class TestScrapeListing:
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.get = AsyncMock(return_value=mock_response)
 
-        with patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
+        ):
             result = await scrape_listing(
                 "https://www.realtor.ca/real-estate/12345678/vancouver-property"
             )
@@ -413,7 +439,9 @@ class TestScrapeListing:
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.get = fake_get
 
-        with patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client):
+        with patch(
+            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
+        ):
             await scrape_listing(
                 "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
             )

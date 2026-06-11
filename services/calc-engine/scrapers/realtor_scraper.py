@@ -225,8 +225,6 @@ def _parse_listing(data: dict[str, Any]) -> ScrapedListing:
         sqft_known = False
 
     # ── Year built ────────────────────────────────────────────────────────────
-    year_raw = building.get("ConstructionStyleAttachment", "") or building.get("YearBuilt", "")
-    # Some responses use a dedicated field
     year_built_raw = listing.get("YearBuilt", building.get("Age", ""))
     if year_built_raw:
         year_digits = re.sub(r"\D", "", str(year_built_raw))
@@ -249,6 +247,7 @@ def _parse_listing(data: dict[str, Any]) -> ScrapedListing:
 
     return ScrapedListing(
         address=address,
+        postal_code=postal_code,
         price=price,
         annual_taxes=annual_taxes,
         tax_known=tax_known,
@@ -310,14 +309,20 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
         )
         return None
     except httpx.RequestError as exc:
-        logger.error("Realtor.ca API request failed for property %s: %s", property_id, exc)
+        logger.error(
+            "Realtor.ca API request failed for property %s: %s", property_id, exc
+        )
         return None
-    except Exception as exc:  # noqa: BLE001 — catch-all so one failure never crashes the app
+    except (
+        Exception
+    ) as exc:  # noqa: BLE001 — catch-all so one failure never crashes the app
         logger.error("Unexpected error scraping property %s: %s", property_id, exc)
         return None
 
     try:
         return _parse_listing(data)
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to parse Realtor.ca response for property %s: %s", property_id, exc)
+        logger.error(
+            "Failed to parse Realtor.ca response for property %s: %s", property_id, exc
+        )
         return None
