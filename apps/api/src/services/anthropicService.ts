@@ -28,6 +28,8 @@ export interface NarrativeInput {
   rentHigh: number
   compCount: number
   compConfidence: 'low' | 'medium' | 'high'
+  /** Listing's actual asking rent (for-rent listings). Falls back to rentMid when null. */
+  askingRent: number | null
 
   // Investment metrics (investor / landlord modes)
   capRate: number
@@ -147,12 +149,15 @@ Rules: second person. Warm but direct. Plain paragraphs only. No bullet points. 
 
 /** Report C — tenant evaluation */
 function buildTenantPrompt(input: NarrativeInput): string {
+  // The listing's real asking rent; market mid is only a stand-in when unknown.
+  const asking = input.askingRent ?? input.rentMid
+
   const leverage = ((): string => {
-    const above = input.rentMid - input.rentHigh
-    if (above > 100)
-      return `High — asking rent is ${fmtCAD(above)} above the top of the market range`
-    if (input.rentMid > input.rentHigh) return 'Moderate — asking rent is above market'
-    if (input.rentMid <= input.rentLow) return 'Strong — asking rent is at or below market'
+    const aboveTop = asking - input.rentHigh
+    if (aboveTop > 100)
+      return `High — asking rent is ${fmtCAD(aboveTop)} above the top of the market range`
+    if (asking > input.rentHigh) return 'Moderate — asking rent is above market'
+    if (asking <= input.rentLow) return 'Strong — asking rent is at or below market'
     return 'Low — asking rent is within the typical market range'
   })()
 
@@ -164,7 +169,7 @@ function buildTenantPrompt(input: NarrativeInput): string {
   return `You are a tenant advisor reviewing a rental listing.
 
 UNIT: ${input.address}
-ASKING RENT: ${fmtCAD(input.rentMid)}/mo
+ASKING RENT: ${fmtCAD(asking)}/mo
 MARKET RANGE: ${fmtCAD(input.rentLow)}–${fmtCAD(input.rentHigh)}/mo (${input.compCount} comparables, confidence: ${input.compConfidence})
 LEVERAGE: ${leverage}
 FLAGS: ${buildFlagsList(input.riskFlags)}

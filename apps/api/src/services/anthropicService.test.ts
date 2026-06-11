@@ -58,6 +58,7 @@ const FREE_INPUT: NarrativeInput = {
   rentHigh: 3200,
   compCount: 8,
   compConfidence: 'medium',
+  askingRent: null,
   capRate: 0.0197,
   cashFlowMonthly: -2126.82,
   cashFlowAnnual: -25521.84,
@@ -185,6 +186,45 @@ describe('generateNarrative', () => {
     const prompt = (getMockCreate().mock.calls[0][0] as { messages: { content: string }[] })
       .messages[0]!.content
     expect(prompt).toContain('investment analyst')
+  })
+
+  // ── Tenant leverage — uses the listing's real asking rent ──────────────────
+
+  it('tenant prompt reports High leverage when asking rent is far above market', async () => {
+    getMockCreate().mockResolvedValue(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    // Market: $2,700–$3,200. Asking $3,500 → $300 above the top of the range.
+    const tenantInput: NarrativeInput = { ...FREE_INPUT, mode: 'tenant', askingRent: 3500 }
+    await generateNarrative(tenantInput)
+
+    const prompt = (getMockCreate().mock.calls[0][0] as { messages: { content: string }[] })
+      .messages[0]!.content
+    expect(prompt).toContain('ASKING RENT: $3,500/mo')
+    expect(prompt).toContain('High — asking rent is $300 above the top of the market range')
+  })
+
+  it('tenant prompt reports Strong leverage when asking rent is at or below market low', async () => {
+    getMockCreate().mockResolvedValue(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    const tenantInput: NarrativeInput = { ...FREE_INPUT, mode: 'tenant', askingRent: 2600 }
+    await generateNarrative(tenantInput)
+
+    const prompt = (getMockCreate().mock.calls[0][0] as { messages: { content: string }[] })
+      .messages[0]!.content
+    expect(prompt).toContain('Strong — asking rent is at or below market')
+  })
+
+  it('tenant prompt falls back to rentMid when askingRent is null', async () => {
+    getMockCreate().mockResolvedValue(makeAnthropicResponse(VALID_FREE_NARRATIVE))
+
+    const tenantInput: NarrativeInput = { ...FREE_INPUT, mode: 'tenant', askingRent: null }
+    await generateNarrative(tenantInput)
+
+    const prompt = (getMockCreate().mock.calls[0][0] as { messages: { content: string }[] })
+      .messages[0]!.content
+    // rentMid = 2900, within the 2700–3200 range
+    expect(prompt).toContain('ASKING RENT: $2,900/mo')
+    expect(prompt).toContain('Low — asking rent is within the typical market range')
   })
 })
 

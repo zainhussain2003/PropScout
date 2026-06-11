@@ -1080,7 +1080,8 @@ propscout/
 │   │       │   │   ├── ProgressDisplay.tsx    # Scraping progress screen
 │   │       │   │   ├── SignInModal.tsx        # Sign-in / sign-up bottom-sheet
 │   │       │   │   ├── BottomSheet.tsx        # Mobile bottom-sheet wrapper (slide-up from bottom)
-│   │       │   │   └── StickyActionBar.tsx    # Mobile-only sticky bottom bar (Save / Share / PDF)
+│   │       │   │   ├── StickyActionBar.tsx    # Mobile-only sticky bottom bar (Save / Share / PDF)
+│   │       │   │   └── ErrorBoundary.tsx      # Root error boundary — app never blank-screens
 │   │       │   │
 │   │       │   ├── analysis/          # Domain components — used across investor + landlord reports
 │   │       │   │   ├── DealScore.tsx          # Radial gauge with animation

@@ -23,6 +23,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
 import { DevToolbar } from './components/dev/DevToolbar'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
 
 function AppInner(): JSX.Element {
   const { tier } = useTier()
@@ -101,9 +102,11 @@ function AppInner(): JSX.Element {
 
 function App(): JSX.Element {
   return (
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

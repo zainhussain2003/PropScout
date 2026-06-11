@@ -131,8 +131,11 @@ function rowToListing(row: ListingRow): Listing {
  */
 function rowToAnalysis(row: AnalysisRow): Analysis {
   const metrics = row.calculated_metrics as Analysis['metrics']
-  const dealScore =
-    (row.market_data as { dealScore?: Analysis['dealScore'] } | null)?.dealScore ?? null
+  const marketData = row.market_data as {
+    dealScore?: Analysis['dealScore']
+    sunScout?: Analysis['sunScout']
+  } | null
+  const dealScore = marketData?.dealScore ?? null
   const riskFlags = Array.isArray(row.risk_flags) ? (row.risk_flags as Analysis['riskFlags']) : []
   const rentalEstimate = row.rental_estimate as Analysis['rentalComps']
 
@@ -155,7 +158,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     riskFlags,
     narrative: row.ai_narrative,
     hasSanityWarnings: false,
-    sunScout: null,
+    sunScout: marketData?.sunScout ?? null,
   }
 }
 
@@ -239,7 +242,7 @@ export async function saveAnalysis(
       report_mode: modeMap[analysis.mode],
       financing_params: null,
       rental_estimate: analysis.rentalComps ?? null,
-      market_data: { dealScore: analysis.dealScore },
+      market_data: { dealScore: analysis.dealScore, sunScout: analysis.sunScout },
       calculated_metrics: analysis.metrics ?? null,
       deal_score: analysis.dealScore?.total ?? null,
       risk_flags: analysis.riskFlags,

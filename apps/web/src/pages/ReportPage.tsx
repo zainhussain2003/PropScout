@@ -26,6 +26,7 @@ import { InvestmentMetricsSection } from '../components/investor/InvestmentMetri
 import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
+import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { DEFAULT_FINANCING_INPUTS } from '../constants/demoData'
 import type {
   Analysis,
@@ -660,6 +661,8 @@ function TenantReportContent({
           </div>
         </section>
       )}
+
+      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="03" />
     </main>
   )
 }
@@ -742,6 +745,7 @@ function InvestorReportContent({
       <OSFISection metrics={metrics} financing={financing} />
       <RiskFlagsSection listing={listingData} />
       <EquitySection metrics={metrics} />
+      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" />
     </main>
   )
 }

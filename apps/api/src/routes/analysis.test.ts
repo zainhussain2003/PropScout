@@ -438,6 +438,112 @@ describe('POST / — analysis route', () => {
     expect(body.code).toBe('INVALID_REQUEST')
   })
 
+  // ── Server-side input validation (never trust frontend data) ───────────────
+
+  it('returns 400 (not 500) when rental.postalCode is missing', async () => {
+    const rentalWithoutPostal: Record<string, unknown> = { ...MINIMAL_CAMEL_BODY.rental }
+    delete rentalWithoutPostal['postalCode']
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: { ...MINIMAL_CAMEL_BODY, rental: rentalWithoutPostal },
+    })
+
+    expect(response.statusCode).toBe(400)
+    const body = response.json() as ApiError
+    expect(body.code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when financing is missing entirely', async () => {
+    const withoutFinancing: Record<string, unknown> = { ...MINIMAL_CAMEL_BODY }
+    delete withoutFinancing['financing']
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: withoutFinancing,
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it('returns 400 when propertyData.price is not a number', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, price: 'not-a-number' },
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  // ── Description forwarding — red flags must deduct from the deal score ─────
+
+  it('forwards listingDescription to the calc engine as description', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+
+    await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        ...MINIMAL_CAMEL_BODY,
+        listingDescription: 'Basement apartment with separate entrance. Sold as-is.',
+      },
+    })
+
+    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { body: string },
+    ]
+    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
+    expect(forwarded['description']).toBe('Basement apartment with separate entrance. Sold as-is.')
+  })
+
+  it('forwards description: null when no listingDescription is provided', async () => {
+    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+
+    await fastify.inject({ method: 'POST', url: '/', payload: MINIMAL_CAMEL_BODY })
+
+    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { body: string },
+    ]
+    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
+    expect(forwarded['description']).toBeNull()
+  })
+
+  it('maps calc-engine flag_id risk flags to id + human label', async () => {
+    mockCalcEngineOK({
+      ...CALC_ENGINE_RESPONSE,
+      risk_flags: [
+        {
+          flag_id: 'as_is_where_is',
+          severity: 'red',
+          confidence: 95,
+          evidence: 'Sold as-is.',
+          source: 'regex',
+        },
+      ],
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/',
+      payload: MINIMAL_CAMEL_BODY,
+    })
+
+    const body = response.json() as { riskFlags: Array<{ id: string; label: string }> }
+    expect(body.riskFlags).toHaveLength(1)
+    expect(body.riskFlags[0]!.id).toBe('as_is_where_is')
+    expect(body.riskFlags[0]!.label).toBe('Sold as-is')
+  })
+
   // ── Test 9 — Free tier limit ───────────────────────────────────────────────
 
   it('returns 429 FREE_LIMIT_REACHED when free user has hit their monthly limit', async () => {

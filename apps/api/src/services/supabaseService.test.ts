@@ -324,6 +324,29 @@ describe('saveAnalysis', () => {
     expect(result).toBe('deadbeefdeadbeefdeadbeefdeadbeef')
   })
 
+  it('persists sunScout inside market_data', async () => {
+    const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
+    const analysisChain = makeQueryChain({ data: null, error: null })
+    mockFrom.mockReturnValueOnce(listingChain).mockReturnValueOnce(analysisChain)
+
+    const sunScout = {
+      annualPeakSunHours: 3619,
+      summerDailyHours: 8,
+      winterDailyHours: 9,
+      seasonalGrid: { Dec: 5, Mar: 6.9, Jun: 6, Sep: 6.9 },
+      monthlyHours: [310, 280, 372, 330, 279, 240, 248, 310, 360, 341, 270, 279],
+      sunScore: 88.2,
+      verdict: 'excellent' as const,
+    }
+
+    await saveAnalysis(makeAnalysis({ sunScout }), makeListing(), null)
+
+    const insertPayload = (analysisChain.insert as jest.Mock).mock.calls[0][0] as {
+      market_data: { sunScout: unknown }
+    }
+    expect(insertPayload.market_data.sunScout).toEqual(sunScout)
+  })
+
   it('returns null (non-fatal) when listing upsert fails', async () => {
     const listingChain = makeQueryChain({ data: null, error: new Error('upsert failed') })
     mockFrom.mockReturnValue(listingChain)
@@ -533,6 +556,76 @@ describe('getAnalysisByToken', () => {
     expect(result!.analysis.mode).toBe('investor') // DB 'investment' maps to 'investor'
     expect(result!.listing.address).toBe('5702-5 Buttermill Ave')
     expect(result!.listing.price).toBe(729900)
+  })
+
+  it('round-trips sunScout through market_data', async () => {
+    const futureAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    const sunScout = {
+      annualPeakSunHours: 3619,
+      summerDailyHours: 8,
+      winterDailyHours: 9,
+      seasonalGrid: { Dec: 5, Mar: 6.9, Jun: 6, Sep: 6.9 },
+      monthlyHours: [310, 280, 372, 330, 279, 240, 248, 310, 360, 341, 270, 279],
+      sunScore: 88.2,
+      verdict: 'excellent' as const,
+    }
+
+    const chain = makeQueryChain({
+      data: {
+        id: 'analysis-uuid',
+        user_id: null,
+        listing_id: 'listing-uuid',
+        report_mode: 'investment',
+        financing_params: null,
+        rental_estimate: null,
+        market_data: { dealScore: null, sunScout },
+        calculated_metrics: null,
+        deal_score: null,
+        risk_flags: [],
+        ai_narrative: null,
+        pdf_url: null,
+        share_token: 'suntoken123',
+        share_expires_at: futureAt,
+        created_at: new Date().toISOString(),
+        listings: makeValidListingRow(),
+      },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getAnalysisByToken('suntoken123')
+
+    expect(result).not.toBeNull()
+    expect(result!.analysis.sunScout).toEqual(sunScout)
+  })
+
+  it('returns sunScout null when market_data has no sunScout (legacy rows)', async () => {
+    const futureAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    const chain = makeQueryChain({
+      data: {
+        id: 'analysis-uuid',
+        user_id: null,
+        listing_id: 'listing-uuid',
+        report_mode: 'investment',
+        financing_params: null,
+        rental_estimate: null,
+        market_data: { dealScore: null },
+        calculated_metrics: null,
+        deal_score: null,
+        risk_flags: [],
+        ai_narrative: null,
+        pdf_url: null,
+        share_token: 'legacytoken1',
+        share_expires_at: futureAt,
+        created_at: new Date().toISOString(),
+        listings: makeValidListingRow(),
+      },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getAnalysisByToken('legacytoken1')
+    expect(result!.analysis.sunScout).toBeNull()
   })
 
   it('returns analysis with no expiry for authenticated user (share_expires_at null)', async () => {

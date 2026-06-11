@@ -1078,7 +1078,8 @@ propscout/
 │   │       │   │   ├── Footer.tsx
 │   │       │   │   ├── ModeModal.tsx          # For-sale/for-rent routing modal
 │   │       │   │   ├── ProgressDisplay.tsx    # Scraping progress screen
-│   │       │   │   └── SignInModal.tsx        # Sign-in / sign-up bottom-sheet
+│   │       │   │   ├── SignInModal.tsx        # Sign-in / sign-up bottom-sheet
+│   │       │   │   └── ErrorBoundary.tsx      # Root error boundary — app never blank-screens
 │   │       │   │
 │   │       │   ├── analysis/          # Domain components — used across investor + landlord reports
 │   │       │   │   ├── DealScore.tsx          # Radial gauge with animation

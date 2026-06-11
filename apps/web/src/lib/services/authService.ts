@@ -4,6 +4,11 @@
  * Auth is the ONE exception where the frontend calls Supabase directly.
  * All other data goes through the Fastify API.
  *
+ * When VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are not configured the
+ * service degrades gracefully: sessions resolve to null and sign-in attempts
+ * return a friendly error — the app must NEVER crash because auth is
+ * unconfigured (the previous behaviour blanked every page).
+ *
  * Exports:
  *   signInWithEmail   — magic link via OTP
  *   signInWithGoogle  — Google OAuth
@@ -17,14 +22,37 @@ import { createClient, type SupabaseClient, type Session } from '@supabase/supab
 
 type AnonClient = SupabaseClient<never, 'public', never>
 let _client: AnonClient | null = null
+let _initFailed = false
 
-function getClient(): AnonClient {
-  if (_client == null) {
-    const url = import.meta.env.VITE_SUPABASE_URL as string
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
-    _client = createClient(url, key) as AnonClient
+const AUTH_UNAVAILABLE = 'Sign-in is temporarily unavailable — please try again later.'
+
+/**
+ * Lazily create the Supabase client. Returns null (and logs once) when the
+ * environment variables are missing or client construction fails.
+ */
+function getClient(): AnonClient | null {
+  if (_client != null) return _client
+  if (_initFailed) return null
+
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+
+  if (!url || !key) {
+    _initFailed = true
+    console.error(
+      '[authService] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY not set — auth disabled'
+    )
+    return null
   }
-  return _client
+
+  try {
+    _client = createClient(url, key) as AnonClient
+    return _client
+  } catch (err) {
+    _initFailed = true
+    console.error('[authService] Supabase client init failed — auth disabled', err)
+    return null
+  }
 }
 
 /**
@@ -34,7 +62,9 @@ function getClient(): AnonClient {
  * @returns { error: null } on success, { error: message } on failure
  */
 export async function signInWithEmail(email: string): Promise<{ error: string | null }> {
-  const { error } = await getClient().auth.signInWithOtp({
+  const client = getClient()
+  if (client == null) return { error: AUTH_UNAVAILABLE }
+  const { error } = await client.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: window.location.origin + '/auth/confirm',
@@ -53,7 +83,9 @@ export async function signInWithEmail(email: string): Promise<{ error: string | 
  * @returns { error: null } on success (redirect happens), { error: message } on failure
  */
 export async function signInWithGoogle(): Promise<{ error: string | null }> {
-  const { error } = await getClient().auth.signInWithOAuth({
+  const client = getClient()
+  if (client == null) return { error: AUTH_UNAVAILABLE }
+  const { error } = await client.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin + '/auth/confirm',
@@ -69,28 +101,40 @@ export async function signInWithGoogle(): Promise<{ error: string | null }> {
  * Sign the current user out and clear the local session.
  */
 export async function signOut(): Promise<void> {
-  await getClient().auth.signOut()
+  const client = getClient()
+  if (client == null) return
+  await client.auth.signOut()
 }
 
 /**
- * Get the current Supabase session synchronously from the local store.
- * Returns null if no user is signed in.
+ * Get the current Supabase session.
+ * Returns null if no user is signed in or auth is not configured.
  */
 export async function getSession(): Promise<Session | null> {
-  const { data } = await getClient().auth.getSession()
-  return data.session
+  const client = getClient()
+  if (client == null) return null
+  try {
+    const { data } = await client.auth.getSession()
+    return data.session
+  } catch (err) {
+    console.error('[authService] getSession failed', err)
+    return null
+  }
 }
 
 /**
  * Subscribe to auth state changes (sign-in, sign-out, token refresh).
+ * No-op (returns a no-op unsubscribe) when auth is not configured.
  *
  * @param callback - called with the new Session (or null on sign-out)
  * @returns unsubscribe function — MUST be called on component unmount to prevent leaks
  */
 export function onAuthStateChange(callback: (session: Session | null) => void): () => void {
+  const client = getClient()
+  if (client == null) return () => undefined
   const {
     data: { subscription },
-  } = getClient().auth.onAuthStateChange((_event, session) => {
+  } = client.auth.onAuthStateChange((_event, session) => {
     callback(session)
   })
   return () => subscription.unsubscribe()
@@ -103,7 +147,9 @@ export function onAuthStateChange(callback: (session: Session | null) => void): 
  * @returns { error: null } on success, { error: message } on failure
  */
 export async function resetPasswordForEmail(email: string): Promise<{ error: string | null }> {
-  const { error } = await getClient().auth.resetPasswordForEmail(email, {
+  const client = getClient()
+  if (client == null) return { error: AUTH_UNAVAILABLE }
+  const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin + '/auth/reset/confirm',
   })
   if (error != null) {

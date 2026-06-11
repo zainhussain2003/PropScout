@@ -91,6 +91,8 @@ interface CamelPropertyData {
   postalCode?: string
   sourceUrl?: string
   listingType?: 'for-sale' | 'for-rent'
+  /** Listing's asking rent for for-rent listings — drives tenant leverage. */
+  askingRentMonthly?: number | null
   lat?: number | null
   lng?: number | null
 }
@@ -161,12 +163,49 @@ interface SnakeAnalysisRequest {
   property_data: SnakePropertyData
   financing: SnakeFinancing
   rental: SnakeRental
+  /** Raw listing description — calc engine runs extraction + score deductions. */
+  description: string | null
 }
 
 // ── camelCase → snake_case input conversion ───────────────────────────────────
 
 function isCamelCaseRequest(body: unknown): body is CamelAnalysisRequest {
   return typeof body === 'object' && body !== null && 'propertyData' in body
+}
+
+/**
+ * Validate the shape of an analysis request beyond the camelCase type guard.
+ * Returns a human-readable problem string, or null when the request is valid.
+ *
+ * Never trust frontend data — a missing rental.postalCode previously crashed
+ * the route with an unhandled TypeError (500) instead of a clean 400.
+ */
+function findRequestProblem(body: CamelAnalysisRequest): string | null {
+  const p = body.propertyData as Partial<CamelPropertyData> | undefined
+  const f = body.financing as Partial<CamelFinancing> | undefined
+  const r = body.rental as Partial<CamelRental> | undefined
+
+  if (p == null || typeof p !== 'object') return 'propertyData is required'
+  if (typeof p.address !== 'string' || p.address.trim() === '')
+    return 'propertyData.address is required'
+  if (typeof p.price !== 'number' || !Number.isFinite(p.price))
+    return 'propertyData.price must be a number'
+  if (typeof p.annualTaxes !== 'number' || !Number.isFinite(p.annualTaxes))
+    return 'propertyData.annualTaxes must be a number'
+  if (typeof p.beds !== 'number') return 'propertyData.beds must be a number'
+  if (typeof p.baths !== 'number') return 'propertyData.baths must be a number'
+
+  if (f == null || typeof f !== 'object') return 'financing is required'
+  if (typeof f.downPaymentPct !== 'number') return 'financing.downPaymentPct must be a number'
+  if (typeof f.mortgageRate !== 'number') return 'financing.mortgageRate must be a number'
+  if (typeof f.amortizationYears !== 'number') return 'financing.amortizationYears must be a number'
+
+  if (r == null || typeof r !== 'object') return 'rental is required'
+  if (typeof r.low !== 'number' || typeof r.mid !== 'number' || typeof r.high !== 'number')
+    return 'rental.low, rental.mid, and rental.high must be numbers'
+  if (typeof r.postalCode !== 'string') return 'rental.postalCode is required'
+
+  return null
 }
 
 function toSnakeRequest(
@@ -209,6 +248,9 @@ function toSnakeRequest(
       confidence: r.confidence,
       postal_code: r.postalCode,
     },
+    // Forwarded so the calc engine's extraction pipeline (regex + Haiku +
+    // logic gate) can apply red-flag deductions to the deal score (spec §10/§19).
+    description: body.listingDescription?.trim() || null,
   }
 }
 
@@ -260,6 +302,8 @@ interface PyInvestmentMetrics {
 }
 
 interface PyRiskFlag {
+  /** Calc engine serialises the id as `flag_id`; `id` kept for compatibility. */
+  flag_id?: string
   id?: string
   severity?: string
   label?: string
@@ -378,6 +422,20 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     const body = req.body
+
+    // ── Server-side input validation — never trust frontend data ──────────
+    const problem = findRequestProblem(body)
+    if (problem != null) {
+      return reply
+        .code(400)
+        .send(
+          makeError(
+            'INVALID_REQUEST',
+            'One or more required fields are missing or invalid.',
+            problem
+          )
+        )
+    }
 
     // ── Optional JWT auth ──────────────────────────────────────────────────
     // Reads userId and tier from Supabase JWT. Unauthenticated requests run
@@ -525,14 +583,18 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     // Run extraction and narrative concurrently — both are non-fatal.
     const reportMode = (body.mode as Analysis['mode']) ?? 'investor'
 
-    // Build calc-engine risk flags before merging
-    const calcEngineFlags: RiskFlag[] = pyData.risk_flags.map((f) => ({
-      id: String(f.id ?? ''),
-      severity: (f.severity as 'red' | 'amber') ?? 'amber',
-      label: String(f.label ?? ''),
-      evidence: (f.evidence as string | null) ?? null,
-      confidence: Number(f.confidence ?? 0),
-    }))
+    // Build calc-engine risk flags before merging.
+    // The calc engine serialises ids as `flag_id` and omits labels — map both.
+    const calcEngineFlags: RiskFlag[] = pyData.risk_flags.map((f) => {
+      const flagId = String(f.flag_id ?? f.id ?? '')
+      return {
+        id: flagId,
+        severity: (f.severity as 'red' | 'amber') ?? 'amber',
+        label: String(f.label ?? FLAG_LABELS[flagId] ?? flagId),
+        evidence: (f.evidence as string | null) ?? null,
+        confidence: Number(f.confidence ?? 0),
+      }
+    })
 
     const metricsResult = toMetrics(pyData.metrics)
     const dealScoreResult = toDealScore(pyData.deal_score)
@@ -551,6 +613,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       rentHigh: rentalForCalcEngine.high,
       compCount: comps?.compCount ?? 0,
       compConfidence: comps?.confidence ?? 'low',
+      askingRent: body.propertyData.askingRentMonthly ?? null,
       capRate: metricsResult.capRate,
       cashFlowMonthly: metricsResult.cashFlowMonthly,
       cashFlowAnnual: metricsResult.cashFlowAnnual,
