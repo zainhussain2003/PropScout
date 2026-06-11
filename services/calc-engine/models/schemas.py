@@ -34,6 +34,8 @@ class PropertyInput(BaseModel):
     year_built: int | None = None
     property_type: str = "condo"
     is_toronto: bool = False  # determines whether MLTT applies
+    lat: float | None = None  # geocoded coordinates for SunScout
+    lng: float | None = None
 
 
 class RentalEstimate(BaseModel):
@@ -102,6 +104,17 @@ class DealScoreOutput(BaseModel):
     breakdown: DealScoreBreakdownOutput
 
 
+class SunScoutOutput(BaseModel):
+    """SunScout solar exposure result — omitted when lat/lng are unavailable."""
+
+    annual_peak_sun_hours: float
+    summer_daily_hours: float
+    winter_daily_hours: float
+    seasonal_grid: dict[str, float]
+    sun_score: float
+    verdict: str
+
+
 class AnalysisOutput(BaseModel):
     """Full analysis result returned to the Fastify API."""
 
@@ -109,3 +122,4 @@ class AnalysisOutput(BaseModel):
     deal_score: DealScoreOutput
     risk_flags: list[dict[str, object]]
     has_sanity_warnings: bool
+    sun_scout: SunScoutOutput | None = None

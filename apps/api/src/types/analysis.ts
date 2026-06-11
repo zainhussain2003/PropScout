@@ -70,6 +70,15 @@ export interface RentalEstimate {
   postalCode: string
 }
 
+export interface SunScoutResult {
+  annualPeakSunHours: number
+  summerDailyHours: number
+  winterDailyHours: number
+  seasonalGrid: { Dec: number; Mar: number; Jun: number; Sep: number }
+  sunScore: number
+  verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
+}
+
 export interface Analysis {
   id: string
   token: string
@@ -81,4 +90,5 @@ export interface Analysis {
   riskFlags: RiskFlag[]
   narrative: string | null
   hasSanityWarnings: boolean
+  sunScout: SunScoutResult | null
 }

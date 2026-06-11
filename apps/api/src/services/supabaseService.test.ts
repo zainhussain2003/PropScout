@@ -126,6 +126,7 @@ function makeAnalysis(overrides: Partial<Analysis> = {}): Analysis {
     riskFlags: [],
     narrative: null,
     hasSanityWarnings: false,
+    sunScout: null,
     ...overrides,
   }
 }
@@ -314,8 +315,8 @@ describe('saveAnalysis', () => {
     const analysisChain = makeQueryChain({ data: null, error: null })
 
     mockFrom
-      .mockReturnValueOnce(listingChain)   // listings
-      .mockReturnValueOnce(analysisChain)  // analyses
+      .mockReturnValueOnce(listingChain) // listings
+      .mockReturnValueOnce(analysisChain) // analyses
 
     const result = await saveAnalysis(makeAnalysis(), makeListing(), null)
 
@@ -339,9 +340,7 @@ describe('saveAnalysis', () => {
     const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
     const analysisChain = makeQueryChain({ data: null, error: new Error('insert failed') })
 
-    mockFrom
-      .mockReturnValueOnce(listingChain)
-      .mockReturnValueOnce(analysisChain)
+    mockFrom.mockReturnValueOnce(listingChain).mockReturnValueOnce(analysisChain)
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
     const result = await saveAnalysis(makeAnalysis(), makeListing(), null)
@@ -369,16 +368,12 @@ describe('saveAnalysis', () => {
     const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
 
     const analysisChain = makeQueryChain({ data: null, error: null })
-    ;(analysisChain.insert as jest.Mock).mockImplementation(
-      (payload: Record<string, unknown>) => {
-        capturedInsertPayload = payload
-        return analysisChain
-      }
-    )
+    ;(analysisChain.insert as jest.Mock).mockImplementation((payload: Record<string, unknown>) => {
+      capturedInsertPayload = payload
+      return analysisChain
+    })
 
-    mockFrom
-      .mockReturnValueOnce(listingChain)
-      .mockReturnValueOnce(analysisChain)
+    mockFrom.mockReturnValueOnce(listingChain).mockReturnValueOnce(analysisChain)
 
     await saveAnalysis(makeAnalysis(), makeListing(), null)
 
@@ -397,16 +392,12 @@ describe('saveAnalysis', () => {
     const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
 
     const analysisChain = makeQueryChain({ data: null, error: null })
-    ;(analysisChain.insert as jest.Mock).mockImplementation(
-      (payload: Record<string, unknown>) => {
-        capturedInsertPayload = payload
-        return analysisChain
-      }
-    )
+    ;(analysisChain.insert as jest.Mock).mockImplementation((payload: Record<string, unknown>) => {
+      capturedInsertPayload = payload
+      return analysisChain
+    })
 
-    mockFrom
-      .mockReturnValueOnce(listingChain)
-      .mockReturnValueOnce(analysisChain)
+    mockFrom.mockReturnValueOnce(listingChain).mockReturnValueOnce(analysisChain)
 
     await saveAnalysis(makeAnalysis(), makeListing(), 'user-uuid-456')
 
@@ -420,16 +411,12 @@ describe('saveAnalysis', () => {
     const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
 
     const analysisChain = makeQueryChain({ data: null, error: null })
-    ;(analysisChain.insert as jest.Mock).mockImplementation(
-      (payload: Record<string, unknown>) => {
-        capturedInsertPayload = payload
-        return analysisChain
-      }
-    )
+    ;(analysisChain.insert as jest.Mock).mockImplementation((payload: Record<string, unknown>) => {
+      capturedInsertPayload = payload
+      return analysisChain
+    })
 
-    mockFrom
-      .mockReturnValueOnce(listingChain)
-      .mockReturnValueOnce(analysisChain)
+    mockFrom.mockReturnValueOnce(listingChain).mockReturnValueOnce(analysisChain)
 
     await saveAnalysis(makeAnalysis({ mode: 'investor' }), makeListing(), null)
 
@@ -445,7 +432,7 @@ describe('getAnalysisByToken', () => {
     jest.clearAllMocks()
   })
 
-  function makeValidListingRow() {
+  function makeValidListingRow(): Record<string, unknown> {
     return {
       id: 'listing-uuid',
       source_url: 'https://example.com/listing',

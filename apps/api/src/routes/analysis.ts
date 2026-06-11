@@ -34,6 +34,7 @@ import type {
   DealScoreBreakdown,
   Analysis,
   RiskFlag,
+  SunScoutResult,
 } from '../types/analysis'
 import {
   saveAnalysis,
@@ -45,6 +46,7 @@ import {
 } from '../services/supabaseService'
 import { generateNarrative, extractListingFlags } from '../services/anthropicService'
 import type { NarrativeInput } from '../services/anthropicService'
+import { geocodeAddress } from '../services/mapboxService'
 import type { Listing } from '../types/property'
 import { FREE_TIER } from '../constants/tiers'
 import { CONFIDENCE } from '../constants/thresholds'
@@ -89,6 +91,8 @@ interface CamelPropertyData {
   postalCode?: string
   sourceUrl?: string
   listingType?: 'for-sale' | 'for-rent'
+  lat?: number | null
+  lng?: number | null
 }
 
 interface CamelFinancing {
@@ -133,6 +137,8 @@ interface SnakePropertyData {
   year_built: number | null
   property_type: string
   is_toronto: boolean
+  lat: number | null
+  lng: number | null
 }
 
 interface SnakeFinancing {
@@ -165,7 +171,9 @@ function isCamelCaseRequest(body: unknown): body is CamelAnalysisRequest {
 
 function toSnakeRequest(
   body: CamelAnalysisRequest,
-  rentalOverride?: CamelAnalysisRequest['rental']
+  rentalOverride?: CamelAnalysisRequest['rental'],
+  lat: number | null = null,
+  lng: number | null = null
 ): SnakeAnalysisRequest {
   const p = body.propertyData
   const f = body.financing
@@ -184,6 +192,8 @@ function toSnakeRequest(
       year_built: p.yearBuilt ?? null,
       property_type: p.propertyType ?? 'condo',
       is_toronto: p.isToronto ?? false,
+      lat: lat ?? p.lat ?? null,
+      lng: lng ?? p.lng ?? null,
     },
     financing: {
       down_payment_pct: f.downPaymentPct,
@@ -258,11 +268,21 @@ interface PyRiskFlag {
   [key: string]: unknown
 }
 
+interface PySunScout {
+  annual_peak_sun_hours: number
+  summer_daily_hours: number
+  winter_daily_hours: number
+  seasonal_grid: Record<string, number>
+  sun_score: number
+  verdict: string
+}
+
 interface PyAnalysisOutput {
   metrics: PyInvestmentMetrics
   deal_score: PyDealScore
   risk_flags: PyRiskFlag[]
   has_sanity_warnings: boolean
+  sun_scout: PySunScout | null
 }
 
 // ── snake_case → camelCase output transforms ──────────────────────────────────
@@ -433,7 +453,23 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     const rentalForCalcEngine = comps ?? body.rental
-    const snakeBody = toSnakeRequest(body, rentalForCalcEngine)
+
+    // Attempt geocoding for SunScout (non-fatal — returns null when Mapbox not configured)
+    let geoLat: number | null = body.propertyData.lat ?? null
+    let geoLng: number | null = body.propertyData.lng ?? null
+    if (geoLat == null || geoLng == null) {
+      try {
+        const geo = await geocodeAddress(body.propertyData.address)
+        if (geo != null) {
+          geoLat = geo.lat
+          geoLng = geo.lng
+        }
+      } catch (err) {
+        fastify.log.warn({ err }, 'geocodeAddress failed — SunScout will be skipped')
+      }
+    }
+
+    const snakeBody = toSnakeRequest(body, rentalForCalcEngine, geoLat, geoLng)
 
     let pyResponse: Response
     try {
@@ -581,6 +617,16 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           ? narrativeSettled.value
           : null,
       hasSanityWarnings: pyData.has_sanity_warnings,
+      sunScout: pyData.sun_scout
+        ? ({
+            annualPeakSunHours: pyData.sun_scout.annual_peak_sun_hours,
+            summerDailyHours: pyData.sun_scout.summer_daily_hours,
+            winterDailyHours: pyData.sun_scout.winter_daily_hours,
+            seasonalGrid: pyData.sun_scout.seasonal_grid as SunScoutResult['seasonalGrid'],
+            sunScore: pyData.sun_scout.sun_score,
+            verdict: pyData.sun_scout.verdict as SunScoutResult['verdict'],
+          } satisfies SunScoutResult)
+        : null,
     }
 
     // Persist to Supabase — non-fatal; analysis still returns even if save fails.

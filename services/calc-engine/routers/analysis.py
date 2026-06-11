@@ -16,9 +16,10 @@ from models.schemas import (
     DealScoreOutput,
     DealScoreBreakdownOutput,
     ComponentMaxes,
+    SunScoutOutput,
 )
+from sunscout.sun_path import calculate_sun_hours
 from constants.rates import get_maintenance_rate
-from constants.thresholds import CONFIDENCE_RED_FLAG_MIN
 from calculations.mortgage import calculate_monthly_payment
 from calculations.closing_costs import estimate_closing_costs
 from calculations.investment import (
@@ -55,7 +56,9 @@ class AnalysisRequest(BaseModel):
     property_data: PropertyInput
     financing: FinancingInput
     rental: RentalEstimate
-    description: str | None = None  # raw listing description; run through extraction pipeline
+    description: str | None = (
+        None  # raw listing description; run through extraction pipeline
+    )
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -222,7 +225,23 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         for warning in sanity_warnings:
             logger.warning("Sanity check failed for %s: %s", prop.address, warning)
 
-    # ── 6. Assemble and return output ─────────────────────────────────────────
+    # ── 6. SunScout (non-fatal — skipped when lat/lng unavailable) ───────────
+    sun_scout_result: SunScoutOutput | None = None
+    if prop.lat is not None and prop.lng is not None:
+        try:
+            ss = calculate_sun_hours(prop.lat, prop.lng)
+            sun_scout_result = SunScoutOutput(
+                annual_peak_sun_hours=ss.annual_peak_sun_hours,
+                summer_daily_hours=ss.summer_daily_hours,
+                winter_daily_hours=ss.winter_daily_hours,
+                seasonal_grid=ss.seasonal_grid,
+                sun_score=ss.sun_score,
+                verdict=ss.verdict,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("SunScout failed for %s: %s", prop.address, exc)
+
+    # ── 7. Assemble and return output ─────────────────────────────────────────
     metrics = InvestmentMetricsOutput(
         cash_flow_monthly=round(cash_flow_monthly, 2),
         cash_flow_annual=round(cash_flow_annual, 2),
@@ -260,4 +279,5 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         deal_score=deal_score,
         risk_flags=serialised_flags,
         has_sanity_warnings=has_sanity_warnings,
+        sun_scout=sun_scout_result,
     )

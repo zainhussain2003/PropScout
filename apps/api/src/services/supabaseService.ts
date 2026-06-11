@@ -155,6 +155,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     riskFlags,
     narrative: row.ai_narrative,
     hasSanityWarnings: false,
+    sunScout: null,
   }
 }
 
