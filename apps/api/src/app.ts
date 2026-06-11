@@ -55,6 +55,8 @@ async function main(): Promise<void> {
 
   await fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })
 
+  await fastify.register(import('./routes/me'), { prefix: '/me' })
+
   fastify.get('/health', async (_req, _reply) => {
     return { status: 'ok', ts: new Date().toISOString() }
   })
