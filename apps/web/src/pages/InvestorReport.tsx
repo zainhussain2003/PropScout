@@ -719,10 +719,8 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
   const [dark, setDark] = useState<boolean>(false)
   const { listing, rental, neighbourhood } = getDemoDataset()
 
-  const { loading, error, financing, metrics, dealScore, updateFinancing } = useInvestorReport(
-    listing,
-    rental
-  )
+  const { loading, error, financing, metrics, dealScore, sunScout, updateFinancing } =
+    useInvestorReport(listing, rental)
 
   const handleToggleDark = useCallback(() => {
     setDark((d) => {
@@ -870,7 +868,7 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
             <NeighbourhoodSection listing={listing} neighbourhood={neighbourhood} />
 
             {/* ── §09 SunScout ───────────────────────────────────────── */}
-            <SunScoutPanel sunScout={null} sectionNumber="09" />
+            <SunScoutPanel sunScout={sunScout} sectionNumber="09" />
 
             {/* ── §10 STR analysis ───────────────────────────────────── */}
             <STRPlaceholderSection listing={listing} />
