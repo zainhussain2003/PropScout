@@ -501,7 +501,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     const dealScoreResult = toDealScore(pyData.deal_score)
 
     const narrativeInput: NarrativeInput = {
+      mode: reportMode,
       address: body.propertyData.address,
+      province: body.propertyData.province ?? 'ON',
       price: body.propertyData.price,
       propertyType: body.propertyData.propertyType ?? 'condo',
       beds: body.propertyData.beds,
@@ -510,9 +512,15 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       rentLow: rentalForCalcEngine.low,
       rentMid: rentalForCalcEngine.mid,
       rentHigh: rentalForCalcEngine.high,
+      compCount: comps?.compCount ?? 0,
+      compConfidence: comps?.confidence ?? 'low',
       capRate: metricsResult.capRate,
       cashFlowMonthly: metricsResult.cashFlowMonthly,
+      cashFlowAnnual: metricsResult.cashFlowAnnual,
+      cashOnCashReturn: metricsResult.cashOnCashReturn,
       dscr: metricsResult.dscr,
+      breakEvenRent: metricsResult.breakEvenRent,
+      condoFeeMonthly: body.propertyData.condoFeeMonthly ?? null,
       dealScore: dealScoreResult.total,
       dealVerdict: dealScoreResult.verdict,
       riskFlags: calcEngineFlags,

@@ -10,114 +10,258 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 export type NarrativeTier = 'free' | 'pro'
 
 export interface NarrativeInput {
+  // Report routing
+  mode: 'investor' | 'personal' | 'tenant' | 'landlord'
+
+  // Property basics
   address: string
+  province: string
   price: number
   propertyType: string
   beds: number
   baths: number
   sqft: number | null
+
+  // Rental market (all modes)
   rentLow: number
   rentMid: number
   rentHigh: number
+  compCount: number
+  compConfidence: 'low' | 'medium' | 'high'
+
+  // Investment metrics (investor / landlord modes)
   capRate: number
   cashFlowMonthly: number
+  cashFlowAnnual: number
+  cashOnCashReturn: number
   dscr: number
+  breakEvenRent: number
+  condoFeeMonthly: number | null
+
+  // Deal assessment
   dealScore: number
   dealVerdict: NonNullable<Analysis['dealScore']>['verdict']
+
+  // Risk flags
   riskFlags: RiskFlag[]
+
+  // Tier determines narrative length
   tier: NarrativeTier
 }
 
-/**
- * Build a summary of red risk flags for inclusion in the narrative prompt.
- * Returns "None" if no red flags are present.
- */
-function buildFlagsSummary(flags: RiskFlag[]): string {
-  const redFlags = flags.filter((f) => f.severity === 'red')
-  if (redFlags.length === 0) return 'None'
-  return redFlags.map((f) => f.label).join(', ')
+const SYSTEM_PROMPT =
+  'You are a Canadian real estate analyst. Write direct, data-driven verdicts in plain English. Use Canadian English. Reference specific dollar figures. Never use bullet points or numbered lists in your response.'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmtCAD(n: number): string {
+  return `$${Math.round(n).toLocaleString('en-CA')}`
 }
 
-/**
- * Build the user-facing narrative prompt for an investor report.
- * Free tier: brief 1-paragraph (60–120 words).
- * Pro tier: full 2–3 paragraph narrative (150–320 words).
- */
+function buildFlagsList(flags: RiskFlag[]): string {
+  const red = flags.filter((f) => f.severity === 'red').map((f) => f.label)
+  const amber = flags.filter((f) => f.severity === 'amber').map((f) => f.label)
+  if (red.length === 0 && amber.length === 0) return 'None'
+  const parts: string[] = []
+  if (red.length > 0) parts.push(`Red: ${red.join(', ')}`)
+  if (amber.length > 0) parts.push(`Amber: ${amber.join(', ')}`)
+  return parts.join(' | ')
+}
+
+function verdictLabel(v: NonNullable<Analysis['dealScore']>['verdict']): string {
+  return v.replace(/_/g, ' ')
+}
+
+// ── Prompt builders ───────────────────────────────────────────────────────────
+
+/** Report A & D — investment purchase / landlord rental */
 function buildInvestorPrompt(input: NarrativeInput): string {
-  const {
-    address,
-    price,
-    propertyType,
-    beds,
-    baths,
-    sqft,
-    rentLow,
-    rentMid,
-    rentHigh,
-    capRate,
-    cashFlowMonthly,
-    dscr,
-    dealScore,
-    dealVerdict,
-    riskFlags,
-    tier,
-  } = input
-
-  const sqftPart = sqft != null ? `, ${sqft.toLocaleString('en-CA')} sqft` : ''
-  const flagsSummary = buildFlagsSummary(riskFlags)
+  const sqftPart = input.sqft != null ? `, ${input.sqft.toLocaleString('en-CA')} sqft` : ''
+  const condoFeePart =
+    input.condoFeeMonthly != null ? `${fmtCAD(input.condoFeeMonthly)}/mo` : 'None'
   const tierInstruction =
-    tier === 'free'
-      ? 'brief 1-paragraph investor narrative (60–120 words)'
-      : 'full 2–3 paragraph investor narrative (150–320 words)'
+    input.tier === 'free'
+      ? '1 short paragraph, 4–5 sentences, 60–120 words'
+      : '3 paragraphs, 150–280 words'
 
-  return `Analyse this property for an investor:
-Address: ${address}
-Price: $${price.toLocaleString('en-CA')}
-Property type: ${propertyType}, ${beds} bed / ${baths} bath${sqftPart}
-Asking rent range: $${rentLow.toLocaleString('en-CA')}–$${rentHigh.toLocaleString('en-CA')}/mo (mid: $${rentMid.toLocaleString('en-CA')})
-Cap rate: ${(capRate * 100).toFixed(2)}%
-Monthly cash flow: $${cashFlowMonthly.toLocaleString('en-CA', { maximumFractionDigits: 0 })}
-DSCR: ${dscr.toFixed(2)}x
-Deal score: ${dealScore}/100 — ${dealVerdict.replace(/_/g, ' ')}
-Risk flags: ${flagsSummary}
+  return `You are a senior Canadian real estate investment analyst writing a deal verdict.
 
-Write a ${tierInstruction} about whether this is a good investment. Focus on the numbers. Do NOT start with "I" or "This property". Canadian English.`
+PROPERTY: ${input.address}
+PRICE: ${fmtCAD(input.price)}
+PROVINCE: ${input.province}
+TYPE: ${input.propertyType}, ${input.beds} bed / ${input.baths} bath${sqftPart}
+
+METRICS:
+- Cap rate: ${(input.capRate * 100).toFixed(2)}%
+- Monthly cash flow: ${fmtCAD(input.cashFlowMonthly)}/mo (annual: ${fmtCAD(input.cashFlowAnnual)})
+- Cash-on-cash return: ${(input.cashOnCashReturn * 100).toFixed(2)}%
+- DSCR: ${input.dscr.toFixed(2)}x
+- Deal score: ${input.dealScore}/100 — ${verdictLabel(input.dealVerdict)}
+- Estimated rent: ${fmtCAD(input.rentMid)}/mo (${input.compCount} comparables, confidence: ${input.compConfidence})
+- Rent range: ${fmtCAD(input.rentLow)}–${fmtCAD(input.rentHigh)}/mo
+- Break-even rent: ${fmtCAD(input.breakEvenRent)}/mo
+- Condo fee: ${condoFeePart}
+
+RISK FLAGS: ${buildFlagsList(input.riskFlags)}
+
+Write a ${tierInstruction} investment verdict:
+${
+  input.tier === 'free'
+    ? 'The single most important fact about this deal. Use dollar amounts.'
+    : `1. The single most important fact — the one thing that determines whether to proceed.
+2. The 2–3 specific numbers that back this up. Use dollar amounts, not just percentages.
+3. One concrete next step or the exact condition under which this deal would work.`
 }
 
-const NARRATIVE_SYSTEM_PROMPT =
-  'You are a Canadian real estate investment analyst. Write concise, data-driven investment narrative. Use Canadian English. Be direct about the deal quality. Reference specific numbers.'
+Rules: second person ("you"). Be direct. Plain paragraphs only. No bullet points. Do not mention PropScout. Do not say "as an AI." Assume the reader has seen all the numbers — add judgment, not repetition.`
+}
+
+/** Report B — personal purchase */
+function buildPersonalPrompt(input: NarrativeInput): string {
+  const sqftPart = input.sqft != null ? `, ${input.sqft.toLocaleString('en-CA')} sqft` : ''
+  const tierInstruction =
+    input.tier === 'free'
+      ? '1 short paragraph, 4–5 sentences, 60–120 words'
+      : '3 paragraphs, 150–240 words'
+
+  return `You are a real estate advisor helping someone decide whether to buy a home for personal use.
+
+PROPERTY: ${input.address}
+ASKING PRICE: ${fmtCAD(input.price)}
+TYPE: ${input.propertyType}, ${input.beds} bed / ${input.baths} bath${sqftPart}
+MONTHLY CARRYING COST: ${fmtCAD(input.breakEvenRent)}/mo (mortgage + taxes + insurance + condo fee)
+COMPARABLE SALES RANGE: Based on ${input.compCount} comparable sales (confidence: ${input.compConfidence})
+RISK FLAGS: ${buildFlagsList(input.riskFlags)}
+
+Write a ${tierInstruction} personal buyer verdict:
+${
+  input.tier === 'free'
+    ? 'Is this priced fairly and what is the most important thing to know before making an offer? Use dollar amounts.'
+    : `1. Is this priced fairly relative to recent comparable sales?
+2. The most important practical consideration for this buyer.
+3. What they should do before making an offer.`
+}
+
+Rules: second person. Warm but direct. Plain paragraphs only. No bullet points. Do not mention PropScout. Do not say "as an AI." Assume the reader has seen all the numbers.`
+}
+
+/** Report C — tenant evaluation */
+function buildTenantPrompt(input: NarrativeInput): string {
+  const leverage = ((): string => {
+    const above = input.rentMid - input.rentHigh
+    if (above > 100)
+      return `High — asking rent is ${fmtCAD(above)} above the top of the market range`
+    if (input.rentMid > input.rentHigh) return 'Moderate — asking rent is above market'
+    if (input.rentMid <= input.rentLow) return 'Strong — asking rent is at or below market'
+    return 'Low — asking rent is within the typical market range'
+  })()
+
+  const tierInstruction =
+    input.tier === 'free'
+      ? '1 short paragraph, 4–5 sentences, 60–120 words'
+      : '2 paragraphs, 150–180 words'
+
+  return `You are a tenant advisor reviewing a rental listing.
+
+UNIT: ${input.address}
+ASKING RENT: ${fmtCAD(input.rentMid)}/mo
+MARKET RANGE: ${fmtCAD(input.rentLow)}–${fmtCAD(input.rentHigh)}/mo (${input.compCount} comparables, confidence: ${input.compConfidence})
+LEVERAGE: ${leverage}
+FLAGS: ${buildFlagsList(input.riskFlags)}
+
+Write a ${tierInstruction} tenant verdict:
+${
+  input.tier === 'free'
+    ? 'Is this priced fairly? Should they negotiate? What is the one thing they must confirm before signing? Use dollar amounts.'
+    : `1. Is this priced fairly? Should they negotiate, and to what target rent?
+2. The one thing they must confirm before signing.`
+}
+
+Rules: second person. Direct. Plain paragraphs only. No bullet points. Do not mention PropScout. Do not say "as an AI." Assume the reader has seen all the numbers.`
+}
+
+// ── Output validation ─────────────────────────────────────────────────────────
+
+const BANNED_PHRASES = ['as an AI', 'as an ai', 'I cannot', 'PropScout', 'language model']
+const DOLLAR_RE = /\$[\d,]+/
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length
+}
+
+function validateNarrative(
+  text: string,
+  tier: NarrativeTier,
+  mode: NarrativeInput['mode']
+): boolean {
+  const words = countWords(text)
+  const [minWords, maxWords] = ((): [number, number] => {
+    if (tier === 'free') return [60, 120]
+    if (mode === 'tenant') return [150, 180]
+    if (mode === 'personal') return [150, 240]
+    return [150, 320] // investor / landlord
+  })()
+
+  if (words < minWords || words > maxWords) return false
+  if (BANNED_PHRASES.some((p) => text.includes(p))) return false
+  if (!DOLLAR_RE.test(text)) return false
+  return true
+}
+
+// ── Narrative generation ──────────────────────────────────────────────────────
+
+function selectPrompt(input: NarrativeInput): string {
+  switch (input.mode) {
+    case 'personal':
+      return buildPersonalPrompt(input)
+    case 'tenant':
+      return buildTenantPrompt(input)
+    case 'investor':
+    case 'landlord':
+    default:
+      return buildInvestorPrompt(input)
+  }
+}
 
 /**
  * Generate an AI narrative for a property analysis report.
  *
  * Free tier: 1 paragraph, 60–120 words.
- * Pro and above: 2–3 paragraphs, 150–320 words.
+ * Pro and above: 2–3 paragraphs (length varies by mode).
  *
- * Returns null if the API call fails — narrative failure must never crash the report.
- * Never call this function directly from a route handler.
- * Always call through this service file.
+ * Validates output and retries once on failure.
+ * Returns null if both attempts fail — narrative failure must never crash the report.
  */
 export async function generateNarrative(input: NarrativeInput): Promise<string | null> {
-  try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: input.tier === 'free' ? 200 : 600,
-      system: NARRATIVE_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: buildInvestorPrompt(input),
-        },
-      ],
-    })
+  const prompt = selectPrompt(input)
+  const maxTokens = input.tier === 'free' ? 200 : 700
 
-    const block = response.content[0]
-    if (block.type !== 'text') return null
-    return block.text.trim()
-  } catch (err) {
-    // Narrative failure is non-fatal — the report still loads without it
-    return null
+  async function attempt(): Promise<string | null> {
+    try {
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: maxTokens,
+        temperature: 0,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const block = response.content[0]
+      if (block.type !== 'text') return null
+      return block.text.trim()
+    } catch {
+      return null
+    }
   }
+
+  const first = await attempt()
+  if (first != null && validateNarrative(first, input.tier, input.mode)) return first
+
+  // Retry once on validation failure or API error
+  const second = await attempt()
+  if (second != null && validateNarrative(second, input.tier, input.mode)) return second
+
+  // Return whatever we have rather than null, so the report has something to show
+  return second ?? first
 }
 
 // ── Flag types returned by Haiku extraction ──────────────────────────────────
