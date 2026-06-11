@@ -120,16 +120,99 @@ export async function generateNarrative(input: NarrativeInput): Promise<string |
   }
 }
 
+// ── Flag types returned by Haiku extraction ──────────────────────────────────
+
+export interface FlagExtractionResult {
+  flags: ExtractionFlag[]
+  rawResponse: string
+}
+
+export interface ExtractionFlag {
+  flagId: string
+  present: boolean
+  confidence: number
+  evidence: string
+}
+
+const EXTRACTION_PROMPT_TEMPLATE = `You are a Canadian real estate listing analyst. Extract structured investment risk flags from the listing description below.
+
+For each flag type, output whether it is present, your confidence (0–100), and a brief quoted evidence string from the description. If a flag is not mentioned or cannot be inferred, set present: false and confidence: 0.
+
+Flag types to detect:
+- basement_suite: Evidence of a legal or illegal basement unit (income potential or fire risk)
+- short_term_rental: Evidence of AirBnB / Vrbo use or STR-optimized setup
+- shared_laundry: Laundry is shared with other units or in common area
+- coin_laundry: Pay-per-use laundry (lower quality signal)
+- street_parking_only: No dedicated parking, street parking only
+- first_floor_unit: Unit is on the ground floor (security, privacy concern)
+- condo_fee_includes_utilities: Condo fee covers heat, hydro, or water (affects NOI)
+- tenant_occupied: Unit currently has a tenant (rent control implications)
+- power_of_sale: Listing is a power of sale or foreclosure
+- as_is_where_is: Property sold as-is, seller makes no representations
+- no_representation: Seller has no knowledge of property condition
+- grow_op_history: History of marijuana grow operation or remediation
+- remediation_done: Environmental or mold remediation has been completed
+- flooding_history: Past flooding, water damage, or sump pump failures mentioned
+- noise_concern: Near highway, subway, airport, or industrial area
+
+Return ONLY a JSON array. No explanation, no markdown, no preamble.
+Format:
+[{"flagId":"flag_name","present":true,"confidence":85,"evidence":"exact quote or empty string"},...]
+
+LISTING DESCRIPTION:
+{{DESCRIPTION}}`
+
 /**
  * Extract structured flags from a listing description using Claude Haiku.
- * Returns a JSON object of flag keys and confidence scores.
  *
- * Never feed raw description text into deal score calculations.
- * All text must pass through this extraction pipeline first (spec Section 19).
+ * Returns an array of extraction flags with confidence scores.
+ * The logic gate in the analysis pipeline applies the 85%/60% thresholds
+ * to decide which flags reach the deal score calculation (spec Section 19).
+ *
+ * Returns null (non-fatal) if the API call fails.
  */
-export async function extractListingFlags(_description: string): Promise<Record<string, unknown>> {
-  // TODO: implement extraction prompt — see spec Section 19
-  throw new Error('extractListingFlags: not yet implemented')
+export async function extractListingFlags(
+  description: string
+): Promise<FlagExtractionResult | null> {
+  if (!description.trim()) return null
+
+  const prompt = EXTRACTION_PROMPT_TEMPLATE.replace('{{DESCRIPTION}}', description.slice(0, 4000))
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const block = response.content[0]
+    if (!block || block.type !== 'text') return null
+
+    const raw = block.text.trim()
+
+    let parsed: ExtractionFlag[]
+    try {
+      const jsonMatch = raw.match(/\[[\s\S]*\]/)
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw) as ExtractionFlag[]
+    } catch {
+      return null
+    }
+
+    if (!Array.isArray(parsed)) return null
+
+    const flags: ExtractionFlag[] = parsed
+      .filter((f) => typeof f === 'object' && f !== null && typeof f.flagId === 'string')
+      .map((f) => ({
+        flagId: String(f.flagId),
+        present: Boolean(f.present),
+        confidence: Math.min(100, Math.max(0, Number(f.confidence) || 0)),
+        evidence: typeof f.evidence === 'string' ? f.evidence : '',
+      }))
+
+    return { flags, rawResponse: raw }
+  } catch {
+    return null
+  }
 }
 
 export { client as anthropicClient }

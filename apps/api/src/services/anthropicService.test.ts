@@ -23,7 +23,7 @@ jest.mock('@anthropic-ai/sdk', () => {
   }
 })
 
-import { generateNarrative } from './anthropicService'
+import { generateNarrative, extractListingFlags } from './anthropicService'
 import type { NarrativeInput } from './anthropicService'
 
 // Pull the shared mock function reference out so tests can configure it
@@ -126,5 +126,78 @@ describe('generateNarrative', () => {
     const result = await generateNarrative(FREE_INPUT)
 
     expect(result).toBeNull()
+  })
+})
+
+// ── extractListingFlags ───────────────────────────────────────────────────────
+
+describe('extractListingFlags', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('returns null for an empty description', async () => {
+    const result = await extractListingFlags('')
+    expect(result).toBeNull()
+    expect(getMockCreate()).not.toHaveBeenCalled()
+  })
+
+  it('returns parsed flags on a valid JSON response from Haiku', async () => {
+    const mockFlags = [
+      {
+        flagId: 'basement_suite',
+        present: true,
+        confidence: 90,
+        evidence: 'finished basement suite',
+      },
+      { flagId: 'short_term_rental', present: false, confidence: 0, evidence: '' },
+    ]
+    getMockCreate().mockResolvedValueOnce({
+      content: [{ type: 'text', text: JSON.stringify(mockFlags) }],
+      model: 'claude-haiku-4-5-20251001',
+    })
+
+    const result = await extractListingFlags('Renovated 3-bed with finished basement suite.')
+
+    expect(result).not.toBeNull()
+    expect(result!.flags).toHaveLength(2)
+    expect(result!.flags[0]).toMatchObject({
+      flagId: 'basement_suite',
+      present: true,
+      confidence: 90,
+    })
+  })
+
+  it('returns null when the API throws', async () => {
+    getMockCreate().mockRejectedValueOnce(new Error('Rate limit'))
+
+    const result = await extractListingFlags('Some listing description.')
+
+    expect(result).toBeNull()
+  })
+
+  it('returns null when the response is not valid JSON', async () => {
+    getMockCreate().mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Not a JSON array at all.' }],
+      model: 'claude-haiku-4-5-20251001',
+    })
+
+    const result = await extractListingFlags('Some listing description.')
+
+    expect(result).toBeNull()
+  })
+
+  it('clamps confidence values to 0–100 range', async () => {
+    const mockFlags = [
+      { flagId: 'noise_concern', present: true, confidence: 150, evidence: 'near highway' },
+    ]
+    getMockCreate().mockResolvedValueOnce({
+      content: [{ type: 'text', text: JSON.stringify(mockFlags) }],
+      model: 'claude-haiku-4-5-20251001',
+    })
+
+    const result = await extractListingFlags('Near a major highway.')
+
+    expect(result!.flags[0]!.confidence).toBe(100)
   })
 })
