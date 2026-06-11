@@ -23,6 +23,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { SignInModal } from '../components/shared/SignInModal'
 import {
   PB_PROPERTY,
   PB_SCHOOLS,
@@ -1240,6 +1241,7 @@ interface PersonalBuyerPageProps {
 
 export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProps): JSX.Element {
   const [dark, setDark] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
 
   const financing = {
     downPct: PB_PROPERTY.defaultDownPct,
@@ -1274,9 +1276,7 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
             return next
           })
         }}
-        onSignIn={() => {
-          /* TODO: wire sign-in modal */
-        }}
+        onSignIn={() => setShowSignIn(true)}
       />
 
       <PersonalPropertyHero score={score} monthly={monthly} />
@@ -1300,6 +1300,7 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
 
       <Footer />
       <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
     </div>
   )
 }

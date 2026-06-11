@@ -30,6 +30,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { SignInModal } from '../components/shared/SignInModal'
 import {
   LL_PROPERTY,
   LL_RENT_COMPS,
@@ -283,6 +284,7 @@ interface LandlordPageProps {
 export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
   const [askingRent, setAskingRent] = useState(LL_PROPERTY.askingRent)
   const [financing, setFinancing] = useState<FinancingInputs>(LL_DEFAULT_FINANCING)
 
@@ -354,9 +356,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
             return next
           })
         }}
-        onSignIn={() => {
-          /* TODO: wire sign-in modal */
-        }}
+        onSignIn={() => setShowSignIn(true)}
       />
 
       {/* Hero + verdict */}
@@ -575,6 +575,7 @@ export function LandlordPage({ tier = 'pro' }: LandlordPageProps): JSX.Element {
 
       <Footer />
       <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
     </div>
   )
 }
