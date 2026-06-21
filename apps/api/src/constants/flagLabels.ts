@@ -6,10 +6,41 @@
  * label; the ID stays as the stable identifier for overrides + telemetry.
  *
  * Unknown IDs fall through to humanizeFlagId() which Title-Cases the words.
+ *
+ * Keep this list in sync with:
+ *   - services/calc-engine/extraction/haiku_extraction.py _FLAG_IDS
+ *   - services/calc-engine/extraction/regex_rules.py rule list
  */
 
 export const FLAG_LABELS: Record<string, string> = {
-  // Extraction-pipeline flags (spec Section 19)
+  // Haiku-extracted flags (haiku_extraction.py _FLAG_IDS)
+  unverified_bedroom: 'Unverified bedroom (den or office)',
+  glass_door_bedroom: 'Glass-door bedroom',
+  is_basement_unit: 'Basement unit',
+  basement_unit: 'Basement / secondary suite',
+  parking_unclear: 'Parking status unclear',
+  parking_included: 'Parking included',
+  illegal_unit_risk: 'Unpermitted secondary suite risk',
+  special_assessment_risk: 'Special assessment / reserve fund risk',
+  no_exterior_window: 'Possible no exterior window',
+  pets_allowed: 'Pets allowed',
+  no_pets: 'No pets',
+  utilities_included: 'Utilities included',
+  utilities_extra: 'Utilities extra (not included)',
+  furnished: 'Furnished',
+  den_present: 'Den present',
+  no_smoking: 'No smoking',
+  short_term_ok: 'Short-term rental allowed',
+  renovation_needed: 'Needs renovation',
+  new_construction: 'New construction',
+
+  // Regex-only flags not in the Haiku set
+  tenanted: 'Tenant occupied',
+  str_history: 'Short-term rental history',
+  needs_work: 'Sold as-is / needs work',
+  recently_renovated: 'Recently renovated',
+
+  // Legacy / spec-only flags (kept for backward compat with older clients)
   basement_suite: 'Basement suite',
   short_term_rental: 'Short-term rental setup',
   shared_laundry: 'Shared laundry',

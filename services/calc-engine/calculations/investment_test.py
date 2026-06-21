@@ -47,7 +47,11 @@ def test_maintenance_rate_old_build() -> None:
 
 
 def test_maintenance_rate_unknown() -> None:
-    assert get_maintenance_rate(None) == 0.005
+    # Unknown year defaults to the middle bracket (1.0%) rather than the
+    # newest-build rate (0.5%). Realtor.ca often doesn't expose year_built
+    # in the static HTML; defaulting low understated maintenance cost for
+    # every property that didn't get the field scraped.
+    assert get_maintenance_rate(None) == 0.010
 
 
 # ── calculate_financing_scenarios ─────────────────────────────────

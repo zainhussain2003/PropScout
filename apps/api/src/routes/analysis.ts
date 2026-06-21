@@ -24,18 +24,20 @@ import {
   updateAnalysisByToken,
   fetchRentalComps,
 } from '../services/supabaseService'
-import {
-  extractListingFlags,
-  generateNarrative,
-  type NarrativeInput,
-} from '../services/anthropicService'
+import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
 import { getVacancyRateByCity } from '../services/cmhcService'
+import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
+import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
+// Mortgage rate is overridden per-request by the live Bank of Canada rate
+// (via bankOfCanadaService → calc engine /rates/mortgage). 0.0479 is the
+// hardcoded fallback used by the calc engine when the live fetch fails — kept
+// here too so tests don't need to mock the rate service.
 const FINANCING_DEFAULTS = {
   down_payment_pct: 0.2,
   mortgage_rate: 0.0479,
@@ -194,12 +196,13 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // Step 3 — mark processing
       await updateAnalysisStatus(token, 'processing')
 
-      // Step 4 — extract listing flags (never throws — result feeds the calc engine in a future step)
-      if (listing.description) {
-        await extractListingFlags(listing.description)
-      }
+      // (The listing description is forwarded to the calc engine in the
+      // payload below — the calc engine runs the full extraction pipeline
+      // (regex + Haiku merge + confidence gating) and applies red-flag
+      // deductions to the deal score. Doing extraction here too would be
+      // duplicate work and the result would be ignored.)
 
-      // Step 4b — fetch rental comps from nightly-scraped rental_listings.
+      // Step 4 — fetch rental comps from nightly-scraped rental_listings.
       // Falls back to a low-confidence estimate from the listing's own rent
       // (or the price-based proxy) when the FSA has no comps yet.
       const comps = await fetchRentalComps(listing.postalCode, listing.beds).catch(() => null)
@@ -213,18 +216,35 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         confidence: 'low' as const,
       }
 
+      // Step 4b — live mortgage rate (falls back to FINANCING_DEFAULTS.mortgage_rate
+      // when the BoC service is unreachable or returns 'fallback').
+      const liveRate = await getMortgageRate().catch(() => null)
+      const financingForCalc = {
+        ...FINANCING_DEFAULTS,
+        mortgage_rate: liveRate?.rate ?? FINANCING_DEFAULTS.mortgage_rate,
+      }
+
       // Step 5 — build calc engine payload
       // For for-rent listings (tenant/landlord modes), listing.price is null.
       // Estimate property value from monthly rent at a ~6% gross yield proxy
       // so the calc engine can produce a deal score without failing validation.
       const estimatedPrice = listing.price ?? Math.round((listing.rentMonthly ?? 1500) * 200)
 
+      // Estimate annual taxes from price + city when the scraper couldn't
+      // find the actual value. Defaulting to 0 understated carrying costs
+      // by $400–800/mo on a typical Ontario property.
+      const annualTaxesForCalc =
+        listing.annualTaxes ?? estimateAnnualTaxes(estimatedPrice, listing.city)
+
       const calcPayload = {
+        // Forwarded so the calc engine runs the extraction pipeline and
+        // deducts from the deal score for confirmed red flags.
+        description: listing.description ?? null,
         property_data: {
           address: listing.address,
           province: listing.province,
           price: estimatedPrice,
-          annual_taxes: listing.annualTaxes ?? 0,
+          annual_taxes: annualTaxesForCalc,
           condo_fee_monthly: listing.condoFeeMonthly,
           condo_fee_known: listing.condoFeeKnown,
           beds: listing.beds,
@@ -234,7 +254,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           property_type: listing.propertyType,
           is_toronto: listing.city === 'Toronto',
         },
-        financing: FINANCING_DEFAULTS,
+        financing: financingForCalc,
         rental: {
           low: rentalForCalc.low,
           mid: rentalForCalc.mid,
