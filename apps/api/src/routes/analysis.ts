@@ -32,6 +32,7 @@ import {
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
 import { getVacancyRateByCity } from '../services/cmhcService'
+import { flagLabel } from '../constants/flagLabels'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -92,8 +93,11 @@ interface PyInvestmentMetrics {
 }
 
 interface PyRiskFlag {
+  /** Calc engine uses snake_case `flag_id`; older callers may send `id`. */
+  flag_id?: string
   id?: string
   severity?: string
+  /** Calc engine doesn't send a label — orchestrator resolves it via flagLabel(). */
   label?: string
   evidence?: string | null
   confidence?: number
@@ -285,8 +289,21 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         : null
 
       // Step 8 — generate narrative (never throws)
-      const flagLabels = pyData.risk_flags
-        .map((f) => String(f.label ?? ''))
+      // The Python calc engine returns flag_id (not id) and no label; resolve
+      // human-readable labels here for both the narrative + the UI payload.
+      const resolvedFlags = pyData.risk_flags.map((f) => {
+        const id = String(f.flag_id ?? f.id ?? '')
+        return {
+          id,
+          severity: (f.severity as 'red' | 'amber') ?? 'amber',
+          label: flagLabel(id),
+          evidence: (f.evidence as string | null) ?? null,
+          confidence: Number(f.confidence ?? 0),
+        }
+      })
+
+      const flagLabels = resolvedFlags
+        .map((f) => f.label)
         .filter(Boolean)
         .join(', ')
 
@@ -333,13 +350,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
               postalCode: listing.postalCode,
             }
           : null,
-        riskFlags: pyData.risk_flags.map((f) => ({
-          id: String(f.id ?? ''),
-          severity: (f.severity as 'red' | 'amber') ?? 'amber',
-          label: String(f.label ?? ''),
-          evidence: (f.evidence as string | null) ?? null,
-          confidence: Number(f.confidence ?? 0),
-        })),
+        riskFlags: resolvedFlags,
         narrative,
         walkScore,
         neighbourhood: null,

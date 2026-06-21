@@ -59,10 +59,16 @@ function mapPropertyType(raw: string): PropertyType {
   if (lower.includes('town') || lower.includes('row')) return 'townhouse'
   if (lower.includes('semi')) return 'semi-detached'
   if (lower.includes('detach')) return 'detached'
+  // Realtor.ca uses "Single Family" for detached houses. Map to 'detached'.
+  if (lower.includes('single family') || lower.includes('house')) return 'detached'
   if (lower.includes('multiplex') || lower.includes('duplex') || lower.includes('triplex'))
     return 'multiplex'
   if (lower.includes('commercial')) return 'commercial'
-  return 'condo'
+  if (lower.includes('condo') || lower.includes('apartment')) return 'condo'
+  // Unknown — default to 'detached' rather than 'condo' since the latter triggers
+  // the synthetic condo_fee_unknown flag (often a false positive). Detached is the
+  // more common Ontario type and doesn't carry a fee assumption.
+  return 'detached'
 }
 
 function extractCity(address: string): string {
