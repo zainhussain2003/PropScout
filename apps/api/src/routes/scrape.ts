@@ -178,7 +178,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       // Step 5 — write to Supabase
-      const listingId = await saveListing(listing)
+      const listingId = await saveListing(listing, 'realtor_ca')
       const token = randomUUID()
       await createPendingAnalysis(listingId, token)
 

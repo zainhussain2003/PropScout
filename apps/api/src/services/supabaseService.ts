@@ -29,9 +29,11 @@ interface ListingRow {
   source: string
   listing_type: string
   address: string
+  city: string | null
   postal_code: string | null
   province: string | null
   price: number | null
+  rent_monthly: number | null
   beds: number | null
   baths: number | null
   sqft: number | null
@@ -42,6 +44,7 @@ interface ListingRow {
   condo_fee_known: boolean
   year_built: number | null
   year_built_known: boolean
+  parking_spots: number | null
   listing_description: string | null
   photo_urls: string[] | null
   days_on_market: number | null
@@ -70,16 +73,22 @@ interface AnalysisRow {
 
 /**
  * Map a Listing object to the listings table row shape.
+ * `source` defaults to 'manual' for non-scraper paths; scrape.ts passes 'realtor_ca'.
  */
-function listingToRow(listing: Listing): Omit<ListingRow, 'id' | 'scraped_at'> {
+function listingToRow(
+  listing: Listing,
+  source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
+): Omit<ListingRow, 'id' | 'scraped_at'> {
   return {
     source_url: listing.url,
-    source: 'manual' as const,
+    source,
     listing_type: listing.listingType === 'for-sale' ? 'for_sale' : 'for_rent',
     address: listing.address,
+    city: listing.city || null,
     postal_code: listing.postalCode ?? null,
     province: listing.province ?? null,
     price: listing.price ?? null,
+    rent_monthly: listing.rentMonthly ?? null,
     beds: listing.beds,
     baths: listing.baths,
     sqft: listing.sqft ?? null,
@@ -90,6 +99,7 @@ function listingToRow(listing: Listing): Omit<ListingRow, 'id' | 'scraped_at'> {
     condo_fee_known: listing.condoFeeKnown,
     year_built: listing.yearBuilt ?? null,
     year_built_known: listing.yearBuilt != null,
+    parking_spots: listing.parkingSpots ?? null,
     listing_description: listing.description ?? null,
     photo_urls: listing.photos.length > 0 ? listing.photos : null,
     days_on_market: null,
@@ -105,17 +115,17 @@ function rowToListing(row: ListingRow): Listing {
     url: row.source_url,
     listingType: row.listing_type === 'for_sale' ? 'for-sale' : 'for-rent',
     address: row.address,
-    city: '',
+    city: row.city ?? '',
     province: (row.province ?? 'ON') as Listing['province'],
     postalCode: row.postal_code ?? '',
     price: row.price,
-    rentMonthly: null,
+    rentMonthly: row.rent_monthly,
     beds: row.beds ?? 0,
     baths: row.baths ?? 0,
     sqft: row.sqft,
-    propertyType: (row.property_type ?? 'condo') as Listing['propertyType'],
+    propertyType: (row.property_type ?? 'detached') as Listing['propertyType'],
     yearBuilt: row.year_built,
-    parkingSpots: 0,
+    parkingSpots: row.parking_spots ?? 0,
     condoFeeMonthly: row.condo_fee_monthly,
     condoFeeKnown: row.condo_fee_known,
     annualTaxes: row.annual_taxes,
@@ -133,6 +143,8 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
   const marketData = row.market_data as {
     dealScore?: Analysis['dealScore']
     sunScout?: Analysis['sunScout']
+    walkScore?: Analysis['walkScore']
+    hasSanityWarnings?: boolean
   } | null
   const dealScore = marketData?.dealScore ?? null
   const riskFlags = Array.isArray(row.risk_flags) ? (row.risk_flags as Analysis['riskFlags']) : []
@@ -156,8 +168,8 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     rentalComps: rentalEstimate,
     riskFlags,
     narrative: row.ai_narrative,
-    hasSanityWarnings: false,
-    walkScore: null,
+    hasSanityWarnings: marketData?.hasSanityWarnings ?? false,
+    walkScore: marketData?.walkScore ?? null,
     neighbourhood: null,
     sunScout: marketData?.sunScout ?? null,
   }
@@ -243,7 +255,12 @@ export async function saveAnalysis(
       report_mode: modeMap[analysis.mode],
       financing_params: null,
       rental_estimate: analysis.rentalComps ?? null,
-      market_data: { dealScore: analysis.dealScore, sunScout: analysis.sunScout },
+      market_data: {
+        dealScore: analysis.dealScore,
+        sunScout: analysis.sunScout,
+        walkScore: analysis.walkScore,
+        hasSanityWarnings: analysis.hasSanityWarnings,
+      },
       calculated_metrics: analysis.metrics ?? null,
       deal_score: analysis.dealScore?.total ?? null,
       risk_flags: analysis.riskFlags,
@@ -661,9 +678,15 @@ export async function deleteFlagOverride(token: string, flagId: string): Promise
 /**
  * Upsert a listing by source_url and return its id.
  * Used by POST /scrape to persist the scraped listing before analysis.
+ *
+ * @param source distinguishes Realtor.ca scraper from manual entry — controls
+ *   the `source` column for downstream filtering (analytics, debugging).
  */
-export async function saveListing(listing: Omit<Listing, 'id'>): Promise<string> {
-  const payload = listingToRow(listing as Listing)
+export async function saveListing(
+  listing: Omit<Listing, 'id'>,
+  source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
+): Promise<string> {
+  const payload = listingToRow(listing as Listing, source)
   const { data, error } = await db()
     .from('listings')
     .upsert(payload, { onConflict: 'source_url' })
@@ -769,7 +792,12 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
     .update({
       report_mode: modeMap[analysis.mode],
       rental_estimate: analysis.rentalComps ?? null,
-      market_data: { dealScore: analysis.dealScore, sunScout: analysis.sunScout },
+      market_data: {
+        dealScore: analysis.dealScore,
+        sunScout: analysis.sunScout,
+        walkScore: analysis.walkScore,
+        hasSanityWarnings: analysis.hasSanityWarnings,
+      },
       calculated_metrics: analysis.metrics ?? null,
       deal_score: analysis.dealScore?.total ?? null,
       risk_flags: analysis.riskFlags,
