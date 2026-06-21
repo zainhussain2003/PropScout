@@ -30,6 +30,7 @@ import type {
   FinancingInputs,
   ComputedInvestorMetrics,
   DealScoreData,
+  SunScoutResult,
 } from '../types/analysis'
 import type { RentalInput, PropertyInput } from '../types/api'
 
@@ -48,6 +49,9 @@ export interface UseInvestorReportResult {
 
   /** Display-ready deal score with label, tagline, and tone */
   dealScore: DealScoreData | null
+
+  /** SunScout data — null in demo mode, populated from live analysis when available */
+  sunScout: SunScoutResult | null
 
   /** Update financing — triggers local recompute (demo) or API re-run (live) */
   updateFinancing: (financing: FinancingInputs) => void
@@ -190,6 +194,7 @@ export function useInvestorReport(
     financing,
     metrics: isDemo ? demoMetrics : apiMetrics,
     dealScore: isDemo ? demoDealScore : apiDealScore,
+    sunScout: isDemo ? null : (analysis?.sunScout ?? null),
     updateFinancing,
   }
 }

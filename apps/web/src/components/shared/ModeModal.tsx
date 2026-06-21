@@ -93,6 +93,7 @@ export interface ListingPreviewData {
   beds: string
   sqft: string
   extra?: string
+  sourceUrl?: string
 }
 
 function ListingPreview({ listing }: { listing: ListingPreviewData }): JSX.Element {

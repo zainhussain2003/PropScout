@@ -27,80 +27,111 @@ export class ApiRequestError extends Error {
   }
 }
 
-// ── camelCase → snake_case request body ───────────────────────────────────────
-
-interface SnakePropertyInput {
-  address: string
-  province: string
-  price: number
-  annual_taxes: number
-  condo_fee_monthly: number | null
-  condo_fee_known: boolean
-  beds: number
-  baths: number
-  sqft: number | null
-  year_built: number | null
-  property_type: string
-  is_toronto: boolean
-}
-
-interface SnakeFinancingInput {
-  down_payment_pct: number
-  mortgage_rate: number
-  amortization_years: number
-  include_management_fee: boolean
-}
-
-interface SnakeRentalInput {
-  low: number
-  mid: number
-  high: number
-  comp_count: number
-  confidence: 'low' | 'medium' | 'high'
-  postal_code: string
-}
+// ── Fastify request body (camelCase — Fastify converts to snake_case for calc engine) ──
 
 interface AnalysisRequestBody {
-  property_data: SnakePropertyInput
-  financing: SnakeFinancingInput
-  rental: SnakeRentalInput
+  propertyData: PropertyInput & { sourceUrl?: string; listingType?: string }
+  financing: FinancingInput
+  rental: RentalInput
+  mode?: string
+  listingDescription?: string
 }
 
-function toSnakeProperty(p: PropertyInput): SnakePropertyInput {
-  return {
-    address: p.address,
-    province: p.province ?? 'ON',
-    price: p.price,
-    annual_taxes: p.annualTaxes,
-    condo_fee_monthly: p.condoFeeMonthly ?? null,
-    condo_fee_known: p.condoFeeKnown ?? false,
-    beds: p.beds,
-    baths: p.baths,
-    sqft: p.sqft ?? null,
-    year_built: p.yearBuilt ?? null,
-    property_type: p.propertyType ?? 'condo',
-    is_toronto: p.isToronto ?? false,
-  }
+// ── Scrape types ──────────────────────────────────────────────────────────────
+
+export interface ScrapedListing {
+  sourceUrl: string
+  listingId: string
+  address: string
+  city: string
+  province: string
+  postalCode: string | null
+  price: number | null
+  rentMonthly: number | null
+  beds: number | null
+  baths: number | null
+  sqft: number | null
+  sqftKnown: boolean
+  yearBuilt: number | null
+  yearBuiltKnown: boolean
+  propertyType: string
+  parkingSpots: number
+  parkingKnown: boolean
+  condoFeeMonthly: number | null
+  condoFeeKnown: boolean
+  annualTaxes: number | null
+  annualTaxesKnown: boolean
+  isToronto: boolean
+  description: string | null
+  listingType: 'for-sale' | 'for-rent'
 }
 
-function toSnakeFinancing(f: FinancingInput): SnakeFinancingInput {
-  return {
-    down_payment_pct: f.downPaymentPct,
-    mortgage_rate: f.mortgageRate,
-    amortization_years: f.amortizationYears,
-    include_management_fee: f.includeManagementFee ?? false,
-  }
+export interface ScrapeResult {
+  success: boolean
+  listing: ScrapedListing | null
+  error: string | null
 }
 
-function toSnakeRental(r: RentalInput): SnakeRentalInput {
-  return {
-    low: r.low,
-    mid: r.mid,
-    high: r.high,
-    comp_count: r.compCount,
-    confidence: r.confidence,
-    postal_code: r.postalCode,
+export async function scrapeUrl(url: string): Promise<ScrapeResult> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/scrape`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+  } catch {
+    return { success: false, listing: null, error: 'NETWORK_ERROR' }
   }
+
+  if (!response.ok) {
+    let error = 'SCRAPE_FAILED'
+    try {
+      const json = (await response.json()) as { error?: string }
+      if (json.error) error = json.error
+    } catch {
+      // use default
+    }
+    return { success: false, listing: null, error }
+  }
+
+  const data = (await response.json()) as {
+    success: boolean
+    listing: Record<string, unknown> | null
+    error: string | null
+  }
+  if (!data.success || data.listing == null) {
+    return { success: false, listing: null, error: data.error ?? 'SCRAPE_FAILED' }
+  }
+
+  const r = data.listing
+  const listing: ScrapedListing = {
+    sourceUrl: String(r.source_url ?? url),
+    listingId: String(r.listing_id ?? ''),
+    address: String(r.address ?? ''),
+    city: String(r.city ?? ''),
+    province: String(r.province ?? 'ON'),
+    postalCode: r.postal_code != null ? String(r.postal_code) : null,
+    price: r.price != null ? Number(r.price) : null,
+    rentMonthly: r.rent_monthly != null ? Number(r.rent_monthly) : null,
+    beds: r.beds != null ? Number(r.beds) : null,
+    baths: r.baths != null ? Number(r.baths) : null,
+    sqft: r.sqft != null ? Number(r.sqft) : null,
+    sqftKnown: Boolean(r.sqft_known),
+    yearBuilt: r.year_built != null ? Number(r.year_built) : null,
+    yearBuiltKnown: Boolean(r.year_built_known),
+    propertyType: String(r.property_type ?? 'condo'),
+    parkingSpots: Number(r.parking_spots ?? 0),
+    parkingKnown: Boolean(r.parking_known),
+    condoFeeMonthly: r.condo_fee_monthly != null ? Number(r.condo_fee_monthly) : null,
+    condoFeeKnown: Boolean(r.condo_fee_known),
+    annualTaxes: r.annual_taxes != null ? Number(r.annual_taxes) : null,
+    annualTaxesKnown: Boolean(r.annual_taxes_known),
+    isToronto: Boolean(r.is_toronto),
+    description: r.description != null ? String(r.description) : null,
+    listingType: (r.listing_type as 'for-sale' | 'for-rent') ?? 'for-sale',
+  }
+  return { success: true, listing, error: null }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -117,19 +148,28 @@ function toSnakeRental(r: RentalInput): SnakeRentalInput {
 export async function runAnalysis(
   property: PropertyInput,
   financing: FinancingInput,
-  rental: RentalInput
+  rental: RentalInput,
+  mode?: string,
+  options?: { accessToken?: string; listingDescription?: string }
 ): Promise<Analysis> {
   const body: AnalysisRequestBody = {
-    property_data: toSnakeProperty(property),
-    financing: toSnakeFinancing(financing),
-    rental: toSnakeRental(rental),
+    propertyData: property,
+    financing,
+    rental,
+    ...(mode != null ? { mode } : {}),
+    ...(options?.listingDescription ? { listingDescription: options.listingDescription } : {}),
+  }
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (options?.accessToken) {
+    headers['Authorization'] = `Bearer ${options.accessToken}`
   }
 
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/analysis/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     })
   } catch (err) {
@@ -329,4 +369,47 @@ export async function fetchReport(token: string): Promise<FetchReportResult> {
   }
 
   return response.json() as Promise<FetchReportResult>
+}
+
+// ── Province waitlist ─────────────────────────────────────────────────────────
+
+/**
+ * Submit an email to the province waitlist. Non-fatal — failure is silently
+ * swallowed so the ProvinceGate still shows the confirmation screen.
+ */
+export async function postWaitlist(email: string, province: string): Promise<void> {
+  try {
+    await fetch(`${BASE_URL}/waitlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, province }),
+    })
+  } catch {
+    // Non-fatal — user sees confirmation screen regardless
+  }
+}
+
+// ── Get saved analysis by share token ─────────────────────────────────────────
+
+export interface GetAnalysisResult {
+  analysis: Analysis
+  listing: import('../../types/property').Listing
+}
+
+/**
+ * Fetch a saved analysis by its share token.
+ * Returns null if not found or expired.
+ */
+export async function getAnalysisByToken(token: string): Promise<GetAnalysisResult | null> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`)
+  } catch {
+    return null
+  }
+
+  if (response.status === 404) return null
+  if (!response.ok) return null
+
+  return response.json() as Promise<GetAnalysisResult>
 }

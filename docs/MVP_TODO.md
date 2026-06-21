@@ -10,6 +10,11 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ## Week 1–2 — Data pipeline (nothing else works without this)
 
+### Database schema
+
+- [x] Initial Supabase migration (`20260610_initial_schema.sql`) — users, subscriptions, listings, rental_listings, schools, analyses, portfolio_properties, waitlist, flag_overrides, sanity_failures + RLS policies + comp-query/dedupe indexes
+- [ ] Migration run against production Supabase project (Week 8–10 deploy step)
+
 ### Realtor.ca scraper
 
 - [ ] Extract listing ID from Realtor.ca URL
@@ -43,21 +48,22 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Rental comps scraper (nightly job)
 
-- [ ] Playwright scraper for Rentals.ca
-- [ ] Playwright scraper for Kijiji (rental category)
-- [ ] Playwright scraper for PadMapper
-- [ ] Normalise: geocode address to lat/lng
-- [ ] Normalise: convert weekly rents to monthly
-- [ ] Normalise: parse beds to integer
-- [ ] Deduplicate: same address + rent + beds within 7 days = one record
-- [ ] Store to `rental_listings` table with timestamp
-- [ ] Schedule as nightly Railway job at 2am ET
+- [x] Playwright scraper for Rentals.ca (`sources/rentals_ca.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Playwright scraper for Kijiji (rental category) (`sources/kijiji.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Playwright scraper for PadMapper (`sources/padmapper.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Normalise: geocode address to lat/lng (`services/mapbox_service.py` — non-fatal on failure)
+- [x] Normalise: convert weekly rents to monthly (×4.33, daily rates discarded)
+- [x] Normalise: parse beds to integer (Studio/Bachelor → 0, dens never counted)
+- [x] Deduplicate: same address + rent + beds within 7 days = one record (in-batch + against stored rows)
+- [x] Store to `rental_listings` table with timestamp (insert-only — historical rows never deleted)
+- [ ] Schedule as nightly Railway job at 2am ET (`railway.json` cron config written — Railway deploy + first-run confirmation pending)
+- [x] Unit + functionality tests — 50 passing (normalization, dedupe, full pipeline with mocked sources/storage/geocoding)
 
 ### Province detection
 
-- [ ] Parse postal code from scraped address
-- [ ] Ontario FSA check (starts with K, L, M, N, P)
-- [ ] Non-Ontario → return province code, block analysis, trigger waitlist flow
+- [x] Parse postal code from scraped address (`isOntarioPostalCode()` in provinces.ts + frontend `isOntarioPostal()` in AnalyzingPage)
+- [x] Ontario FSA check (starts with K, L, M, N, P) — backend `isOntarioPostalCode()` + frontend early check
+- [x] Non-Ontario → return province code, block analysis, trigger waitlist flow — backend 400 PROVINCE_NOT_SUPPORTED + frontend `province_gate` view + POST /waitlist endpoint
 
 ---
 
@@ -334,24 +340,24 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 
 ### PR 9 — Route wiring (end-to-end integration)
 
-- [ ] `.env.example` updated — WALKSCORE_API_KEY, MAPBOX_TOKEN, SCRAPER_URL confirmed present alongside existing vars
-- [ ] Supabase migration — `analyses` table with id, token, listing_id, user_id, mode, status, analysis, created_at, expires_at
-- [ ] `saveAnalysis`, `updateAnalysisStatus`, `getAnalysisByToken` implemented in supabaseService.ts
-- [ ] Realtor.ca scraper — `services/scrapers/realtor_scraper.py` with ScrapedListing dataclass, rate limiting, unit tests
-- [ ] `POST /scrape` Fastify route — calls scraper, province gate (Ontario FSA check), writes to Supabase, returns token
-- [ ] Mapbox geocoding service — `apps/api/src/services/mapboxService.ts`, returns lat/lng or null
-- [ ] Walk Score service — `apps/api/src/services/walkScoreService.ts`, returns WalkScoreResult or null
-- [ ] `extractListingFlags` — Claude Haiku step in anthropicService.ts, description in → structured flags out
-- [ ] Claude narrative — `generateNarrative` in anthropicService.ts, free (1 para) and pro (2–3 para) tiers
-- [ ] `POST /analysis` expanded to full orchestrator — 9-step pipeline, writes complete analysis on finish
-- [ ] `GET /analysis/:token` — returns pending/processing status or full analysis, 404/410 on miss/expiry
-- [ ] `analysisService.ts` — scrapeUrl, triggerAnalysis, fetchReport implemented with real API calls
-- [ ] `LandingPage.tsx` — real scrapeUrl call replaces runDemo(), province gate and scraper-fail paths wired
-- [ ] `ModeModal` → navigates to `/analyzing?token=[token]&mode=[mode]` on mode selection
-- [ ] `/analyzing` page — triggerAnalysis on mount, polls fetchReport every 2s, navigates to /r/[token] on complete
-- [ ] `/r/[token]` report page — fetches real analysis, routes to correct report component, replaces fixture data
+- [x] `.env.example` updated — WALKSCORE_API_KEY, MAPBOX_TOKEN, SCRAPER_URL confirmed present alongside existing vars
+- [x] Supabase migration — `analyses` table with id, token, listing_id, user_id, mode, status, analysis, created_at, expires_at
+- [x] `saveAnalysis`, `updateAnalysisStatus`, `getAnalysisByToken` implemented in supabaseService.ts
+- [x] Realtor.ca scraper — `services/scrapers/realtor_scraper.py` with ScrapedListing dataclass, rate limiting, unit tests
+- [x] `POST /scrape` Fastify route — calls scraper, province gate (Ontario FSA check), writes to Supabase, returns token
+- [x] Mapbox geocoding service — `apps/api/src/services/mapboxService.ts`, returns lat/lng or null
+- [x] Walk Score service — `apps/api/src/services/walkScoreService.ts`, returns WalkScoreResult or null
+- [x] `extractListingFlags` — Claude Haiku step in anthropicService.ts, description in → structured flags out
+- [x] Claude narrative — `generateNarrative` in anthropicService.ts, free (1 para) and pro (2–3 para) tiers
+- [x] `POST /analysis` expanded to full orchestrator — 9-step pipeline, writes complete analysis on finish
+- [x] `GET /analysis/:token` — returns pending/processing status or full analysis, 404/410 on miss/expiry
+- [x] `analysisService.ts` — scrapeUrl, triggerAnalysis, fetchReport implemented with real API calls
+- [x] `LandingPage.tsx` — real scrapeUrl call replaces runDemo(), province gate and scraper-fail paths wired
+- [x] `ModeModal` → navigates to `/analyzing?token=[token]&mode=[mode]` on mode selection
+- [x] `/analyzing` page — triggerAnalysis on mount, polls fetchReport every 2s, navigates to /r/[token] on complete
+- [x] `/r/[token]` report page — fetches real analysis, routes to correct report component, replaces fixture data
 - [ ] Integration test — mock scraper → real calc engine → mock Claude + Walk Score → assert token roundtrip
-- [ ] All existing analysis route tests and useAnalysis hook tests pass
+- [x] All existing analysis route tests and useAnalysis hook tests pass
 - [ ] Golden dataset regression passes 95%+
 
 ---
@@ -390,11 +396,11 @@ All tasks reference spec Section 19.
 
 - [x] Deterministic regex rules (`regex_rules.py`) — patterns for 7 flag types, Phase 1
 - [x] Logic gate (`logic_gate.py`) — merges regex + AI results, 85%/60% confidence thresholds
-- [ ] Claude Haiku extraction — full implementation (`haiku_extraction.py` is a stub)
-- [ ] JSON parse validation with fallback (all-false on parse error, log failure)
-- [ ] Red flag threshold: 85%+ → red, deducts score
-- [ ] Amber flag threshold: 60–84% → amber, no score deduction
-- [ ] Below 60% → not shown
+- [x] Claude Haiku extraction — `extractListingFlags()` in anthropicService.ts (Fastify layer) + `haiku_extraction.py` in Python layer
+- [x] JSON parse validation with fallback (all-false on parse error, returns null non-fatally)
+- [x] Red flag threshold: 85%+ → red, deducts score (CONFIDENCE.RED_FLAG_MIN in analysis route)
+- [x] Amber flag threshold: 60–84% → amber, no score deduction
+- [x] Below 60% → not shown (filtered out before merge in analysis route)
 - [ ] `flag_overrides` table in Supabase
 - [ ] User override toggle component in React
 - [ ] Override triggers instant deal score recalculation (no page reload)
@@ -404,21 +410,38 @@ All tasks reference spec Section 19.
 - [x] Pytest regression test suite written for golden dataset (framework in place, 1 test passing)
 - [ ] Accuracy at or above 95% before proceeding to Week 6 (pending Haiku implementation)
 
+### SunScout
+
+- [x] pvlib installed in Python calc engine
+- [x] `window_sun_hours_by_month()` — NREL SPA via pvlib, 1-hour resolution, sample 15th of each month × days_in_month
+- [x] `annual_light_score()` — weighted benchmark scoring (bedroom_main 40%, living 35%, others 25%)
+- [x] Score interpretation labels (excellent / good / average / below_average / poor)
+- [x] `calculate_sun_hours()` — main entry point returning `SunScoutResult` dataclass
+- [x] 22 unit tests in `sun_path_test.py` (physics assertions, sanity ranges, score calibration)
+- [x] `SunScoutOutput` Pydantic model + `sun_scout` field on `AnalysisOutput` in calc engine
+- [x] Calc engine router calls `calculate_sun_hours()` when lat/lng present (non-fatal)
+- [x] `SunScoutResult` TypeScript interface in both API and web type trees
+- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase
+- [ ] Window direction input UI (compass direction dropdown per window) — Phase 2
+- [ ] Monthly sun hours grid output wired to real data (SeasonalGrid component exists, needs Analysis.sunScout)
+- [ ] Sun arc SVG visualization wired to real data (SunArcViz component exists, needs summer/winter hours)
+- [ ] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data
+
 ---
 
 ## Week 6–7 — AI narratives and PDF
 
 ### Claude Sonnet narratives
 
-- [ ] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
-- [ ] Report A / D investment prompt — Pro tier (3 paragraphs, 150–320 words)
-- [ ] Report B personal prompt — free tier
-- [ ] Report B personal prompt — Pro tier
-- [ ] Report C tenant prompt — free tier
-- [ ] Report C tenant prompt — Pro tier
-- [ ] Output validation: word count, banned phrases, dollar figure requirement
-- [ ] Regenerate once on validation failure, log and show fallback on second failure
-- [ ] Calibrate against gold-standard examples in spec Section 12
+- [x] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
+- [x] Report A / D investment prompt — Pro tier (3 paragraphs, 150–280 words)
+- [x] Report B personal prompt — free tier
+- [x] Report B personal prompt — Pro tier
+- [x] Report C tenant prompt — free tier
+- [x] Report C tenant prompt — Pro tier
+- [x] Output validation: word count, banned phrases, dollar figure requirement
+- [x] Regenerate once on validation failure, log and show fallback on second failure
+- [ ] Calibrate against gold-standard examples in spec Section 12 (manual QA step at launch)
 
 ### PDF export
 
@@ -441,8 +464,8 @@ All tasks reference spec Section 19.
 - [ ] Stripe — subscription checkout flow
 - [ ] Stripe — webhook handling (subscription created, updated, cancelled)
 - [ ] Tier stored on `users` table, updated via webhook
-- [ ] Free tier: 10 analyses/month counter enforced
-- [ ] Free tier: analysis limit gate screen with upgrade prompt
+- [x] Free tier: 10 analyses/month counter enforced (backend 429 FREE_LIMIT_REACHED via JWT auth + getMonthlyAnalysisCount)
+- [x] Free tier: analysis limit gate screen with upgrade prompt (HardLimitGate wired into AnalyzingPage via limit_gate view)
 - [ ] Free tier: PDF button locked with upgrade prompt
 - [ ] Free tier: SunScout building obstruction locked (Phase 2 — show placeholder)
 - [ ] Free tier: portfolio tracker locked
@@ -450,7 +473,7 @@ All tasks reference spec Section 19.
 - [ ] Pro tier: all above unlocked
 - [ ] Shareable link generation (UUID token stored in `analyses.share_token`)
 - [ ] Shareable link viewer (no login, shows full report, 30-day expiry)
-- [ ] Province waitlist — email capture stored to `waitlist` table with province tag
+- [x] Province waitlist — email capture stored to `waitlist` table with province tag (POST /waitlist + addToWaitlist() + ProvinceGate onSubmit wired)
 - [ ] Guest analysis — 1 free analysis without login, email capture at end
 
 ---

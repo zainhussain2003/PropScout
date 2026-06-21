@@ -77,6 +77,16 @@ export interface RentalEstimate {
   postalCode: string
 }
 
+export interface SunScoutResult {
+  annualPeakSunHours: number
+  summerDailyHours: number
+  winterDailyHours: number
+  seasonalGrid: { Dec: number; Mar: number; Jun: number; Sep: number }
+  monthlyHours: number[] // 12 values, index 0=Jan, index 11=Dec (bedroom_main window)
+  sunScore: number
+  verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
+}
+
 export interface Analysis {
   id: string
   token: string
@@ -90,4 +100,5 @@ export interface Analysis {
   hasSanityWarnings: boolean
   walkScore: WalkScoreResult | null
   neighbourhood: null // placeholder for Phase 2; always null in MVP
+  sunScout: SunScoutResult | null
 }

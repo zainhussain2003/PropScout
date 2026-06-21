@@ -33,6 +33,10 @@ from routers import analysis  # noqa: E402
 
 app.include_router(analysis.router, prefix="/analysis")
 
+from routers import scrape  # noqa: E402
+
+app.include_router(scrape.router, prefix="/scrape")
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:

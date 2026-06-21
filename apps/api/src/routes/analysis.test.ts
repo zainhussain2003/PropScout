@@ -27,14 +27,18 @@ jest.mock('../services/anthropicService')
 jest.mock('../services/mapboxService')
 jest.mock('../services/walkScoreService')
 
-import { getListingByToken, updateAnalysisStatus, saveAnalysis } from '../services/supabaseService'
+import {
+  getListingByToken,
+  updateAnalysisStatus,
+  updateAnalysisByToken,
+} from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
 
 const mockGetListingByToken = jest.mocked(getListingByToken)
 const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
-const mockSaveAnalysis = jest.mocked(saveAnalysis)
+const mockSaveAnalysis = jest.mocked(updateAnalysisByToken)
 const mockExtractListingFlags = jest.mocked(extractListingFlags)
 const mockGenerateNarrative = jest.mocked(generateNarrative)
 const mockGeocodeAddress = jest.mocked(geocodeAddress)
@@ -291,8 +295,8 @@ describe('POST / — analysis orchestrator', () => {
     })
 
     expect(mockSaveAnalysis).toHaveBeenCalledTimes(1)
-    const [analysisArg] = mockSaveAnalysis.mock.calls[0]
-    expect(analysisArg.token).toBe('test-token')
+    const [tokenArg, analysisArg] = mockSaveAnalysis.mock.calls[0]
+    expect(tokenArg).toBe('test-token')
     expect(analysisArg.mode).toBe('investor')
   })
 })

@@ -16,7 +16,9 @@ from models.schemas import (
     DealScoreOutput,
     DealScoreBreakdownOutput,
     ComponentMaxes,
+    SunScoutOutput,
 )
+from sunscout.sun_path import calculate_sun_hours
 from constants.rates import get_maintenance_rate
 from calculations.mortgage import calculate_monthly_payment
 from calculations.closing_costs import estimate_closing_costs
@@ -31,6 +33,9 @@ from calculations.investment import (
 )
 from calculations.deal_score import calculate_deal_score
 from calculations.sanity import sanity_check_metrics
+from extraction.regex_rules import extract_regex_flags
+from extraction.haiku_extraction import extract_flags_with_haiku
+from extraction.logic_gate import merge_flags, MergedFlag
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +46,9 @@ _DEFAULT_CMHC_VACANCY_RATE: float = 0.02
 _DEFAULT_RENTAL_DOM: int = 21
 _DEFAULT_RENT_TREND: str = "flat"
 
+# Points deducted from the deal score per confirmed red flag
+_DEDUCTION_PER_RED_FLAG: int = 5
+
 
 class AnalysisRequest(BaseModel):
     """Combined request body for the analysis endpoint."""
@@ -48,6 +56,9 @@ class AnalysisRequest(BaseModel):
     property_data: PropertyInput
     financing: FinancingInput
     rental: RentalEstimate
+    description: str | None = (
+        None  # raw listing description; run through extraction pipeline
+    )
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -148,6 +159,41 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         include_management=fin.include_management_fee,
     )
 
+    # ── 3b. Listing description extraction pipeline ───────────────────────────
+    # Runs regex first (deterministic), then Haiku for gray areas.
+    # Logic gate merges and applies confidence thresholds.
+    # Only validated red flags (85%+ confidence) deduct from the deal score.
+    merged_flags: list = []
+    risk_flag_deductions: float = 0.0
+
+    if body.description:
+        try:
+            regex_flags = extract_regex_flags(body.description)
+            haiku_flags = await extract_flags_with_haiku(body.description)
+            merged_flags = merge_flags(regex_flags, haiku_flags)
+
+            red_flag_count = sum(1 for f in merged_flags if f.severity == "red")
+            risk_flag_deductions = float(red_flag_count * _DEDUCTION_PER_RED_FLAG)
+        except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
+            logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
+            merged_flags = []
+            risk_flag_deductions = 0.0
+
+    # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
+    # The calculation uses $0 when condo_fee_monthly is not provided, which may
+    # silently understate carrying costs by hundreds per month for condos.
+    # Surface an amber warning so the user can correct it in the financing sliders.
+    if prop.property_type == "condo" and not prop.condo_fee_known:
+        condo_fee_flag = MergedFlag(
+            flag_id="condo_fee_unknown",
+            severity="amber",
+            confidence=100,
+            evidence="Condo fee not provided — costs calculated assuming $0/month",
+            source="structural",
+        )
+        if not any(f.flag_id == "condo_fee_unknown" for f in merged_flags):
+            merged_flags.append(condo_fee_flag)
+
     # ── 4. Deal score ─────────────────────────────────────────────────────────
     score_result = calculate_deal_score(
         cap_rate=cap_rate,
@@ -157,7 +203,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         cmhc_vacancy_rate=_DEFAULT_CMHC_VACANCY_RATE,
         rental_days_on_market=_DEFAULT_RENTAL_DOM,
         rent_trend=_DEFAULT_RENT_TREND,
-        risk_flag_deductions=0,  # extraction pipeline wired in Week 5–6
+        risk_flag_deductions=risk_flag_deductions,
     )
 
     br = score_result["breakdown"]
@@ -197,7 +243,26 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         for warning in sanity_warnings:
             logger.warning("Sanity check failed for %s: %s", prop.address, warning)
 
-    # ── 6. Assemble and return output ─────────────────────────────────────────
+    # ── 6. SunScout (non-fatal — skipped when lat/lng unavailable) ───────────
+    sun_scout_result: SunScoutOutput | None = None
+    if prop.lat is not None and prop.lng is not None:
+        try:
+            ss = calculate_sun_hours(prop.lat, prop.lng)
+            bedroom_main = ss.window_hours.get("bedroom_main", {})
+            monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
+            sun_scout_result = SunScoutOutput(
+                annual_peak_sun_hours=ss.annual_peak_sun_hours,
+                summer_daily_hours=ss.summer_daily_hours,
+                winter_daily_hours=ss.winter_daily_hours,
+                seasonal_grid=ss.seasonal_grid,
+                monthly_hours=monthly_hours,
+                sun_score=ss.sun_score,
+                verdict=ss.verdict,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("SunScout failed for %s: %s", prop.address, exc)
+
+    # ── 7. Assemble and return output ─────────────────────────────────────────
     metrics = InvestmentMetricsOutput(
         cash_flow_monthly=round(cash_flow_monthly, 2),
         cash_flow_annual=round(cash_flow_annual, 2),
@@ -218,9 +283,22 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         has_sanity_warnings=has_sanity_warnings,
     )
 
+    # Serialise merged flags into the response — only flags above amber threshold
+    serialised_flags: list[dict[str, object]] = [
+        {
+            "flag_id": f.flag_id,
+            "severity": f.severity,
+            "confidence": f.confidence,
+            "evidence": f.evidence,
+            "source": f.source,
+        }
+        for f in merged_flags
+    ]
+
     return AnalysisOutput(
         metrics=metrics,
         deal_score=deal_score,
-        risk_flags=[],  # extraction pipeline wired in Week 5–6
+        risk_flags=serialised_flags,
         has_sanity_warnings=has_sanity_warnings,
+        sun_scout=sun_scout_result,
     )

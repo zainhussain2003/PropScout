@@ -40,7 +40,6 @@ import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
 import { SectionHead } from '../components/shared/SectionHead'
 import { Icon } from '../components/shared/Icon'
-import { Chip } from '../components/shared/Chip'
 import { PropertyHero } from '../components/analysis/PropertyHero'
 import { AIVerdictBlock } from '../components/analysis/AIVerdictBlock'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
@@ -52,6 +51,7 @@ import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
+import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { fmtMoney } from '../lib/investorCalc'
 
 // ── Demo dataset selection ─────────────────────────────────────────────────────
@@ -232,110 +232,6 @@ function DueDiligenceSection(): JSX.Element {
             </div>
           </div>
         ))}
-      </div>
-    </section>
-  )
-}
-
-// ── Section: SunScout placeholder (§09) ───────────────────────────────────────
-
-function SunScoutPlaceholderSection(): JSX.Element {
-  return (
-    <section className="container tr-section" data-section="09">
-      <SectionHead
-        n="09"
-        topic="SunScout"
-        question={
-          <>
-            How much <em>light</em> does it get?
-          </>
-        }
-        verdict="Modeling · Phase 2"
-        tone="caution"
-      />
-
-      <div
-        className="card col"
-        style={{ padding: 40, gap: 20, alignItems: 'center', textAlign: 'center' }}
-      >
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 999,
-            background: 'color-mix(in oklab, var(--caution) 14%, transparent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon name="sun" size={28} />
-        </div>
-
-        <div className="col" style={{ gap: 8, maxWidth: 560 }}>
-          <Chip>Coming Phase 2</Chip>
-          <h4 className="serif" style={{ fontSize: 24 }}>
-            Solar path analysis — shipping Q3 2026.
-          </h4>
-          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-            SunScout will use NASA NREL sun-path data and building-height obstruction modelling to
-            show you peak sun hours by season and window orientation. Ideal for evaluating
-            south-facing condos and adding solar panels.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: 12,
-            marginTop: 8,
-            width: '100%',
-            filter: 'blur(2px)',
-            opacity: 0.5,
-            pointerEvents: 'none',
-          }}
-          aria-hidden="true"
-        >
-          {(['Dec', 'Mar', 'Jun', 'Sep'] as const).map((month) => (
-            <div
-              key={month}
-              className="col"
-              style={{
-                padding: '16px',
-                borderRadius: 12,
-                background: 'var(--bg-elev)',
-                border: '1px solid var(--line)',
-                gap: 4,
-              }}
-            >
-              <span
-                className="mono"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted)',
-                }}
-              >
-                {month}
-              </span>
-              <span className="serif tabular" style={{ fontSize: 22, lineHeight: 1 }}>
-                {month === 'Jun'
-                  ? '6.8'
-                  : month === 'Sep'
-                    ? '5.1'
-                    : month === 'Mar'
-                      ? '4.4'
-                      : '2.9'}
-                h
-              </span>
-              <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
-                peak sun / day
-              </span>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   )
@@ -840,12 +736,13 @@ export function InvestorReport({
     ? shimToNeighbourhood(realAnalysis)
     : demoData.neighbourhood
 
-  const { loading, error, financing, metrics, dealScore, updateFinancing } = useInvestorReport(
-    listing,
-    demoData.rental,
-    undefined,
-    realAnalysis ?? null // skip internal API call when analysis is preloaded
-  )
+  const { loading, error, financing, metrics, dealScore, sunScout, updateFinancing } =
+    useInvestorReport(
+      listing,
+      demoData.rental,
+      undefined,
+      realAnalysis ?? null // skip internal API call when analysis is preloaded
+    )
 
   const handleToggleDark = useCallback(() => {
     setDark((d) => {
@@ -1000,7 +897,7 @@ export function InvestorReport({
             <NeighbourhoodSection listing={listing} neighbourhood={neighbourhood} />
 
             {/* ── §09 SunScout ───────────────────────────────────────── */}
-            <SunScoutPlaceholderSection />
+            <SunScoutPanel sunScout={sunScout} sectionNumber="09" />
 
             {/* ── §10 STR analysis ───────────────────────────────────── */}
             <STRPlaceholderSection listing={listing} />

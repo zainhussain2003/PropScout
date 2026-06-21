@@ -18,7 +18,11 @@ import type {
   ReportMode,
   WalkScoreResult,
 } from '../types/analysis'
-import { getListingByToken, updateAnalysisStatus, saveAnalysis } from '../services/supabaseService'
+import {
+  getListingByToken,
+  updateAnalysisStatus,
+  updateAnalysisByToken,
+} from '../services/supabaseService'
 import {
   extractListingFlags,
   generateNarrative,
@@ -318,7 +322,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       // Step 10 — save and return
-      await saveAnalysis(analysis, listing, null)
+      await updateAnalysisByToken(token, analysis)
       return reply.send({ token, analysis })
     } catch (err) {
       fastify.log.error({ err }, 'Unexpected error in POST /analysis')

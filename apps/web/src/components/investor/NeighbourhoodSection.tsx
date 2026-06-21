@@ -71,6 +71,7 @@ export function NeighbourhoodSection({
 
       {/* 6 stat tiles */}
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',

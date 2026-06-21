@@ -14,10 +14,7 @@ export interface School {
 /**
  * Find nearby schools for a given property location.
  */
-export async function getNearbySchools(
-  _lat: number,
-  _lng: number
-): Promise<School[]> {
+export async function getNearbySchools(_lat: number, _lng: number): Promise<School[]> {
   // TODO: implement — requires GOOGLE_PLACES_KEY
-  throw new Error('getNearbySchools: not yet implemented')
+  return []
 }

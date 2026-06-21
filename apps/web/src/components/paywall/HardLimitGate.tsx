@@ -18,6 +18,10 @@ interface HardLimitGateProps {
   used: number
   /** Human-readable time until the quota resets. Default "32 days". */
   resetsIn?: string
+  /** Display label for when the current billing cycle started. e.g. "Jun 1" */
+  cycleStart?: string
+  /** Display label for when the quota resets. e.g. "Jul 1" */
+  resetDate?: string
 }
 
 export function HardLimitGate({
@@ -25,6 +29,8 @@ export function HardLimitGate({
   monthlyLimit,
   used,
   resetsIn = '32 days',
+  cycleStart,
+  resetDate,
 }: HardLimitGateProps): JSX.Element {
   return (
     <div
@@ -138,8 +144,11 @@ export function HardLimitGate({
               color: 'rgba(255,255,255,0.5)',
             }}
           >
-            <span>Started this cycle May 1</span>
-            <span className="mono tabular">Resets June 1 · {resetsIn}</span>
+            {cycleStart != null && <span>Started this cycle {cycleStart}</span>}
+            <span className="mono tabular">
+              {resetDate != null ? `Resets ${resetDate} · ` : ''}
+              {resetsIn}
+            </span>
           </div>
 
           <div

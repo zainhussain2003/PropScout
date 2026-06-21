@@ -23,6 +23,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { SignInModal } from '../components/shared/SignInModal'
 import {
   PB_PROPERTY,
   PB_SCHOOLS,
@@ -43,6 +44,7 @@ import { DealScore } from '../components/analysis/DealScore'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { PBTrueCostSection } from '../components/personal/PBTrueCostSection'
 import { PBFMVSection } from '../components/personal/PBFMVSection'
+import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
@@ -1539,6 +1541,7 @@ export function PersonalBuyerPage({
   listing: realListing,
 }: PersonalBuyerPageProps): JSX.Element {
   const [dark, setDark] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
 
   const isReal = !!(realAnalysis && realListing)
 
@@ -1598,9 +1601,7 @@ export function PersonalBuyerPage({
             return next
           })
         }}
-        onSignIn={() => {
-          /* TODO: wire sign-in modal */
-        }}
+        onSignIn={() => setShowSignIn(true)}
       />
 
       <PersonalPropertyHero
@@ -1646,6 +1647,7 @@ export function PersonalBuyerPage({
 
       <Footer />
       <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
     </div>
   )
 }
