@@ -126,6 +126,8 @@ function makeAnalysis(overrides: Partial<Analysis> = {}): Analysis {
     riskFlags: [],
     narrative: null,
     hasSanityWarnings: false,
+    walkScore: null,
+    neighbourhood: null,
     sunScout: null,
     ...overrides,
   }

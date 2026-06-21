@@ -80,6 +80,7 @@ const ANALYSIS_FIXTURE: Analysis = {
   narrative: 'Test narrative.',
   walkScore: null,
   neighbourhood: null,
+  sunScout: null,
   hasSanityWarnings: false,
 }
 

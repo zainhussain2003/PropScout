@@ -624,7 +624,8 @@ export async function getListingByToken(token: string): Promise<Listing | null> 
     return null
   }
 
-  const row = (data as { listings: ListingRow | null }).listings
+  const listings = (data as { listings: ListingRow | ListingRow[] | null }).listings
+  const row = Array.isArray(listings) ? (listings[0] ?? null) : listings
   if (row == null) return null
   return rowToListing(row)
 }

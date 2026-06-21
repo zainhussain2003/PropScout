@@ -318,6 +318,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         narrative,
         walkScore,
         neighbourhood: null,
+        sunScout: null,
         hasSanityWarnings: pyData.has_sanity_warnings,
       }
 

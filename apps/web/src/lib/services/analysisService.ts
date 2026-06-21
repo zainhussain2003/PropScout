@@ -72,68 +72,6 @@ export interface ScrapeResult {
   error: string | null
 }
 
-export async function scrapeUrl(url: string): Promise<ScrapeResult> {
-  let response: Response
-  try {
-    response = await fetch(`${BASE_URL}/scrape`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    })
-  } catch {
-    return { success: false, listing: null, error: 'NETWORK_ERROR' }
-  }
-
-  if (!response.ok) {
-    let error = 'SCRAPE_FAILED'
-    try {
-      const json = (await response.json()) as { error?: string }
-      if (json.error) error = json.error
-    } catch {
-      // use default
-    }
-    return { success: false, listing: null, error }
-  }
-
-  const data = (await response.json()) as {
-    success: boolean
-    listing: Record<string, unknown> | null
-    error: string | null
-  }
-  if (!data.success || data.listing == null) {
-    return { success: false, listing: null, error: data.error ?? 'SCRAPE_FAILED' }
-  }
-
-  const r = data.listing
-  const listing: ScrapedListing = {
-    sourceUrl: String(r.source_url ?? url),
-    listingId: String(r.listing_id ?? ''),
-    address: String(r.address ?? ''),
-    city: String(r.city ?? ''),
-    province: String(r.province ?? 'ON'),
-    postalCode: r.postal_code != null ? String(r.postal_code) : null,
-    price: r.price != null ? Number(r.price) : null,
-    rentMonthly: r.rent_monthly != null ? Number(r.rent_monthly) : null,
-    beds: r.beds != null ? Number(r.beds) : null,
-    baths: r.baths != null ? Number(r.baths) : null,
-    sqft: r.sqft != null ? Number(r.sqft) : null,
-    sqftKnown: Boolean(r.sqft_known),
-    yearBuilt: r.year_built != null ? Number(r.year_built) : null,
-    yearBuiltKnown: Boolean(r.year_built_known),
-    propertyType: String(r.property_type ?? 'condo'),
-    parkingSpots: Number(r.parking_spots ?? 0),
-    parkingKnown: Boolean(r.parking_known),
-    condoFeeMonthly: r.condo_fee_monthly != null ? Number(r.condo_fee_monthly) : null,
-    condoFeeKnown: Boolean(r.condo_fee_known),
-    annualTaxes: r.annual_taxes != null ? Number(r.annual_taxes) : null,
-    annualTaxesKnown: Boolean(r.annual_taxes_known),
-    isToronto: Boolean(r.is_toronto),
-    description: r.description != null ? String(r.description) : null,
-    listingType: (r.listing_type as 'for-sale' | 'for-rent') ?? 'for-sale',
-  }
-  return { success: true, listing, error: null }
-}
-
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
