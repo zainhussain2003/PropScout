@@ -160,11 +160,18 @@ def _parse_rendered_fields(
 
 async def scrape_listing(url: str) -> ScrapedListing | None:
     """
-    Scrape a single Realtor.ca listing URL via ScraperAPI (render=true).
+    Scrape a single Realtor.ca listing URL via ScraperAPI (premium proxy).
 
-    Rendered requests typically take 15–30 s. Taxes, condo fee, and year built
-    are populated from the JS-rendered DOM; all other fields come from the
-    dataLayer JS block and schema.org JSON-LD present in the static HTML.
+    Uses `premium=true` only (no `render=true`). ScraperAPI's render mode
+    fails with HTTP 500 on Realtor.ca listing pages — their JS bot detection
+    catches the headless browser even with a residential proxy. The static
+    HTML returned by `premium=true` already contains the dataLayer.property
+    JS block, the JSON-LD <script>, and the propertyDetailsSection label/value
+    pairs (taxes), so the parser has everything it needs.
+
+    Caveat: condo fee and year built are sometimes JS-injected (only show up
+    with render). Those fields are wrapped in _known flags — the calc engine
+    treats them as missing when absent, which is the right behaviour.
 
     Args:
         url: Full Realtor.ca listing URL.
@@ -186,7 +193,6 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
                 params={
                     "api_key": SCRAPER_API_KEY,
                     "url": url,
-                    "render": "true",
                     "premium": "true",
                 },
             )
