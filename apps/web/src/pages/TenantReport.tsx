@@ -1471,7 +1471,7 @@ export function TenantReport({
       )}
 
       {/* §09 SunScout */}
-      <SunScoutPanel sunScout={null} sectionNumber="09" />
+      <SunScoutPanel sunScout={realAnalysis?.sunScout ?? null} sectionNumber="09" />
 
       {/* §10 Comps map */}
       <CompsMapSection />

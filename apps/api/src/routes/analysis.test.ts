@@ -31,6 +31,7 @@ import {
   getListingByToken,
   updateAnalysisStatus,
   updateAnalysisByToken,
+  fetchRentalComps,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -39,6 +40,7 @@ import { getWalkScore } from '../services/walkScoreService'
 const mockGetListingByToken = jest.mocked(getListingByToken)
 const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
 const mockSaveAnalysis = jest.mocked(updateAnalysisByToken)
+const mockFetchRentalComps = jest.mocked(fetchRentalComps)
 const mockExtractListingFlags = jest.mocked(extractListingFlags)
 const mockGenerateNarrative = jest.mocked(generateNarrative)
 const mockGeocodeAddress = jest.mocked(geocodeAddress)
@@ -151,6 +153,7 @@ describe('POST / — analysis orchestrator', () => {
     mockGenerateNarrative.mockResolvedValue('Test narrative')
     mockGeocodeAddress.mockResolvedValue(null)
     mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
 
     global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })

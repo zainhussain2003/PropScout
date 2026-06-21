@@ -22,6 +22,7 @@ import {
   getListingByToken,
   updateAnalysisStatus,
   updateAnalysisByToken,
+  fetchRentalComps,
 } from '../services/supabaseService'
 import {
   extractListingFlags,
@@ -193,6 +194,20 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         await extractListingFlags(listing.description)
       }
 
+      // Step 4b — fetch rental comps from nightly-scraped rental_listings.
+      // Falls back to a low-confidence estimate from the listing's own rent
+      // (or the price-based proxy) when the FSA has no comps yet.
+      const comps = await fetchRentalComps(listing.postalCode, listing.beds).catch(() => null)
+
+      const rentalFallback = listing.rentMonthly ?? Math.round((listing.price ?? 0) * 0.005) // ~0.5%/mo of price
+      const rentalForCalc = comps ?? {
+        low: Math.round(rentalFallback * 0.9),
+        mid: rentalFallback,
+        high: Math.round(rentalFallback * 1.1),
+        compCount: 0,
+        confidence: 'low' as const,
+      }
+
       // Step 5 — build calc engine payload
       // For for-rent listings (tenant/landlord modes), listing.price is null.
       // Estimate property value from monthly rent at a ~6% gross yield proxy
@@ -216,11 +231,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         },
         financing: FINANCING_DEFAULTS,
         rental: {
-          low: 0,
-          mid: 0,
-          high: 0,
-          comp_count: 0,
-          confidence: 'low',
+          low: rentalForCalc.low,
+          mid: rentalForCalc.mid,
+          high: rentalForCalc.high,
+          comp_count: rentalForCalc.compCount,
+          confidence: rentalForCalc.confidence,
           postal_code: listing.postalCode,
         },
       }
@@ -286,9 +301,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         dscr: pyData.metrics.dscr,
         dealScore: pyData.deal_score.total,
         dealVerdict: pyData.deal_score.verdict,
-        rentMid: 0,
-        compCount: 0,
-        rentConfidence: 'low',
+        rentMid: rentalForCalc.mid,
+        compCount: rentalForCalc.compCount,
+        rentConfidence: rentalForCalc.confidence,
         breakEvenRent: pyData.metrics.break_even_rent,
         condoFeeMonthly: listing.condoFeeMonthly,
         condoFeeKnown: listing.condoFeeKnown,
@@ -307,7 +322,16 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         createdAt: new Date().toISOString(),
         metrics: toMetrics(pyData.metrics),
         dealScore: toDealScore(pyData.deal_score),
-        rentalComps: null,
+        rentalComps: comps
+          ? {
+              low: comps.low,
+              mid: comps.mid,
+              high: comps.high,
+              compCount: comps.compCount,
+              confidence: comps.confidence,
+              postalCode: listing.postalCode,
+            }
+          : null,
         riskFlags: pyData.risk_flags.map((f) => ({
           id: String(f.id ?? ''),
           severity: (f.severity as 'red' | 'amber') ?? 'amber',

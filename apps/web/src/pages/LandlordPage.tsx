@@ -629,7 +629,7 @@ export function LandlordPage({
       <NeighbourhoodSection listing={listing} neighbourhood={neighbourhood} />
 
       {/* §10 SunScout */}
-      <SunScoutPanel sunScout={null} sectionNumber="10" />
+      <SunScoutPanel sunScout={realAnalysis?.sunScout ?? null} sectionNumber="10" />
 
       {/* §11 STR placeholder */}
       <STRPlaceholderSection listing={listing} />
