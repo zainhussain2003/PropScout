@@ -1,5 +1,9 @@
 """
-Rental comparables scraper — runs nightly at 2am ET on Railway.
+Rental comparables scraper — runs nightly on Railway.
+
+Schedule: 06:00 UTC (= 01:00 EST / 02:00 EDT). Railway crons run in UTC;
+the actual local-time landing drifts an hour with North American DST.
+See `railway.json` for the cron expression.
 
 Pipeline (spec Section 11.2):
   1. Scrape all three sources (Rentals.ca, Kijiji, PadMapper) across Ontario
