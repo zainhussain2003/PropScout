@@ -4047,7 +4047,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       class="col gap-12"
     >
       <div
-        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
       >
         <div
           aria-hidden="true"
@@ -4057,20 +4057,20 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--caution) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
         >
           <span
-            style="font-size: 14px; font-weight: 500; color: var(--ink);"
+            style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
           >
             Pre-1980 build — knob & tube risk
           </span>
           <span
             class="mono"
-            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
           >
             Built 1972. Many homes from this era have legacy aluminum wiring or knob & tube remnants. Insurance companies often require replacement before binding policy.
           </span>
         </div>
       </div>
       <div
-        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
       >
         <div
           aria-hidden="true"
@@ -4080,20 +4080,20 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--caution) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
         >
           <span
-            style="font-size: 14px; font-weight: 500; color: var(--ink);"
+            style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
           >
             Roof age unknown
           </span>
           <span
             class="mono"
-            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
           >
             Listing description doesn't mention roof replacement. Asphalt shingles in this climate last 18–22 years — at minimum, ask for the most recent roofing receipt.
           </span>
         </div>
       </div>
       <div
-        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
       >
         <div
           aria-hidden="true"
@@ -4103,20 +4103,20 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--pass) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
         >
           <span
-            style="font-size: 14px; font-weight: 500; color: var(--ink);"
+            style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
           >
             No flood zone overlay
           </span>
           <span
             class="mono"
-            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
           >
             Address is outside the Conservation Halton regulated floodplain. No special insurance riders needed.
           </span>
         </div>
       </div>
       <div
-        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+        style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
       >
         <div
           aria-hidden="true"
@@ -4126,13 +4126,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--pass) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
         >
           <span
-            style="font-size: 14px; font-weight: 500; color: var(--ink);"
+            style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
           >
             No active conservation easement
           </span>
           <span
             class="mono"
-            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+            style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
           >
             No environmental restrictions on the lot that would limit additions, garages, or accessory dwellings.
           </span>

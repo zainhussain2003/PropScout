@@ -55,6 +55,8 @@ async function main(): Promise<void> {
 
   await fastify.register(import('./routes/analysisToken'), { prefix: '/analysis' })
 
+  await fastify.register(import('./routes/overrides'), { prefix: '/analysis' })
+
   await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
 
   await fastify.register(import('./routes/billing'), { prefix: '/billing' })

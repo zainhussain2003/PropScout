@@ -31,6 +31,7 @@ import {
 } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
+import { getVacancyRateByCity } from '../services/cmhcService'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -308,7 +309,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         condoFeeMonthly: listing.condoFeeMonthly,
         condoFeeKnown: listing.condoFeeKnown,
         rentTrend: 'flat',
-        vacancyRate: 0.02,
+        vacancyRate: getVacancyRateByCity(listing.city),
         riskFlagSummary: flagLabels || undefined,
       }
 

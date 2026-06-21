@@ -3389,7 +3389,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             style="border-bottom: 1px solid var(--line); padding: 4px 0px;"
           >
             <div
-              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
             >
               <div
                 aria-hidden="true"
@@ -3399,13 +3399,13 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
               >
                 <span
-                  style="font-size: 14px; font-weight: 500; color: var(--ink);"
+                  style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
                 >
                   Condo-fee burden
                 </span>
                 <span
                   class="mono"
-                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
                 >
                   $761/mo · 26% of estimated gross rent (threshold 20%)
                 </span>
@@ -3416,7 +3416,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             style="border-bottom: 1px solid var(--line); padding: 4px 0px;"
           >
             <div
-              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
             >
               <div
                 aria-hidden="true"
@@ -3426,13 +3426,13 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
               >
                 <span
-                  style="font-size: 14px; font-weight: 500; color: var(--ink);"
+                  style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
                 >
                   Deeply negative cash flow
                 </span>
                 <span
                   class="mono"
-                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
                 >
                   Break-even rent $4,585 vs. market $2,900
                 </span>
@@ -3443,7 +3443,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             style="border-bottom: medium; padding: 4px 0px;"
           >
             <div
-              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
             >
               <div
                 aria-hidden="true"
@@ -3453,13 +3453,13 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--caution) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
               >
                 <span
-                  style="font-size: 14px; font-weight: 500; color: var(--ink);"
+                  style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
                 >
                   Building supply pressure
                 </span>
                 <span
                   class="mono"
-                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
                 >
                   24 active rentals in same building · trend declining
                 </span>

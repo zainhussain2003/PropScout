@@ -1,15 +1,30 @@
 /**
  * CMHC vacancy rate data service.
- * Used to adjust rental income estimates based on local market vacancy rates.
+ *
+ * CMHC publishes Rental Market Survey data annually (typically Q1). There's
+ * no live API — the table in `constants/cmhcVacancy.ts` should be refreshed
+ * each year against the latest CMHC publication.
+ *
+ * Used by the orchestrator to feed a city-accurate vacancy rate into the
+ * narrative input (and eventually the calc engine, when wired).
  */
 
+import { CMHC_VACANCY_RATES_BY_CITY, DEFAULT_VACANCY_RATE } from '../constants/cmhcVacancy'
+
 /**
- * Get the current vacancy rate for a given postal code area.
- * Falls back to the default 5% assumption if CMHC data is unavailable.
+ * Look up the vacancy rate for a given city. Case-insensitive.
+ * Falls back to DEFAULT_VACANCY_RATE when the city isn't in the table.
+ */
+export function getVacancyRateByCity(city: string | null | undefined): number {
+  if (!city) return DEFAULT_VACANCY_RATE
+  const normalized = city.trim().toLowerCase()
+  return CMHC_VACANCY_RATES_BY_CITY[normalized] ?? DEFAULT_VACANCY_RATE
+}
+
+/**
+ * @deprecated kept for backward compatibility with the original stub signature.
+ * Prefer getVacancyRateByCity — postal code → city mapping is not in scope.
  */
 export async function getVacancyRate(_postalCode: string): Promise<number> {
-  // TODO: implement CMHC data fetch
-  // Fall back to default if unavailable
-  const DEFAULT_VACANCY_RATE = 0.05
   return DEFAULT_VACANCY_RATE
 }

@@ -1443,7 +1443,7 @@ exports[`RentalCompsBar > matches snapshot 1`] = `
 
 exports[`RiskRow > matches snapshot 1`] = `
 <div
-  style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card);"
+  style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
 >
   <div
     aria-hidden="true"
@@ -1453,13 +1453,13 @@ exports[`RiskRow > matches snapshot 1`] = `
     style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
   >
     <span
-      style="font-size: 14px; font-weight: 500; color: var(--ink);"
+      style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
     >
       Condo-fee burden
     </span>
     <span
       class="mono"
-      style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right;"
+      style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
     >
       $761/mo · 26% of rent
     </span>

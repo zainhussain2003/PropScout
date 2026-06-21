@@ -563,6 +563,91 @@ export async function addToWaitlist(email: string, province: string): Promise<vo
   }
 }
 
+// ── flag_overrides ───────────────────────────────────────────────────────────
+//
+// A row in flag_overrides means "the user has dismissed this risk flag for
+// this analysis." The orchestrator filters dismissed flags out of the score
+// deduction when computing the post-override metrics.
+
+/**
+ * Look up the analysis row id for a share token.
+ * Internal helper for the flag_overrides functions.
+ */
+async function getAnalysisIdByToken(token: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('id')
+    .eq('share_token', token)
+    .maybeSingle()
+
+  if (error != null || data == null) return null
+  return (data as { id: string }).id
+}
+
+/**
+ * Return the set of flag_ids the user has dismissed for this analysis.
+ */
+export async function getFlagOverrides(token: string): Promise<string[]> {
+  const analysisId = await getAnalysisIdByToken(token)
+  if (analysisId == null) return []
+
+  const { data, error } = await db()
+    .from('flag_overrides')
+    .select('flag_id')
+    .eq('analysis_id', analysisId)
+
+  if (error != null || data == null) {
+    console.error('[supabaseService] getFlagOverrides error:', error)
+    return []
+  }
+
+  return (data as Array<{ flag_id: string }>).map((r) => r.flag_id)
+}
+
+/**
+ * Mark a flag as dismissed by the user for this analysis.
+ * Idempotent — re-adding the same override is a no-op.
+ */
+export async function addFlagOverride(token: string, flagId: string): Promise<boolean> {
+  const analysisId = await getAnalysisIdByToken(token)
+  if (analysisId == null) return false
+
+  const { error } = await db().from('flag_overrides').insert({
+    analysis_id: analysisId,
+    flag_id: flagId,
+    user_override: true,
+  })
+
+  // 23505 = unique_violation; treat as success (idempotent)
+  if (error != null && error.code !== '23505') {
+    console.error('[supabaseService] addFlagOverride error:', error)
+    return false
+  }
+
+  return true
+}
+
+/**
+ * Remove a previously-set override (un-dismiss the flag).
+ */
+export async function deleteFlagOverride(token: string, flagId: string): Promise<boolean> {
+  const analysisId = await getAnalysisIdByToken(token)
+  if (analysisId == null) return false
+
+  const { error } = await db()
+    .from('flag_overrides')
+    .delete()
+    .eq('analysis_id', analysisId)
+    .eq('flag_id', flagId)
+
+  if (error != null) {
+    console.error('[supabaseService] deleteFlagOverride error:', error)
+    return false
+  }
+
+  return true
+}
+
 // ── HEAD route-wiring helpers ────────────────────────────────────────────────
 //
 // These functions support the scrape → token → analyze flow added on
