@@ -29,6 +29,8 @@ import type { ListingPreviewData } from '../components/shared/ModeModal'
 import { validateUrl } from '../lib/validateUrl'
 import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
+import { scrapeUrl, ApiRequestError } from '../lib/services/analysisService'
+import type { Listing } from '../types/property'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -343,6 +345,11 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   const [stage, setStage] = useState<HeroStage>('idle')
   const [progress, setProgress] = useState(0)
   const [errorMsg, setErrorMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [listing, setListing] = useState<Listing | null>(null)
+  const [token, setToken] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   const pickSample = (i: number): void => {
     setSampleIdx(i)
@@ -376,15 +383,64 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
 
   const handleAnalyze = (): void => {
     if (stage === 'done') {
-      // Open the mode modal with the current listing preview.
-      // Detect kind from the actual URL in the input so that a typed URL
-      // overrides the sample's preset kind.
+      // Demo path — open modal with the sample listing preview.
       const sample = SAMPLE_LISTINGS[sampleIdx]
       onOpenModal({ ...sample.preview, kind: detectKindFromUrl(url) })
       return
     }
-    runDemo()
+
+    // Real URL submit path — validate then call the scrape API.
+    const urlErr = validateUrl(url)
+    if (urlErr !== null) {
+      setStage('error')
+      setErrorMsg(urlErr)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    void (async () => {
+      try {
+        const result = await scrapeUrl(url)
+        setToken(result.token)
+        setListing(result.listing)
+        setShowModal(true)
+      } catch (err) {
+        if (err instanceof ApiRequestError) {
+          if (err.code === 'PROVINCE_NOT_SUPPORTED') {
+            setError(
+              "PropScout is currently Ontario-only. We'll notify you when we expand to your area."
+            )
+          } else if (err.code === 'SCRAPER_FAILED') {
+            setError(
+              'Could not read that listing — check the URL and try again, or enter the details manually.'
+            )
+          } else {
+            setError('Something went wrong — please try again.')
+          }
+        } else {
+          setError('Something went wrong — please try again.')
+        }
+      } finally {
+        setLoading(false)
+      }
+    })()
   }
+
+  // Convert a real Listing → ListingPreviewData so ModeModal can show a preview.
+  const listingPreview: ListingPreviewData | null = listing
+    ? {
+        kind: listing.listingType === 'for-rent' ? 'rent' : 'sale',
+        address: listing.address,
+        price:
+          listing.listingType === 'for-sale'
+            ? `$${(listing.price ?? 0).toLocaleString()}`
+            : `$${(listing.rentMonthly ?? 0).toLocaleString()}/mo`,
+        beds: `${listing.beds} bed${listing.beds !== 1 ? 's' : ''} · ${listing.baths} bath${listing.baths !== 1 ? 's' : ''}`,
+        sqft: listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : '—',
+      }
+    : null
 
   const scrapeSteps = [
     ['Found listing · Unit 3705 · 28 Charles St E, Toronto', progress > 10],
@@ -396,368 +452,395 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   ] as [string, boolean][]
 
   return (
-    <section
-      id="hero"
-      style={{ paddingTop: 60, paddingBottom: 'var(--pad-y)', overflow: 'hidden' }}
-    >
-      <div className="container col gap-32">
-        {/* Headline strip */}
-        <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
-          <div className="row gap-12" style={{ marginBottom: 24 }}>
-            <span className="chip" style={{ background: 'transparent' }}>
-              <span
-                style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
-                className="live-dot"
-              />
-              Live in Ontario · 2,400 listings analyzed last week
-            </span>
-            <span className="chip">v0.9 · MVP preview</span>
+    <>
+      <section
+        id="hero"
+        style={{ paddingTop: 60, paddingBottom: 'var(--pad-y)', overflow: 'hidden' }}
+      >
+        <div className="container col gap-32">
+          {/* Headline strip */}
+          <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
+            <div className="row gap-12" style={{ marginBottom: 24 }}>
+              <span className="chip" style={{ background: 'transparent' }}>
+                <span
+                  style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
+                  className="live-dot"
+                />
+                Live in Ontario · 2,400 listings analyzed last week
+              </span>
+              <span className="chip">v0.9 · MVP preview</span>
+            </div>
+
+            <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
+              Know what any Canadian listing
+              <br />
+              is <em style={{ color: 'var(--accent)' }}>really</em> worth — before you sign.
+            </h1>
+
+            <p
+              style={{
+                fontSize: clampStr(17, 21),
+                maxWidth: 720,
+                color: 'var(--ink-2)',
+                marginTop: 22,
+              }}
+            >
+              Paste any listing. Whether you&apos;re renting, buying a home, hunting an investment,
+              or pricing out your own unit — PropScout returns a full, plain-English report in under
+              sixty seconds. Comps, costs, risks, sun path, and a written verdict. Canadian rules.
+              Real money.
+            </p>
           </div>
 
-          <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
-            Know what any Canadian listing
-            <br />
-            is <em style={{ color: 'var(--accent)' }}>really</em> worth — before you sign.
-          </h1>
-
-          <p
+          {/* Main URL input card */}
+          <div
+            className="col gap-24"
             style={{
-              fontSize: clampStr(17, 21),
-              maxWidth: 720,
-              color: 'var(--ink-2)',
-              marginTop: 22,
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
+              borderRadius: 22,
+              padding: 'clamp(20px, 2.4vw, 28px)',
+              boxShadow: 'var(--shadow-pop)',
+              marginTop: 8,
             }}
           >
-            Paste any listing. Whether you&apos;re renting, buying a home, hunting an investment, or
-            pricing out your own unit — PropScout returns a full, plain-English report in under
-            sixty seconds. Comps, costs, risks, sun path, and a written verdict. Canadian rules.
-            Real money.
-          </p>
-        </div>
-
-        {/* Main URL input card */}
-        <div
-          className="col gap-24"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-            borderRadius: 22,
-            padding: 'clamp(20px, 2.4vw, 28px)',
-            boxShadow: 'var(--shadow-pop)',
-            marginTop: 8,
-          }}
-        >
-          <div className="row gap-16" style={{ flexWrap: 'wrap' }}>
-            <div
-              className="hero-input-shell row"
-              style={{
-                flex: '1 1 480px',
-                background: 'var(--bg-elev)',
-                border: '1px solid var(--line)',
-                borderRadius: 14,
-                padding: '14px 16px',
-                gap: 12,
-                minWidth: 0,
-                transition: 'border-color .15s ease, background-color .15s ease',
-              }}
-            >
-              <Icon name="link" size={18} />
-              <input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') runDemo()
-                }}
-                placeholder="Paste a listing URL"
-                aria-label="Listing URL"
+            <div className="row gap-16" style={{ flexWrap: 'wrap' }}>
+              <div
+                className="hero-input-shell row"
                 style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  fontFamily: "'Geist Mono', monospace",
-                  fontSize: 13,
-                  color: 'var(--ink)',
+                  flex: '1 1 480px',
+                  background: 'var(--bg-elev)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 14,
+                  padding: '14px 16px',
+                  gap: 12,
                   minWidth: 0,
+                  transition: 'border-color .15s ease, background-color .15s ease',
                 }}
-              />
-              <button
-                onClick={() => {
-                  void navigator.clipboard
-                    ?.readText()
-                    .then((v) => {
-                      if (v) setUrl(v)
-                    })
-                    .catch(() => {
-                      /* clipboard permission denied */
-                    })
-                }}
-                className="btn btn-ghost"
-                style={{ padding: '6px 10px', fontSize: 11 }}
-                title="Paste from clipboard"
               >
-                <Icon name="paste" size={12} /> Paste
+                <Icon name="link" size={18} />
+                <input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAnalyze()
+                  }}
+                  disabled={loading}
+                  placeholder="Paste a listing URL"
+                  aria-label="Listing URL"
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontFamily: "'Geist Mono', monospace",
+                    fontSize: 13,
+                    color: 'var(--ink)',
+                    minWidth: 0,
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.readText()
+                      .then((v) => {
+                        if (v) setUrl(v)
+                      })
+                      .catch(() => {
+                        /* clipboard permission denied */
+                      })
+                  }}
+                  disabled={loading}
+                  className="btn btn-ghost"
+                  style={{ padding: '6px 10px', fontSize: 11 }}
+                  title="Paste from clipboard"
+                >
+                  <Icon name="paste" size={12} /> Paste
+                </button>
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={handleAnalyze}
+                disabled={loading}
+                style={{ padding: '14px 22px', fontSize: 15, flexShrink: 0 }}
+              >
+                {loading
+                  ? 'Working…'
+                  : stage === 'idle'
+                    ? 'Analyze'
+                    : stage === 'scraping'
+                      ? 'Working…'
+                      : 'Open report'}
+                <Icon name="arrow" size={15} />
               </button>
             </div>
-            <button
-              className="btn btn-primary"
-              onClick={handleAnalyze}
-              style={{ padding: '14px 22px', fontSize: 15, flexShrink: 0 }}
-            >
-              {stage === 'idle' ? 'Analyze' : stage === 'scraping' ? 'Working…' : 'Open report'}
-              <Icon name="arrow" size={15} />
-            </button>
-          </div>
 
-          {/* Status: idle */}
-          {stage === 'idle' && (
-            <div
-              className="row gap-24"
-              style={{
-                flexWrap: 'wrap',
-                color: 'var(--muted)',
-                fontSize: 13,
-                alignItems: 'center',
-              }}
-            >
-              <div className="row gap-8">
-                <Icon name="dot" size={10} /> Free preview · no sign-in
+            {/* Status: idle */}
+            {stage === 'idle' && (
+              <div
+                className="row gap-24"
+                style={{
+                  flexWrap: 'wrap',
+                  color: 'var(--muted)',
+                  fontSize: 13,
+                  alignItems: 'center',
+                }}
+              >
+                <div className="row gap-8">
+                  <Icon name="dot" size={10} /> Free preview · no sign-in
+                </div>
+                <div className="row gap-8">
+                  <Icon name="dot" size={10} /> No login required for tenant reports
+                </div>
+                <div className="row gap-8" style={{ marginLeft: 'auto', alignItems: 'center' }}>
+                  <span>Try one of ours →</span>
+                  {SAMPLE_LISTINGS.map((s, i) => (
+                    <span key={s.key} className="row gap-8">
+                      {i > 0 && <span>·</span>}
+                      <button
+                        onClick={() => pickSample(i)}
+                        className="mono"
+                        style={{
+                          color: i === sampleIdx ? 'var(--accent)' : 'var(--ink-2)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          padding: 0,
+                          textDecoration: i === sampleIdx ? 'underline' : 'none',
+                          textUnderlineOffset: 4,
+                          font: 'inherit',
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="row gap-8">
-                <Icon name="dot" size={10} /> No login required for tenant reports
+            )}
+
+            {/* Status: scraping */}
+            {stage === 'scraping' && (
+              <div className="col gap-12">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    Scraping listing · {progress}%
+                  </div>
+                  <div className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    ~12s remaining
+                  </div>
+                </div>
+                <div
+                  style={{
+                    height: 3,
+                    background: 'var(--line)',
+                    borderRadius: 999,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${progress}%`,
+                      height: '100%',
+                      background: 'var(--accent)',
+                      transition: 'width .2s ease',
+                    }}
+                  />
+                </div>
+                <div className="col gap-8" style={{ marginTop: 8 }}>
+                  {scrapeSteps.map(([txt, on], i) => (
+                    <div
+                      key={i}
+                      className="row gap-12"
+                      style={{ fontSize: 13, opacity: on ? 1 : 0.35, transition: 'opacity .2s' }}
+                    >
+                      <span style={{ color: on ? 'var(--pass)' : 'var(--muted)' }}>
+                        <Icon name={on ? 'check' : 'dot'} size={13} />
+                      </span>
+                      <span style={{ color: on ? 'var(--ink)' : 'var(--muted)' }}>{txt}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="row gap-8" style={{ marginLeft: 'auto', alignItems: 'center' }}>
-                <span>Try one of ours →</span>
-                {SAMPLE_LISTINGS.map((s, i) => (
-                  <span key={s.key} className="row gap-8">
-                    {i > 0 && <span>·</span>}
+            )}
+
+            {/* Status: error — URL validation failure or scrape API error */}
+            {(stage === 'error' || error !== null) && (
+              <div
+                className="row gap-12"
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: 'color-mix(in oklab, var(--fail) 8%, transparent)',
+                  border: '1px solid color-mix(in oklab, var(--fail) 35%, transparent)',
+                  color: 'var(--fail)',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={{ marginTop: 2, flexShrink: 0 }}>
+                  <Icon name="flag" size={16} />
+                </div>
+                <div className="col grow" style={{ gap: 4 }}>
+                  <div style={{ fontWeight: 500, fontSize: 14 }}>
+                    {stage === 'error' ? 'Not a usable link' : 'Could not analyze listing'}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                    {stage === 'error' ? errorMsg : error}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setStage('idle')
+                    setErrorMsg('')
+                    setError(null)
+                  }}
+                  className="btn btn-ghost"
+                  style={{ flexShrink: 0, padding: '6px 12px', fontSize: 12 }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {/* Status: done — mini report preview */}
+            {stage === 'done' && (
+              <div
+                className="row gap-16"
+                style={{
+                  padding: 16,
+                  borderRadius: 14,
+                  background: 'var(--bg-elev)',
+                  border: '1px solid var(--line)',
+                }}
+              >
+                <ShowcaseDealScore score={58} size={88} label="" />
+                <div className="col grow gap-4" style={{ justifyContent: 'center' }}>
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 10,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--caution)',
+                    }}
+                  >
+                    Negotiate first · tenant view
+                  </div>
+                  <div className="serif" style={{ fontSize: 22, lineHeight: 1.2 }}>
+                    Asking $2,150/mo · target $1,950–2,000
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                    The &quot;second bedroom&quot; is a glass-door den. You have strong leverage.{' '}
                     <button
-                      onClick={() => pickSample(i)}
-                      className="mono"
+                      onClick={onSignIn}
                       style={{
-                        color: i === sampleIdx ? 'var(--accent)' : 'var(--ink-2)',
                         background: 'transparent',
                         border: 'none',
-                        cursor: 'pointer',
-                        fontSize: 12,
                         padding: 0,
-                        textDecoration: i === sampleIdx ? 'underline' : 'none',
-                        textUnderlineOffset: 4,
+                        cursor: 'pointer',
+                        color: 'var(--accent)',
+                        fontWeight: 500,
+                        fontSize: 13,
+                        textDecoration: 'underline',
+                        textUnderlineOffset: 3,
+                        textDecorationThickness: '1px',
                         font: 'inherit',
                       }}
                     >
-                      {s.label}
+                      Read full verdict →
                     </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setStage('idle')}
+                  className="btn btn-ghost"
+                  style={{ flexShrink: 0 }}
+                >
+                  Try another
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Sample report showcase */}
+          <ReportShowcase />
+
+          {/* Trust strip */}
+          <div className="col gap-16" style={{ marginTop: 24 }}>
+            <span
+              className="mono"
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: 'var(--muted)',
+                textAlign: 'center',
+              }}
+            >
+              Built on the data Canadian investors already trust
+            </span>
+            <div
+              style={{
+                overflow: 'hidden',
+                maskImage: 'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
+                WebkitMaskImage:
+                  'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
+              }}
+            >
+              <div className="marquee-track">
+                {[0, 1].map((k) => (
+                  <span key={k} style={{ display: 'contents' }}>
+                    {[
+                      'Realtor.ca',
+                      'Zillow.ca',
+                      'Rentals.ca',
+                      'Kijiji',
+                      'PadMapper',
+                      'CMHC',
+                      'Statistics Canada',
+                      'Bank of Canada',
+                      'EQAO',
+                      'Fraser Institute',
+                      'Walk Score',
+                      'Mapbox',
+                      'NREL · SPA',
+                    ].map((n) => (
+                      <span
+                        key={`${n}-${k}`}
+                        className="serif"
+                        style={{ fontSize: 22, color: 'var(--muted)', marginRight: 56 }}
+                      >
+                        {n}
+                      </span>
+                    ))}
                   </span>
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Status: scraping */}
-          {stage === 'scraping' && (
-            <div className="col gap-12">
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  Scraping listing · {progress}%
-                </div>
-                <div className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  ~12s remaining
-                </div>
-              </div>
-              <div
-                style={{
-                  height: 3,
-                  background: 'var(--line)',
-                  borderRadius: 999,
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  style={{
-                    width: `${progress}%`,
-                    height: '100%',
-                    background: 'var(--accent)',
-                    transition: 'width .2s ease',
-                  }}
-                />
-              </div>
-              <div className="col gap-8" style={{ marginTop: 8 }}>
-                {scrapeSteps.map(([txt, on], i) => (
-                  <div
-                    key={i}
-                    className="row gap-12"
-                    style={{ fontSize: 13, opacity: on ? 1 : 0.35, transition: 'opacity .2s' }}
-                  >
-                    <span style={{ color: on ? 'var(--pass)' : 'var(--muted)' }}>
-                      <Icon name={on ? 'check' : 'dot'} size={13} />
-                    </span>
-                    <span style={{ color: on ? 'var(--ink)' : 'var(--muted)' }}>{txt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Status: error */}
-          {stage === 'error' && (
-            <div
-              className="row gap-12"
-              style={{
-                padding: '14px 16px',
-                borderRadius: 12,
-                background: 'color-mix(in oklab, var(--fail) 8%, transparent)',
-                border: '1px solid color-mix(in oklab, var(--fail) 35%, transparent)',
-                color: 'var(--fail)',
-                alignItems: 'flex-start',
-              }}
-            >
-              <div style={{ marginTop: 2, flexShrink: 0 }}>
-                <Icon name="flag" size={16} />
-              </div>
-              <div className="col grow" style={{ gap: 4 }}>
-                <div style={{ fontWeight: 500, fontSize: 14 }}>Not a usable link</div>
-                <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{errorMsg}</div>
-              </div>
-              <button
-                onClick={() => {
-                  setStage('idle')
-                  setErrorMsg('')
-                }}
-                className="btn btn-ghost"
-                style={{ flexShrink: 0, padding: '6px 12px', fontSize: 12 }}
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          {/* Status: done — mini report preview */}
-          {stage === 'done' && (
-            <div
-              className="row gap-16"
-              style={{
-                padding: 16,
-                borderRadius: 14,
-                background: 'var(--bg-elev)',
-                border: '1px solid var(--line)',
-              }}
-            >
-              <ShowcaseDealScore score={58} size={88} label="" />
-              <div className="col grow gap-4" style={{ justifyContent: 'center' }}>
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                    color: 'var(--caution)',
-                  }}
-                >
-                  Negotiate first · tenant view
-                </div>
-                <div className="serif" style={{ fontSize: 22, lineHeight: 1.2 }}>
-                  Asking $2,150/mo · target $1,950–2,000
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                  The &quot;second bedroom&quot; is a glass-door den. You have strong leverage.{' '}
-                  <button
-                    onClick={onSignIn}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      color: 'var(--accent)',
-                      fontWeight: 500,
-                      fontSize: 13,
-                      textDecoration: 'underline',
-                      textUnderlineOffset: 3,
-                      textDecorationThickness: '1px',
-                      font: 'inherit',
-                    }}
-                  >
-                    Read full verdict →
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => setStage('idle')}
-                className="btn btn-ghost"
-                style={{ flexShrink: 0 }}
-              >
-                Try another
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Sample report showcase */}
-        <ReportShowcase />
-
-        {/* Trust strip */}
-        <div className="col gap-16" style={{ marginTop: 24 }}>
-          <span
-            className="mono"
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-              textAlign: 'center',
-            }}
-          >
-            Built on the data Canadian investors already trust
-          </span>
-          <div
-            style={{
-              overflow: 'hidden',
-              maskImage: 'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
-              WebkitMaskImage:
-                'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
-            }}
-          >
-            <div className="marquee-track">
-              {[0, 1].map((k) => (
-                <span key={k} style={{ display: 'contents' }}>
-                  {[
-                    'Realtor.ca',
-                    'Zillow.ca',
-                    'Rentals.ca',
-                    'Kijiji',
-                    'PadMapper',
-                    'CMHC',
-                    'Statistics Canada',
-                    'Bank of Canada',
-                    'EQAO',
-                    'Fraser Institute',
-                    'Walk Score',
-                    'Mapbox',
-                    'NREL · SPA',
-                  ].map((n) => (
-                    <span
-                      key={`${n}-${k}`}
-                      className="serif"
-                      style={{ fontSize: 22, color: 'var(--muted)', marginRight: 56 }}
-                    >
-                      {n}
-                    </span>
-                  ))}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Real-path mode modal — opened after a successful scrapeUrl() call */}
+      <ModeModal
+        open={showModal}
+        listing={listingPreview}
+        onSelect={(mode) => {
+          setShowModal(false)
+          window.location.href = `/analyzing?token=${token ?? ''}&mode=${mode}`
+        }}
+        onClose={() => setShowModal(false)}
+      />
+    </>
   )
 }
 
@@ -2143,10 +2226,7 @@ export function LandingPage(): JSX.Element {
 
   const handleModeSelect = (mode: ReportMode): void => {
     setModalOpen(false)
-    // Navigate to the analyzing page once it's built (PR 5+).
-    // For now, navigate to a placeholder.
-    const kind = pendingListing?.kind ?? 'sale'
-    navigate(`/analyzing?mode=${mode}&kind=${kind}`)
+    navigate(`/analyzing?token=demo&mode=${mode}`)
   }
 
   return (

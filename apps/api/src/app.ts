@@ -1,3 +1,8 @@
+import { config as dotenvConfig } from 'dotenv'
+import { resolve } from 'path'
+// Load project-root .env — works from apps/api/src in dev and dist in prod
+dotenvConfig({ path: resolve(__dirname, '../../../.env') })
+
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
@@ -14,10 +19,9 @@ async function main(): Promise<void> {
     credentials: true,
   })
 
-  // Rate limit — 10 requests per minute per IP on all routes
-  // The analysis endpoint is the most exposed surface
+  // Rate limit — relaxed in dev, tightened before production deploy
   await fastify.register(rateLimit, {
-    max: 10,
+    max: process.env.NODE_ENV === 'production' ? 10 : 200,
     timeWindow: '1 minute',
   })
 
@@ -26,6 +30,10 @@ async function main(): Promise<void> {
   await fastify.register(import('./routes/rates'), { prefix: '/rates' })
 
   await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
+
+  await fastify.register(import('./routes/analysisToken'), { prefix: '/analysis' })
+
+  await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
 
   // Routes registered as each is built:
   // await fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })

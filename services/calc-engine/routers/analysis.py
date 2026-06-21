@@ -124,9 +124,12 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
 
     dscr = calculate_dscr(noi=noi, annual_debt_service=annual_debt_service)
 
-    grm = calculate_grm(
-        purchase_price=float(prop.price),
-        annual_gross_rent=gross_annual_rent,
+    grm = (
+        calculate_grm(
+            purchase_price=float(prop.price), annual_gross_rent=gross_annual_rent
+        )
+        if gross_annual_rent > 0
+        else 0.0
     )
 
     total_cash_invested = down_payment + closing["total"]

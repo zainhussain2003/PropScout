@@ -1,57 +1,101 @@
 /**
- * Functionality tests for the Fastify analysis route.
+ * Functionality tests for the Fastify analysis route (orchestrator).
  *
  * Covers:
- *   - snake_case → camelCase transformation of calc engine responses
- *   - snake_case input body forwarded to calc engine unchanged
- *   - camelCase input converted to snake_case before forwarding to calc engine
- *   - camelCase input returns fully camelCase response (round-trip)
- *   - 503 when the calc engine is unreachable (ECONNREFUSED)
- *   - 422 when the calc engine rejects the input
- *   - 500 when the calc engine returns an unexpected server error
- *   - Nested component_maxes mapped to componentMaxes
- *   - has_sanity_warnings flag passed through correctly
+ *   - Valid token + mode → 200 with { token, analysis } containing metrics and narrative
+ *   - Missing token → 400 MISSING_TOKEN
+ *   - Invalid mode → 400 INVALID_MODE
+ *   - getListingByToken returns null → 404 NOT_FOUND
+ *   - Calc engine network error → 503 CALC_ENGINE_UNAVAILABLE, status marked failed
+ *   - Calc engine non-200 → 500 CALC_ENGINE_ERROR, status marked failed
+ *   - updateAnalysisStatus('processing') called before calc engine fetch
+ *   - saveAnalysis called with correct token after successful pipeline
  *
- * The global `fetch` is mocked in every test — no real network calls are made.
+ * All service calls are mocked — no real network calls or DB queries are made.
  */
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import analysisRoutes from './analysis'
 import type { Analysis } from '../types/analysis'
+import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
 
-// ── Fixture ───────────────────────────────────────────────────────────────────
+// ── Module mocks ──────────────────────────────────────────────────────────────
 
-const CALC_ENGINE_RESPONSE = {
+jest.mock('../services/supabaseService')
+jest.mock('../services/anthropicService')
+jest.mock('../services/mapboxService')
+jest.mock('../services/walkScoreService')
+
+import { getListingByToken, updateAnalysisStatus, saveAnalysis } from '../services/supabaseService'
+import { extractListingFlags, generateNarrative } from '../services/anthropicService'
+import { geocodeAddress } from '../services/mapboxService'
+import { getWalkScore } from '../services/walkScoreService'
+
+const mockGetListingByToken = jest.mocked(getListingByToken)
+const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
+const mockSaveAnalysis = jest.mocked(saveAnalysis)
+const mockExtractListingFlags = jest.mocked(extractListingFlags)
+const mockGenerateNarrative = jest.mocked(generateNarrative)
+const mockGeocodeAddress = jest.mocked(geocodeAddress)
+const mockGetWalkScore = jest.mocked(getWalkScore)
+
+// ── Fixtures ──────────────────────────────────────────────────────────────────
+
+const LISTING_FIXTURE: Listing = {
+  id: 'listing-uuid-123',
+  url: 'https://www.realtor.ca/real-estate/12345/5702-buttermill-ave-vaughan',
+  listingType: 'for-sale',
+  address: '5702 Buttermill Ave, Vaughan, ON L4K 0J2',
+  city: 'Vaughan',
+  province: 'ON',
+  postalCode: 'L4K0J2',
+  price: 729_900,
+  rentMonthly: null,
+  beds: 3,
+  baths: 2,
+  sqft: 1050,
+  propertyType: 'condo',
+  yearBuilt: 2005,
+  parkingSpots: 1,
+  condoFeeMonthly: 761,
+  condoFeeKnown: true,
+  annualTaxes: 3326,
+  description: 'Beautiful condo in Vaughan.',
+  photos: ['https://cdn.realtor.ca/photo1.jpg'],
+  scrapedAt: '2026-06-01T00:00:00.000Z',
+}
+
+const CALC_ENGINE_FIXTURE = {
   metrics: {
-    cash_flow_monthly: -2126.82,
-    cash_flow_annual: -25521.83,
-    cap_rate: 0.01973,
-    cash_on_cash_return: -0.160059,
-    dscr: 0.3607,
+    cash_flow_monthly: -1833,
+    cash_flow_annual: -21_996,
+    cap_rate: 0.025,
+    cash_on_cash_return: -0.125,
+    dscr: 0.45,
     grm: 20.97,
-    noi: 14397.85,
-    mortgage_payment_monthly: 3326.64,
-    down_payment: 145980,
-    mortgage_amount: 583920,
+    noi: 14_397,
+    mortgage_payment_monthly: 3_326,
+    down_payment: 145_980,
+    mortgage_amount: 583_920,
     amortization_years: 25,
     mortgage_rate: 0.0479,
-    break_even_rent: 5138.76,
-    closing_costs_total: 13473,
-    ltt_provincial: 11073,
+    break_even_rent: 4_585,
+    closing_costs_total: 13_473,
+    ltt_provincial: 11_073,
     ltt_municipal: 0,
     has_sanity_warnings: false,
   },
   deal_score: {
-    total: 7,
+    total: 9,
     verdict: 'hard_pass',
     breakdown: {
       cap_rate: 0,
       cash_flow: 0,
       cash_on_cash: 0,
       dscr: 0,
-      demand: 7,
-      subtotal: 7,
+      demand: 9,
+      subtotal: 9,
       deduction: 0,
       component_maxes: {
         cap_rate: 25,
@@ -64,28 +108,15 @@ const CALC_ENGINE_RESPONSE = {
   },
   risk_flags: [],
   has_sanity_warnings: false,
-} as const
-
-// ── Fetch mock helpers ────────────────────────────────────────────────────────
-
-function mockCalcEngineOK(body: object): void {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve(body),
-  })
 }
 
-function mockCalcEngineError(status: number, body: object): void {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: false,
+function makeCalcResponse(body: object, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
     status,
-    text: () => Promise.resolve(JSON.stringify(body)),
     json: () => Promise.resolve(body),
-  })
-}
-
-function mockCalcEngineCrash(): void {
-  global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'))
+    text: () => Promise.resolve(JSON.stringify(body)),
+  } as unknown as Response
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────
@@ -98,330 +129,170 @@ async function buildApp(): Promise<FastifyInstance> {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('POST / — analysis route', () => {
-  let fastify: FastifyInstance
+describe('POST / — analysis orchestrator', () => {
+  let app: FastifyInstance
 
   beforeAll(async () => {
-    fastify = await buildApp()
+    app = await buildApp()
   })
 
   beforeEach(() => {
     jest.clearAllMocks()
-    global.fetch = jest.fn()
+
+    // Happy-path defaults
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })
 
   afterAll(async () => {
-    await fastify.close()
+    await app.close()
   })
 
   // ── Test 1 ─────────────────────────────────────────────────────────────────
 
-  it('transforms snake_case to camelCase', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const response = await fastify.inject({
+  it('valid token + mode → 200 with { token, analysis } containing metrics and narrative', async () => {
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: {
-        property_data: { address: '5702 Buttermill Ave', price: 729900 },
-        financing: { down_payment_pct: 0.2, mortgage_rate: 0.0479, amortization_years: 25 },
-        rental: { rent_mid: 2900 },
-      },
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(200)
-
-    const body = response.json() as Analysis
-    const metrics = body.metrics as NonNullable<Analysis['metrics']>
-
-    // camelCase keys present
-    expect(metrics).toHaveProperty('cashFlowMonthly', -2126.82)
-    expect(metrics).toHaveProperty('cashFlowAnnual', -25521.83)
-    expect(metrics).toHaveProperty('capRate', 0.01973)
-    expect(metrics).toHaveProperty('dscr', 0.3607)
-    expect(metrics).toHaveProperty('mortgagePaymentMonthly', 3326.64)
-    expect(metrics).toHaveProperty('downPayment', 145980)
-    expect(metrics).toHaveProperty('mortgageAmount', 583920)
-    expect(metrics).toHaveProperty('amortizationYears', 25)
-    expect(metrics).toHaveProperty('mortgageRate', 0.0479)
-    expect(metrics).toHaveProperty('breakEvenRent', 5138.76)
-    expect(metrics).toHaveProperty('closingCostsTotal', 13473)
-    expect(metrics).toHaveProperty('lttProvincial', 11073)
-    expect(metrics).toHaveProperty('lttMunicipal', 0)
-    expect(metrics).toHaveProperty('hasSanityWarnings', false)
-
-    // dealScore nested key
-    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
-    expect(dealScore.breakdown.componentMaxes.capRate).toBe(25)
-
-    // no snake_case keys survive in metrics
-    const metricKeys = Object.keys(metrics)
-    const snakeCaseKeys = metricKeys.filter((k) => k.includes('_'))
-    expect(snakeCaseKeys).toHaveLength(0)
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { token: string; analysis: Analysis }
+    expect(body.token).toBe('test-token')
+    expect(body.analysis.mode).toBe('investor')
+    expect(body.analysis.narrative).toBe('Test narrative')
+    expect(body.analysis.metrics).toBeDefined()
+    const metrics = body.analysis.metrics as NonNullable<Analysis['metrics']>
+    expect(metrics.cashFlowMonthly).toBe(-1833)
+    expect(metrics.capRate).toBe(0.025)
+    expect(body.analysis.dealScore?.verdict).toBe('hard_pass')
   })
 
   // ── Test 2 ─────────────────────────────────────────────────────────────────
 
-  it('forwards snake_case body to calc engine unchanged', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const requestBody = {
-      property_data: { address: 'test', price: 500000 },
-      financing: {},
-      rental: {},
-    }
-
-    await fastify.inject({
+  it('missing token → 400 MISSING_TOKEN', async () => {
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: requestBody,
+      payload: { mode: 'investor' },
     })
 
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-
-    const [calledUrl, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { method: string; headers: Record<string, string>; body: string },
-    ]
-
-    expect(calledUrl).toContain('/analysis/')
-    // snake_case input passes through without modification
-    expect(calledOptions.body).toBe(JSON.stringify(requestBody))
-  })
-
-  // ── Test 2b ────────────────────────────────────────────────────────────────
-
-  it('converts camelCase input to snake_case before forwarding to calc engine', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const camelBody = {
-      propertyData: {
-        address: '5702 Buttermill Ave',
-        province: 'ON',
-        price: 729900,
-        annualTaxes: 3326,
-        condoFeeMonthly: 761,
-        condoFeeKnown: true,
-        beds: 3,
-        baths: 2,
-        sqft: 1050,
-        yearBuilt: 2005,
-        propertyType: 'condo',
-        isToronto: false,
-      },
-      financing: {
-        downPaymentPct: 0.2,
-        mortgageRate: 0.0479,
-        amortizationYears: 25,
-        includeManagementFee: false,
-      },
-      rental: {
-        low: 2700,
-        mid: 2900,
-        high: 3200,
-        compCount: 8,
-        confidence: 'medium' as const,
-        postalCode: 'L4K',
-      },
-    }
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: camelBody,
-    })
-
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-
-    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { method: string; headers: Record<string, string>; body: string },
-    ]
-
-    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
-
-    // Input was converted from camelCase to snake_case
-    expect(forwarded).toHaveProperty('property_data')
-    expect(forwarded).not.toHaveProperty('propertyData')
-
-    const propData = forwarded['property_data'] as Record<string, unknown>
-    expect(propData).toHaveProperty('annual_taxes', 3326)
-    expect(propData).toHaveProperty('condo_fee_monthly', 761)
-    expect(propData).toHaveProperty('condo_fee_known', true)
-    expect(propData).toHaveProperty('year_built', 2005)
-    expect(propData).toHaveProperty('property_type', 'condo')
-    expect(propData).toHaveProperty('is_toronto', false)
-    expect(propData).not.toHaveProperty('annualTaxes')
-    expect(propData).not.toHaveProperty('yearBuilt')
-
-    const fin = forwarded['financing'] as Record<string, unknown>
-    expect(fin).toHaveProperty('down_payment_pct', 0.2)
-    expect(fin).toHaveProperty('mortgage_rate', 0.0479)
-    expect(fin).toHaveProperty('amortization_years', 25)
-    expect(fin).not.toHaveProperty('downPaymentPct')
-
-    const rental = forwarded['rental'] as Record<string, unknown>
-    expect(rental).toHaveProperty('comp_count', 8)
-    expect(rental).toHaveProperty('postal_code', 'L4K')
-    expect(rental).not.toHaveProperty('compCount')
-  })
-
-  // ── Test 2c ────────────────────────────────────────────────────────────────
-
-  it('returns 200 and fully camelCase response for camelCase input (round-trip)', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        propertyData: {
-          address: '5702 Buttermill Ave',
-          price: 729900,
-          annualTaxes: 3326,
-          condoFeeMonthly: 761,
-          condoFeeKnown: true,
-          beds: 3,
-          baths: 2,
-          yearBuilt: 2005,
-          propertyType: 'condo',
-          isToronto: false,
-        },
-        financing: {
-          downPaymentPct: 0.2,
-          mortgageRate: 0.0479,
-          amortizationYears: 25,
-          includeManagementFee: false,
-        },
-        rental: {
-          low: 2700,
-          mid: 2900,
-          high: 3200,
-          compCount: 8,
-          confidence: 'medium' as const,
-          postalCode: 'L4K',
-        },
-      },
-    })
-
-    expect(response.statusCode).toBe(200)
-
-    const body = response.json() as Analysis
-    const metrics = body.metrics as NonNullable<Analysis['metrics']>
-
-    // Response is fully camelCase — no snake_case keys
-    const metricKeys = Object.keys(metrics)
-    const snakeCaseKeys = metricKeys.filter((k) => k.includes('_'))
-    expect(snakeCaseKeys).toHaveLength(0)
-
-    // Key camelCase fields present
-    expect(metrics).toHaveProperty('cashFlowMonthly')
-    expect(metrics).toHaveProperty('mortgagePaymentMonthly')
-    expect(metrics).toHaveProperty('lttProvincial')
-    expect(metrics).toHaveProperty('amortizationYears', 25)
-
-    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
-    expect(dealScore.breakdown.componentMaxes).toBeDefined()
-    expect(dealScore.breakdown.componentMaxes.capRate).toBe(25)
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('MISSING_TOKEN')
   })
 
   // ── Test 3 ─────────────────────────────────────────────────────────────────
 
-  it('returns 503 when calc engine is unreachable', async () => {
-    mockCalcEngineCrash()
-
-    const response = await fastify.inject({
+  it('invalid mode → 400 INVALID_MODE', async () => {
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: { token: 'test-token', mode: 'landlord-invalid' },
     })
 
-    expect(response.statusCode).toBe(503)
-
-    const body = response.json() as ApiError
-    expect(body.error).toBe(true)
-    expect(body.code).toBe('CALC_ENGINE_UNAVAILABLE')
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('INVALID_MODE')
   })
 
   // ── Test 4 ─────────────────────────────────────────────────────────────────
 
-  it('returns 422 when calc engine returns 422', async () => {
-    mockCalcEngineError(422, { detail: 'validation error' })
+  it('getListingByToken returns null → 404 NOT_FOUND', async () => {
+    mockGetListingByToken.mockResolvedValue(null)
 
-    const response = await fastify.inject({
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: { token: 'missing-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(422)
-
-    const body = response.json() as ApiError
-    expect(body.code).toBe('INVALID_ANALYSIS_INPUT')
+    expect(res.statusCode).toBe(404)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('NOT_FOUND')
   })
 
   // ── Test 5 ─────────────────────────────────────────────────────────────────
 
-  it('returns 500 when calc engine returns 500', async () => {
-    mockCalcEngineError(500, { detail: 'internal error' })
+  it('calc engine network error → 503 CALC_ENGINE_UNAVAILABLE, updateAnalysisStatus called with failed', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'))
 
-    const response = await fastify.inject({
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(500)
-
-    const body = response.json() as ApiError
-    expect(body.code).toBe('CALC_ENGINE_ERROR')
+    expect(res.statusCode).toBe(503)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('CALC_ENGINE_UNAVAILABLE')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
   })
 
   // ── Test 6 ─────────────────────────────────────────────────────────────────
 
-  it('maps component_maxes to componentMaxes', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+  it('calc engine non-200 → 500 CALC_ENGINE_ERROR, updateAnalysisStatus called with failed', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(makeCalcResponse({ detail: 'validation error' }, 422))
 
-    const response = await fastify.inject({
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(200)
-
-    const body = response.json() as Analysis
-    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
-
-    expect(dealScore.breakdown.componentMaxes).toEqual({
-      capRate: 25,
-      cashFlow: 25,
-      cashOnCash: 20,
-      dscr: 15,
-      demand: 10,
-    })
+    expect(res.statusCode).toBe(500)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('CALC_ENGINE_ERROR')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
   })
 
   // ── Test 7 ─────────────────────────────────────────────────────────────────
 
-  it('passes has_sanity_warnings through', async () => {
-    const responseWithWarnings = {
-      ...CALC_ENGINE_RESPONSE,
-      metrics: { ...CALC_ENGINE_RESPONSE.metrics, has_sanity_warnings: true },
-      has_sanity_warnings: true,
-    }
+  it('updateAnalysisStatus called with processing before calc engine fetch', async () => {
+    const callSequence: string[] = []
 
-    mockCalcEngineOK(responseWithWarnings)
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+    mockUpdateAnalysisStatus.mockImplementation(async (_token, status) => {
+      callSequence.push(`status:${status}`)
+    })
+    ;(global.fetch as jest.Mock).mockImplementation(async () => {
+      callSequence.push('fetch')
+      return makeCalcResponse(CALC_ENGINE_FIXTURE)
     })
 
-    expect(response.statusCode).toBe(200)
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
 
-    const body = response.json() as Analysis
-    expect(body.hasSanityWarnings).toBe(true)
+    const processingIdx = callSequence.indexOf('status:processing')
+    const fetchIdx = callSequence.indexOf('fetch')
+    expect(processingIdx).toBeGreaterThanOrEqual(0)
+    expect(fetchIdx).toBeGreaterThan(processingIdx)
+  })
+
+  // ── Test 8 ─────────────────────────────────────────────────────────────────
+
+  it('saveAnalysis called with correct token and mode after successful pipeline', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(mockSaveAnalysis).toHaveBeenCalledTimes(1)
+    const [analysisArg] = mockSaveAnalysis.mock.calls[0]
+    expect(analysisArg.token).toBe('test-token')
+    expect(analysisArg.mode).toBe('investor')
   })
 })

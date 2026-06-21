@@ -3030,9 +3030,9 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         </h2>
       </div>
       <span
-        class="verdict-pill pass"
+        class="verdict-pill caution"
       >
-        Quiet · GO-connected
+        Some daily errands by foot · Transit 48
       </span>
     </div>
     <div

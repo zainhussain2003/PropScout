@@ -61,6 +61,13 @@ export interface RiskFlag {
   confidence: number
 }
 
+export interface WalkScoreResult {
+  walk: number // 0–100
+  transit: number | null // 0–100, null if no transit data
+  bike: number | null // 0–100, null if no bike data
+  description: string // e.g. "Walker's Paradise"
+}
+
 export interface RentalEstimate {
   low: number
   mid: number
@@ -81,4 +88,6 @@ export interface Analysis {
   riskFlags: RiskFlag[]
   narrative: string | null
   hasSanityWarnings: boolean
+  walkScore: WalkScoreResult | null
+  neighbourhood: null // placeholder for Phase 2; always null in MVP
 }

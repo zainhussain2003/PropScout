@@ -75,6 +75,13 @@ export interface InvestmentMetrics {
   hasSanityWarnings: boolean
 }
 
+export interface WalkScoreResult {
+  walk: number
+  transit: number | null
+  bike: number | null
+  description: string
+}
+
 export type FlagSeverity = 'red' | 'amber'
 
 export interface RiskFlag {
@@ -104,6 +111,8 @@ export interface Analysis {
   rentalComps: RentalEstimate | null
   riskFlags: RiskFlag[]
   narrative: string | null
+  walkScore: WalkScoreResult | null
+  neighbourhood: NeighbourhoodData | null
   hasSanityWarnings: boolean
 }
 

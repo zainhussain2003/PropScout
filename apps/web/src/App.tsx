@@ -4,6 +4,7 @@ import { PaywallContext } from './components/paywall/PaywallContext'
 import { UpgradeModal } from './components/paywall/UpgradeModal'
 import { HardLimitGate } from './components/paywall/HardLimitGate'
 import { LandingPage } from './pages/LandingPage'
+import { AnalyzingPage } from './pages/analyzing'
 import { InvestorReport } from './pages/InvestorReport'
 import { TenantReport } from './pages/TenantReport'
 import { PersonalBuyerPage } from './pages/PersonalBuyerPage'
@@ -16,6 +17,7 @@ import { EmailVerifiedPage } from './pages/EmailVerifiedPage'
 import { StripeWelcomePage } from './pages/StripeWelcomePage'
 import { StripeCancelledPage } from './pages/StripeCancelledPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ReportPage } from './pages/ReportPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
 import { DevToolbar } from './components/dev/DevToolbar'
@@ -37,6 +39,8 @@ function App(): JSX.Element {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/analyzing" element={<AnalyzingPage />} />
+          <Route path="/r/:token" element={<ReportPage />} />
           <Route path="/investor-report" element={<InvestorReport tier={MOCK_TIER} />} />
           <Route path="/tenant-report" element={<TenantReport tier={MOCK_TIER} />} />
           <Route path="/personal-report" element={<PersonalBuyerPage tier={MOCK_TIER} />} />

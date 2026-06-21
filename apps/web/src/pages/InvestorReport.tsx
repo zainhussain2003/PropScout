@@ -31,8 +31,10 @@ import {
   HAMILTON_RENTAL,
   HAMILTON_NEIGHBOURHOOD,
 } from '../constants/demoData'
-import type { ListingData, NeighbourhoodData, FinancingInputs } from '../types/analysis'
+import type { Analysis, ListingData, NeighbourhoodData, FinancingInputs } from '../types/analysis'
 import type { RentalInput } from '../types/api'
+import type { Listing } from '../types/property'
+import { shimToListingData, shimToNeighbourhood } from '../lib/reportShims'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -816,16 +818,33 @@ function buildNarrativeSub(
 interface InvestorReportProps {
   /** User tier — controls AIVerdictBlock (pro) vs TruncatedVerdict (free). */
   tier?: string
+  /** Real analysis from the API — when provided, demo data is replaced with live data. */
+  analysis?: Analysis | null
+  /** Real listing from the API — required alongside analysis to activate live mode. */
+  listing?: Listing | null
 }
 
-export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Element {
+export function InvestorReport({
+  tier = 'pro',
+  analysis: realAnalysis,
+  listing: realListing,
+}: InvestorReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const [dark, setDark] = useState<boolean>(false)
-  const { listing, rental, neighbourhood } = getDemoDataset()
+  const demoData = getDemoDataset()
+
+  // Shim: use real data when provided, fall back to demo fixtures
+  const listing: ListingData =
+    realAnalysis && realListing ? shimToListingData(realListing, realAnalysis) : demoData.listing
+  const neighbourhood: NeighbourhoodData = realAnalysis
+    ? shimToNeighbourhood(realAnalysis)
+    : demoData.neighbourhood
 
   const { loading, error, financing, metrics, dealScore, updateFinancing } = useInvestorReport(
     listing,
-    rental
+    demoData.rental,
+    undefined,
+    realAnalysis ?? null // skip internal API call when analysis is preloaded
   )
 
   const handleToggleDark = useCallback(() => {
@@ -887,14 +906,21 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
             <div className="container" style={{ marginBottom: 32 }}>
               {tier === 'free' ? (
                 <TruncatedVerdict
-                  firstParagraph={buildNarrativeFirstParaStr(listing, dealScore.label)}
+                  firstParagraph={
+                    realAnalysis?.narrative
+                      ? realAnalysis.narrative.split('. ')[0] + '.'
+                      : buildNarrativeFirstParaStr(listing, dealScore.label)
+                  }
                   onUnlock={() => openUpgradeModal('verdict')}
                 />
               ) : (
                 <AIVerdictBlock
                   eyebrow="Scout AI · investor verdict"
                   headline={buildNarrativeHeadline(listing, dealScore.label)}
-                  sub={buildNarrativeSub(listing, metrics.capRate, metrics.cashFlowMonthly)}
+                  sub={
+                    realAnalysis?.narrative ??
+                    buildNarrativeSub(listing, metrics.capRate, metrics.cashFlowMonthly)
+                  }
                 />
               )}
             </div>
