@@ -1,180 +1,205 @@
-# Overnight work log — 2026-06-21
+# Work log — 2026-06-21
 
-You said "complete as much as you can" — so I worked through every phase in order and stopped only where I needed your input. Tests are green across the board.
+## Blocked on you — handle when you have time
 
-## What got built overnight
+In priority order:
 
-### Phase 1 — Per-listing analysis wiring (DONE)
+### Tier 1 — directly affects score accuracy
 
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` added to `.env`
-- `fetchRentalComps` wired into the orchestrator (was `null`). Falls back to a low-confidence rent estimate when the FSA has no comps yet, so reports still produce metrics.
-- `getWalkScore` was already wired in the merged code (line 268 of `analysis.ts`)
-- `SunScoutPanel` consuming `analysis.sunScout` in TenantReport, LandlordPage, InvestorReport, and PersonalBuyerPage (now uses SunScoutPanel for real listings, fixture for demo)
-- `authService.degraded.test.ts` rewritten to use `vi.stubEnv` + `vi.resetModules` so it passes regardless of local env state
-- `scripts/smoke-test.mjs` — end-to-end smoke against live Supabase + local API + local calc engine. Passed.
+1. **Deploy nightly scraper to Railway** (Phase 2)
+   - `npm install -g @railway/cli` if needed
+   - `cd services/scrapers && railway login && railway init`
+   - Set in Railway dashboard env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MAPBOX_TOKEN`
+   - `railway up`
+   - Trigger one manual run from the dashboard; verify `rental_listings` rows appear
+   - **Impact:** until this runs, `rentalComps` is always a fallback estimate, which directly degrades `cap_rate`, `cash_flow`, `DSCR`, `CoC`
 
-### Phase 2 — Nightly scraper (PARTIAL)
+### Tier 2 — improves data quality
 
-- Cron docstring fixed in `rental_comps_scraper.py` + `railway.json` `_cronScheduleNote` added (UTC vs ET clarity)
-- **Blocked on you:** Railway deploy
+2. **Refresh CMHC vacancy table** with current published numbers
+   - Open `apps/api/src/constants/cmhcVacancy.ts`
+   - Get the latest CMHC Rental Market Survey (cmhc-schl.gc.ca, published ~Q1 annually)
+   - Replace the placeholder values with current actual rates per CMA
+   - **Impact:** `demand` component of deal score (max 10 pts) is currently using indicative not authoritative values
 
-### Phase 3 — SunScout UI wiring (DONE in Phase 1)
+3. **Refresh Ontario property tax rates** (annual)
+   - `apps/api/src/constants/propertyTaxRates.ts` — values are 2024/25 cycle
+   - Refresh annually from municipal budget docs
 
-### Phase 4 — Schools / neighbourhood data (PARTIAL — scaffolds in, no real data yet)
+4. **ScraperAPI render mode** — Realtor.ca returns 500 with `render=true`, only works with `premium=true` alone (already wired). Worth contacting ScraperAPI support if you want JS-rendered fields (year_built, sometimes condo fee) back
 
-- **CMHC vacancy service** — `apps/api/src/constants/cmhcVacancy.ts` with a table of indicative Ontario CMA vacancy rates + `cmhcService.getVacancyRateByCity()`. Wired into the orchestrator (replaces the hardcoded `0.02`). **Refresh the table annually against the latest CMHC Rental Market Survey publication.**
-- **Google Places service** — `googlePlacesService.ts` fully implemented (Nearby Search, keyword-based type + board classification, Haversine distance, sorted by distance). Returns `[]` when `GOOGLE_PLACES_KEY` is unset. 6 unit tests pass.
-- **Schools loader script** — `scripts/load-schools.mjs` — CSV → Supabase `schools` upsert (`name + postal_code` as conflict key). Accepts EQAO/Fraser-style columns. Run: `node scripts/load-schools.mjs <path-to-csv>`.
+### Tier 3 — feature gaps
 
-### Phase 5 — Extraction overrides (DONE infrastructure-wise)
+5. **Stripe products live** (Phase 6)
+   - Create Investor Pro $10/mo, Professional $59/mo, Team $299/mo in Stripe dashboard
+   - Put price IDs in `.env`: `STRIPE_PRICE_PRO`, `STRIPE_PRICE_PROFESSIONAL`, `STRIPE_PRICE_TEAM`
+   - Register webhook at `/webhooks/stripe`; copy signing secret to `STRIPE_WEBHOOK_SECRET`
+   - For local testing: `ngrok http 3001`
 
-- `flag_overrides` table was already in the schema
-- `supabaseService`: `getFlagOverrides`, `addFlagOverride`, `deleteFlagOverride`
-- `apps/api/src/routes/overrides.ts` — `GET / POST / DELETE /analysis/:token/overrides`. 7 unit tests pass.
-- Registered in `app.ts`
-- Frontend service: `apps/web/src/lib/services/overrideService.ts`
-- Frontend hook: `apps/web/src/hooks/useFlagOverrides.ts` (optimistic updates with rollback)
-- `RiskRow` extended with `dismissable` / `dismissed` / `onToggleDismiss` props — renders Dismiss/Restore button when `dismissable=true`
-- **Quick follow-up for you:** wire `useFlagOverrides(token)` into each report page and pass `dismissable + dismissed + onToggleDismiss` to each `RiskRow`. Mechanical work; about 20 lines per page across 4 pages.
+6. **School data** (Phase 4)
+   - Download EQAO results (https://www.eqao.com/results-and-data)
+   - Download Fraser Institute rankings (https://www.fraserinstitute.org/school-performance)
+   - Either combine into one CSV matching the headers expected by `scripts/load-schools.mjs`, or pre-process
+   - Run: `node scripts/load-schools.mjs path/to/schools.csv`
+   - Get Google Places API key (Maps Platform → enable Places API), add `GOOGLE_PLACES_KEY=<key>` to `.env`
 
-### Phase 6 — Stripe billing (NOT STARTED)
-
-Routes (`billing.ts`, `webhooks.ts`) are already in place from the merge. What's left needs your input:
-
-- Create Stripe products + price IDs in the Stripe dashboard, copy IDs into `.env` (`STRIPE_PRICE_PRO`, `STRIPE_PRICE_PROFESSIONAL`, `STRIPE_PRICE_TEAM`)
-- Register the webhook in Stripe dashboard pointing at `/webhooks/stripe`; copy signing secret to `STRIPE_WEBHOOK_SECRET`
-- For local testing: `ngrok http 3001` and use that URL in the Stripe webhook
-
-### Phase 7 — Pre-launch quality gates (PARTIAL — integration test DONE)
-
-- **PR9 integration test** — `apps/api/src/routes/integration.test.ts`. Mocks scraper service + calc engine + Claude + Walk Score + Mapbox + Supabase (in-memory store). Three scenarios:
-  1. Full roundtrip: `POST /scrape` → `POST /analysis` → `GET /analysis/:token`
-  2. Province gate: non-Ontario URL returns `PROVINCE_NOT_SUPPORTED`
-  3. `GET /analysis/:token` returns `pending` before pipeline completes
-- All 3 pass.
-- `authService.degraded` regression fixed (was Phase 7 item 7.35)
-- **Blocked on you:** 50-listing golden dataset collection
-
-### Phase 8 — Deferred per the plan
-
-PDF, portfolio tracker, BC/AB expansion, AirDNA, Teranet, SunScout obstruction, Team seats — all untouched.
+7. **Golden dataset** (Phase 7)
+   - Collect 50 labelled Ontario listing descriptions
+   - Save to `services/calc-engine/tests/golden_dataset/golden_cases.json`
+   - Run `pytest services/calc-engine/tests/golden_dataset/test_extraction.py` until ≥95%
 
 ---
 
-## Verification results
+## What I worked on overnight + today
 
-```
-API typecheck    : clean
-Web typecheck    : clean
-API tests        : 112 / 112 pass  (was 96; +16 from overrides + googlePlaces + integration)
-Web tests        : 792 / 792 pass
-Calc-engine      : 286 / 286 pass
-Scrapers         : 105 / 105 pass
-Total            : 1287 tests passing
-End-to-end smoke : passed against live Supabase + local calc engine + local API
-```
+See git log on branch `feat/combined-route-wiring-and-status`. Highlights:
 
-`requirements.txt` for calc-engine is stale on Python 3.14 (pydantic-core 2.8 has no wheel). Your installed versions are newer and work — I didn't change the pins because that risks the regression suite.
-
-Note: `python -m pytest services/calc-engine services/scrapers` together has a path-collision quirk on Windows. Run them separately as shown above.
+- Merge of `feat/route-wiring` + `origin/claude/codebase-status-next-b2uufc`
+- DB schema alignment (`20260622_align_to_initial_schema.sql`)
+- Per-listing pipeline working end-to-end against live Realtor.ca URLs
+- Data persistence fixes (rent_monthly, city, walkScore, hasSanityWarnings) + migration `20260622_add_listing_extras.sql`
+- Score accuracy fixes (risk-flag deductions, live mortgage rate, estimated taxes, year-built fallback, calc engine .env loading, flag labels)
+- 1300+ tests passing across 4 test suites
 
 ---
 
-## Blocked on you (in priority order)
+## What's running while you're away
 
-### 1. ScraperAPI key (~2 min, unblocks Phase 1 real test)
+Per your direction: keep going on backend / data / quality. All four focus areas:
 
-- Sign up at https://www.scraperapi.com/ — free tier is 1000 req/mo
-- Add `SCRAPER_API_KEY=<key>` to `.env`
+- Score quality improvements (dedup, mode-specific severity, OSFI surfacing, better for-rent valuation)
+- Schools service layer (reads empty table, ready for data)
+- Observability + error handling
+- Spec doc updates
+- ~~Override UI wiring into the 4 report pages~~ ✅ **done** — see below
 
-### 2. Try a real Ontario URL end-to-end
-
-Once ScraperAPI key is set:
-
-- Terminal A: `cd services/calc-engine && python -m uvicorn main:app --port 8000`
-- Terminal B: `cd services/scrapers && pip install -r requirements.txt && python -m playwright install --with-deps chromium && python -m uvicorn main:app --port 8001`
-- Terminal C: `npm --prefix apps/api run dev`
-- Terminal D: `npm --prefix apps/web run dev`
-- Browser: http://localhost:5173 → paste an Ontario Realtor.ca URL → pick a mode
-
-### 3. Railway deploy for nightly scraper (Phase 2)
-
-- `npm install -g @railway/cli` if needed
-- `cd services/scrapers && railway login && railway init`
-- Set in Railway dashboard env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MAPBOX_TOKEN`
-- `railway up`
-- Trigger one manual run; check `rental_listings` rows
-
-### 4. Wire `useFlagOverrides` into the 4 report pages (Phase 5 follow-up, ~30 min)
-
-Pattern per page:
-
-```tsx
-import { useFlagOverrides } from '../hooks/useFlagOverrides'
-import { useParams } from 'react-router-dom'
-
-// inside the component
-const { token } = useParams<{ token: string }>()
-const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
-
-// where you render RiskRow
-<RiskRow
-  tone={flag.tone}
-  label={flag.label}
-  detail={flag.detail}
-  dismissable
-  dismissed={overrides.has(flag.id)}
-  onToggleDismiss={() =>
-    overrides.has(flag.id) ? undismiss(flag.id) : dismiss(flag.id)
-  }
-/>
-```
-
-Pages to touch: InvestorReport (~line 523), TenantReport, LandlordPage (~594), PersonalBuyerPage.
-
-### 5. School data (Phase 4 follow-up)
-
-- Download EQAO results (https://www.eqao.com/results-and-data)
-- Download Fraser Institute rankings (https://www.fraserinstitute.org/school-performance)
-- Either combine into one CSV with columns matching `scripts/load-schools.mjs` header expectations, or pre-process each
-- `node scripts/load-schools.mjs path/to/schools.csv`
-- Get a Google Places API key (Maps Platform → enable Places API → create credentials), add `GOOGLE_PLACES_KEY=<key>` to `.env`
-
-### 6. CMHC vacancy table refresh (Phase 4 follow-up, annual)
-
-Open `apps/api/src/constants/cmhcVacancy.ts`, replace the placeholder values with current numbers from the latest CMHC Rental Market Survey.
-
-### 7. Stripe live billing (Phase 6)
-
-- Create Stripe products + prices in dashboard
-- Populate `STRIPE_PRICE_*` in `.env`
-- Register `/webhooks/stripe` endpoint; copy signing secret to `STRIPE_WEBHOOK_SECRET`
-- For local: `ngrok http 3001`
-
-### 8. Golden dataset (Phase 7)
-
-50 labelled Ontario listing descriptions in `services/calc-engine/tests/golden_dataset/golden_cases.json`. Then run the regression suite to drive accuracy ≥95%.
+I'll fix edge cases I find as I find them and note unusual ones at the bottom of this file.
 
 ---
 
-## Commits I made tonight
+## Done since last update
 
-1. `94a59c0` — feat(route-wiring): WIP route wiring, scrape endpoint, analyzing/report pages, service hardening
-2. `cdfea65` — merge: combine feat/route-wiring with origin/claude/codebase-status-next-b2uufc
-3. `370afcc` — fix(merge): post-merge typecheck + snapshot fixes
-4. `e4f2842` — fix(db): align migrations after merge
-5. `44cf752` — feat(orchestrator): wire fetchRentalComps + SunScout, fix degraded auth tests
-6. `0c6f864` — docs(scrapers): clarify nightly cron is UTC, not ET
-7. (this commit) — feat(phases-3-7): finish PersonalBuyerPage SunScout, override API + UI, CMHC + Google Places services, schools loader, integration test, CMHC wired into orchestrator
+### Risk-flag override UI wired into all 4 report modes
 
-Branch: `feat/combined-route-wiring-and-status`. Nothing pushed to remote — all local.
+`apps/web/src/pages/ReportPage.tsx` (`/r/:token`) is the live renderer for every
+real analysis. The override infra already existed (hook `useFlagOverrides`,
+`overrideService`, API route `/analysis/:token/overrides`, and `RiskRow`'s
+`dismissable`/`dismissed`/`onToggleDismiss` props) but **no report page consumed it** —
+flags rendered read-only.
+
+Wired `useFlagOverrides(token)` into `ReportPage` and threaded a new
+`FlagOverrideControls` type into both renderers:
+
+- `InvestorReportContent` (investor / landlord / personal) → `RiskFlagsSection`
+- `TenantReportContent` (tenant) → inline flag list
+
+Each flag now shows Dismiss / Restore; toggling persists via the service with
+optimistic update + rollback on failure (hook already handled that). No-ops on
+the demo routes (`/investor-report`, etc.) since there's no live token.
+
+Added `apps/web/src/pages/ReportPage.test.tsx` (3 functionality tests). Full web
+suite green: **795 passing / 59 files**, typecheck clean.
 
 ---
 
-## What I deliberately didn't do
+### Live deal-score recalc on flag dismissal ✅ (you chose option B)
 
-- **Wire overrides into all 4 report pages** — listed as follow-up #4. The components + hook + API are all ready; per-page integration needs token plumbing that depends on each page's prop chain. Worth doing in one focused session with the dev server visible.
-- **Run the Railway deploy** — needs your Railway auth.
-- **Touch Stripe** — needs your dashboard access.
-- **Make up CMHC numbers** — used indicative ranges with a clear "refresh against the latest publication" note instead.
-- **Collect golden dataset listings** — real-world data collection, not autonomous work.
+You said dismissing a flag should move the score live. Done.
+
+- New pure functions in `apps/web/src/lib/investorCalc.ts`:
+  - `verdictFromScore(score)` — mirrors the Python `get_verdict` brackets exactly.
+  - `adjustDealScoreForOverrides(base, flags, dismissed)` — restores dismissed
+    flags' deductions to the score, re-applies the 15-pt cap to the _remaining_
+    deductions, and recomputes verdict / label / tagline / tone. Same formula the
+    calc engine uses, so a client recompute lands on the identical number.
+- Wired into `InvestorReportContent` (investor / landlord / personal). The
+  `PropertyHero` gauge animates to the new score, the verdict pill + tagline flip,
+  and the §06 "−X pts" line updates — all instantly on Dismiss / Restore, and on
+  page load for already-dismissed flags (persisted overrides applied on first render).
+- Stored `deal_score` stays the raw baseline; the display layer applies the
+  adjustment. Updated the now-accurate docstrings in `overrides.ts` +
+  `supabaseService.ts` (they previously claimed a calc-engine re-run filter that
+  was never actually implemented — see follow-up below).
+- Tests: 5 unit tests for the two pure fns (cap behaviour, verdict crossing, amber
+  no-op), 2 functionality tests proving the gauge moves 65 → 70 on dismiss and
+  starts at 70 when pre-dismissed. Full web suite green: **802 passing / 59 files**,
+  typecheck clean.
+
+---
+
+### Quality pass — calc-engine + API (autonomous, no blockers hit)
+
+Three score-accuracy / code-quality fixes, each with tests:
+
+1. **Sanity checks now cover deal score + cash flow + negative break-even.**
+   `sanity_check_metrics` (calc engine) previously bounded cap rate, rent, price,
+   DSCR and the break-even _ratio_ — but not the deal score or monthly cash flow,
+   both of which CLAUDE.md §12 says must have bounds, and a _negative_ break-even
+   slipped through. Added optional `deal_score` (0–95) and `cash_flow_monthly`
+   (±$20K) params + a negative-break-even guard; wired the two new values from the
+   router. +11 unit tests. (`calculations/sanity.py`, `sanity_test.py`, `routers/analysis.py`)
+
+2. **For-rent valuation magic numbers → documented constants.** The orchestrator
+   had inline `* 200`, `* 0.005`, `±10%`, `1500` literals burying the ~6% gross-yield
+   assumption (CLAUDE.md §11 violation). Extracted to `apps/api/src/constants/valuation.ts`
+   with the rent↔price proxies locked as exact reciprocals. +4 unit tests.
+
+3. **Real per-city CMHC vacancy now drives the demand score.** The deal score's
+   demand component (up to 10 pts) was using a flat hardcoded `0.02` while the API
+   already fetched real per-city vacancy (`getVacancyRateByCity`) — but only used it
+   for the narrative. Threaded the real rate into the calc payload + schema; the
+   calc engine uses it (falls back to default when omitted). This is the unblocked
+   complement to your Tier-2 "refresh CMHC table" task — once you refresh the
+   numbers, they now actually move the score. +3 tests (2 calc-route, 1 API payload).
+
+Suites green after each: calc-engine **298 passing**, API **124 passing**, typecheck clean.
+
+4. **Docs synced to shipped code** (CLAUDE.md's "new feature" Step 1 + 2):
+   - Spec §19 (override toggle) reworded to match the shipped design — greys out +
+     **Restore** (not "disappears"), live recalc via `adjustDealScoreForOverrides`,
+     stored score stays raw baseline. The spec already specified live recalc and
+     already listed `cmhc_vacancy_rate` in the calc payload — so the per-city vacancy
+     change brought the _code_ in line with the _spec_, not the other way round.
+   - `TESTING.md` Test 33 rewritten (dismiss/restore + live gauge + reload persistence
+     - demo-route gating) and Tests 33a (sanity bounds) + 33b (vacancy→demand) added,
+       each with their automated-coverage pointers.
+
+---
+
+## Where I've stopped — remaining items need you or are deferred
+
+I worked through everything unblocked. What's left needs a decision or data from you:
+
+- **Mode-specific flag severity** — needs you to define _which_ flags change severity by
+  report mode and by how much. The calc engine doesn't even receive `mode` yet; threading
+  it in is pointless until the rules exist. Product decision.
+- **OSFI "surfacing"** — currently OSFI uses a fixed $125K assumed income (shown as
+  "at $125K income", by design). Making it real needs an income-input UI + decision on
+  prominence. Product/design decision.
+- **Better for-rent valuation** — the `rent × 200` proxy (now a documented constant) needs
+  real market cap-rate data to improve. Data-blocked (overlaps your CMHC/comps tasks).
+- **Schools service layer** — code reads an empty table; nothing to verify until the EQAO /
+  Fraser data is loaded (your Tier-3 task #6).
+- The earlier follow-ups (account-list / PDF score consistency, backend re-run override
+  filter) you said to handle later.
+
+Error isolation in the orchestrator was reviewed and is already sound (geocode + walk score
+
+- narrative all degrade to null/fallback; only a calc-engine outage hard-fails, correctly).
+
+---
+
+## Follow-ups I found (not blocking, flagging for later)
+
+1. **Other surfaces still show the raw (un-adjusted) score.** The report page now
+   applies overrides, but anything else that reads the stored `deal_score` will show
+   the baseline: the Account "saved analyses" list, and the PDF export when it's built.
+   When those are wired, apply the same `adjustDealScoreForOverrides` (fetch the
+   token's overrides alongside the analysis). Low priority until PDF/account list ship.
+2. **POST `/analysis` re-run ignores overrides.** The orchestrator
+   (`apps/api/src/routes/analysis.ts`) never reads `getFlagOverrides(token)` nor
+   forwards dismissed IDs to the calc engine — so a _fresh re-analysis_ recomputes
+   from scratch. With live display-layer recalc this is no longer user-visible in the
+   report, so I left it. If you'd rather the persisted score also reflect dismissals,
+   I can thread `dismissed_flag_ids` through the calc payload (calc engine already
+   isolates the red-flag deduction count cleanly — small change). Tell me if you want it.

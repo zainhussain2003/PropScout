@@ -7,6 +7,7 @@ Build tasks: `MVP_TODO.md`
 This file tells you exactly what to test after each week of development, how to test it manually yourself, and which tests require other pieces to be built first before they can be verified end-to-end.
 
 **Legend:**
+
 - ✋ Manual test — you do this yourself in a browser or terminal
 - 🔗 Combined test — cannot be tested alone, depends on another component being built first
 - 🤖 Automated test — run via pytest or a script
@@ -18,6 +19,7 @@ This file tells you exactly what to test after each week of development, how to 
 ### Realtor.ca scraper
 
 **✋ Test 1 — Basic scrape returns clean data**
+
 1. Find 3 real Realtor.ca listing URLs — one condo, one detached house, one rental
 2. Run the scraper against each URL directly (call the function in a Python terminal or via a test script)
 3. Print the raw JSON output
@@ -26,6 +28,7 @@ This file tells you exactly what to test after each week of development, how to 
 6. Fail: any field silently missing without a `_known: false` flag
 
 **✋ Test 2 — Condo fee extraction**
+
 1. Find a Realtor.ca condo listing that shows a maintenance fee in the listing details
 2. Run the scraper
 3. Verify `condo_fee_monthly` is populated and `condo_fee_known` is `true`
@@ -33,12 +36,14 @@ This file tells you exactly what to test after each week of development, how to 
 5. Verify the scraper either finds it via description parsing or correctly sets `condo_fee_known: false`
 
 **✋ Test 3 — Scraper failure fallback**
+
 1. Pass a deliberately broken URL to the scraper (e.g. an expired listing or a non-listing page)
 2. Verify the scraper returns a partial data object — not a crash, not an empty object
 3. Verify `condo_fee_known: false` and `year_built_known: false` are set on missing fields
 4. Pass: graceful partial return. Fail: exception thrown or silent empty response
 
 **✋ Test 4 — For-sale vs for-rent detection**
+
 1. Paste a Realtor.ca for-sale URL — verify `listing_type: for_sale` returned
 2. Paste a Realtor.ca for-rent URL — verify `listing_type: for_rent` returned
 3. Pass: correct classification every time
@@ -48,11 +53,13 @@ This file tells you exactly what to test after each week of development, how to 
 ### Zillow.ca scraper
 
 **✋ Test 5 — Zillow Canadian listing scrape**
+
 1. Find a Zillow.ca listing for an Ontario property
 2. Run the scraper, verify same fields as Realtor.ca test
 3. Pass: clean JSON with all available fields populated
 
 **✋ Test 6 — US property rejection**
+
 1. Paste a Zillow.com US listing URL (e.g. a New York property)
 2. Verify the scraper returns an error flag, not property data
 3. The response should indicate this is a non-Canadian property
@@ -69,6 +76,7 @@ Covers rent parsing (weekly ×4.33, daily discarded, sanity bounds), bed parsing
 **⚠️ Note:** Full rental comps testing requires the nightly scraper to have run at least once and populated the `rental_listings` table. On day one of building, the database will be empty. Start the scraper running immediately and let it accumulate for several days before testing comp results.
 
 **✋ Test 7 — Nightly scraper runs and stores data**
+
 1. Trigger the scraper manually (don't wait for the nightly schedule)
 2. Check the Supabase `rental_listings` table directly
 3. Verify new rows are appearing with: source, address, postal code, beds, rent_monthly, scraped_at
@@ -76,6 +84,7 @@ Covers rent parsing (weekly ×4.33, daily discarded, sanity bounds), bed parsing
 5. Pass: rows appearing with correct data. Fail: table empty or rent values unrealistic
 
 **✋ Test 8 — Deduplication**
+
 1. Run the scraper twice in a row on the same day
 2. Count rows in `rental_listings` before and after the second run
 3. Pass: row count does not double for listings that were already scraped
@@ -89,11 +98,13 @@ Cannot be fully tested until the comp query function is wired into the calc engi
 ### Province detection
 
 **✋ Test 10 — Ontario postal codes pass**
+
 1. Run the province detection function with: L4K 5W4 (Vaughan), M5V 1J1 (Toronto), K1A 0A9 (Ottawa)
 2. All three should return `province: ON` and pass the Ontario gate
 3. Pass: analysis allowed to proceed
 
 **✋ Test 11 — Non-Ontario postal codes are blocked**
+
 1. Run with: V6B 1A1 (Vancouver BC), T2P 1J9 (Calgary AB), H3B 1A1 (Montreal QC)
 2. All three should return the province code and block the analysis
 3. Pass: province gate triggered, waitlist prompt shown
@@ -108,6 +119,7 @@ Cannot be fully tested until the comp query function is wired into the calc engi
 Use Unit 5702, 5 Buttermill Ave, Vaughan as the calibration property. This property has known values from the spec.
 
 Inputs:
+
 - Purchase price: $729,900
 - Annual taxes: $3,326
 - Condo fee: $761/mo
@@ -117,6 +129,7 @@ Inputs:
 - Amortization: 25 years
 
 Expected outputs (verify each):
+
 - Monthly mortgage payment: ~$3,340
 - Total monthly expenses: ~$4,733
 - Monthly cash flow: approximately −$1,833
@@ -130,6 +143,7 @@ Pass: all outputs within 2% of expected values
 Fail: any output off by more than 5% — find the formula error before proceeding
 
 **✋ Test 13 — OSFI stress test**
+
 1. Use any Ontario property with a 4.79% contract rate
 2. Verify qualifying rate = max(4.79 + 2, 5.25) = 6.79%
 3. Verify the qualifying monthly payment is calculated at 6.79%, not 4.79%
@@ -139,15 +153,16 @@ Fail: any output off by more than 5% — find the formula error before proceedin
 Test three price points:
 
 | Purchase price | Expected LTT (non-Toronto) |
-|---|---|
-| $400,000 | $4,475 |
-| $730,000 | $11,475 |
-| $1,000,000 | $16,475 |
+| -------------- | -------------------------- |
+| $400,000       | $4,475                     |
+| $730,000       | $11,475                    |
+| $1,000,000     | $16,475                    |
 
 Calculate manually using the brackets in spec Section 6, then verify the engine matches.
 Also test a Toronto address — LTT should be approximately double.
 
 **✋ Test 15 — Deal score formula**
+
 1. Run the scoring function with a "perfect deal" (cap rate 6.5%, cash flow +$600/mo, CoC 9%, DSCR 1.3x, low vacancy, no risk flags)
 2. Verify score is 80+ (should be close to 90–95)
 3. Run with the 5702 Buttermill inputs
@@ -157,23 +172,26 @@ Also test a Toronto address — LTT should be approximately double.
 7. Pass: scores are consistent, deterministic (same inputs = same score every time)
 
 **✋ Test 16 — Maintenance reserve by age**
+
 1. Input a post-2010 property — verify reserve = 0.5% of value / 12
 2. Input a 1990 build — verify reserve = 1.0% of value / 12
 3. Input a 1975 build — verify reserve = 1.5% of value / 12 and the pre-1980 risk flag is triggered
 
 **✋ Test 17 — Four financing scenarios**
 Run the calc engine and verify all four scenarios return different but plausible values:
+
 1. Base case (20% down, current rate, 25yr)
 2. OSFI stress (same down, qualifying rate)
 3. Higher down (35% down, current rate, 25yr)
 4. Conservative (20% down, rate +2%, 25yr)
-Pass: scenario 2 always has the highest payment, scenario 3 always has the lowest
+   Pass: scenario 2 always has the highest payment, scenario 3 always has the lowest
 
 ---
 
 ## Week 3–4 — Frontend skeleton
 
 **✋ Test 18 — URL input validation**
+
 1. Paste a valid Realtor.ca URL — verify it passes validation
 2. Paste a valid Zillow.ca URL — verify it passes validation
 3. Paste a random URL (e.g. google.com) — verify inline error message appears
@@ -181,6 +199,7 @@ Pass: scenario 2 always has the highest payment, scenario 3 always has the lowes
 5. Paste a blank input and click analyse — verify error message appears
 
 **✋ Test 19 — Mode selection modal**
+
 1. Paste a for-sale URL — verify the investment vs personal use modal appears
 2. Select Investment — verify Report A layout loads
 3. Go back, select Personal Use — verify Report B layout loads
@@ -189,12 +208,14 @@ Pass: scenario 2 always has the highest payment, scenario 3 always has the lowes
 6. Select Landlord — verify Report D layout loads
 
 **✋ Test 20 — Progress display during scraping**
+
 1. Paste a URL and watch the progress display
 2. Verify fields appear progressively as they are confirmed — not all at once
 3. If a field is missing (e.g. condo fee not found), verify it appears as an amber "enter manually" prompt
 4. Verify the progress display does not just show a spinner with no information
 
 **✋ Test 21 — Manual entry fallback**
+
 1. Simulate a scraper failure (or use a URL that returns partial data)
 2. Verify the manual entry form appears with whatever fields were captured pre-filled
 3. Verify missing required fields (condo fee for condos) are highlighted in amber
@@ -202,6 +223,7 @@ Pass: scenario 2 always has the highest payment, scenario 3 always has the lowes
 5. Verify the analysis runs on the combined scraper + manual data
 
 **✋ Test 22 — Province gate**
+
 1. Paste a Realtor.ca listing from BC or Alberta
 2. Verify the analysis does not run
 3. Verify the province gate screen appears with the correct province name
@@ -215,6 +237,7 @@ Cannot be fully tested until Supabase auth and Stripe are set up in Week 7–8. 
 ## Week 4–5 — School and neighbourhood data
 
 **✋ Test 24 — School discovery**
+
 1. Use a known address in Toronto (e.g. 5 Buttermill Ave, Vaughan)
 2. Call the Google Places API school lookup
 3. Verify at least 1 elementary, 1 middle, and 1 high school are returned
@@ -222,6 +245,7 @@ Cannot be fully tested until Supabase auth and Stripe are set up in Week 7–8. 
 5. Verify the school names are real schools (cross-check on Google Maps)
 
 **✋ Test 25 — EQAO score matching**
+
 1. Take a school name returned by Google Places
 2. Look it up in the Supabase `schools` table
 3. Verify the EQAO score is present and is a number between 0 and 10
@@ -229,11 +253,13 @@ Cannot be fully tested until Supabase auth and Stripe are set up in Week 7–8. 
 5. Pass: scores match. Fail: scores missing or clearly wrong
 
 **✋ Test 26 — Fraser Institute ranking**
+
 1. Same process as Test 25 but for Fraser rank percentile
 2. Verify the provincial percentile is a number between 0 and 100
 3. Cross-check one school against fraserinstitute.org
 
 **✋ Test 27 — Walk Score and Transit Score**
+
 1. Call the Walk Score API with a known address
 2. Verify two scores are returned: Walk Score and Transit Score
 3. Use 5 Buttermill Ave, Vaughan — expected Walk Score approximately 72, Transit Score approximately 85
@@ -241,6 +267,7 @@ Cannot be fully tested until Supabase auth and Stripe are set up in Week 7–8. 
 5. Pass: scores are plausible for the location
 
 **✋ Test 28 — CMHC vacancy rate**
+
 1. Query the CMHC API for Vaughan / York Region
 2. Verify a vacancy rate percentage is returned
 3. Verify the value is between 0% and 10% (anything outside this range is suspicious)
@@ -279,6 +306,7 @@ This is the most important test in the entire pipeline. Do not proceed to Week 7
 Note: aim for at least 10 examples of each flag type, including negative examples (descriptions that should NOT trigger the flag). Edge cases are the most valuable — look for listings with creative/misleading language.
 
 **✋ Test 31 — Haiku JSON output format**
+
 1. Send a single listing description to Claude Haiku with the extraction prompt
 2. Verify the raw response is valid JSON with no markdown fencing, no preamble
 3. Verify every expected key is present in the response
@@ -287,6 +315,7 @@ Note: aim for at least 10 examples of each flag type, including negative example
 6. Test with a completely empty description — verify all flags return false with confidence 0
 
 **✋ Test 32 — Confidence threshold behaviour**
+
 1. Find a listing description where Haiku returns a flag with confidence between 60 and 84
 2. Verify the flag appears as amber in the UI, not red
 3. Verify the amber flag does NOT deduct from the deal score
@@ -294,16 +323,38 @@ Note: aim for at least 10 examples of each flag type, including negative example
 5. Verify it appears as red and DOES deduct from the deal score
 6. Verify a confidence below 60 does not appear in the UI at all
 
-**✋ Test 33 — User override toggle**
-1. Find a property where a risk flag has been set (either by regex or Haiku)
-2. Click the "This is wrong" toggle on the flag
-3. Verify the flag disappears from the risk section immediately (no page reload)
-4. Verify the deal score updates instantly to remove the deduction
-5. Check the Supabase `flag_overrides` table — verify a new row was logged with the correct analysis_id, flag_name, and user_override: true
+**✋ Test 33 — User override toggle (dismiss / restore + live score recalc)**
+
+1. Open a real report (`/r/:token`) for a property with at least one red risk flag
+2. Click **Dismiss** on the flag
+3. Verify the row greys out and is struck through (it does NOT vanish), and the button now reads **Restore** — no page reload
+4. Verify the deal score gauge animates up instantly (the dismissed flag's deduction is removed) and the §06 "−X pts" line drops accordingly
+5. If dismissing pushes the score across a bracket, verify the verdict pill + tagline change to match
+6. Click **Restore** — verify the strike-through clears and the score returns to its original value
+7. Check the Supabase `flag_overrides` table — verify Dismiss inserts a row (correct analysis_id + flag_id) and Restore removes it
+8. Reload the report with a flag still dismissed — verify it loads already greyed out with the adjusted score (persisted overrides applied on first render)
+9. Verify on the demo routes (`/investor-report`, `/tenant-report`, etc.) the Dismiss button is absent — overrides only apply to live, tokened analyses
+
+   🤖 Automated coverage: `apps/web/src/pages/ReportPage.test.tsx` (dismiss/restore wiring + 65→70 live recalc), `apps/web/src/lib/investorCalc.test.ts` (`adjustDealScoreForOverrides`, `verdictFromScore`)
+
+**✋ Test 33a — Sanity bounds on score outputs**
+
+1. The calc engine flags implausible outputs without crashing. Confirm `sanity_check_metrics` covers: cap rate (0–20%), rent ($500–15k), price ($50k–10M), DSCR (≤5×), break-even ratio (≤3×), **deal score (0–95)**, **monthly cash flow (±$20k)**, and **negative break-even**
+2. Any failure sets `has_sanity_warnings=true` (UI notice) but the analysis still returns
+
+   🤖 Automated coverage: `services/calc-engine/calculations/sanity_test.py`
+
+**✋ Test 33b — Per-city CMHC vacancy drives the demand score**
+
+1. Run analyses for two cities with different CMHC vacancy rates (e.g. a tight <2% market vs a soft >5% market)
+2. Verify the deal score's demand component differs (vacancy contributes up to 4 of the 10 demand points), not a flat default
+
+   🤖 Automated coverage: `services/calc-engine/routers/analysis_test.py` (vacancy flows into demand), `apps/api/src/routes/analysis.test.ts` (payload forwards the per-city rate)
 
 ### SunScout
 
 **✋ Test 34 — Sun hours calculation**
+
 1. Use coordinates for Toronto (lat: 43.65, lng: -79.38) and a south-facing window (bearing: 180)
 2. Run `window_sun_hours_by_month()`
 3. Expected: December should return approximately 3–5 hours, June approximately 9–12 hours
@@ -312,6 +363,7 @@ Note: aim for at least 10 examples of each flag type, including negative example
 6. Pass: values are plausible and seasonal variation is obvious
 
 **✋ Test 35 — Light score calculation**
+
 1. Use a south-facing main bedroom and south-facing living area
 2. Run `annual_light_score()`
 3. Expected: score should be 75–90 (south-facing in Toronto is good light)
@@ -320,6 +372,7 @@ Note: aim for at least 10 examples of each flag type, including negative example
 6. Pass: scores reflect real-world expectations
 
 **✋ Test 36 — SunScout UI rendering**
+
 1. Complete an analysis on a real property
 2. Verify the seasonal grid shows 4 columns (Dec, Mar, Jun, Sep) with hour values
 3. Verify the sun arc SVG renders without errors
@@ -333,6 +386,7 @@ Note: aim for at least 10 examples of each flag type, including negative example
 ### AI narratives
 
 **✋ Test 37 — Free tier narrative length**
+
 1. Run an analysis as a free tier user
 2. Verify the AI narrative section shows 1 paragraph only
 3. Count the words — should be between 60 and 120
@@ -340,6 +394,7 @@ Note: aim for at least 10 examples of each flag type, including negative example
 5. Verify at least one dollar figure appears in the text
 
 **✋ Test 38 — Pro tier narrative length**
+
 1. Run an analysis as a Pro tier user (set tier manually in Supabase for testing)
 2. Verify the AI narrative shows the full narrative (2–3 paragraphs depending on report type)
 3. Count the words — should be between 150 and 320
@@ -352,6 +407,7 @@ Run the analysis on Unit 5702, 5 Buttermill Ave. Read the Pro tier narrative.
 Compare it against the gold-standard example in spec Section 12.
 
 Ask yourself:
+
 - Does it open with the single most important fact? (The condo fee)
 - Does it use specific dollar amounts, not just percentages?
 - Does it give a concrete next step in the final paragraph?
@@ -361,6 +417,7 @@ Ask yourself:
 Pass: all yes. Fail: any no — tune the prompt and re-run.
 
 **✋ Test 40 — Narrative fallback**
+
 1. Temporarily break the Claude API key (set it to an invalid value)
 2. Run an analysis
 3. Verify the report still loads — the narrative section shows the fallback message
@@ -369,6 +426,7 @@ Pass: all yes. Fail: any no — tune the prompt and re-run.
 
 **✋ Test 41 — All four narrative types**
 Run one analysis in each of the four report modes and verify a narrative generates successfully:
+
 - Report A: investment purchase
 - Report B: personal purchase (check school summary appears in the narrative input)
 - Report C: tenant evaluation
@@ -377,18 +435,21 @@ Run one analysis in each of the four report modes and verify a narrative generat
 ### PDF export
 
 **✋ Test 42 — PDF generates without errors**
+
 1. Complete an analysis as a Pro user
 2. Click the PDF export button
 3. Verify the PDF downloads within 10 seconds
 4. Open the PDF and verify it has the correct number of pages (Report A = 8, Report B = 6, Report C = 4)
 
 **✋ Test 43 — PDF content accuracy**
+
 1. Open the generated PDF for the 5702 Buttermill Ave analysis
 2. Verify the numbers in the PDF match the numbers shown in the web report exactly
 3. Check: cap rate, monthly cash flow, deal score, rent estimate, break-even rent
 4. Pass: PDF matches web report. Fail: any discrepancy — Puppeteer rendering issue
 
 **✋ Test 44 — PDF branding**
+
 1. Verify PropScout logo appears in the footer of every page
 2. Verify propscout.ca URL appears in the footer
 3. Verify "Not financial or legal advice" disclaimer is present
@@ -402,18 +463,21 @@ Cannot be tested until Stripe is set up in Week 7–8. At that stage: log in as 
 ## Week 7–8 — Auth, payments, access control
 
 **✋ Test 46 — Email signup**
+
 1. Go to the signup page
 2. Enter an email and password
 3. Verify a confirmation email arrives (if Supabase email confirmation is enabled)
 4. Verify the user row appears in Supabase `users` table with `tier: free`
 
 **✋ Test 47 — Google OAuth**
+
 1. Click "Sign in with Google"
 2. Complete the Google auth flow
 3. Verify you are redirected back to PropScout and logged in
 4. Verify the user row appears in Supabase with the correct email and `tier: free`
 
 **✋ Test 48 — Stripe checkout**
+
 1. Log in as a free user
 2. Click upgrade to Investor Pro
 3. Complete Stripe checkout using the test card: 4242 4242 4242 4242, any future date, any CVC
@@ -422,12 +486,14 @@ Cannot be tested until Stripe is set up in Week 7–8. At that stage: log in as 
 6. Verify Pro features are now accessible (PDF button, full AI narrative)
 
 **✋ Test 49 — Stripe webhook (subscription cancelled)**
+
 1. Log in as a Pro user
 2. Cancel the subscription via the Stripe billing portal
 3. Verify that at the end of the billing period, `tier` in Supabase updates back to `free`
 4. Verify Pro features are re-locked after tier changes
 
 **✋ Test 50 — Free tier analysis limit**
+
 1. Log in as a free user
 2. Run analyses one by one, counting as you go
 3. After the 10th analysis, verify the gate screen appears on the 11th attempt
@@ -435,6 +501,7 @@ Cannot be tested until Stripe is set up in Week 7–8. At that stage: log in as 
 5. Upgrade to Pro — verify the gate disappears and analyses continue
 
 **✋ Test 51 — Shareable link**
+
 1. Complete an analysis as any tier
 2. Click the share button and copy the generated link
 3. Open the link in a different browser (not logged in)
@@ -442,6 +509,7 @@ Cannot be tested until Stripe is set up in Week 7–8. At that stage: log in as 
 5. Verify the link expires after 30 days (you can test this by manually setting `share_expires_at` in Supabase to a past date)
 
 **✋ Test 52 — Guest analysis**
+
 1. Log out completely
 2. Paste a listing URL and complete an analysis without logging in
 3. Verify the analysis runs
@@ -456,6 +524,7 @@ Cannot be tested until Stripe is set up in Week 7–8. At that stage: log in as 
 
 **✋ Test 53 — Full Report A end-to-end**
 Use Unit 5702, 5 Buttermill Ave, Vaughan ($729,900 condo)
+
 1. Paste the Realtor.ca URL
 2. Select Investment
 3. Verify scraper pulls correct data (price, taxes, condo fee, beds)
@@ -465,10 +534,11 @@ Use Unit 5702, 5 Buttermill Ave, Vaughan ($729,900 condo)
 7. Verify AI narrative mentions the condo fee as the primary issue
 8. Export PDF — verify all 8 pages render correctly
 9. Generate shareable link — verify it opens without login
-Total time from URL paste to report: should be under 30 seconds
+   Total time from URL paste to report: should be under 30 seconds
 
 **✋ Test 54 — Full Report B end-to-end**
 Use a real detached house listing in Ontario (find one on Realtor.ca)
+
 1. Paste the URL and select Personal Use
 2. Verify the monthly ownership cost section shows mortgage + taxes + insurance + maintenance
 3. Verify at least 3 schools appear with EQAO scores and Fraser rankings
@@ -478,6 +548,7 @@ Use a real detached house listing in Ontario (find one on Realtor.ca)
 
 **✋ Test 55 — Full Report C end-to-end**
 Use Unit 3705, 5 Buttermill Ave, Vaughan ($2,150/mo rental listing)
+
 1. Paste the rental URL without logging in
 2. Select Tenant
 3. Verify the listing accuracy flags fire (glass door den, parking unclear)
@@ -490,6 +561,7 @@ Use Unit 3705, 5 Buttermill Ave, Vaughan ($2,150/mo rental listing)
 
 **✋ Test 55a — Listed vs. reality section (conditional display)**
 Use Unit 3705, 5 Buttermill Ave (has known misrepresentation flags)
+
 1. Verify the "Listed vs. Reality" section appears — flags are present so it should show
 2. Verify the left card shows the Zillow/Realtor.ca description wording ("2 bed + study")
 3. Verify the right card shows the corrected version ("1 proper bedroom + 1 glass-door den")
@@ -499,12 +571,14 @@ Use Unit 3705, 5 Buttermill Ave (has known misrepresentation flags)
 
 **✋ Test 55b — Full unit breakdown**
 Use Unit 3705, 5 Buttermill Ave
+
 1. Verify the unit breakdown card shows all available fields: floor, balcony sqft, bedroom descriptions, bathrooms, ceilings, windows, laundry, cooling, heating, internet, parking, available date
 2. Verify fields not found in the listing are labelled "Not listed" — not blank, not zero
 3. Verify sqft shows the estimate range ("est. 600–700 sqft") when the exact value is not in the listing
 
 **✋ Test 55c — Building amenities grid**
 Use Unit 3705, 5 Buttermill Ave (Transit City — known amenities)
+
 1. Verify the amenities grid renders with icons and labels
 2. Verify confirmed-included amenities (gym, pool, internet, YMCA) are shown in full colour
 3. Verify parking appears in a warning state (unconfirmed for this unit)
@@ -512,6 +586,7 @@ Use Unit 3705, 5 Buttermill Ave (Transit City — known amenities)
 
 **✋ Test 55d — Location and lifestyle card**
 Use Unit 3705, 5 Buttermill Ave
+
 1. Verify VMC subway station appears with walking distance (~2 min)
 2. Verify downtown Toronto commute time appears (~50 min)
 3. Verify Walk Score and Transit Score are present and plausible (Walk ~72, Transit ~85)
@@ -521,6 +596,7 @@ Use Unit 3705, 5 Buttermill Ave
 
 **✋ Test 56 — Full Report D end-to-end**
 Use any active rental listing on Kijiji or Rentals.ca in Ontario
+
 1. Paste the URL and select Landlord
 2. Verify you are prompted for the property value / purchase price
 3. Enter a realistic purchase price and verify the investment metrics calculate
@@ -531,6 +607,7 @@ Use any active rental listing on Kijiji or Rentals.ca in Ontario
 
 **✋ Test 57 — Test across all property types**
 Run a Report A analysis on one of each type and verify the report renders correctly without errors:
+
 - [ ] Condo apartment
 - [ ] Detached house
 - [ ] Semi-detached house
@@ -544,12 +621,14 @@ Note which property types produce the most scraper gaps (missing sqft, missing y
 
 **✋ Test 58 — Property with no rental comps**
 Find a listing in a rural Ontario postal code with very few nearby rentals (try a small town in Northern Ontario)
+
 1. Run a Report A analysis
 2. Verify the comps section shows the low-confidence warning ("Only X comparables found — confidence: low")
 3. Verify the analysis still completes — it does not fail or hang
 
 **✋ Test 59 — Property with unknown condo fee**
 Find a condo listing on Realtor.ca where the maintenance fee is not listed anywhere
+
 1. Paste the URL
 2. Verify the amber "enter manually" prompt appears during the progress display for the condo fee field
 3. Verify the analysis does not proceed until a value is entered (or the user explicitly confirms it's unknown)
@@ -557,12 +636,14 @@ Find a condo listing on Realtor.ca where the maintenance fee is not listed anywh
 
 **✋ Test 60 — Property with unknown year built**
 Find a listing with no year built information
+
 1. Verify `year_built_known: false` in the scraped data
 2. Verify the risk flag "Year built unknown — rent control status unconfirmed" appears
 3. Verify the deal score deducts 1 point for this flag (per the formula in spec Section 10)
 
 **✋ Test 61 — Pre-1980 property**
 Find a listing with a confirmed year built before 1980
+
 1. Verify the pre-1980 maintenance reserve rate (1.5%) is used in calculations
 2. Verify the "High maintenance risk" amber flag appears
 3. Verify the deal score deducts 3 points for this flag
@@ -571,6 +652,7 @@ Find a listing with a confirmed year built before 1980
 
 **✋ Test 62 — Mobile browser test**
 Open propscout.ca on your phone browser (not a desktop browser with responsive mode — an actual phone)
+
 1. Paste a URL using the mobile keyboard
 2. Verify the URL input bar is usable on mobile (no keyboard overlap issues)
 3. Verify the mode selection modal is tappable with a finger (buttons large enough)
@@ -581,6 +663,7 @@ Open propscout.ca on your phone browser (not a desktop browser with responsive m
 ### Performance tests
 
 **✋ Test 63 — Analysis speed**
+
 1. Time a full analysis from URL paste to report rendered for a Toronto condo
 2. Target: under 30 seconds total
 3. If over 30 seconds, identify the bottleneck (scraper? comps query? AI narrative?)
@@ -598,31 +681,37 @@ Fail: any one hangs, crashes, or returns another user's data
 Run these immediately before going live:
 
 **✋ Disclaimer and legal**
+
 - [ ] "Not financial or legal advice" text is visible on every report type
 - [ ] Privacy policy page exists at propscout.ca/privacy
 - [ ] Terms of service page exists at propscout.ca/terms
 
 **✋ Payments**
+
 - [ ] Stripe is in live mode (not test mode)
 - [ ] A real card payment successfully creates a Pro subscription
 - [ ] Subscription cancellation works end-to-end
 
 **✋ Domain and SSL**
+
 - [ ] propscout.ca loads over HTTPS (padlock in browser)
 - [ ] www.propscout.ca redirects to propscout.ca (or vice versa — pick one)
 - [ ] No SSL certificate warnings
 
 **✋ Emails**
+
 - [ ] Support email (support@propscout.ca) receives messages
 - [ ] Supabase sends auth emails from a branded address (not a Supabase default)
 - [ ] Stripe sends billing receipts correctly
 
 **✋ Error logging**
+
 - [ ] A failed scrape is logged somewhere you can see it (Railway logs minimum)
 - [ ] A failed Claude API call is logged
 - [ ] A failed Stripe webhook is logged
 
 **✋ Golden dataset final run**
+
 - [ ] Run the full extraction pipeline regression suite one final time
 - [ ] Confirm 95%+ accuracy before going live
 - [ ] Document the final accuracy score and date in this file
@@ -632,20 +721,23 @@ Run these immediately before going live:
 ## After launch — ongoing testing
 
 Every time you change the extraction prompt, update a model version, or add a new flag type:
+
 1. Run the golden dataset regression suite immediately
 2. Confirm accuracy is still 95%+ before the change goes live
 3. If accuracy drops, revert the change and investigate
 
 Every time a user reports a misrepresentation that PropScout missed:
+
 1. Add that listing description to the golden dataset
 2. Label it correctly
 3. Re-run the suite
 4. Fix the prompt or regex if needed
 
 Every time Realtor.ca or Zillow.ca changes their page structure:
+
 1. Run Tests 1–6 immediately to confirm the scrapers still work
 2. If broken, fix the scraper before anything else — the whole pipeline depends on it
 
 ---
 
-*PropScout · Testing Guide · May 2026 · Update this file as new features are added*
+_PropScout · Testing Guide · May 2026 · Update this file as new features are added_
