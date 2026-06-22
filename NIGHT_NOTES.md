@@ -189,17 +189,38 @@ Error isolation in the orchestrator was reviewed and is already sound (geocode +
 
 ---
 
-## Follow-ups I found (not blocking, flagging for later)
+## Non-blocking follow-ups — status
 
-1. **Other surfaces still show the raw (un-adjusted) score.** The report page now
-   applies overrides, but anything else that reads the stored `deal_score` will show
-   the baseline: the Account "saved analyses" list, and the PDF export when it's built.
-   When those are wired, apply the same `adjustDealScoreForOverrides` (fetch the
-   token's overrides alongside the analysis). Low priority until PDF/account list ship.
-2. **POST `/analysis` re-run ignores overrides.** The orchestrator
-   (`apps/api/src/routes/analysis.ts`) never reads `getFlagOverrides(token)` nor
-   forwards dismissed IDs to the calc engine — so a _fresh re-analysis_ recomputes
-   from scratch. With live display-layer recalc this is no longer user-visible in the
-   report, so I left it. If you'd rather the persisted score also reflect dismissals,
-   I can thread `dismissed_flag_ids` through the calc payload (calc engine already
-   isolates the red-flag deduction count cleanly — small change). Tell me if you want it.
+### ✅ Done: backend re-run now honours overrides (was follow-up #2)
+
+`POST /analysis` now fetches `getFlagOverrides(token)` and forwards
+`dismissed_flag_ids` to the calc engine, which drops those flags' deductions (the
+flags are still returned, shown greyed out). The override fetch is fully defensive
+(any failure → no dismissals; analysis never fails). Verified this can't
+double-count with the live display recalc: `adjustDealScoreForOverrides` recomputes
+from the score _subtotal_, not the stored total, so it's idempotent — whether the
+stored score is raw or already-adjusted, the displayed value is the same. +3 tests
+(2 calc-route: deduction drops on dismiss / unknown id is a no-op; 1 API: payload
+forwards the dismissed IDs). Updated `overrides.ts` docstring to describe both paths.
+
+### ✅ Done (partial): CLAUDE.md structure reconciled for the backend (was follow-up #3)
+
+Both `CLAUDE.md` and `docs/CLAUDE.md` had the api `routes/` and `constants/`
+trees badly out of date (missing overrides, scrape, rates, billing, me, waitlist,
+analysisToken; flagLabels, cmhcVacancy, propertyTaxRates, valuation). Reconciled
+those sections in both files.
+
+### ⚠️ Not done — needs a decision from you
+
+1. **Account "saved analyses" list (was follow-up #1) is NOT a quick cleanup.**
+   `AccountPage` renders a hardcoded `SAVED_ANALYSES` fixture — there is **no
+   endpoint to list a user's real saved analyses**, so there's no real score to
+   override-adjust yet. Making it real = a new auth'd list endpoint + frontend
+   fetch + wiring (a feature, not a cleanup). Same applies to PDF export (not built).
+   When we build either, they should call `adjustDealScoreForOverrides` — but note
+   that with the backend re-run filter above, the _stored_ score already converges,
+   so this matters less now.
+2. **Two near-duplicate `CLAUDE.md` files** (root + `docs/`, ~66 KB each) drift
+   independently — I had to edit both. Worth picking one canonical copy (or making
+   one a pointer to the other). A full web-component-tree audit of the structure is
+   also still pending. Quick decision needed before I invest in either.

@@ -1181,8 +1181,14 @@ propscout/
 │       └── src/
 │           ├── app.ts                 # Fastify app setup — plugins, routes registered here
 │           ├── routes/
-│           │   ├── analysis.ts        # POST /analysis — orchestrates full pipeline
-│           │   ├── auth.ts            # Auth helpers
+│           │   ├── analysis.ts        # POST /analysis — orchestrates full pipeline (incl. flag overrides + vacancy)
+│           │   ├── analysisToken.ts   # GET/POST /analysis/:token — fetch + trigger by share token
+│           │   ├── overrides.ts       # GET/POST/DELETE /analysis/:token/overrides — risk-flag dismissals
+│           │   ├── scrape.ts          # POST /scrape — scrape a listing URL into a pending analysis
+│           │   ├── rates.ts           # GET /rates/mortgage — live Bank of Canada rate proxy
+│           │   ├── billing.ts         # Stripe checkout + billing portal sessions
+│           │   ├── me.ts              # Current-user profile + tier
+│           │   ├── waitlist.ts        # Non-Ontario province-gate waitlist signups
 │           │   └── webhooks.ts        # Stripe webhook — verifies signature before processing
 │           ├── services/              # One file per external API — never call APIs in routes
 │           │   ├── anthropicService.ts      # Claude Haiku (extraction) + Sonnet (narrative)
@@ -1190,9 +1196,9 @@ propscout/
 │           │   ├── mapboxService.ts         # Geocoding + map tiles
 │           │   ├── googlePlacesService.ts   # School discovery
 │           │   ├── stripeService.ts         # Subscriptions + billing portal
-│           │   ├── cmhcService.ts           # Vacancy rates
+│           │   ├── cmhcService.ts           # Vacancy rates (getVacancyRateByCity)
 │           │   ├── bankOfCanadaService.ts   # Current mortgage rates
-│           │   └── supabaseService.ts       # All DB reads and writes
+│           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint
 │           ├── types/
@@ -1202,6 +1208,10 @@ propscout/
 │           └── constants/
 │               ├── tiers.ts
 │               ├── thresholds.ts
+│               ├── flagLabels.ts      # Risk-flag id → human-readable label
+│               ├── cmhcVacancy.ts     # CMHC vacancy rates by city (refresh annually)
+│               ├── propertyTaxRates.ts # Ontario municipal property-tax rates (refresh annually)
+│               ├── valuation.ts       # Fallback rent↔price proxies (~6% gross yield) for missing data
 │               └── provinces.ts       # Ontario FSA prefixes, LTT brackets
 │
 ├── services/
