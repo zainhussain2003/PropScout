@@ -1,5 +1,23 @@
 # Work log — 2026-06-21
 
+## ⚠️ Unsourced / assumed values — track, validate, do not trust as researched
+
+These numbers drive user-facing decisions but are **not** backed by a dataset in
+the codebase. They are hand-picked or industry-norm assumptions. Each needs a real
+source before it should be presented as authoritative. (Added during the product-design
+pass on mode-specific severity, OSFI income, and cap-rate valuation.)
+
+| Factor                                            | Current / proposed value            | Source status                                                                                                 | What would validate it                                                                                                            |
+| ------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Per-city cap rates** (for-rent value est.)      | none yet — table to be created      | ❌ GUESS — no constant exists; CMHC has rent not cap rates                                                    | Published Ontario cap-rate survey (e.g. CBRE Cap Rate Survey), or derive from board median price ÷ CMHC median rent per city/type |
+| **expenseRatio per property type** (NOI est.)     | ~35–45% of gross rent (TBD)         | 🟡 DERIVED/NORM — partials exist in `rates.py` (% of value, not rent); OER is an industry norm                | Compute the calc engine's own expense model across a representative sample, or use a documented residential OER benchmark         |
+| **Flag severity × mode mapping** (the matrix)     | see matrix draft v2                 | 🟡 INFORMED — legal cells (no_pets void = RTA s.14; N12 own-use) are law-sourced; the rest is reasoned design | Investor/realtor/paralegal SME review of the non-legal cells                                                                      |
+| **Red-flag deduction magnitudes** (points column) | −5 standard / −10 severe (proposed) | ❌ GUESS — no dataset ranks flag severity in points                                                           | SME calibration against known deals; revisit the −15 total cap if −10 magnitudes bind too fast                                    |
+| **OSFI default household income**                 | $125,000 (existing placeholder)     | ❌ GUESS — placeholder in `demoData`/types                                                                    | StatsCan Ontario median household income for the buyer demographic                                                                |
+
+**Rule going forward:** any new decision-driving number that can't cite a source lands
+in this table with its placeholder and a validation path — not buried in code as if researched.
+
 ## Blocked on you — handle when you have time
 
 In priority order:
