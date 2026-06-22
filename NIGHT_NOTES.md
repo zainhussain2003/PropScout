@@ -41,6 +41,33 @@ properties. I audited every consumer:
   label↔colour disagreements more visible. Worth a small cleanup to unify all colour
   bands on the verdict brackets. Separate from the matrix.
 
+### Per-mode score model — verified in code (don't assume one scale)
+
+There is no single "out of 100" deal score. Three distinct models:
+
+| Mode               | Intended score                                                              | Scale             | What the LIVE `/r/:token` actually shows      |
+| ------------------ | --------------------------------------------------------------------------- | ----------------- | --------------------------------------------- |
+| Investor (A)       | Investment (cap/cashflow/CoC/DSCR/demand)                                   | **0–95**          | ✅ investment 95                              |
+| Landlord (D)       | Investment (reuses investor)                                                | **0–95**          | ✅ investment 95                              |
+| Personal buyer (B) | **HomeScore** (pricing + schools 20 + light 15 + walk 15 + lot 8 + risk 10) | **0–100**         | ⚠️ **investment 95** — WRONG (see divergence) |
+| Tenant (C)         | rent positioning + flags; spec mentions a "tenant score badge" (unwired)    | **no deal score** | rent positioning + flags, no gauge            |
+
+**Consequences for the mode-severity matrix:**
+
+- **Flag display-severity (colour)** applies to **all four modes** — flags render in every report.
+- **Investment score-impact (deductions + severe gating)** is only coherent for the
+  modes that actually show the 0–95 investment score: **investor + landlord**.
+- **Tenant** has no deal score → its matrix column is **display-only** (no deductions).
+- **Personal buyer's** real model is HomeScore (its own `riskPts`, max 10) — investment-style
+  −5/gating doesn't apply; flag impact there is a separate mechanism.
+
+**New divergence to track (pre-existing, not from this work):** the live `ReportPage`
+routes `mode === 'personal'` through `InvestorReportContent`, so a personal buyer is
+shown the **investment** deal score (cap-rate/DSCR/cash-flow) — but the demo
+`PersonalBuyerPage` correctly uses `computeHomeScore` (FMV + schools + light + walk),
+which is what spec §7 (Report B) describes. Live personal reports are scoring the wrong
+thing. Decision needed: route personal → a HomeScore-based report, or accept for now.
+
 ### Nightly scraper — deploy-readiness audit (read-only, greenlit)
 
 **Verdict: structurally deploy-ready; one expected caveat.**
