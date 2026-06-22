@@ -39,6 +39,7 @@ import {
   fetchRentalComps,
   getAnalysisStatus,
   getAnalysisByToken,
+  getFlagOverrides,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -56,6 +57,7 @@ const mockExtractListingFlags = jest.mocked(extractListingFlags)
 const mockGenerateNarrative = jest.mocked(generateNarrative)
 const mockGeocodeAddress = jest.mocked(geocodeAddress)
 const mockGetWalkScore = jest.mocked(getWalkScore)
+const mockGetFlagOverrides = jest.mocked(getFlagOverrides)
 
 // ── In-memory DB store ──────────────────────────────────────────────────────
 
@@ -234,6 +236,7 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
     })
 
     // External APIs
+    mockGetFlagOverrides.mockResolvedValue([])
     mockExtractListingFlags.mockResolvedValue({})
     mockGenerateNarrative.mockResolvedValue(
       'Test narrative — the deal does not pencil at this asking price.'

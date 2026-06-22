@@ -32,6 +32,7 @@ import {
   updateAnalysisStatus,
   updateAnalysisByToken,
   fetchRentalComps,
+  getFlagOverrides,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -46,6 +47,7 @@ const mockExtractListingFlags = jest.mocked(extractListingFlags)
 const mockGenerateNarrative = jest.mocked(generateNarrative)
 const mockGeocodeAddress = jest.mocked(geocodeAddress)
 const mockGetWalkScore = jest.mocked(getWalkScore)
+const mockGetFlagOverrides = jest.mocked(getFlagOverrides)
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -155,6 +157,7 @@ describe('POST / — analysis orchestrator', () => {
     mockGeocodeAddress.mockResolvedValue(null)
     mockGetWalkScore.mockResolvedValue(null)
     mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
 
     global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })
@@ -202,6 +205,29 @@ describe('POST / — analysis orchestrator', () => {
     }
     // LISTING_FIXTURE city is Vaughan — must match the real cmhcService value.
     expect(sentBody.cmhc_vacancy_rate).toBe(getVacancyRateByCity('Vaughan'))
+  })
+
+  // ── Test 1c ────────────────────────────────────────────────────────────────
+
+  it('forwards the user-dismissed flag IDs to the calc engine payload', async () => {
+    mockGetFlagOverrides.mockResolvedValue(['tenanted', 'basement_unit'])
+
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(mockGetFlagOverrides).toHaveBeenCalledWith('test-token')
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    expect(calcCall).toBeDefined()
+
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      dismissed_flag_ids?: string[]
+    }
+    expect(sentBody.dismissed_flag_ids).toEqual(['tenanted', 'basement_unit'])
   })
 
   // ── Test 2 ─────────────────────────────────────────────────────────────────

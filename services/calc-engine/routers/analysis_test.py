@@ -14,6 +14,7 @@ Calibration properties used:
 
 import sys
 import os
+from unittest.mock import patch, AsyncMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -21,6 +22,11 @@ from fastapi.testclient import TestClient  # noqa: E402
 from main import app  # noqa: E402
 
 client = TestClient(app)
+
+# Patch target for the Haiku extractor as imported into the router module.
+# Tests that send a description patch this so only the deterministic regex
+# flags fire — no network call, no key dependency.
+_HAIKU_PATCH = "routers.analysis.extract_flags_with_haiku"
 
 # ── Shared payloads ────────────────────────────────────────────────────────────
 
@@ -490,6 +496,55 @@ def test_cmhc_vacancy_rate_defaults_when_omitted() -> None:
     # Vaughan: DOM default 21 (2 pts) + flat trend (2 pts) + 2% vacancy (3 pts) = 7.
     demand = response.json()["deal_score"]["breakdown"]["demand"]
     assert demand == 7, f"Expected demand 7 with default 2% vacancy, got {demand}"
+
+
+def test_dismissed_red_flag_removes_its_score_deduction() -> None:
+    """
+    A red flag the user has dismissed (passed in dismissed_flag_ids) must stop
+    deducting from the deal score on re-run, while still being returned in
+    risk_flags so the UI can show it greyed out.
+
+    'currently rented' deterministically triggers the regex 'tenanted' flag at
+    confidence 92 (>= 85 -> red), worth a -5 deduction.
+    """
+    base = {
+        **_HAMILTON_PAYLOAD,
+        "description": "Bright duplex, currently rented to great tenants.",
+    }
+    dismissed = {**base, "dismissed_flag_ids": ["tenanted"]}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        base_resp = client.post("/analysis/", json=base)
+        dismissed_resp = client.post("/analysis/", json=dismissed)
+
+    assert base_resp.status_code == 200, base_resp.text
+    assert dismissed_resp.status_code == 200, dismissed_resp.text
+
+    base_data = base_resp.json()
+    dismissed_data = dismissed_resp.json()
+
+    # The red flag fires in both responses (still shown), ...
+    assert any(f["flag_id"] == "tenanted" for f in base_data["risk_flags"])
+    assert any(f["flag_id"] == "tenanted" for f in dismissed_data["risk_flags"])
+
+    # ... but its -5 deduction is gone once dismissed, lifting the score by 5.
+    assert base_data["deal_score"]["breakdown"]["deduction"] == 5
+    assert dismissed_data["deal_score"]["breakdown"]["deduction"] == 0
+    assert dismissed_data["deal_score"]["total"] == base_data["deal_score"]["total"] + 5
+
+
+def test_dismissing_unknown_flag_id_is_a_noop() -> None:
+    """Dismissing a flag_id that isn't present must not change the score."""
+    base = {**_HAMILTON_PAYLOAD, "description": "Bright duplex, currently rented."}
+    other = {**base, "dismissed_flag_ids": ["some_other_flag"]}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        base_total = client.post("/analysis/", json=base).json()["deal_score"]["total"]
+        other_total = client.post("/analysis/", json=other).json()["deal_score"][
+            "total"
+        ]
+
+    assert base_total == other_total
 
 
 def test_analysis_response_has_all_required_fields() -> None:

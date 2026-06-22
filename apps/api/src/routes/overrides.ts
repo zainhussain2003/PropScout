@@ -1,9 +1,15 @@
 /**
  * Risk-flag overrides — user can dismiss flags they've evaluated and
- * decided don't apply. Dismissals are persisted here (flag_overrides) and the
- * report UI restores each dismissed flag's deduction to the deal score live
- * (see adjustDealScoreForOverrides in apps/web). The stored deal_score remains
- * the raw, no-overrides baseline; the display layer applies the adjustment.
+ * decided don't apply. Dismissals are persisted here (flag_overrides) and take
+ * effect two ways, which agree:
+ *   - Live: the report UI restores each dismissed flag's deduction to the deal
+ *     score immediately (adjustDealScoreForOverrides in apps/web), recomputing
+ *     from the score subtotal so it never depends on the stored total.
+ *   - On re-run: POST /analysis forwards the dismissed flag IDs to the calc
+ *     engine, which drops their deduction so the stored deal_score converges on
+ *     the same value. Dismissed flags are still returned (shown greyed out),
+ *     just no longer deducted. The live recompute is idempotent w.r.t. this, so
+ *     the two paths can't double-count.
  *
  * Routes (mounted with prefix /analysis):
  *   GET    /:token/overrides              → { overrides: string[] }

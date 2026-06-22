@@ -5,7 +5,7 @@ Route handlers call services and calculations. No business logic here.
 
 import logging
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from models.schemas import (
     PropertyInput,
@@ -63,6 +63,10 @@ class AnalysisRequest(BaseModel):
     # Fastify API from cmhcService; falls back to the default when omitted so
     # the demand score reflects the actual market, not a flat assumption.
     cmhc_vacancy_rate: float | None = None
+    # Flag IDs the user has dismissed for this analysis (from flag_overrides).
+    # Dismissed red flags are still returned in risk_flags (so the UI can show
+    # them greyed out) but no longer deduct from the deal score on re-run.
+    dismissed_flag_ids: list[str] = Field(default_factory=list)
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -170,13 +174,20 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     merged_flags: list = []
     risk_flag_deductions: float = 0.0
 
+    dismissed_flags = set(body.dismissed_flag_ids)
+
     if body.description:
         try:
             regex_flags = extract_regex_flags(body.description)
             haiku_flags = await extract_flags_with_haiku(body.description)
             merged_flags = merge_flags(regex_flags, haiku_flags)
 
-            red_flag_count = sum(1 for f in merged_flags if f.severity == "red")
+            # Dismissed red flags stay in the list but stop deducting.
+            red_flag_count = sum(
+                1
+                for f in merged_flags
+                if f.severity == "red" and f.flag_id not in dismissed_flags
+            )
             risk_flag_deductions = float(red_flag_count * _DEDUCTION_PER_RED_FLAG)
         except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
             logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)

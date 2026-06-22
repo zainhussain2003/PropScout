@@ -23,6 +23,7 @@ import {
   updateAnalysisStatus,
   updateAnalysisByToken,
   fetchRentalComps,
+  getFlagOverrides,
 } from '../services/supabaseService'
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -249,6 +250,16 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // component (calc engine) and the narrative, so they stay consistent.
       const cmhcVacancyRate = getVacancyRateByCity(listing.city)
 
+      // Flags the user previously dismissed for this analysis — forwarded so a
+      // re-run drops their score deduction. Non-essential: any failure (or a
+      // missing value) defaults to no dismissals; the analysis never fails here.
+      let dismissedFlagIds: string[] = []
+      try {
+        dismissedFlagIds = (await getFlagOverrides(token)) ?? []
+      } catch {
+        dismissedFlagIds = []
+      }
+
       const calcPayload = {
         // Forwarded so the calc engine runs the extraction pipeline and
         // deducts from the deal score for confirmed red flags.
@@ -277,6 +288,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           postal_code: listing.postalCode,
         },
         cmhc_vacancy_rate: cmhcVacancyRate,
+        dismissed_flag_ids: dismissedFlagIds,
       }
 
       // Step 6 — call calc engine
