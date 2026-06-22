@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
+import { PersonalBuyerPage } from './PersonalBuyerPage'
 import {
   enrichMetrics,
   toDealScoreData,
@@ -935,6 +936,14 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         .replace(/(^-|-$)/g, '') ?? 'property')
     : 'property'
 
+  // Personal buyers get the HomeScore report (not the investment score). It's a
+  // self-contained page with its own Nav/Footer, and it suppresses the numeric
+  // gauge while showing the cost/location/risk readouts the investment report
+  // would never give an owner-occupier (cap-rate/DSCR are the wrong question).
+  if (!loading && !notFound && analysis && listing && mode === 'personal') {
+    return <PersonalBuyerPage analysis={analysis} listing={listing} />
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Nav
@@ -956,7 +965,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
 
       {!loading && !notFound && analysis && listing && (
         <>
-          {(mode === 'investor' || mode === 'landlord' || mode === 'personal') && (
+          {(mode === 'investor' || mode === 'landlord') && (
             <InvestorReportContent
               listing={listing}
               analysis={analysis}

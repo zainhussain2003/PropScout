@@ -21,6 +21,23 @@ pass on mode-specific severity, OSFI income, and cap-rate valuation.)
 **Rule going forward:** any new decision-driving number that can't cite a source lands
 in this table with its placeholder and a validation path — not buried in code as if researched.
 
+**Copy phantoms count too.** The personal risk-section disclaimer claimed a "municipal open
+data (flood overlays, conservation)" source the product does **not** ingest — a phantom
+aimed straight at buyer trust, in the one domain (flood) where false reassurance is most
+dangerous. Fixed to "listing description only". **New rule: every user-facing disclaimer
+that names a data source must trace to a source we actually ingest.** Audit copy the same
+way we audit code — a confident sentence about data we don't have is as bad as a fake number.
+
+**Soft-caution tier — base-rate watch (revisit once real listings flow).** `verify_history`
+fires amber on "no representations / as-is / buyer due diligence" — which is boilerplate
+legal cover on a large share of estate / power-of-sale / tenanted listings, unrelated to
+grow-ops or floods. Risk: if it fires on most personal reports it becomes wallpaper and
+buyers tune it out, silently re-creating the false-negative problem one layer up. Mitigation
+shipped: the flag's evidence quotes the exact trigger phrase so it reads "this listing says
+X — worth asking", not a generic amber. **To do when real data flows: measure the soft-tier
+fire-rate; if it lights up the majority of reports, tighten the patterns.** Don't remove the
+tier — keep it from becoming noise.
+
 ### Visible risk path for the gauge-suppressed personal report — VERIFIED BROKEN
 
 With the HomeScore gauge suppressed, the severe-gate's safety purpose can only reach the

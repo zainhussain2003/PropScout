@@ -147,6 +147,20 @@ const INVESTOR_ANALYSIS: Analysis = {
   ],
 }
 
+const PERSONAL_ANALYSIS: Analysis = {
+  ...ANALYSIS,
+  mode: 'personal',
+  riskFlags: [
+    {
+      id: 'grow_op_history',
+      severity: 'red',
+      label: 'Grow-op history',
+      evidence: 'former grow-op',
+      confidence: 90,
+    },
+  ],
+}
+
 function renderReport(): void {
   render(
     <MemoryRouter>
@@ -224,6 +238,20 @@ describe('ReportPage — risk-flag overrides', () => {
 
     // Persisted dismissal is applied on first render — score already at 70.
     expect(await screen.findByLabelText(/Deal score: 70 out of 95/i)).toBeInTheDocument()
+  })
+
+  it('routes personal mode to the HomeScore report — gauge suppressed, risk readout survives', async () => {
+    getAnalysisByToken.mockResolvedValue({ analysis: PERSONAL_ANALYSIS, listing: SALE_LISTING })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    // Owner-occupiers get the HomeScore report, not the investment gauge:
+    // the numeric score is paused with an explanation, not a blank space.
+    expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
+    // The investment deal-score gauge must NOT appear for a personal buyer.
+    expect(screen.queryByLabelText(/Deal score: .* out of 95/i)).not.toBeInTheDocument()
+    // The safety readout survives the gauge suppression — the red flag still shows.
+    expect(await screen.findByText(/Grow-op history/i)).toBeInTheDocument()
   })
 
   it('recomputes the OSFI verdict live when household income changes', async () => {

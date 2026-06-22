@@ -117,6 +117,8 @@ interface PersonalHeroProps {
   score: HomeScore
   monthly: PersonalMonthlyCost
   photoUrls?: string[]
+  /** When true, the numeric Home score is hidden (inputs mostly placeholder). */
+  scoreSuppressed?: boolean
 }
 
 function PersonalPropertyHero({
@@ -124,6 +126,7 @@ function PersonalPropertyHero({
   score,
   monthly,
   photoUrls,
+  scoreSuppressed = false,
 }: PersonalHeroProps): JSX.Element {
   const verdictColor =
     score.verdict.tone === 'pass'
@@ -289,29 +292,68 @@ function PersonalPropertyHero({
 
         {/* RIGHT — sticky home-score card */}
         <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
-          <div className="col" style={{ alignItems: 'center', gap: 8 }}>
-            <DealScore score={score.total} size="lg" label="Home score / 100" animate />
-          </div>
-
-          <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+          {scoreSuppressed ? (
+            // Inputs are mostly placeholder (FMV pinned to asking, schools/light
+            // pending) — an aggregate number would imply confidence we don't have.
+            // Explain the absence so it reads as honesty, not a missing widget.
             <div
-              className="mono"
+              className="col"
               style={{
-                fontSize: 10,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: verdictColor,
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 8,
+                padding: '8px 4px',
               }}
             >
-              {score.verdict.label}
+              <div
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                Overall score paused
+              </div>
+              <div className="serif" style={{ fontSize: 19, lineHeight: 1.25 }}>
+                Pricing &amp; schools data pending
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 280 }}>
+                We don&apos;t yet have comparable-sales or school data for this address, so a single
+                home score would overstate what we know. The sections below show what we can verify
+                — cost, location, and risk flags.
+              </p>
             </div>
-            <div
-              className="serif"
-              style={{ fontSize: 20, lineHeight: 1.2, textWrap: 'balance' } as React.CSSProperties}
-            >
-              {score.verdict.tagline}
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="col" style={{ alignItems: 'center', gap: 8 }}>
+                <DealScore score={score.total} size="lg" label="Home score / 100" animate />
+              </div>
+
+              <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: verdictColor,
+                  }}
+                >
+                  {score.verdict.label}
+                </div>
+                <div
+                  className="serif"
+                  style={
+                    { fontSize: 20, lineHeight: 1.2, textWrap: 'balance' } as React.CSSProperties
+                  }
+                >
+                  {score.verdict.tagline}
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="divider" />
 
@@ -1525,6 +1567,7 @@ export function PersonalBuyerPage({
         property={property}
         score={score}
         monthly={monthly}
+        scoreSuppressed={isReal}
         photoUrls={
           isReal ? (realListing!.photos.length > 0 ? realListing!.photos : undefined) : undefined
         }
