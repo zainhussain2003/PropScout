@@ -141,6 +141,24 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
         ),
         87,
     ),
+    # Soft-caution tier (amber, confidence 65 → no score deduction). The
+    # euphemisms severe-flag regex deliberately ignores ("no representations",
+    # "remediation completed", "stigmatized", "buyer due diligence") are too
+    # ambiguous for a HARD grow-op/flood claim — but for an owner-occupier the
+    # cost of a missed danger outweighs the cost of one wasted question, so we
+    # surface them as a "verify, don't assume" prompt, NOT a confirmed flag.
+    (
+        "verify_history",
+        re.compile(
+            r"\b(no\s+representations?|without\s+representations?"
+            r"|remediat(ed|ion)|restoration\s+(completed|after|done)"
+            r"|stigmati[sz]ed"
+            r"|(buyer|purchaser)[^.]{0,20}due\s+diligence"
+            r"|health\s+canada)",
+            re.IGNORECASE,
+        ),
+        65,
+    ),
 ]
 
 

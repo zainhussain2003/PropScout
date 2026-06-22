@@ -70,16 +70,47 @@ EUPHEMISTIC_FLOOD = [
 ]
 
 
-def test_euphemisms_are_missed_by_regex_documented_gap() -> None:
-    # These SHOULD miss — they're ambiguous and overlap benign/other situations.
-    # Asserted so the recall gap is explicit; if behaviour changes, this fails
-    # loudly and we re-evaluate rather than silently shifting recall.
+def test_euphemisms_do_not_fire_the_hard_severe_flags() -> None:
+    # Euphemisms must NOT produce a CONFIRMED grow-op/flood claim — too ambiguous,
+    # overlap estate/power-of-sale. Asserted so the recall gap stays explicit.
     for text in EUPHEMISTIC_GROW_OP:
         assert "grow_op_history" not in _fired(
             text
         ), f"unexpected grow-op hit: {text!r}"
     for text in EUPHEMISTIC_FLOOD:
         assert "flooding_history" not in _fired(text), f"unexpected flood hit: {text!r}"
+
+
+# ── Soft-caution tier: euphemisms with verify-language fire verify_history ──────
+
+SOFT_CAUTION = [
+    "Sold as-is, seller makes no representations or warranties.",
+    "Previous use; buyer to perform own due diligence.",
+    "Remediation completed; certificate available on request.",
+    "Stigmatized property — priced accordingly.",
+    "Recent restoration completed in the lower level.",
+]
+
+
+def test_verify_language_fires_soft_caution_not_hard_flag() -> None:
+    # The third tier: ambiguous phrasing becomes an amber "verify, don't assume"
+    # prompt (verify_history) — never a hard grow_op/flood claim. For an
+    # owner-occupier a wasted question beats a missed danger.
+    for text in SOFT_CAUTION:
+        fired = _fired(text)
+        assert "verify_history" in fired, f"missed soft caution: {text!r}"
+        assert (
+            "grow_op_history" not in fired and "flooding_history" not in fired
+        ), f"soft caution must not become a hard flag: {text!r}"
+
+
+def test_benign_copy_fires_no_verify_history() -> None:
+    # The soft tier must still not fire on genuinely benign listings.
+    for text in (
+        "Sunlight floods the open-concept living room.",
+        "Grow your family here.",
+    ):
+        assert "verify_history" not in _fired(text), f"soft false positive: {text!r}"
 
 
 # ── False positives: must NOT fire ──────────────────────────────────────────────

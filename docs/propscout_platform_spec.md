@@ -1430,6 +1430,19 @@ The solution is to treat the listing description as untrusted input that must pa
 >   but its recall on oblique phrasing is **unverified** until the golden dataset includes
 >   labelled euphemistic grow-op/flood cases. Until then, treat severe-flag detection as
 >   "explicit yes, euphemistic unproven" — do not claim complete grow-op/flood detection.
+>
+> **Three tiers, not two (precision vs recall for a safety signal).** Staying silent on
+> euphemisms is wrong for an owner-occupier — a false positive costs one wasted question, a
+> false negative means a family buys a remediated grow-op blind. So ambiguous phrasing
+> ("no representations", "remediation completed", "stigmatized", "buyer due diligence") fires
+> a **soft caution** flag `verify_history` (amber, confidence 65, no score deduction) — a
+> "verify, don't assume" prompt, visually distinct from a confirmed red flag, NOT an
+> accusation. The hard grow-op/flood flags stay explicit-only.
+>
+> **UI honesty constraint:** because detection is partial, no report may imply a clearance.
+> The personal report's zero-flag state says "Listing text only — verify directly" and "not a
+> clean bill of health", never "no risks / clear". Copy must not claim data sources not
+> ingested (e.g. municipal flood overlays are NOT checked — don't say they are).
 
 ### Pipeline architecture
 

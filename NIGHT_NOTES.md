@@ -42,6 +42,18 @@ prominently ("Grow-op history — major risk" at the top). The 34/20/10 ceiling 
 correct and stays in code for when the gauge turns on, but it's mathematically invisible
 until then — the extraction + rendering fixes are what actually protect the buyer now.
 
+**DONE + a third tier (precision vs recall for a safety signal).** Both fixes shipped.
+Plus: regex staying silent on euphemisms optimised for precision, which is wrong for an
+owner-occupier (false positive = one wasted question; false negative = family buys a
+remediated grow-op blind). Added a **soft-caution tier**: ambiguous phrasing ("no
+representations", "remediation", "stigmatized", "buyer due diligence") fires
+`verify_history` (amber, conf 65, no deduction) — a "verify, don't assume" prompt,
+distinct from a confirmed red flag; hard grow-op/flood flags stay explicit-only.
+**UI honesty:** the personal zero-flag state now says "Listing text only — verify
+directly / not a clean bill of health", never "no risks / clear"; and the section
+disclaimer no longer claims municipal flood-overlay data we don't ingest (a copy
+phantom). Detection is partial → no report may imply a clearance.
+
 ### Re-basing check — downstream consumers of the deal score (done before coding the matrix)
 
 The mode-weighted magnitudes change the score _distribution_, not just individual

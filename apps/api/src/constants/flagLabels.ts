@@ -56,6 +56,8 @@ export const FLAG_LABELS: Record<string, string> = {
   remediation_done: 'Remediation completed',
   flooding_history: 'Flooding history',
   noise_concern: 'Noise concern',
+  // Soft caution — ambiguous phrasing, a prompt to verify, NOT a confirmed claim.
+  verify_history: 'Language worth verifying — ask the agent why',
 
   // Orchestrator-synthetic structural flags
   condo_fee_unknown: 'Condo fee not disclosed',

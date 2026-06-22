@@ -1103,9 +1103,11 @@ function RisksSection({ flags }: RisksSectionProps): JSX.Element {
   if (flags !== undefined) {
     const redCount = flags.filter((f) => f.severity === 'red').length
     const amberCount = flags.filter((f) => f.severity === 'amber').length
+    // Never imply a clean home: we only parse listing wording. "No flags" means
+    // "nothing in the text", not "this property is clear" — say so explicitly.
     const verdict =
       flags.length === 0
-        ? 'No flags detected'
+        ? 'Listing text only — verify directly'
         : `${amberCount + redCount} flagged · ${redCount > 0 ? redCount + ' critical' : 'none critical'}`
 
     return (
@@ -1119,11 +1121,15 @@ function RisksSection({ flags }: RisksSectionProps): JSX.Element {
             </>
           }
           verdict={verdict}
-          tone={flags.length === 0 ? 'pass' : 'caution'}
+          tone={redCount > 0 ? 'fail' : 'caution'}
         />
         <div className="col gap-12">
           {flags.length === 0 ? (
-            <RiskRow tone="green" label="No flags detected in this listing" detail="" />
+            <RiskRow
+              tone="amber"
+              label="No risk language found in the listing text"
+              detail="A wording check only — not a clean bill of health. Ask the agent about as-is / remediation, water or flood history, and any past grow-op."
+            />
           ) : (
             // Render each flag at its TRUE severity (a critical red flag must not
             // look like a minor amber one), and surface red flags first so a
@@ -1141,9 +1147,11 @@ function RisksSection({ flags }: RisksSectionProps): JSX.Element {
           )}
         </div>
         <p style={{ marginTop: 22, fontSize: 13, color: 'var(--muted)', maxWidth: 720 }}>
-          Risks above come from listing description parsing, municipal open data (flood overlays,
-          conservation), and PropScout's pre-1980 build heuristics. Use them to scope your
-          inspection and your conditional period — not as a final word.
+          These come from parsing the listing description only — explicit risk wording, plus
+          ambiguous phrasing worth verifying, and a pre-1980 build heuristic. PropScout does not yet
+          check municipal flood overlays or open data, and the description catches explicit mentions
+          far better than euphemisms — so the absence of a flag is not a clearance. Use this to
+          scope your inspection and conditions, not as a final word.
         </p>
       </section>
     )
