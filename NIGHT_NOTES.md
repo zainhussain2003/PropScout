@@ -96,6 +96,33 @@ and the schools load. (A)+(B) make personal _less wrong_ (right questions + real
 signal); the score stays low-confidence until FMV + schools land. The sales comps are
 already flagged `isSampleData`/`isEstimated` in the UI, which is honest — keep that.
 
+**Correction — light is a FOURTH phantom, not a "free fix":** `analysis.sunScout` is
+hardcoded `null` (`analysis.ts:410`) and the calc payload sends **no lat/lng**, so the
+calc engine's sun-path branch never fires. Light can't come from sunScout without wiring
+that pipeline first. **Only trusted live components: walk + flags/risk.** Light joins
+FMV/schools as "data pending."
+
+**DECISION — gauge suppression (option iii):** A live HomeScore would be ~80% constants
+(pricing pinned to "asking = fair", schools 0, light 4, lot 8) — a confident number that
+can't tell a buyer they're overpaying. So: route personal → HomeScore, wire the risk
+readout + severe-gate (B), but **suppress the numeric gauge** until **FMV _or_ schools is
+real**. Show only trusted sub-readouts (walk, risk/flags); pricing shown as "no
+comparable-sales source — not scored", schools/light "data pending". **Re-enable
+condition: gauge turns on when FMV or schools becomes real.** Justified by MVP
+"Definition of done" criterion 2 = modes "work end-to-end" (a complete honest report),
+NOT "show a score" — v1 doesn't require the gauge. Severe-gate ceilings are designed now
+but only display once the gauge is un-suppressed; until then the safety fix is showing
+severe flags prominently in the risk readout.
+
+**HomeScore severe-gate ceilings — DRAFT for review (derived vs HomeScore's OWN brackets,
+not the investor ladder):** HomeScore bands are ≥80 "Make an offer" / ≥65 "Worth
+pursuing" / ≥50 "Negotiate first" / ≥35 "Look further" / <35 "Probably not". Below 35 is
+all one band, so the investor 40/30/20/10 ladder's lower rungs don't add verdict
+distinction here. And a severe flag is _worse_ for an owner-occupier (you live in it)
+than for an investor (who can remediate-and-rent), so personal is harsher: 1 severe →
+**34** ("Probably not"/fail, vs investor's "marginal"), 2 severe → **20**, 3+ → **10**,
+floor 5. All ceilings flagged unsourced. Send for review before coding.
+
 ### Nightly scraper — deploy-readiness audit (read-only, greenlit)
 
 **Verdict: structurally deploy-ready; one expected caveat.**
