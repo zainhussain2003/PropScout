@@ -36,6 +36,7 @@ import {
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
+import { getVacancyRateByCity } from '../services/cmhcService'
 
 const mockGetListingByToken = jest.mocked(getListingByToken)
 const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
@@ -181,6 +182,26 @@ describe('POST / — analysis orchestrator', () => {
     expect(metrics.cashFlowMonthly).toBe(-1833)
     expect(metrics.capRate).toBe(0.025)
     expect(body.analysis.dealScore?.verdict).toBe('hard_pass')
+  })
+
+  // ── Test 1b ────────────────────────────────────────────────────────────────
+
+  it('forwards the per-city CMHC vacancy rate to the calc engine payload', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    expect(calcCall).toBeDefined()
+
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      cmhc_vacancy_rate?: number
+    }
+    // LISTING_FIXTURE city is Vaughan — must match the real cmhcService value.
+    expect(sentBody.cmhc_vacancy_rate).toBe(getVacancyRateByCity('Vaughan'))
   })
 
   // ── Test 2 ─────────────────────────────────────────────────────────────────

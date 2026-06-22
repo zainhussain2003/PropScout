@@ -31,6 +31,12 @@ import { getVacancyRateByCity } from '../services/cmhcService'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
 import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
+import {
+  RENT_TO_PRICE_MONTHLY,
+  PRICE_TO_MONTHLY_RENT,
+  FALLBACK_RENT_BAND,
+  DEFAULT_RENT_MONTHLY,
+} from '../constants/valuation'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -207,11 +213,12 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // (or the price-based proxy) when the FSA has no comps yet.
       const comps = await fetchRentalComps(listing.postalCode, listing.beds).catch(() => null)
 
-      const rentalFallback = listing.rentMonthly ?? Math.round((listing.price ?? 0) * 0.005) // ~0.5%/mo of price
+      const rentalFallback =
+        listing.rentMonthly ?? Math.round((listing.price ?? 0) * RENT_TO_PRICE_MONTHLY)
       const rentalForCalc = comps ?? {
-        low: Math.round(rentalFallback * 0.9),
+        low: Math.round(rentalFallback * (1 - FALLBACK_RENT_BAND)),
         mid: rentalFallback,
-        high: Math.round(rentalFallback * 1.1),
+        high: Math.round(rentalFallback * (1 + FALLBACK_RENT_BAND)),
         compCount: 0,
         confidence: 'low' as const,
       }
@@ -228,13 +235,19 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // For for-rent listings (tenant/landlord modes), listing.price is null.
       // Estimate property value from monthly rent at a ~6% gross yield proxy
       // so the calc engine can produce a deal score without failing validation.
-      const estimatedPrice = listing.price ?? Math.round((listing.rentMonthly ?? 1500) * 200)
+      const estimatedPrice =
+        listing.price ??
+        Math.round((listing.rentMonthly ?? DEFAULT_RENT_MONTHLY) * PRICE_TO_MONTHLY_RENT)
 
       // Estimate annual taxes from price + city when the scraper couldn't
       // find the actual value. Defaulting to 0 understated carrying costs
       // by $400–800/mo on a typical Ontario property.
       const annualTaxesForCalc =
         listing.annualTaxes ?? estimateAnnualTaxes(estimatedPrice, listing.city)
+
+      // Real per-city CMHC vacancy rate — feeds both the deal score's demand
+      // component (calc engine) and the narrative, so they stay consistent.
+      const cmhcVacancyRate = getVacancyRateByCity(listing.city)
 
       const calcPayload = {
         // Forwarded so the calc engine runs the extraction pipeline and
@@ -263,6 +276,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           confidence: rentalForCalc.confidence,
           postal_code: listing.postalCode,
         },
+        cmhc_vacancy_rate: cmhcVacancyRate,
       }
 
       // Step 6 — call calc engine
@@ -346,7 +360,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         condoFeeMonthly: listing.condoFeeMonthly,
         condoFeeKnown: listing.condoFeeKnown,
         rentTrend: 'flat',
-        vacancyRate: getVacancyRateByCity(listing.city),
+        vacancyRate: cmhcVacancyRate,
         riskFlagSummary: flagLabels || undefined,
       }
 
