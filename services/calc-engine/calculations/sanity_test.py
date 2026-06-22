@@ -163,6 +163,77 @@ def test_vaughan_break_even_does_not_warn() -> None:
     assert not any("Break-even" in w for w in result)
 
 
+# ── Negative break-even rent ────────────────────────────────────────────────────
+
+
+def test_negative_break_even_triggers_warning() -> None:
+    """A negative break-even rent signals an expense-input error."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "break_even_rent": -100})
+    assert any("negative" in w.lower() for w in result)
+
+
+def test_zero_break_even_does_not_trigger_negative_warning() -> None:
+    """Break-even of exactly $0 is the boundary — not negative, no warning."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "break_even_rent": 0})
+    assert not any("negative" in w.lower() for w in result)
+
+
+# ── Deal score ──────────────────────────────────────────────────────────────────
+
+
+def test_deal_score_not_checked_when_omitted() -> None:
+    """Deal score is optional — omitting it produces no deal-score warning."""
+    result = sanity_check_metrics(**_VAUGHAN_OK)
+    assert not any("Deal score" in w for w in result)
+
+
+def test_deal_score_within_range_passes() -> None:
+    """A normal deal score (0–95) produces no warning."""
+    assert sanity_check_metrics(**_VAUGHAN_OK, deal_score=7) == []
+    assert sanity_check_metrics(**_VAUGHAN_OK, deal_score=0) == []
+    assert sanity_check_metrics(**_VAUGHAN_OK, deal_score=95) == []
+
+
+def test_deal_score_negative_triggers_warning() -> None:
+    """A negative deal score is a scoring bug."""
+    result = sanity_check_metrics(**_VAUGHAN_OK, deal_score=-3)
+    assert any("Deal score" in w for w in result)
+
+
+def test_deal_score_above_95_triggers_warning() -> None:
+    """A deal score above the 95-point maximum is a scoring bug."""
+    result = sanity_check_metrics(**_VAUGHAN_OK, deal_score=120)
+    assert any("Deal score" in w for w in result)
+
+
+# ── Monthly cash flow ───────────────────────────────────────────────────────────
+
+
+def test_cash_flow_not_checked_when_omitted() -> None:
+    """Cash flow is optional — omitting it produces no cash-flow warning."""
+    result = sanity_check_metrics(**_VAUGHAN_OK)
+    assert not any("cash flow" in w.lower() for w in result)
+
+
+def test_realistic_negative_cash_flow_passes() -> None:
+    """A deeply negative but realistic cash flow (-$1,833/mo) is not flagged."""
+    assert sanity_check_metrics(**_VAUGHAN_OK, cash_flow_monthly=-1_833) == []
+
+
+def test_cash_flow_beyond_20k_triggers_warning() -> None:
+    """Cash flow beyond ±$20K/mo is implausible for a residential property."""
+    high = sanity_check_metrics(**_VAUGHAN_OK, cash_flow_monthly=25_000)
+    low = sanity_check_metrics(**_VAUGHAN_OK, cash_flow_monthly=-25_000)
+    assert any("cash flow" in w.lower() for w in high)
+    assert any("cash flow" in w.lower() for w in low)
+
+
+def test_cash_flow_at_boundary_passes() -> None:
+    """Exactly ±$20,000/mo is within bounds (not beyond)."""
+    assert sanity_check_metrics(**_VAUGHAN_OK, cash_flow_monthly=20_000) == []
+    assert sanity_check_metrics(**_VAUGHAN_OK, cash_flow_monthly=-20_000) == []
+
+
 # ── Multiple warnings ──────────────────────────────────────────────────────────
 
 

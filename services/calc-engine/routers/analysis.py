@@ -59,6 +59,10 @@ class AnalysisRequest(BaseModel):
     description: str | None = (
         None  # raw listing description; run through extraction pipeline
     )
+    # Real per-city CMHC vacancy rate (decimal, e.g. 0.018). Supplied by the
+    # Fastify API from cmhcService; falls back to the default when omitted so
+    # the demand score reflects the actual market, not a flat assumption.
+    cmhc_vacancy_rate: float | None = None
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -195,12 +199,19 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             merged_flags.append(condo_fee_flag)
 
     # ── 4. Deal score ─────────────────────────────────────────────────────────
+    # Use the real per-city vacancy rate when the API supplies it; the DOM and
+    # rent-trend inputs stay on defaults until a data source exists for them.
+    vacancy_rate = (
+        body.cmhc_vacancy_rate
+        if body.cmhc_vacancy_rate is not None
+        else _DEFAULT_CMHC_VACANCY_RATE
+    )
     score_result = calculate_deal_score(
         cap_rate=cap_rate,
         cash_flow_monthly=cash_flow_monthly,
         cash_on_cash=cash_on_cash,
         dscr=dscr,
-        cmhc_vacancy_rate=_DEFAULT_CMHC_VACANCY_RATE,
+        cmhc_vacancy_rate=vacancy_rate,
         rental_days_on_market=_DEFAULT_RENTAL_DOM,
         rent_trend=_DEFAULT_RENT_TREND,
         risk_flag_deductions=risk_flag_deductions,
@@ -236,6 +247,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         purchase_price=float(prop.price),
         dscr=dscr,
         break_even_rent=break_even_rent,
+        deal_score=deal_score.total,
+        cash_flow_monthly=cash_flow_monthly,
     )
     has_sanity_warnings = len(sanity_warnings) > 0
 

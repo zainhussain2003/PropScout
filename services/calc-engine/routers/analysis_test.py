@@ -450,6 +450,48 @@ def test_detached_unknown_fee_does_not_emit_flag() -> None:
     )
 
 
+def test_cmhc_vacancy_rate_flows_into_demand_score() -> None:
+    """
+    The per-city CMHC vacancy rate supplied by the Fastify API must drive the
+    demand component of the deal score, not a flat in-module default.
+
+    Vacancy contribution (deal_score._score_market_demand):
+      < 2%  → 4 pts,  < 3% → 3 pts,  < 5% → 1 pt,  >= 5% → 0 pts.
+    A tight 1% market and a soft 6% market must therefore score 4 demand
+    points apart, all else equal.
+    """
+    tight = {**_VAUGHAN_PAYLOAD, "cmhc_vacancy_rate": 0.01}
+    soft = {**_VAUGHAN_PAYLOAD, "cmhc_vacancy_rate": 0.06}
+
+    tight_resp = client.post("/analysis/", json=tight)
+    soft_resp = client.post("/analysis/", json=soft)
+
+    assert tight_resp.status_code == 200, tight_resp.text
+    assert soft_resp.status_code == 200, soft_resp.text
+
+    tight_demand = tight_resp.json()["deal_score"]["breakdown"]["demand"]
+    soft_demand = soft_resp.json()["deal_score"]["breakdown"]["demand"]
+
+    assert tight_demand - soft_demand == 4, (
+        f"Expected 4-pt demand gap between 1% and 6% vacancy, "
+        f"got tight={tight_demand}, soft={soft_demand}"
+    )
+
+
+def test_cmhc_vacancy_rate_defaults_when_omitted() -> None:
+    """
+    Omitting cmhc_vacancy_rate falls back to the 2% in-module default, which
+    lands in the < 3% bracket (3 demand points from vacancy). Confirms the
+    optional field is backward-compatible with callers that don't send it.
+    """
+    response = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
+    assert response.status_code == 200, response.text
+
+    # Vaughan: DOM default 21 (2 pts) + flat trend (2 pts) + 2% vacancy (3 pts) = 7.
+    demand = response.json()["deal_score"]["breakdown"]["demand"]
+    assert demand == 7, f"Expected demand 7 with default 2% vacancy, got {demand}"
+
+
 def test_analysis_response_has_all_required_fields() -> None:
     """
     The /analysis/ response must include every field defined in AnalysisOutput,

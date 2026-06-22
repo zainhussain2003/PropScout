@@ -41,6 +41,15 @@ class SanityBounds:
     # Break-even rent vs market rent ratio: above 3× means the numbers are extreme
     break_even_rent_ratio_max: float = 3.0
 
+    # Deal score: the engine produces 0–95 (sum of component maxes). Anything
+    # outside this range means a scoring bug, not a bad deal.
+    deal_score_min: float = 0.0
+    deal_score_max: float = 95.0
+
+    # Monthly cash flow: beyond ±$20K/mo on a residential property means a data
+    # error in rent or expenses, not a real (if extreme) deal.
+    cash_flow_monthly_abs_max: float = 20_000.0
+
 
 _BOUNDS = SanityBounds()
 
@@ -52,6 +61,8 @@ def sanity_check_metrics(
     purchase_price: float,
     dscr: float,
     break_even_rent: float,
+    deal_score: float | None = None,
+    cash_flow_monthly: float | None = None,
     bounds: SanityBounds = _BOUNDS,
 ) -> list[str]:
     """
@@ -67,6 +78,9 @@ def sanity_check_metrics(
         purchase_price: Property purchase price, in dollars.
         dscr: Debt service coverage ratio.
         break_even_rent: Monthly rent required to break even, in dollars.
+        deal_score: Final deal score (0–95). Optional — checked only when provided.
+        cash_flow_monthly: Monthly cash flow in dollars. Optional — checked only
+            when provided.
         bounds: Override default bounds for testing (use default in production).
 
     Returns:
@@ -126,6 +140,36 @@ def sanity_check_metrics(
             f"Break-even rent (${break_even_rent:,.0f}/mo) is more than "
             f"{bounds.break_even_rent_ratio_max:.0f}× the estimated market rent "
             f"(${monthly_rent:,.0f}/mo). Verify expense inputs."
+        )
+
+    # ── Break-even rent must not be negative ──────────────────────────────────
+    # A negative break-even implies you'd profit at $0 rent — impossible on a
+    # leveraged purchase, so it signals an expense-input error.
+    if break_even_rent < 0:
+        warnings.append(
+            f"Break-even rent (${break_even_rent:,.0f}/mo) is negative — "
+            "verify expense and mortgage inputs."
+        )
+
+    # ── Deal score ────────────────────────────────────────────────────────────
+    if deal_score is not None and not (
+        bounds.deal_score_min <= deal_score <= bounds.deal_score_max
+    ):
+        warnings.append(
+            f"Deal score {deal_score:.0f} is outside the valid range "
+            f"({bounds.deal_score_min:.0f}–{bounds.deal_score_max:.0f}) — "
+            "this indicates a scoring bug, not a bad deal."
+        )
+
+    # ── Monthly cash flow ─────────────────────────────────────────────────────
+    if (
+        cash_flow_monthly is not None
+        and abs(cash_flow_monthly) > bounds.cash_flow_monthly_abs_max
+    ):
+        warnings.append(
+            f"Monthly cash flow ${cash_flow_monthly:,.0f} is implausible "
+            f"(beyond ±${bounds.cash_flow_monthly_abs_max:,.0f}). "
+            "Verify rent and expense inputs."
         )
 
     return warnings
