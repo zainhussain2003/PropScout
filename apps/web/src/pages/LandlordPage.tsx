@@ -573,7 +573,7 @@ export function LandlordPage({
           verdict={metrics.osfi.pass ? 'Pass' : 'Fail'}
           tone={metrics.osfi.pass ? 'pass' : 'fail'}
         />
-        <OSFICard osfi={metrics.osfi} financing={financing} />
+        <OSFICard osfi={metrics.osfi} financing={financing} income={financing.assumedIncome} />
       </section>
 
       {/* §07 Risk flags */}

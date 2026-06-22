@@ -3313,7 +3313,9 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           <div
             style="padding: 10px 14px; border-radius: 12px; background: color-mix(in oklab, var(--fail) 8%, transparent); border: 1px solid color-mix(in oklab, var(--fail) 25%, transparent); font-size: 12px; color: var(--ink-2); line-height: 1.5;"
           >
-            Assumed gross household income $125k. Qualifying payment pushes GDS to
+            Gross household income 
+            $125,000
+            . Qualifying payment pushes GDS to
              
             45.2%
              — above the 44% federal threshold. Standard A-lender financing likely unavailable; alt-lender or higher income required.

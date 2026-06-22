@@ -12,10 +12,16 @@ import { fmtPct, fmtMoney } from '../../lib/investorCalc'
 interface OSFICardProps {
   osfi: OSFIResult
   financing: FinancingInputs
+  /**
+   * Gross household income the GDS is computed against — shown in the footnote.
+   * Optional: falls back to financing.assumedIncome for static/demo callers.
+   */
+  income?: number
 }
 
-export function OSFICard({ osfi, financing }: OSFICardProps): JSX.Element {
+export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Element {
   const tone = osfi.pass ? 'pass' : 'fail'
+  const displayIncome = income ?? financing.assumedIncome
 
   const rows: Array<{
     label: string
@@ -119,13 +125,13 @@ export function OSFICard({ osfi, financing }: OSFICardProps): JSX.Element {
       >
         {osfi.pass ? (
           <>
-            Assumed gross household income $125k. At {fmtPct(osfi.qualifyingRate, 2)} qualifying
-            rate, GDS sits comfortably under the 44% federal threshold — most insured-mortgage
-            products available.
+            Gross household income {fmtMoney(displayIncome)}. At {fmtPct(osfi.qualifyingRate, 2)}{' '}
+            qualifying rate, GDS sits comfortably under the 44% federal threshold — most
+            insured-mortgage products available.
           </>
         ) : (
           <>
-            Assumed gross household income $125k. Qualifying payment pushes GDS to{' '}
+            Gross household income {fmtMoney(displayIncome)}. Qualifying payment pushes GDS to{' '}
             {fmtPct(osfi.gds, 1)} — above the 44% federal threshold. Standard A-lender financing
             likely unavailable; alt-lender or higher income required.
           </>

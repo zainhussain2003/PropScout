@@ -225,4 +225,20 @@ describe('ReportPage — risk-flag overrides', () => {
     // Persisted dismissal is applied on first render — score already at 70.
     expect(await screen.findByLabelText(/Deal score: 70 out of 95/i)).toBeInTheDocument()
   })
+
+  it('recomputes the OSFI verdict live when household income changes', async () => {
+    getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    const slider = await screen.findByLabelText(/Gross household income/i)
+
+    // Drop income to the floor → GDS blows past 44%, OSFI must read "Fails".
+    fireEvent.change(slider, { target: { value: '40000' } })
+    expect(await screen.findByText(/Fails at .* income/i)).toBeInTheDocument()
+
+    // Raise income to the ceiling → comfortably qualifies again.
+    fireEvent.change(slider, { target: { value: '400000' } })
+    expect(await screen.findByText(/Passes at .* income/i)).toBeInTheDocument()
+  })
 })

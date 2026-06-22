@@ -870,7 +870,11 @@ export function InvestorReport({
                 verdict={metrics.osfi.pass ? 'Passes GDS test' : 'Fails GDS test'}
                 tone={metrics.osfi.pass ? 'pass' : 'fail'}
               />
-              <OSFICard osfi={metrics.osfi} financing={financing} />
+              <OSFICard
+                osfi={metrics.osfi}
+                financing={financing}
+                income={financing.assumedIncome}
+              />
             </section>
 
             {/* ── §06 Risk flags ─────────────────────────────────────── */}
