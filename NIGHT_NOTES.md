@@ -20,6 +20,27 @@ pass on mode-specific severity, OSFI income, and cap-rate valuation.)
 **Rule going forward:** any new decision-driving number that can't cite a source lands
 in this table with its placeholder and a validation path — not buried in code as if researched.
 
+### Visible risk path for the gauge-suppressed personal report — VERIFIED BROKEN
+
+With the HomeScore gauge suppressed, the severe-gate's safety purpose can only reach the
+user through the visible risk section. Traced it; it does not work today:
+
+- **Severe flags aren't all extracted (6th phantom):** `grow_op_history` and
+  `flooding_history` have **no extractor** (not in regex, not in Haiku) — they're labels
+  only, so a grow-op/flood listing never produces the flag. (`illegal_unit_risk` +
+  `special_assessment_risk` ARE extracted by Haiku.)
+- **Critical flags render as amber:** `PersonalBuyerPage` `RisksSection` (line ~1129) maps
+  every real flag to `tone="amber"` — a `red` flag shows amber, indistinguishable from a
+  minor one. The "N critical" verdict text is computed but the rows don't reflect it.
+
+**So the real (B) deliverable in a gauge-suppressed world is the VISIBLE path, not the
+hidden ceiling:** (1) add `grow_op_history` + `flooding_history` extractors (regex
+keywords: grow-op/cannabis/marijuana grow; flood/water damage/flood zone), (2) fix the
+personal `RisksSection` to render each flag at its true severity and surface red flags
+prominently ("Grow-op history — major risk" at the top). The 34/20/10 ceiling ladder is
+correct and stays in code for when the gauge turns on, but it's mathematically invisible
+until then — the extraction + rendering fixes are what actually protect the buyer now.
+
 ### Re-basing check — downstream consumers of the deal score (done before coding the matrix)
 
 The mode-weighted magnitudes change the score _distribution_, not just individual

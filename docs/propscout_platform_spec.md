@@ -651,6 +651,76 @@ Maximum total deduction: -15. Score never goes below 0.
 
 ---
 
+### 10a. Mode-aware severity & gating (v2)
+
+> Status: design locked, implementation pending. Every magnitude below (deduction
+> points, gate ceilings, floor, the flag×mode mapping) is an **unsourced placeholder**
+> tracked in `NIGHT_NOTES.md` → "Unsourced / assumed values". Do not present as researched.
+
+**Per-mode score models — there is no single scale.** Verified in code:
+
+| Mode                        | Score model                     | Scale | Score-impact of flags              |
+| --------------------------- | ------------------------------- | ----- | ---------------------------------- |
+| Investor (A) / Landlord (D) | Investment (this §10 formula)   | 0–95  | deductions + severe gating (below) |
+| Personal buyer (B)          | HomeScore (§7)                  | 0–100 | its own severe gate (§10b)         |
+| Tenant (C)                  | none (rent positioning + flags) | —     | display-only                       |
+
+**Two axes, kept separate.** Flag **display-severity (colour)** applies in **all four
+modes** — flags render in every report. Flag **score-impact** applies only where a score
+exists: the investment formula (A/D) and HomeScore (B). Tenant flags are display-only.
+
+**Severe flags GATE; they do not deduct.** A small set of dealbreakers
+(`grow_op_history`, `flooding_history`, `illegal_unit_risk`, `special_assessment_risk`)
+**cap the maximum achievable score** rather than subtracting points — additive deductions
+can't express "this one fact sinks it no matter how good the rest is" (a grow-op on a
+95-fundamentals property must not read "strong buy"). Standard red flags keep the additive
+model. Order of operations for the investment score (A/D):
+
+```
+1. Each flag gets a base confidence-severity (≥85 red, 60–84 amber).
+2. Mode override: look up (flag_id, mode) in the matrix → it REPLACES the base
+   severity (absent → keep base; a base red is a standard −5).
+3. Standard tier (additive):  standard_deduction = min(15, Σ standard −5s)
+   additive_score = component_subtotal(max 95) − standard_deduction
+4. Severe tier (gating):  severe_ceiling = no-severe → 95; else max(10, 40 − (n−1)×10)
+       1 severe → 40 ("marginal") · 2 → 30 · 3 → 20 · 4+ → 10
+5. raw   = max(0, min(additive_score, severe_ceiling))
+6. label = verdictFromScore(raw)          ← label from the TRUE score
+7. floor = max(5, raw)                     ← "a property is always worth something"
+8. display = round(floor × 100 / 95)       ← display-normalize to /100, brackets unchanged
+```
+
+The cap applies to the standard-deduction subtotal (per tier); the severe gate is a
+**ceiling on the whole score**; the floor is applied last (after the label) so it can
+never lift a property into a better verdict band — it only stops a genuine 0–4 from
+displaying as 0. Internal scale stays 0–95; the verdict brackets above are unchanged.
+
+### 10b. HomeScore severe gate (Report B) + gauge suppression
+
+HomeScore (§7) has its **own** bands (≥80 "Make an offer" / ≥65 "Worth pursuing" / ≥50
+"Negotiate first" / ≥35 "Look further" / <35 "Probably not"). The severe gate is derived
+against **these** bands, not the investment ladder, and is **harsher** — a severe flag is
+worse for an owner-occupier (who lives in it) than an investor (who can remediate-and-rent):
+
+```
+1 severe → ceiling 34 ("Probably not" / fail)
+2 severe → ceiling 20 · 3+ → ceiling 10 · floor max(5, score)
+```
+
+**Gauge suppression (current state).** HomeScore's inputs are mostly placeholder in
+production — pricing is pinned to "asking = fair" (no comparable-sales source; Teranet is
+out of MVP), schools are unloaded, light is unwired (`sunScout` is null). So the numeric
+HomeScore gauge is **suppressed**: the personal report shows only trusted sub-readouts
+(walk, the risk/flag signal) plus honest "data pending" for pricing/schools/light. The
+severe gate's safety value therefore reaches the user through the **visible risk section**
+(severe flags surfaced prominently), not the hidden number.
+
+**Re-enable trigger (concrete, checkable):** the gauge turns on only when **FMV _or_
+schools has a real source wired and tested** — not "when data lands". Until then the
+ceiling ladder lives in code but is not displayed.
+
+---
+
 ## 11. Technical architecture
 
 ### 11.1 Tech stack
@@ -1344,6 +1414,16 @@ The US PropScout (propscout.ai) is a different product, different market, no leg
 Realtors are incentivised to obscure negatives. A glass-door den becomes "a versatile second bedroom." A basement unit becomes "a finished lower level retreat." A missing parking space becomes "parking available — inquire with management." If PropScout feeds raw listing descriptions directly into the deal score or AI narrative, it will eventually misread creative marketing language as factual property data — and users will lose trust in the score.
 
 The solution is to treat the listing description as untrusted input that must pass through a structured extraction pipeline before any number is calculated or any flag is set. The deal score is always derived from validated structured data, never from an AI reading marketing copy directly.
+
+> **Severe-flag extraction gap (must close before the §10a/§10b severe gate means anything).**
+> The severe gate keys on `grow_op_history`, `flooding_history`, `illegal_unit_risk`,
+> `special_assessment_risk`. As of this writing only the last two are extracted (Haiku);
+> **`grow_op_history` and `flooding_history` have no extractor at all** — they exist only as
+> labels, so a grow-op or flood listing never produces the flag and the gate has nothing to
+> fire on. Add regex patterns (grow-op: `grow.?op`, `cannabis/marijuana grow`, `former grow`;
+> flood: `flood`, `water damage`, `flood zone`, `conservation overlay`) and/or Haiku keys for
+> both before relying on the severe gate. A gate around a flag that is never produced is a
+> safety mechanism that silently never runs.
 
 ### Pipeline architecture
 
