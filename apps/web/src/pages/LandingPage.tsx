@@ -30,6 +30,7 @@ import { validateUrl } from '../lib/validateUrl'
 import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
 import { scrapeUrl, ApiRequestError } from '../lib/services/analysisService'
+import { DEAL_SCORE } from '../constants/thresholds'
 import type { Listing } from '../types/property'
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -69,7 +70,13 @@ function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps):
   const dash = filled
   const dashOffset = arc - filled
 
-  const stroke = score >= 65 ? 'var(--pass)' : score >= 40 ? 'var(--caution)' : 'var(--fail)'
+  // Unified on the DEAL_SCORE verdict brackets (matches the report gauge + labels).
+  const stroke =
+    score >= DEAL_SCORE.GOOD
+      ? 'var(--pass)'
+      : score >= DEAL_SCORE.MARGINAL
+        ? 'var(--caution)'
+        : 'var(--fail)'
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>

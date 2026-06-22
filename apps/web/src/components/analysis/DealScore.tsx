@@ -8,13 +8,15 @@
  *   showVerdict  — when true, shows a VerdictPill below the score
  *   animate      — when true, stroke animates from empty → target on mount
  *
- * Colour rules (per spec):
- *   ≤ 25  → var(--fail)     clay red
- *   26–60 → var(--caution)  amber
- *   61+   → var(--pass)     sage green
+ * Colour rules — unified on the DEAL_SCORE verdict brackets so the gauge colour
+ * always matches the verdict label/tone (VERDICT_DISPLAY in investorCalc):
+ *   ≥ 65 (good_deal+)        → var(--pass)     sage green
+ *   35–64 (caution/marginal) → var(--caution)  amber
+ *   < 35 (do_not_buy+)       → var(--fail)     clay red
  */
 
 import { useEffect, useState } from 'react'
+import { DEAL_SCORE } from '../../constants/thresholds'
 
 interface DealScoreProps {
   score: number
@@ -31,9 +33,9 @@ const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
 }
 
 function getScoreColor(score: number): string {
-  if (score <= 25) return 'var(--fail)'
-  if (score <= 60) return 'var(--caution)'
-  return 'var(--pass)'
+  if (score >= DEAL_SCORE.GOOD) return 'var(--pass)'
+  if (score >= DEAL_SCORE.MARGINAL) return 'var(--caution)'
+  return 'var(--fail)'
 }
 
 export function DealScore({
