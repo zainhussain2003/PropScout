@@ -1125,9 +1125,19 @@ function RisksSection({ flags }: RisksSectionProps): JSX.Element {
           {flags.length === 0 ? (
             <RiskRow tone="green" label="No flags detected in this listing" detail="" />
           ) : (
-            flags.map((f) => (
-              <RiskRow key={f.label} tone="amber" label={f.label} detail={f.evidence ?? ''} />
-            ))
+            // Render each flag at its TRUE severity (a critical red flag must not
+            // look like a minor amber one), and surface red flags first so a
+            // grow-op / flood reads as an unmissable danger at the top.
+            [...flags]
+              .sort((a, b) => Number(b.severity === 'red') - Number(a.severity === 'red'))
+              .map((f) => (
+                <RiskRow
+                  key={f.label}
+                  tone={f.severity}
+                  label={f.label}
+                  detail={f.evidence ?? ''}
+                />
+              ))
           )}
         </div>
         <p style={{ marginTop: 22, fontSize: 13, color: 'var(--muted)', maxWidth: 720 }}>

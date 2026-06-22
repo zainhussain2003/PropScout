@@ -1415,15 +1415,21 @@ Realtors are incentivised to obscure negatives. A glass-door den becomes "a vers
 
 The solution is to treat the listing description as untrusted input that must pass through a structured extraction pipeline before any number is calculated or any flag is set. The deal score is always derived from validated structured data, never from an AI reading marketing copy directly.
 
-> **Severe-flag extraction gap (must close before the §10a/§10b severe gate means anything).**
+> **Severe-flag extraction — recall limitation (read before trusting the §10a/§10b gate).**
 > The severe gate keys on `grow_op_history`, `flooding_history`, `illegal_unit_risk`,
-> `special_assessment_risk`. As of this writing only the last two are extracted (Haiku);
-> **`grow_op_history` and `flooding_history` have no extractor at all** — they exist only as
-> labels, so a grow-op or flood listing never produces the flag and the gate has nothing to
-> fire on. Add regex patterns (grow-op: `grow.?op`, `cannabis/marijuana grow`, `former grow`;
-> flood: `flood`, `water damage`, `flood zone`, `conservation overlay`) and/or Haiku keys for
-> both before relying on the severe gate. A gate around a flag that is never produced is a
-> safety mechanism that silently never runs.
+> `special_assessment_risk`. All four now have extractors, but recall is uneven and that
+> matters because under-detection here is an _invisible_ failure:
+>
+> - **Regex catches EXPLICIT mentions only** ("former grow-op", "flood zone", "water
+>   damage") and correctly rejects benign copy ("sunlight floods the room"). Verified by the
+>   recall matrix in `extraction/regex_rules_test.py`.
+> - **Euphemisms are NOT caught by regex** ("sold as-is, no representations", "previous use",
+>   "remediation completed", "restoration after moisture") — they overlap estate /
+>   power-of-sale / benign situations, so matching them would create false positives.
+> - **Haiku is expected to cover the euphemism gap** (grow-op/flooding added to the prompt),
+>   but its recall on oblique phrasing is **unverified** until the golden dataset includes
+>   labelled euphemistic grow-op/flood cases. Until then, treat severe-flag detection as
+>   "explicit yes, euphemistic unproven" — do not claim complete grow-op/flood detection.
 
 ### Pipeline architecture
 
