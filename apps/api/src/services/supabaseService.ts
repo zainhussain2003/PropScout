@@ -583,8 +583,9 @@ export async function addToWaitlist(email: string, province: string): Promise<vo
 // ── flag_overrides ───────────────────────────────────────────────────────────
 //
 // A row in flag_overrides means "the user has dismissed this risk flag for
-// this analysis." The orchestrator filters dismissed flags out of the score
-// deduction when computing the post-override metrics.
+// this analysis." The report UI reads these (GET /analysis/:token/overrides)
+// and restores each dismissed flag's deduction to the deal score live; the
+// stored deal_score stays the raw baseline.
 
 /**
  * Look up the analysis row id for a share token.

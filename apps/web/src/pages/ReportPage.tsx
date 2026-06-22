@@ -9,7 +9,14 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
-import { enrichMetrics, toDealScoreData, computeLTT, fmtMoney } from '../lib/investorCalc'
+import { useFlagOverrides } from '../hooks/useFlagOverrides'
+import {
+  enrichMetrics,
+  toDealScoreData,
+  adjustDealScoreForOverrides,
+  computeLTT,
+  fmtMoney,
+} from '../lib/investorCalc'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { Nav } from '../components/shared/Nav'
@@ -35,6 +42,7 @@ import type {
   DealScoreData,
   ComputedInvestorMetrics,
   FinancingInputs,
+  FlagOverrideControls,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 
@@ -269,10 +277,23 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
 
 // ── Risk flags section ────────────────────────────────────────────────────────
 
-function RiskFlagsSection({ listing }: { listing: ListingData }): JSX.Element {
+function RiskFlagsSection({
+  listing,
+  flagOverrides,
+}: {
+  listing: ListingData
+  flagOverrides: FlagOverrideControls
+}): JSX.Element {
   const redFlags = listing.riskFlags.filter((f) => f.tone === 'red')
   const amberFlags = listing.riskFlags.filter((f) => f.tone === 'amber')
-  const totalDeductions = listing.riskFlags.reduce((s, f) => s + f.deduct, 0)
+  // Applied deductions exclude dismissed flags and cap at 15 — matches the
+  // live deal-score recompute so the "−X pts" line and the gauge stay in sync.
+  const rawDeductions = listing.riskFlags.reduce((s, f) => s + f.deduct, 0)
+  const dismissedDeductions = listing.riskFlags.reduce(
+    (s, f) => (flagOverrides.overrides.has(f.id) ? s + f.deduct : s),
+    0
+  )
+  const totalDeductions = Math.min(15, Math.max(0, rawDeductions - dismissedDeductions))
 
   const verdictTone = redFlags.length > 1 ? 'fail' : redFlags.length === 1 ? 'caution' : 'pass'
   const verdictLabel =
@@ -330,7 +351,15 @@ function RiskFlagsSection({ listing }: { listing: ListingData }): JSX.Element {
           </div>
         ) : (
           listing.riskFlags.map((f) => (
-            <RiskRow key={f.id} tone={f.tone} label={f.label} detail={f.detail} />
+            <RiskRow
+              key={f.id}
+              tone={f.tone}
+              label={f.label}
+              detail={f.detail}
+              dismissable={flagOverrides.canOverride}
+              dismissed={flagOverrides.overrides.has(f.id)}
+              onToggleDismiss={() => flagOverrides.onToggle(f.id)}
+            />
           ))
         )}
       </div>
@@ -534,9 +563,11 @@ function buildSub(narrative: string | null, capRate: number, cashFlowMonthly: nu
 function TenantReportContent({
   listing,
   analysis,
+  flagOverrides,
 }: {
   listing: Listing
   analysis: Analysis
+  flagOverrides: FlagOverrideControls
 }): JSX.Element {
   const [addressLine1, addressLine2] = splitAddress(listing.address, listing.city, listing.province)
   const asking = listing.rentMonthly ?? 0
@@ -656,7 +687,15 @@ function TenantReportContent({
           />
           <div className="card col" style={{ padding: 0, overflow: 'hidden' }}>
             {analysis.riskFlags.map((f) => (
-              <RiskRow key={f.id} tone={f.severity} label={f.label} detail={f.evidence ?? ''} />
+              <RiskRow
+                key={f.id}
+                tone={f.severity}
+                label={f.label}
+                detail={f.evidence ?? ''}
+                dismissable={flagOverrides.canOverride}
+                dismissed={flagOverrides.overrides.has(f.id)}
+                onToggleDismiss={() => flagOverrides.onToggle(f.id)}
+              />
             ))}
           </div>
         </section>
@@ -673,10 +712,12 @@ function InvestorReportContent({
   listing,
   analysis,
   tier,
+  flagOverrides,
 }: {
   listing: Listing
   analysis: Analysis
   tier: string
+  flagOverrides: FlagOverrideControls
 }): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const listingData = toListingData(listing, analysis)
@@ -685,8 +726,15 @@ function InvestorReportContent({
   const metrics: ComputedInvestorMetrics | null =
     analysis.metrics != null ? enrichMetrics(analysis.metrics, listingData, financing) : null
 
-  const dealScore: DealScoreData | null =
+  const baseScore: DealScoreData | null =
     analysis.dealScore != null ? toDealScoreData(analysis.dealScore) : null
+
+  // Live recompute: dismissed flags restore their deduction to the score
+  // immediately, so the gauge + verdict move the instant the user acts.
+  const dealScore: DealScoreData | null =
+    baseScore != null
+      ? adjustDealScoreForOverrides(baseScore, listingData.riskFlags, flagOverrides.overrides)
+      : null
 
   const handleBack = useCallback(() => window.history.back(), [])
 
@@ -743,7 +791,7 @@ function InvestorReportContent({
       <RentalCompsSection analysis={analysis} listing={listingData} />
       <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
       <OSFISection metrics={metrics} financing={financing} />
-      <RiskFlagsSection listing={listingData} />
+      <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
       <EquitySection metrics={metrics} />
       <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" />
     </main>
@@ -778,6 +826,20 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       setLoading(false)
     })
   }, [token])
+
+  const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
+  const onToggleFlag = useCallback(
+    (flagId: string) => {
+      if (overrides.has(flagId)) void undismiss(flagId)
+      else void dismiss(flagId)
+    },
+    [overrides, dismiss, undismiss]
+  )
+  const flagOverrides: FlagOverrideControls = {
+    overrides,
+    canOverride: token != null,
+    onToggle: onToggleFlag,
+  }
 
   const handleToggleDark = useCallback(() => {
     setDark((d) => {
@@ -827,10 +889,21 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       {!loading && !notFound && analysis && listing && (
         <>
           {(mode === 'investor' || mode === 'landlord' || mode === 'personal') && (
-            <InvestorReportContent listing={listing} analysis={analysis} tier={tier} />
+            <InvestorReportContent
+              listing={listing}
+              analysis={analysis}
+              tier={tier}
+              flagOverrides={flagOverrides}
+            />
           )}
 
-          {mode === 'tenant' && <TenantReportContent listing={listing} analysis={analysis} />}
+          {mode === 'tenant' && (
+            <TenantReportContent
+              listing={listing}
+              analysis={analysis}
+              flagOverrides={flagOverrides}
+            />
+          )}
 
           <div className="container" style={{ paddingTop: 32, paddingBottom: 16 }}>
             <div

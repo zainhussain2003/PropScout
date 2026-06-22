@@ -26,6 +26,7 @@ import type {
   FinancingInputs,
   ListingData,
 } from '../types/analysis'
+import { DEAL_SCORE } from '../constants/thresholds'
 
 // ── Deal score display metadata ────────────────────────────────────────────────
 
@@ -78,6 +79,69 @@ export function toDealScoreData(score: DealScore): DealScoreData {
     tone: display.tone,
     breakdown: score.breakdown,
     deductions: score.breakdown.deduction,
+  }
+}
+
+/**
+ * Map a numeric deal score to a verdict string. Mirrors the Python calc
+ * engine's `get_verdict` (deal_score.py) exactly — same brackets, same order —
+ * so a client-side recompute lands on the identical verdict the backend would.
+ */
+export function verdictFromScore(score: number): DealVerdict {
+  if (score >= DEAL_SCORE.STRONG) return 'strong_buy'
+  if (score >= DEAL_SCORE.GOOD) return 'good_deal'
+  if (score >= DEAL_SCORE.CAUTION) return 'caution'
+  if (score >= DEAL_SCORE.MARGINAL) return 'marginal'
+  if (score >= DEAL_SCORE.DO_NOT_BUY) return 'do_not_buy'
+  return 'hard_pass'
+}
+
+/** Max risk-flag deduction the deal score will absorb — mirrors Python `_DEDUCTION_MAX`. */
+const DEDUCTION_MAX = 15
+
+/**
+ * Recompute a deal score with some risk flags dismissed (user overrides).
+ *
+ * When a user dismisses a flag, its deduction is restored to the score live —
+ * the displayed gauge, verdict label, tagline and tone all move immediately,
+ * without waiting for a backend re-run. Mirrors the backend formula:
+ *   remaining = min(DEDUCTION_MAX, rawTotalDeduction − dismissedDeduction)
+ *   total     = subtotal − remaining
+ * The cap is applied to the *remaining* deductions so dismissing a flag only
+ * lifts the score once total deductions fall back under the cap — exactly how
+ * the calc engine would score it on the next re-run.
+ *
+ * @param base       The stored deal score (no overrides applied).
+ * @param flags      All risk flags with their per-flag deduction points.
+ * @param dismissed  IDs of flags the user has dismissed.
+ */
+export function adjustDealScoreForOverrides(
+  base: DealScoreData,
+  flags: ReadonlyArray<{ id: string; deduct: number }>,
+  dismissed: ReadonlySet<string>
+): DealScoreData {
+  if (dismissed.size === 0) return base
+
+  const subtotal = base.breakdown.subtotal
+  const rawTotal = flags.reduce((sum, f) => sum + f.deduct, 0)
+  const dismissedSum = flags.reduce((sum, f) => (dismissed.has(f.id) ? sum + f.deduct : sum), 0)
+
+  const remainingApplied = Math.min(DEDUCTION_MAX, Math.max(0, rawTotal - dismissedSum))
+  const newTotal = Math.max(0, subtotal - remainingApplied)
+
+  if (newTotal === base.total) return base
+
+  const verdict = verdictFromScore(newTotal)
+  const display = VERDICT_DISPLAY[verdict]
+  return {
+    ...base,
+    total: newTotal,
+    verdict,
+    label: display.label,
+    tagline: display.tagline,
+    tone: display.tone,
+    deductions: remainingApplied,
+    breakdown: { ...base.breakdown, deduction: remainingApplied },
   }
 }
 

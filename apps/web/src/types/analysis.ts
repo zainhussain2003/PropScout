@@ -92,6 +92,20 @@ export interface RiskFlag {
   confidence: number // 0–100
 }
 
+/**
+ * Controls for dismissing/restoring risk flags within a report.
+ * Threaded from the page (which owns the useFlagOverrides hook) down to the
+ * RiskRow renderers so flags can be dismissed inline.
+ */
+export interface FlagOverrideControls {
+  /** Set of flag IDs the user has dismissed for this analysis. */
+  overrides: Set<string>
+  /** True when a live analysis token exists — show the Dismiss/Restore button. */
+  canOverride: boolean
+  /** Toggle dismissal for a flag (dismiss if active, restore if already dismissed). */
+  onToggle: (flagId: string) => void
+}
+
 export interface RentalEstimate {
   low: number
   mid: number
