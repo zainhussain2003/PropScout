@@ -34,10 +34,10 @@ import { flagLabel } from '../constants/flagLabels'
 import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
 import {
   RENT_TO_PRICE_MONTHLY,
-  PRICE_TO_MONTHLY_RENT,
   FALLBACK_RENT_BAND,
   DEFAULT_RENT_MONTHLY,
 } from '../constants/valuation'
+import { estimateValueFromRent } from '../constants/marketCapRates'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -234,11 +234,18 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
       // Step 5 — build calc engine payload
       // For for-rent listings (tenant/landlord modes), listing.price is null.
-      // Estimate property value from monthly rent at a ~6% gross yield proxy
-      // so the calc engine can produce a deal score without failing validation.
+      // Estimate value from rent via the per-city cap rate + residual-expense
+      // ratio (NOI / capRate), subtracting actual tax + condo fee when present
+      // so they're never double-counted. Keeps the calc engine able to score.
       const estimatedPrice =
         listing.price ??
-        Math.round((listing.rentMonthly ?? DEFAULT_RENT_MONTHLY) * PRICE_TO_MONTHLY_RENT)
+        estimateValueFromRent({
+          rentMonthly: listing.rentMonthly ?? DEFAULT_RENT_MONTHLY,
+          city: listing.city,
+          propertyType: listing.propertyType,
+          annualTaxes: listing.annualTaxes,
+          condoFeeMonthly: listing.condoFeeMonthly,
+        })
 
       // Estimate annual taxes from price + city when the scraper couldn't
       // find the actual value. Defaulting to 0 understated carrying costs
