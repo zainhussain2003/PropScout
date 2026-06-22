@@ -76,6 +76,26 @@ clean one. This is the personal-buyer equivalent of the severe-flag gating we bu
 investors, and it is currently entirely absent. Fixing live personal = two pieces:
 (A) route personal → HomeScore, (B) wire flags into HomeScore with severe gating.
 
+**HomeScore production-readiness audit (the hidden dependency before (A)):**
+HomeScore works in the demo on fixtures. In the `isReal` path its inputs are mostly
+placeholder, so routing live personal → HomeScore yields a data-thin score, not a
+trustworthy one:
+
+| Component (max)     | Real-path source                                                                                       | Status                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Pricing vs FMV (25) | `shimToPersonalProperty`: `fmv.mid = asking price` (±5%), so `askVsMid` is **always 0** → always 18/25 | ❌ meaningless — no comparable-SALES source; Teranet is explicitly out of MVP |
+| Schools (20)        | `EMPTY_SCHOOLS` → 0 pts                                                                                | ❌ schools table not loaded (Tier-3 task #6)                                  |
+| Light (15)          | `lightScore = 0` → 4 pts                                                                               | ❌ pvlib→HomeScore not wired (MVP_TODO line 389 unchecked)                    |
+| Walk/transit (15)   | from `analysis.walkScore`                                                                              | ✅ real                                                                       |
+| Lot (8)             | hardcoded 8                                                                                            | ⚠️ baseline                                                                   |
+| Risk (10)           | hardcoded 10, no flag input                                                                            | ❌ the gating gap                                                             |
+
+So **(A) is a bounded routing task, but a _meaningful_ HomeScore is gated on data that
+doesn't exist yet** — chiefly a real FMV / comparable-sales source (out of MVP scope)
+and the schools load. (A)+(B) make personal _less wrong_ (right questions + real risk
+signal); the score stays low-confidence until FMV + schools land. The sales comps are
+already flagged `isSampleData`/`isEstimated` in the UI, which is honest — keep that.
+
 ### Nightly scraper — deploy-readiness audit (read-only, greenlit)
 
 **Verdict: structurally deploy-ready; one expected caveat.**
