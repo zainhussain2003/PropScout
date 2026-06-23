@@ -21,6 +21,43 @@ pass on mode-specific severity, OSFI income, and cap-rate valuation.)
 **Rule going forward:** any new decision-driving number that can't cite a source lands
 in this table with its placeholder and a validation path — not buried in code as if researched.
 
+---
+
+## 📒 CONSOLIDATED UNSOURCED LEDGER — reconciled to SHIPPED code (2026-06-22)
+
+The scoring engine is **structurally done and numerically unvalidated** — different kinds of
+done a user can't tell apart (a 68/100 looks identical whether the 68 came from board data
+or a turn-three guess). This is the single list of every guess still LIVE in shipped code,
+its actual value, and how to validate it. "Flagged as unsourced" was a promise to validate
+later; this is the promise made visible so validation is a _choice_, not a forgotten debt.
+
+| #   | Constant (file)                                                                        | Shipped value                                            | Status                                                                                                     | Validation path                                                             |
+| --- | -------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 1   | Severe-gate ceilings `_SEVERE_GATE_BASE/STEP/FLOOR` (`deal_score.py`)                  | 40 / 30 / 20 / 10 by count                               | ❌ GUESS — _(the earlier "−30 tiered cap" in the table above NEVER shipped; the gate ceiling replaced it)_ | SME calibration: how far should 1 vs 2+ severe flags cap a score            |
+| 2   | Standard red deduction + cap (`_DEDUCTION_PER_RED_FLAG`=5, `_DEDUCTION_MAX`=15)        | −5/flag, capped −15                                      | ❌ GUESS                                                                                                   | SME calibration against known deals                                         |
+| 3   | Display floor `_DISPLAY_FLOOR` (`deal_score.py`)                                       | 5                                                        | 🟢 DESIGN — low-stakes ("always worth something"); not a data claim                                        | —                                                                           |
+| 4   | Component point ladders (cap/cf/coc/dscr/demand)                                       | from `investor-calc.jsx`                                 | 🟡 INFORMED — the jsx _is_ the only source; no external citation                                           | Validate brackets against real Ontario deal outcomes                        |
+| 5   | Severe-flag regex confidences (`regex_rules.py`)                                       | grow-op 90, flood 87, illegal-unit 85, special-assess 88 | ❌ GUESS — hand-assigned, not measured precision/recall                                                    | Label a corpus; measure actual precision per flag                           |
+| 6   | Soft-tier `verify_history` confidence + fire rate                                      | 65; fire rate UNMEASURED                                 | ❌ UNVERIFIED — the base-rate watch item; could be noisy on real MLS copy                                  | Run against real listings; measure how often it fires                       |
+| 7   | Non-severe regex confidences (tenanted 92, str 90, basement 88, needs_work 85, …)      | hand-assigned                                            | ❌ GUESS                                                                                                   | Same corpus measurement                                                     |
+| 8   | Per-city cap rates + default (`marketCapRates.ts`)                                     | 3.8–5.8%; default 5.0%                                   | ❌ GUESS — hand-picked Ontario ladder                                                                      | CBRE Cap Rate Survey, or board median price ÷ CMHC median rent              |
+| 9   | Residual expense ratios by type + default (`marketCapRates.ts`)                        | 18–30%; default 24%                                      | ❌ GUESS — residual (vacancy+mgmt+maint+insurance, EXCL tax & condo fee)                                   | Documented residential OER benchmark, or derive from the engine's own model |
+| 10  | OSFI default household income (`osfi.ts`)                                              | $125,000                                                 | ❌ GUESS                                                                                                   | StatsCan Ontario median household income for the buyer demographic          |
+| 11  | Demand defaults `_DEFAULT_RENTAL_DOM`=21, `_DEFAULT_RENT_TREND`="flat" (`analysis.py`) | 21 days / flat                                           | ❌ NO SOURCE — always used (no data feed exists for DOM or trend)                                          | Derive DOM + trend from the nightly rental corpus once it accumulates       |
+| 12  | `_DEFAULT_CMHC_VACANCY_RATE`=2% (`analysis.py`)                                        | 2% fallback                                              | 🟡 PARTIAL — overridden by real `cmhcService` per-city when present; the _fallback_ is the guess           | Ensure cmhcService covers all target cities so the fallback rarely fires    |
+| 13  | Maintenance reserve / vacancy 5% / mgmt 8% / insurance 0.35% (`rates.py`)              | industry-norm                                            | 🟡 INFORMED — common assumptions, not a cited dataset                                                      | Document the industry source or calibrate                                   |
+| 14  | `MIN_RAW_ROWS_PER_SOURCE`=5 (`scrapers/constants.py`)                                  | 5                                                        | 🟡 NEW/CONSERVATIVE — selector-health floor; intentionally low to avoid false alarms                       | Raise once real per-night per-source baselines exist                        |
+
+**Not a number — an unbuilt gap to state plainly:** the **per-flag × mode severity matrix**
+(the "I draft, you review" design) is **NOT implemented**. Only the severe-gate (4 flags
+gate for investor/landlord) + flat standard-red deduction is coded. Flags do **not** get
+mode-specific severity (e.g. `needs_work` is not demoted to amber for an investor, a tenant
+flag is not re-weighted for a landlord). The shipped "matrix" is the severe gate only — the
+mode-specific _cells_ remain a design on paper. Validate AND build before claiming the matrix.
+
+**None of the above is "do it now."** It's the list to see before context-switching to the
+scraper, so validation is scheduled, not forgotten.
+
 ### Step 3 — investment severe-gate: calc engine DONE, frontend wiring REMAINS (don't hide the seam)
 
 Built (calc engine, authoritative): `mode` threaded through the payload/schema;
