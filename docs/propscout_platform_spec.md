@@ -1443,6 +1443,16 @@ The solution is to treat the listing description as untrusted input that must pa
 > The personal report's zero-flag state says "Listing text only — verify directly" and "not a
 > clean bill of health", never "no risks / clear". Copy must not claim data sources not
 > ingested (e.g. municipal flood overlays are NOT checked — don't say they are).
+>
+> **All four severe-gate inputs now have a deterministic regex floor.** Verified before
+> building the §10a investor gate: `illegal_unit_risk` and `special_assessment_risk` were
+> **Haiku-only** (no regex) — so on the investment path, with Haiku down/keyless, two of the
+> gate's four inputs would never fire and the gate would silently run on nothing. Added
+> regex floors for the explicit cases of both (`non-conforming`, `unpermitted`, `illegal
+unit`, `retrofit required`; `special assessment`, `reserve fund shortfall`, `upcoming
+levy`), guarded against benign copy ("healthy reserve fund", "legal duplex"). All four are
+> asserted to fire via regex in `regex_rules_test.py` so a gate input can't silently revert
+> to a phantom. Haiku still covers the euphemistic cases on top.
 
 ### Pipeline architecture
 

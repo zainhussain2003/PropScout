@@ -21,6 +21,20 @@ pass on mode-specific severity, OSFI income, and cap-rate valuation.)
 **Rule going forward:** any new decision-driving number that can't cite a source lands
 in this table with its placeholder and a validation path — not buried in code as if researched.
 
+**Seventh phantom — caught before building the investor gate (verify inputs exist first).**
+The §10a investor severe gate keys on grow_op / flooding / illegal_unit / special_assessment.
+Traced all four to their extractors before building: grow-op + flooding have a regex floor
+(added earlier), but `illegal_unit_risk` and `special_assessment_risk` were **Haiku-only** —
+no deterministic extractor. Since the calc engine keeps regex flags but loses Haiku-only
+flags when Haiku is unavailable, the gate would have silently run on 2 of 4 inputs. Fixed:
+added regex floors for the explicit cases of both (guarded against "healthy reserve fund" /
+"legal duplex"), and a permanent test asserts all four fire via regex. End-to-end check also
+done: a real grow-op listing flows description → pipeline → `grow_op_history` (red),
+`flooding_history` (red), `verify_history` (amber), and the routed personal report renders
+the grow-op red **above** the amber soft-caution with the gauge paused (ReportPage test with
+ordering assertion). Lesson now a habit: verify a gate's inputs are extracted before building
+the gate, and look at the composition, not just the unit tests.
+
 **Copy phantoms count too.** The personal risk-section disclaimer claimed a "municipal open
 data (flood overlays, conservation)" source the product does **not** ingest — a phantom
 aimed straight at buyer trust, in the one domain (flood) where false reassurance is most

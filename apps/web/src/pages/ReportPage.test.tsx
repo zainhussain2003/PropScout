@@ -151,6 +151,14 @@ const PERSONAL_ANALYSIS: Analysis = {
   ...ANALYSIS,
   mode: 'personal',
   riskFlags: [
+    // Deliberately amber-first in the data to prove the render re-orders red on top.
+    {
+      id: 'verify_history',
+      severity: 'amber',
+      label: 'Language worth verifying — ask the agent why',
+      evidence: 'no representations',
+      confidence: 65,
+    },
     {
       id: 'grow_op_history',
       severity: 'red',
@@ -251,7 +259,13 @@ describe('ReportPage — risk-flag overrides', () => {
     // The investment deal-score gauge must NOT appear for a personal buyer.
     expect(screen.queryByLabelText(/Deal score: .* out of 95/i)).not.toBeInTheDocument()
     // The safety readout survives the gauge suppression — the red flag still shows.
-    expect(await screen.findByText(/Grow-op history/i)).toBeInTheDocument()
+    const growOp = await screen.findByText(/Grow-op history/i)
+    expect(growOp).toBeInTheDocument()
+
+    // ...and the red flag is surfaced ABOVE the amber soft-caution, even though
+    // the data listed amber first — the safety signal is on top.
+    const verify = screen.getByText(/Language worth verifying/i)
+    expect(growOp.compareDocumentPosition(verify) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('recomputes the OSFI verdict live when household income changes', async () => {

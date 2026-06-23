@@ -141,6 +141,31 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
         ),
         87,
     ),
+    # Illegal / non-conforming unit. Regex floor for EXPLICIT cases so the severe
+    # gate doesn't depend on Haiku alone (Haiku still catches "separate entrance"
+    # ambiguity). Avoids bare "illegal" — requires a unit/permit context.
+    (
+        "illegal_unit_risk",
+        re.compile(
+            r"\b(non.?conforming|unpermitted|without\s+(a\s+)?permit|no\s+permit"
+            r"|illegal\s+(unit|apartment|suite|basement|second\s+unit)"
+            r"|retrofit\s+required|not\s+a\s+legal\s+(unit|duplex))\b",
+            re.IGNORECASE,
+        ),
+        85,
+    ),
+    # Special assessment / reserve-fund risk. Regex floor for EXPLICIT cases —
+    # must NOT fire on a benign "healthy reserve fund".
+    (
+        "special_assessment_risk",
+        re.compile(
+            r"\b(special\s+assessment|reserve\s+fund\s+(study|shortfall|deficit|concern)"
+            r"|upcoming\s+(assessment|levy)|pending\s+assessment"
+            r"|underfunded\s+reserve)\b",
+            re.IGNORECASE,
+        ),
+        88,
+    ),
     # Soft-caution tier (amber, confidence 65 → no score deduction). The
     # euphemisms severe-flag regex deliberately ignores ("no representations",
     # "remediation completed", "stigmatized", "buyer due diligence") are too

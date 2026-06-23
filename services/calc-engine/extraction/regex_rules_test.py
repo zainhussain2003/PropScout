@@ -126,3 +126,31 @@ FALSE_POSITIVES = [
 def test_no_false_positives_on_benign_copy() -> None:
     for text, flag in FALSE_POSITIVES:
         assert flag not in _fired(text), f"false positive {flag} on: {text!r}"
+
+
+# ── Severe-gate inputs all have a deterministic regex floor ─────────────────────
+# The §10a investor severe gate keys on these four. Each must fire via regex (not
+# Haiku alone) so the gate never "fires on nothing" when Haiku is unavailable.
+
+SEVERE_GATE_EXPLICIT = {
+    "grow_op_history": "Former grow-op, remediated with documentation.",
+    "flooding_history": "Located in a flood zone; past water damage repaired.",
+    "illegal_unit_risk": "Non-conforming basement apartment, unpermitted second unit.",
+    "special_assessment_risk": "Upcoming special assessment; reserve fund shortfall.",
+}
+
+
+def test_all_four_severe_gate_inputs_have_a_regex_floor() -> None:
+    for flag_id, text in SEVERE_GATE_EXPLICIT.items():
+        assert flag_id in _fired(
+            text
+        ), f"severe-gate input has no regex floor: {flag_id}"
+
+
+def test_new_severe_floors_dont_false_positive() -> None:
+    assert "special_assessment_risk" not in _fired(
+        "Healthy reserve fund, well-managed condo."
+    )
+    assert "illegal_unit_risk" not in _fired(
+        "Conforming to all by-laws; a legal duplex."
+    )
