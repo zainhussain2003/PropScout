@@ -1453,6 +1453,13 @@ unit`, `retrofit required`; `special assessment`, `reserve fund shortfall`, `upc
 levy`), guarded against benign copy ("healthy reserve fund", "legal duplex"). All four are
 > asserted to fire via regex in `regex_rules_test.py` so a gate input can't silently revert
 > to a phantom. Haiku still covers the euphemistic cases on top.
+>
+> Their deterministic recall is **EXPLICIT-only** — same honesty as grow-op/flood. The gate
+> catches _stated_ special-assessments / illegal units reliably; _hinted_ ones only when
+> Haiku is up. Don't treat "now has a regex" as "fully covered". **Principle for any
+> safety-gating flag: it needs a deterministic floor — an LLM-only extractor degrades
+> silently when the LLM is unavailable (no key, outage), producing a clean-looking score
+> that quietly missed the risk. Regex for the load-bearing explicit cases, LLM for the tail.**
 
 ### Pipeline architecture
 

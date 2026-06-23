@@ -296,6 +296,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         },
         cmhc_vacancy_rate: cmhcVacancyRate,
         dismissed_flag_ids: dismissedFlagIds,
+        mode,
       }
 
       // Step 6 — call calc engine

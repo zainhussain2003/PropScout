@@ -21,6 +21,30 @@ pass on mode-specific severity, OSFI income, and cap-rate valuation.)
 **Rule going forward:** any new decision-driving number that can't cite a source lands
 in this table with its placeholder and a validation path — not buried in code as if researched.
 
+### Step 3 — investment severe-gate: calc engine DONE, frontend wiring REMAINS (don't hide the seam)
+
+Built (calc engine, authoritative): `mode` threaded through the payload/schema;
+`calculate_deal_score` now takes `severe_flag_count` (backward-compatible default 0 →
+no gate → identical to the old flat model, so the regression suite is untouched). Severe
+flags (the 4, all with regex floors) GATE the ceiling (40 / 30 / 20 / 10 by count);
+standard reds deduct −5 capped −15; order = cap → subtract → gate, verified by a
+**composition test** (a 95-fundamentals property + 1 severe → 40/marginal, display 42 —
+not floated up; severe+standard proves the order). `severe_ceiling` + `to_display_score`
+(floor 5 → ×100/95) are tested helpers. Gate applies only to investor/landlord modes.
+
+**REMAINING (frontend, flagged so it's not a silent phantom):**
+
+1. **Gauge still shows raw /95, not the display-normalized /100.** `to_display_score`
+   exists + is tested in Python but the React gauge (`DealScore`, label "/95") isn't wired
+   to it yet. The displayed number is the gated raw, not floor+normalized.
+2. **Override live-recalc is NOT gate-aware.** `adjustDealScoreForOverrides` (frontend)
+   restores flat −5 deductions only. Dismissing a SEVERE flag should lift the ceiling
+   (40 → 95) live — it currently won't until a backend re-run. The backend re-run IS
+   correct (the router excludes dismissed flags from `severe_flag_count`), so the stored
+   score is right; only the _live_ dismiss of a severe flag is stale. This is the seam to
+   close next — mirror the gate in the display-layer recompute, or have the frontend call
+   the calc engine for the gated number rather than re-deriving it.
+
 **Seventh phantom — caught before building the investor gate (verify inputs exist first).**
 The §10a investor severe gate keys on grow_op / flooding / illegal_unit / special_assessment.
 Traced all four to their extractors before building: grow-op + flooding have a regex floor

@@ -46,8 +46,23 @@ _DEFAULT_CMHC_VACANCY_RATE: float = 0.02
 _DEFAULT_RENTAL_DOM: int = 21
 _DEFAULT_RENT_TREND: str = "flat"
 
-# Points deducted from the deal score per confirmed red flag
+# Points deducted from the deal score per confirmed STANDARD red flag
 _DEDUCTION_PER_RED_FLAG: int = 5
+
+# Severe dealbreakers — these GATE the score's ceiling instead of deducting
+# points (spec §10a). Each must have a deterministic regex floor (verified in
+# extraction/regex_rules_test.py) so the gate never runs on nothing when Haiku
+# is unavailable. Modes that show the investment score (investor/landlord) apply
+# the gate; personal/tenant don't use this score.
+_SEVERE_FLAGS: frozenset[str] = frozenset(
+    {
+        "grow_op_history",
+        "flooding_history",
+        "illegal_unit_risk",
+        "special_assessment_risk",
+    }
+)
+_GATED_MODES: frozenset[str] = frozenset({"investor", "landlord"})
 
 
 class AnalysisRequest(BaseModel):
@@ -67,6 +82,9 @@ class AnalysisRequest(BaseModel):
     # Dismissed red flags are still returned in risk_flags (so the UI can show
     # them greyed out) but no longer deduct from the deal score on re-run.
     dismissed_flag_ids: list[str] = Field(default_factory=list)
+    # Report mode — only investor/landlord apply the investment severe-gate
+    # (personal uses HomeScore, tenant has no deal score). Spec §10a.
+    mode: str = "investor"
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -173,6 +191,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     # Only validated red flags (85%+ confidence) deduct from the deal score.
     merged_flags: list = []
     risk_flag_deductions: float = 0.0
+    severe_flag_count: int = 0
 
     dismissed_flags = set(body.dismissed_flag_ids)
 
@@ -182,17 +201,23 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             haiku_flags = await extract_flags_with_haiku(body.description)
             merged_flags = merge_flags(regex_flags, haiku_flags)
 
-            # Dismissed red flags stay in the list but stop deducting.
-            red_flag_count = sum(
-                1
+            # Active = red and not dismissed. Severe flags GATE the ceiling;
+            # standard reds deduct −5 each (capped in calculate_deal_score).
+            active_reds = [
+                f
                 for f in merged_flags
                 if f.severity == "red" and f.flag_id not in dismissed_flags
+            ]
+            severe_flag_count = sum(
+                1 for f in active_reds if f.flag_id in _SEVERE_FLAGS
             )
-            risk_flag_deductions = float(red_flag_count * _DEDUCTION_PER_RED_FLAG)
+            standard_red_count = len(active_reds) - severe_flag_count
+            risk_flag_deductions = float(standard_red_count * _DEDUCTION_PER_RED_FLAG)
         except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
             logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
             merged_flags = []
             risk_flag_deductions = 0.0
+            severe_flag_count = 0
 
     # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
     # The calculation uses $0 when condo_fee_monthly is not provided, which may
@@ -217,6 +242,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         if body.cmhc_vacancy_rate is not None
         else _DEFAULT_CMHC_VACANCY_RATE
     )
+    # The severe gate only applies to modes that show this investment score.
+    gate_count = severe_flag_count if body.mode in _GATED_MODES else 0
     score_result = calculate_deal_score(
         cap_rate=cap_rate,
         cash_flow_monthly=cash_flow_monthly,
@@ -226,6 +253,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         rental_days_on_market=_DEFAULT_RENTAL_DOM,
         rent_trend=_DEFAULT_RENT_TREND,
         risk_flag_deductions=risk_flag_deductions,
+        severe_flag_count=gate_count,
     )
 
     br = score_result["breakdown"]

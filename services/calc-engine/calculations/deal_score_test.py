@@ -11,12 +11,83 @@ All inputs derived from investor-calc.jsx reference dataset.
 from .deal_score import (
     calculate_deal_score,
     get_verdict,
+    severe_ceiling,
+    to_display_score,
     _score_cap_rate,
     _score_cash_flow,
     _score_cash_on_cash,
     _score_dscr,
     _score_market_demand,
 )
+
+# Strong fundamentals → component subtotal near the 95 max. Used to prove a
+# severe flag GATES the score rather than being floated up by a great base.
+_STRONG = dict(
+    cap_rate=0.065,
+    cash_flow_monthly=600,
+    cash_on_cash=0.09,
+    dscr=1.30,
+    cmhc_vacancy_rate=0.015,
+    rental_days_on_market=10,
+    rent_trend="rising",
+)
+
+
+# ── Severe-gate composition (spec §10a) — the full chain, not per-step ──────────
+
+
+def test_severe_gate_ladder_and_display_helpers() -> None:
+    assert severe_ceiling(0) == 95
+    assert severe_ceiling(1) == 40  # "marginal" ceiling
+    assert severe_ceiling(2) == 30
+    assert severe_ceiling(3) == 20
+    assert severe_ceiling(4) == 10
+    assert severe_ceiling(5) == 10  # floored
+    assert to_display_score(0) == 5  # floor: a property is always worth something
+    assert to_display_score(40) == 42  # round(40 × 100/95)
+    assert to_display_score(95) == 100
+
+
+def test_one_severe_flag_gates_strong_fundamentals_not_floated() -> None:
+    # Component subtotal ~95, NO standard deductions, ONE severe flag.
+    res = calculate_deal_score(**_STRONG, risk_flag_deductions=0, severe_flag_count=1)
+    assert res["breakdown"]["subtotal"] >= 90  # the base really is strong
+    assert res["total"] == 40  # gated to the severe ceiling, NOT ~95
+    assert res["verdict"] == "marginal"  # label comes from the gated raw score
+    assert get_verdict(res["total"]) == "marginal"
+    assert to_display_score(res["total"]) == 42  # final displayed number
+
+
+def test_severe_plus_standard_order_cap_then_subtract_then_gate() -> None:
+    # Mid base, 4 standard reds (−20 → capped −15), 2 severe (ceiling 30).
+    # Order: cap standard at 15 → additive = subtotal − 15 → gate to min(additive, 30).
+    res = calculate_deal_score(
+        cap_rate=0.045,  # 15
+        cash_flow_monthly=100,  # 13
+        cash_on_cash=0.03,  # 8
+        dscr=1.00,  # 7
+        cmhc_vacancy_rate=0.05,  # demand: 0 vacancy pts
+        rental_days_on_market=10,  # +3
+        rent_trend="rising",  # +3 → demand 6
+        risk_flag_deductions=20,  # 4 standard reds — must cap at 15
+        severe_flag_count=2,  # ceiling 30
+    )
+    sub = res["breakdown"]["subtotal"]
+    assert res["breakdown"]["deduction"] == 15  # capped, not 20
+    expected = max(0, min(sub - 15, 30))  # gate AFTER the standard subtraction
+    assert res["total"] == expected
+    # The composed chain end-to-end: label from raw, then displayed number.
+    assert res["verdict"] == get_verdict(res["total"])
+    assert to_display_score(res["total"]) == round(max(5, res["total"]) * 100 / 95)
+
+
+def test_no_severe_flags_is_backward_compatible() -> None:
+    # severe_flag_count defaults to 0 → no ceiling → identical to the old flat model.
+    a = calculate_deal_score(**_STRONG, risk_flag_deductions=10)
+    b = calculate_deal_score(**_STRONG, risk_flag_deductions=10, severe_flag_count=0)
+    assert a["total"] == b["total"]
+    assert a["total"] == max(0, a["breakdown"]["subtotal"] - 10)
+
 
 # ── _score_cap_rate ────────────────────────────────────────────────
 
