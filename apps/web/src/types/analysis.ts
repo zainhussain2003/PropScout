@@ -43,7 +43,8 @@ export interface DealScoreBreakdown {
 }
 
 export interface DealScore {
-  total: number // 0–100
+  total: number // 0–95 raw gated score (verdict derives from this)
+  displayTotal: number // 0–100 floored + normalised for the gauge
   verdict: DealVerdict
   breakdown: DealScoreBreakdown
 }
@@ -207,7 +208,8 @@ export interface ExpenseBreakdown {
  * the human-readable label, tagline, and tone needed by the UI.
  */
 export interface DealScoreData {
-  total: number
+  total: number // 0–95 raw gated score (label/tone derive from this)
+  displayTotal: number // 0–100 floored + normalised — the number the gauge shows
   verdict: DealVerdict
   label: string // e.g. 'Hard pass'
   tagline: string // e.g. 'Fails on multiple fundamentals.'

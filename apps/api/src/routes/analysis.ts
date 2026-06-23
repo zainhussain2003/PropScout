@@ -77,6 +77,7 @@ interface PyDealScoreBreakdown {
 
 interface PyDealScore {
   total: number
+  display_total: number
   verdict: string
   breakdown: PyDealScoreBreakdown
 }
@@ -165,6 +166,7 @@ function toDealScore(py: PyDealScore): DealScore {
   }
   return {
     total: py.total,
+    displayTotal: py.display_total,
     verdict: py.verdict as DealScore['verdict'],
     breakdown,
   }

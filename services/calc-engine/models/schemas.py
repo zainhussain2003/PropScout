@@ -99,7 +99,8 @@ class DealScoreBreakdownOutput(BaseModel):
 class DealScoreOutput(BaseModel):
     """Deal score result with component breakdown."""
 
-    total: int  # 0–95
+    total: int  # 0–95 — the raw gated score (verdict is derived from THIS)
+    display_total: int  # 0–100 — floored + normalised for the gauge (spec §10a)
     verdict: str
     breakdown: DealScoreBreakdownOutput
 

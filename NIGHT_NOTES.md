@@ -47,11 +47,17 @@ live-recalc-on-dismiss (requested earlier) is gone — the safe direction (the g
 never show better than the gate). ReportPage test now asserts exactly this: dismiss greys
 the flag but the score stays at the backend value. Web 799 passing.
 
-**REMAINING — seam #1: gauge still shows raw /95, not display-normalized /100.**
-`to_display_score` (floor 5 → ×100/95) is tested in Python but not yet shown. To honor
-one-source, the calc engine should RETURN the display value (add to DealScoreOutput) and
-the React gauge consume it — don't re-implement ×100/95 in React. Plus a web composition
-test asserting the displayed /100 number + verdict match the backend. Next.
+**Seam #1 — CLOSED, one-source.** The calc engine now RETURNS `display_total` (floored +
+×100/95 via the tested `to_display_score`) on `DealScoreOutput`; threaded through API →
+`DealScore`/`DealScoreData` types → the gauge. React does **not** re-implement ×100/95 —
+it consumes the backend value. The `DealScore` gauge gained `max` (100) + `tone` props:
+the ring colour now comes from the backend **verdict tone**, never re-derived from the
+(normalized) number against raw brackets — so the colour-cutoff near-miss can't resurrect
+as a number/label/colour disagreement. Label + number + colour all read from one backend
+result. Composition test asserts the displayed `68 out of 100` AND the "Good deal" verdict
+label render together from the same source. Web 799 passing, calc 312, API 130, typecheck
+clean. (Standalone `DealScore` keeps default `max=95`; only gauges showing a verdict pass
+`max=100` + `tone`.)
 
 **Seventh phantom — caught before building the investor gate (verify inputs exist first).**
 The §10a investor severe gate keys on grow_op / flooding / illegal_unit / special_assessment.

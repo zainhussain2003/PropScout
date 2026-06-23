@@ -104,6 +104,7 @@ function makeAnalysis(overrides: Partial<Analysis> = {}): Analysis {
     },
     dealScore: {
       total: 12,
+      displayTotal: 13,
       verdict: 'hard_pass',
       breakdown: {
         capRate: 3,

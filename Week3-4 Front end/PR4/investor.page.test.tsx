@@ -160,7 +160,7 @@ describe('InvestorReport page — loaded state (Vaughan / hard pass)', () => {
 
   it('renders the deal score gauge with score 8', () => {
     renderInvestorReport()
-    expect(screen.getByLabelText('Deal score: 8 out of 95')).toBeInTheDocument()
+    expect(screen.getByLabelText('Deal score: 8 out of 100')).toBeInTheDocument()
   })
 
   it('renders the "Hard pass" verdict label', () => {

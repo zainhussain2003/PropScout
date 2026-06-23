@@ -97,6 +97,7 @@ const CALC_ENGINE_FIXTURE = {
   },
   deal_score: {
     total: 9,
+    display_total: 9,
     verdict: 'hard_pass',
     breakdown: {
       cap_rate: 0,

@@ -215,6 +215,7 @@ export const HAMILTON_STABLE_METRICS = {
 
 export const VAUGHAN_DEAL_SCORE: DealScore = {
   total: 8,
+  displayTotal: 8,
   verdict: 'hard_pass',
   breakdown: {
     capRate: 0,
@@ -230,6 +231,7 @@ export const VAUGHAN_DEAL_SCORE: DealScore = {
 
 export const HAMILTON_DEAL_SCORE: DealScore = {
   total: 72,
+  displayTotal: 76,
   verdict: 'good_deal',
   breakdown: {
     capRate: 22,

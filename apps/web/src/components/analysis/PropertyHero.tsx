@@ -297,9 +297,11 @@ export function PropertyHero({
           {/* Gauge — capped at 84px on mobile */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
             <DealScore
-              score={score.total}
+              score={score.displayTotal}
+              max={100}
+              tone={score.tone}
               size={isMobile ? 'sm' : 'lg'}
-              label="Deal score / 95"
+              label="Deal score / 100"
               animate
             />
           </div>

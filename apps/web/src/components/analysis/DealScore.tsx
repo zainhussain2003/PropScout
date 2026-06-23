@@ -24,12 +24,27 @@ interface DealScoreProps {
   label?: string
   showVerdict?: boolean
   animate?: boolean
+  /** Denominator for the arc + aria-label. Default 95 (raw scale); pass 100 for display-normalized. */
+  max?: number
+  /**
+   * Ring colour driven by the verdict tone (one source of truth). When omitted,
+   * colour falls back to the bracket-based default — but for any score that has
+   * a backend verdict, ALWAYS pass tone so the colour can't disagree with the
+   * number (a normalized number against raw brackets would mismatch the label).
+   */
+  tone?: 'pass' | 'caution' | 'fail'
 }
 
 const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
   sm: 84,
   md: 120,
   lg: 180,
+}
+
+const TONE_COLOR: Record<'pass' | 'caution' | 'fail', string> = {
+  pass: 'var(--pass)',
+  caution: 'var(--caution)',
+  fail: 'var(--fail)',
 }
 
 function getScoreColor(score: number): string {
@@ -44,6 +59,8 @@ export function DealScore({
   label,
   showVerdict = false,
   animate = true,
+  max = 95,
+  tone,
 }: DealScoreProps): JSX.Element {
   const px = SIZE_MAP[size]
   const strokeWidth = Math.round(px * 0.085)
@@ -52,8 +69,8 @@ export function DealScore({
   const cx = px / 2
   const cy = px / 2
 
-  const clamped = Math.max(0, Math.min(95, Math.round(score)))
-  const targetOffset = circumference * (1 - clamped / 95)
+  const clamped = Math.max(0, Math.min(max, Math.round(score)))
+  const targetOffset = circumference * (1 - clamped / max)
 
   // Start at full offset (gap = 0 shown) then animate to target
   const [offset, setOffset] = useState(animate ? circumference : targetOffset)
@@ -70,12 +87,14 @@ export function DealScore({
     return () => cancelAnimationFrame(id)
   }, [targetOffset, animate])
 
-  const color = getScoreColor(clamped)
+  // Colour from the backend verdict tone when given — never re-derive it from
+  // the (possibly normalized) number, or it can disagree with the verdict label.
+  const color = tone ? TONE_COLOR[tone] : getScoreColor(clamped)
 
   return (
     <div
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
-      aria-label={`Deal score: ${clamped} out of 95`}
+      aria-label={`Deal score: ${clamped} out of ${max}`}
     >
       <div style={{ position: 'relative', width: px, height: px }}>
         {/* SVG gauge */}

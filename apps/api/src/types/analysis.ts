@@ -26,7 +26,8 @@ export interface DealScoreBreakdown {
 }
 
 export interface DealScore {
-  total: number
+  total: number // 0–95 raw gated score (verdict derives from this)
+  displayTotal: number // 0–100 floored + normalised for the gauge
   verdict: DealVerdict
   breakdown: DealScoreBreakdown
 }

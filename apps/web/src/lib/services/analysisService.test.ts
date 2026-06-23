@@ -50,6 +50,7 @@ const ANALYSIS_FIXTURE: Analysis = {
   },
   dealScore: {
     total: 7,
+    displayTotal: 7,
     verdict: 'hard_pass',
     breakdown: {
       capRate: 0,

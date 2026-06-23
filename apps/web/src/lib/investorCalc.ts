@@ -72,6 +72,7 @@ export function toDealScoreData(score: DealScore): DealScoreData {
   const display = VERDICT_DISPLAY[score.verdict]
   return {
     total: score.total,
+    displayTotal: score.displayTotal,
     verdict: score.verdict,
     label: display.label,
     tagline: display.tagline,

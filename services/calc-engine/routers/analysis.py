@@ -31,7 +31,7 @@ from calculations.investment import (
     calculate_cash_on_cash,
     calculate_break_even_rent,
 )
-from calculations.deal_score import calculate_deal_score
+from calculations.deal_score import calculate_deal_score, to_display_score
 from calculations.sanity import sanity_check_metrics
 from extraction.regex_rules import extract_regex_flags
 from extraction.haiku_extraction import extract_flags_with_haiku
@@ -260,6 +260,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     cm = br["component_maxes"]
     deal_score = DealScoreOutput(
         total=score_result["total"],
+        display_total=to_display_score(int(score_result["total"])),
         verdict=score_result["verdict"],
         breakdown=DealScoreBreakdownOutput(
             cap_rate=br["cap_rate"],

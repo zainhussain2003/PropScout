@@ -351,7 +351,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
         style="align-items: center; gap: 8px;"
       >
         <div
-          aria-label="Deal score: 2 out of 95"
+          aria-label="Deal score: 5 out of 100"
           style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
         >
           <div
@@ -393,7 +393,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
                 class="serif tabular"
                 style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--fail);"
               >
-                2
+                5
               </span>
               <span
                 class="mono"

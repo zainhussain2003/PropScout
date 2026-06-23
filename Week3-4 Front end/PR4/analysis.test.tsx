@@ -438,7 +438,7 @@ describe('PropertyHero', () => {
       />
     )
     // DealScore renders the number; score.total = 8 (clamped)
-    expect(screen.getByLabelText('Deal score: 8 out of 95')).toBeInTheDocument()
+    expect(screen.getByLabelText('Deal score: 8 out of 100')).toBeInTheDocument()
   })
 
   it('renders the verdict label', () => {

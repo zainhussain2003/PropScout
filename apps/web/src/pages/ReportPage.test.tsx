@@ -121,9 +121,10 @@ const INVESTOR_ANALYSIS: Analysis = {
     lttMunicipal: 0,
     hasSanityWarnings: false,
   },
-  // One 5-pt red flag is applied: subtotal 70 → stored total 65.
+  // One 5-pt red flag is applied: subtotal 70 → stored total 65 → display round(65×100/95)=68.
   dealScore: {
     total: 65,
+    displayTotal: 68,
     verdict: 'good_deal',
     breakdown: {
       capRate: 15,
@@ -227,8 +228,12 @@ describe('ReportPage — risk-flag overrides', () => {
     listOverrides.mockResolvedValue([])
     renderReport()
 
-    // The displayed score is the calc engine's stored, gated value — 65.
-    expect(await screen.findByLabelText(/Deal score: 65 out of 95/i)).toBeInTheDocument()
+    // Composition / one-source: the displayed /100 number is the backend's
+    // display_total (raw 65 → round(65×100/95) = 68), and the verdict LABEL is the
+    // backend's verdict (good_deal → "Good deal") — number and label can't disagree
+    // because both come from the same calc-engine result, not a frontend recompute.
+    expect(await screen.findByLabelText(/Deal score: 68 out of 100/i)).toBeInTheDocument()
+    expect(screen.getByText(/Good deal/i)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }))
 
@@ -236,7 +241,7 @@ describe('ReportPage — risk-flag overrides', () => {
     // does NOT re-derive the score. It stays at the backend value until a re-run.
     // Re-deriving once inflated a gated grow-op property from 40 up to ~90; never again.
     expect(await screen.findByRole('button', { name: /restore/i })).toBeInTheDocument()
-    expect(screen.getByLabelText(/Deal score: 65 out of 95/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Deal score: 68 out of 100/i)).toBeInTheDocument()
     await waitFor(() => {
       expect(addOverride).toHaveBeenCalledWith('test-token', 'flag-basement')
     })
@@ -248,7 +253,7 @@ describe('ReportPage — risk-flag overrides', () => {
     renderReport()
 
     // The stored backend score is shown as-is; the frontend never recomputes it.
-    expect(await screen.findByLabelText(/Deal score: 65 out of 95/i)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/Deal score: 68 out of 100/i)).toBeInTheDocument()
   })
 
   it('routes personal mode to the HomeScore report — gauge suppressed, risk readout survives', async () => {
@@ -260,7 +265,7 @@ describe('ReportPage — risk-flag overrides', () => {
     // the numeric score is paused with an explanation, not a blank space.
     expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
     // The investment deal-score gauge must NOT appear for a personal buyer.
-    expect(screen.queryByLabelText(/Deal score: .* out of 95/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Deal score: .* out of 100/i)).not.toBeInTheDocument()
     // The safety readout survives the gauge suppression — the red flag still shows.
     const growOp = await screen.findByText(/Grow-op history/i)
     expect(growOp).toBeInTheDocument()
