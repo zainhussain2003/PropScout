@@ -14,7 +14,6 @@ import { PersonalBuyerPage } from './PersonalBuyerPage'
 import {
   enrichMetrics,
   toDealScoreData,
-  adjustDealScoreForOverrides,
   computeLTT,
   computeOSFI,
   fmtMoney,
@@ -289,14 +288,10 @@ function RiskFlagsSection({
 }): JSX.Element {
   const redFlags = listing.riskFlags.filter((f) => f.tone === 'red')
   const amberFlags = listing.riskFlags.filter((f) => f.tone === 'amber')
-  // Applied deductions exclude dismissed flags and cap at 15 — matches the
-  // live deal-score recompute so the "−X pts" line and the gauge stay in sync.
-  const rawDeductions = listing.riskFlags.reduce((s, f) => s + f.deduct, 0)
-  const dismissedDeductions = listing.riskFlags.reduce(
-    (s, f) => (flagOverrides.overrides.has(f.id) ? s + f.deduct : s),
-    0
-  )
-  const totalDeductions = Math.min(15, Math.max(0, rawDeductions - dismissedDeductions))
+  // No "−X pts" line here: with the severe gate, score impact is gate + standard
+  // tier, not a single deduction — and re-deriving it on the frontend is exactly
+  // the second computation that drifts from the calc engine. The score itself is
+  // shown (from the backend) in the hero gauge.
 
   const verdictTone = redFlags.length > 1 ? 'fail' : redFlags.length === 1 ? 'caution' : 'pass'
   const verdictLabel =
@@ -321,24 +316,6 @@ function RiskFlagsSection({
       />
 
       <div className="card col" style={{ padding: 0, overflow: 'hidden' }}>
-        {totalDeductions > 0 && (
-          <div
-            style={{
-              padding: '12px 24px',
-              background: 'color-mix(in oklab, var(--fail) 8%, transparent)',
-              borderBottom: '1px solid var(--line)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 13,
-            }}
-          >
-            <span style={{ color: 'var(--ink-2)' }}>Total deal score deductions</span>
-            <span className="mono tabular" style={{ color: 'var(--fail)', fontWeight: 600 }}>
-              −{totalDeductions} pts
-            </span>
-          </div>
-        )}
-
         {listing.riskFlags.length === 0 ? (
           <div
             style={{
@@ -795,15 +772,13 @@ function InvestorReportContent({
   const metrics: ComputedInvestorMetrics | null =
     analysis.metrics != null ? enrichMetrics(analysis.metrics, listingData, financing) : null
 
-  const baseScore: DealScoreData | null =
-    analysis.dealScore != null ? toDealScoreData(analysis.dealScore) : null
-
-  // Live recompute: dismissed flags restore their deduction to the score
-  // immediately, so the gauge + verdict move the instant the user acts.
+  // ONE SOURCE OF TRUTH: the deal score comes straight from the calc engine
+  // (gated, floored, the lot). The frontend does NOT re-derive it — a second
+  // computation would drift from the gate (a dismissed flag once inflated a
+  // grow-op property from its gated 40 up to ~90 by ignoring the ceiling).
+  // Dismissing a flag persists the override; the gated score updates on re-run.
   const dealScore: DealScoreData | null =
-    baseScore != null
-      ? adjustDealScoreForOverrides(baseScore, listingData.riskFlags, flagOverrides.overrides)
-      : null
+    analysis.dealScore != null ? toDealScoreData(analysis.dealScore) : null
 
   const handleBack = useCallback(() => window.history.back(), [])
 

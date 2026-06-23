@@ -32,18 +32,26 @@ standard reds deduct −5 capped −15; order = cap → subtract → gate, verif
 not floated up; severe+standard proves the order). `severe_ceiling` + `to_display_score`
 (floor 5 → ×100/95) are tested helpers. Gate applies only to investor/landlord modes.
 
-**REMAINING (frontend, flagged so it's not a silent phantom):**
+**Seam #2 — CLOSED by deleting the second computation (the dangerous one).**
+Traced the dangerous _direction_ first: `adjustDealScoreForOverrides` recomputed
+`newTotal = subtotal − remainingApplied` from the pre-gate subtotal (~95), **ignoring the
+ceiling**. So dismissing ANY flag on a grow-op property (gated `total = 40`) inflated the
+live gauge to ~90 = "good deal" — while the grow-op was still present. A normal click made
+a grow-op home read as a good deal. Fixed per the one-source rule: **removed the frontend
+re-derivation entirely** (`adjustDealScoreForOverrides` + `verdictFromScore` deleted, plus
+the re-derived "−X pts" line in `RiskFlagsSection`). The gauge + verdict now come straight
+from the calc engine's gated number — never recomputed. Dismiss still persists + greys the
+flag; the gated score updates on the next backend re-run (which IS gate-correct — the
+router excludes dismissed flags from `severe_flag_count`). Trade-off: the instant
+live-recalc-on-dismiss (requested earlier) is gone — the safe direction (the gauge can
+never show better than the gate). ReportPage test now asserts exactly this: dismiss greys
+the flag but the score stays at the backend value. Web 799 passing.
 
-1. **Gauge still shows raw /95, not the display-normalized /100.** `to_display_score`
-   exists + is tested in Python but the React gauge (`DealScore`, label "/95") isn't wired
-   to it yet. The displayed number is the gated raw, not floor+normalized.
-2. **Override live-recalc is NOT gate-aware.** `adjustDealScoreForOverrides` (frontend)
-   restores flat −5 deductions only. Dismissing a SEVERE flag should lift the ceiling
-   (40 → 95) live — it currently won't until a backend re-run. The backend re-run IS
-   correct (the router excludes dismissed flags from `severe_flag_count`), so the stored
-   score is right; only the _live_ dismiss of a severe flag is stale. This is the seam to
-   close next — mirror the gate in the display-layer recompute, or have the frontend call
-   the calc engine for the gated number rather than re-deriving it.
+**REMAINING — seam #1: gauge still shows raw /95, not display-normalized /100.**
+`to_display_score` (floor 5 → ×100/95) is tested in Python but not yet shown. To honor
+one-source, the calc engine should RETURN the display value (add to DealScoreOutput) and
+the React gauge consume it — don't re-implement ×100/95 in React. Plus a web composition
+test asserting the displayed /100 number + verdict match the backend. Next.
 
 **Seventh phantom — caught before building the investor gate (verify inputs exist first).**
 The §10a investor severe gate keys on grow_op / flooding / illegal_unit / special_assessment.

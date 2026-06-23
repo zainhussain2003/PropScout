@@ -222,30 +222,33 @@ describe('ReportPage — risk-flag overrides', () => {
     })
   })
 
-  it('raises the deal score live when a flag is dismissed (investor mode)', async () => {
+  it('shows the backend deal score and does NOT re-derive it on live dismiss (one source of truth)', async () => {
     getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
     listOverrides.mockResolvedValue([])
     renderReport()
 
-    // Stored score reflects the 5-pt red-flag deduction: 70 − 5 = 65.
+    // The displayed score is the calc engine's stored, gated value — 65.
     expect(await screen.findByLabelText(/Deal score: 65 out of 95/i)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }))
 
-    // Dismissing the only red flag restores the deduction live: 70.
-    expect(await screen.findByLabelText(/Deal score: 70 out of 95/i)).toBeInTheDocument()
+    // Dismiss persists + greys the flag (Restore appears) — but the frontend
+    // does NOT re-derive the score. It stays at the backend value until a re-run.
+    // Re-deriving once inflated a gated grow-op property from 40 up to ~90; never again.
+    expect(await screen.findByRole('button', { name: /restore/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/Deal score: 65 out of 95/i)).toBeInTheDocument()
     await waitFor(() => {
       expect(addOverride).toHaveBeenCalledWith('test-token', 'flag-basement')
     })
   })
 
-  it('starts from the already-dismissed score on load (investor mode)', async () => {
+  it('shows the backend score on load even with a persisted dismissal (no frontend re-derivation)', async () => {
     getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
     listOverrides.mockResolvedValue(['flag-basement'])
     renderReport()
 
-    // Persisted dismissal is applied on first render — score already at 70.
-    expect(await screen.findByLabelText(/Deal score: 70 out of 95/i)).toBeInTheDocument()
+    // The stored backend score is shown as-is; the frontend never recomputes it.
+    expect(await screen.findByLabelText(/Deal score: 65 out of 95/i)).toBeInTheDocument()
   })
 
   it('routes personal mode to the HomeScore report — gauge suppressed, risk readout survives', async () => {
