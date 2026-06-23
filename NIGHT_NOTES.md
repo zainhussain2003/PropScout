@@ -48,12 +48,18 @@ later; this is the promise made visible so validation is a _choice_, not a forgo
 | 13  | Maintenance reserve / vacancy 5% / mgmt 8% / insurance 0.35% (`rates.py`)              | industry-norm                                            | 🟡 INFORMED — common assumptions, not a cited dataset                                                      | Document the industry source or calibrate                                   |
 | 14  | `MIN_RAW_ROWS_PER_SOURCE`=5 (`scrapers/constants.py`)                                  | 5                                                        | 🟡 NEW/CONSERVATIVE — selector-health floor; intentionally low to avoid false alarms                       | Raise once real per-night per-source baselines exist                        |
 
-**Not a number — an unbuilt gap to state plainly:** the **per-flag × mode severity matrix**
-(the "I draft, you review" design) is **NOT implemented**. Only the severe-gate (4 flags
-gate for investor/landlord) + flat standard-red deduction is coded. Flags do **not** get
-mode-specific severity (e.g. `needs_work` is not demoted to amber for an investor, a tenant
-flag is not re-weighted for a landlord). The shipped "matrix" is the severe gate only — the
-mode-specific _cells_ remain a design on paper. Validate AND build before claiming the matrix.
+### ⛔ gate ≠ matrix — DO NOT remember the gate as "the matrix is done"
+
+**The per-flag × mode severity matrix is NOT implemented.** This thread opened as "build the
+matrix" (the four-mode colour table: `needs_work` amber-for-investor / red-for-personal-buyer,
+`tenant_occupied` flipping meaning across roles). What actually shipped is the **severe gate**
+(the 4 catastrophic flags capping the score for investor/landlord) **+ the personal-buyer
+correctness/safety fixes** + a flat standard-red −5. The rich per-mode _cells_ — the original
+Item 1 — remain a **design on paper**. Flags do **not** get mode-specific severity yet.
+
+This line is load-bearing: months from now "the matrix is done" would be believed by everyone
+(including future-me) and it would be **false**. The matrix is **unbuilt scope**, not a
+finished feature. Validate AND build the cells before any doc, commit, or status says "matrix".
 
 **None of the above is "do it now."** It's the list to see before context-switching to the
 scraper, so validation is scheduled, not forgotten.

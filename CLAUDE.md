@@ -1253,6 +1253,7 @@ propscout/
 │   │           └── test_extraction.py # Accuracy gate — must pass 95%+ before merging
 │   │
 │   └── scrapers/                      # Playwright workers — Railway scheduled jobs
+│       ├── README.md                  # Deploy + first-run checklist (env vars, run #1 = selector test, yield-check)
 │       ├── requirements.txt           # playwright, supabase, httpx, pytest
 │       ├── railway.json               # Nightly cron config — 0 6 * * * UTC (2am ET)
 │       ├── conftest.py                # Pytest path setup
