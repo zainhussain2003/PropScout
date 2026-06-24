@@ -34,9 +34,7 @@ def get_client() -> Client:
         url = os.environ.get("SUPABASE_URL")
         key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
         if not url or not key:
-            raise RuntimeError(
-                "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set"
-            )
+            raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
         _client = create_client(url, key)
     return _client
 
@@ -64,50 +62,69 @@ def fetch_recent_dedupe_keys() -> list[tuple[str, int, int | None]]:
         return []
 
     return [
-        (row["address"], row["rent_monthly"], row.get("beds"))
-        for row in response.data
+        (row["address"], row["rent_monthly"], row.get("beds")) for row in response.data
     ]
 
 
 def insert_rental_listings(listings: list[CleanRentalListing]) -> int:
     """
-    Insert normalised rental listings into rental_listings.
+    Upsert normalised rental listings into rental_listings, keyed on source_url.
 
-    Historical records are never deleted or updated — insert only
-    (spec Section 11.2: accumulation is the moat).
+    source_url is the row identity: a re-scraped listing UPDATES its existing row
+    in place (backfilling beds / postal / rent and refreshing scraped_at as
+    last-seen) rather than appending a duplicate. Genuinely-new listings insert.
+    Requires the unique index on rental_listings(source_url); without it the call
+    fails fast on the conflict target before any row is written (no half-write).
+
+    The batch is de-duplicated by source_url first: a single ON CONFLICT statement
+    cannot touch the same conflict key twice ("cannot affect row a second time"),
+    so duplicate URLs in one scrape (e.g. an over-broad card selector) are
+    collapsed, keeping the first occurrence.
 
     Args:
         listings: Deduped, normalised listings to store.
 
     Returns:
-        Number of rows successfully inserted.
+        Number of rows upserted (updated + inserted), or 0 on failure.
     """
     if not listings:
         return 0
 
-    rows = [
-        {
-            "source": l.source,
-            "source_url": l.source_url,
-            "address": l.address,
-            "postal_code": l.postal_code,
-            "lat": l.lat,
-            "lng": l.lng,
-            "beds": l.beds,
-            "baths": l.baths,
-            "rent_monthly": l.rent_monthly,
-            "sqft": l.sqft,
-            "listed_at": l.listed_at.isoformat() if l.listed_at else None,
-            "is_active": True,
-            "raw_json": l.raw_json,
-        }
-        for l in listings
-    ]
+    now = datetime.now(timezone.utc).isoformat()
+    rows: list[dict[str, object]] = []
+    seen_urls: set[str] = set()
+    for item in listings:
+        if item.source_url in seen_urls:
+            continue  # collapse in-batch duplicate conflict keys
+        seen_urls.add(item.source_url)
+        rows.append(
+            {
+                "source": item.source,
+                "source_url": item.source_url,
+                "address": item.address,
+                "postal_code": item.postal_code,
+                "lat": item.lat,
+                "lng": item.lng,
+                "beds": item.beds,
+                "baths": item.baths,
+                "rent_monthly": item.rent_monthly,
+                "sqft": item.sqft,
+                "listed_at": item.listed_at.isoformat() if item.listed_at else None,
+                "is_active": True,
+                "scraped_at": now,  # last-seen; only defaults on insert otherwise
+                "raw_json": item.raw_json,
+            }
+        )
 
     try:
-        response = get_client().table("rental_listings").insert(rows).execute()
+        response = (
+            get_client()
+            .table("rental_listings")
+            .upsert(rows, on_conflict="source_url")
+            .execute()
+        )
     except Exception:
-        logger.exception("Failed to insert %d rental listings", len(rows))
+        logger.exception("Failed to upsert %d rental listings", len(rows))
         return 0
 
     return len(response.data)
