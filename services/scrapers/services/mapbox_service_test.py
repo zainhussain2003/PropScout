@@ -1,4 +1,5 @@
 """Unit tests for mapbox_service — httpx and env mocked throughout."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -37,7 +38,26 @@ async def test_valid_response_returns_lat_lng_in_correct_order(monkeypatch):
     http = _mock_http_client(features=[{"center": [-79.53, 43.79]}])
     with _patch_http(http):
         result = await mapbox_service.geocode_address("5 Buttermill Ave, Vaughan")
-    assert result == (43.79, -79.53)
+    assert result is not None
+    assert (result.lat, result.lng) == (43.79, -79.53)
+    assert result.postal_code is None  # no context → no postcode recovered
+
+
+@pytest.mark.asyncio
+async def test_postcode_recovered_from_context(monkeypatch):
+    monkeypatch.setenv("MAPBOX_TOKEN", "test-token")
+    feature = {
+        "center": [-79.44, 43.66],
+        "context": [
+            {"id": "postcode.123", "text": "M6H 0E6"},
+            {"id": "place.456", "text": "Toronto"},
+        ],
+    }
+    http = _mock_http_client(features=[feature])
+    with _patch_http(http):
+        result = await mapbox_service.geocode_address("950 Lansdowne Ave, Toronto, ON")
+    assert result is not None
+    assert result.postal_code == "M6H0E6"  # space stripped, uppercased
 
 
 @pytest.mark.asyncio

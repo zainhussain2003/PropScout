@@ -26,11 +26,12 @@ from constants import (
 @dataclass
 class RawRentalListing:
     """Raw listing as returned by a source module, before any cleaning."""
-    source: str                      # 'rentals_ca' | 'kijiji' | 'padmapper'
+
+    source: str  # 'rentals_ca' | 'kijiji' | 'padmapper'
     source_url: str
     address: str
-    rent_raw: str                    # e.g. "$2,150/mo", "550 weekly", "2150"
-    beds_raw: str                    # e.g. "2 Beds", "Studio", "3 + den"
+    rent_raw: str  # e.g. "$2,150/mo", "550 weekly", "2150"
+    beds_raw: str  # e.g. "2 Beds", "Studio", "3 + den"
     baths_raw: str | None = None
     sqft_raw: str | None = None
     listed_at: date | None = None
@@ -40,6 +41,7 @@ class RawRentalListing:
 @dataclass
 class CleanRentalListing:
     """Normalised listing ready for dedupe and storage."""
+
     source: str
     source_url: str
     address: str
@@ -60,6 +62,19 @@ _WEEKLY_RE = re.compile(r"week|/wk|wkly", re.IGNORECASE)
 _DAILY_RE = re.compile(r"day|night|/d\b", re.IGNORECASE)
 _BEDS_NUM_RE = re.compile(r"(\d+)")
 _STUDIO_RE = re.compile(r"studio|bachelor", re.IGNORECASE)
+# Spelled-out bed counts — Kijiji titles say "two bedroom", not "2 bedroom".
+_WORD_NUMBERS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
 
 
 def parse_rent_monthly(rent_raw: str) -> int | None:
@@ -114,14 +129,17 @@ def parse_beds(beds_raw: str) -> int | None:
         return 0
 
     match = _BEDS_NUM_RE.search(beds_raw)
-    if not match:
-        return None
+    if match:
+        beds = int(match.group(1))
+        return beds if beds <= BEDS_MAX else None
 
-    beds = int(match.group(1))
-    if beds > BEDS_MAX:
-        return None
+    # No digit — fall back to spelled-out numbers ("two bedroom" → 2).
+    low = beds_raw.lower()
+    for word, value in _WORD_NUMBERS.items():
+        if re.search(rf"\b{word}\b", low):
+            return value
 
-    return beds
+    return None
 
 
 def parse_baths(baths_raw: str | None) -> float | None:

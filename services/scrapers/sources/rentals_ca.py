@@ -7,6 +7,7 @@ cities, the selectors are the first thing to check.
 """
 
 import logging
+import re
 
 from playwright.async_api import Browser
 
@@ -24,10 +25,14 @@ _SEARCH_URL = _BASE_URL + "/{city}?p={page}"
 _CARD_SELECTOR = "[class*='listing-card']"
 _ADDRESS_SELECTOR = "[class*='listing-card__title'], [class*='address']"
 _RENT_SELECTOR = "[class*='listing-card__price'], [class*='price']"
-_BEDS_SELECTOR = "[class*='bed']"
-_BATHS_SELECTOR = "[class*='bath']"
 _SQFT_SELECTOR = "[class*='sqft'], [class*='dimension']"
 _LINK_SELECTOR = "a[href*='/']"
+
+# Beds are not in a dedicated element — they sit in the card text as "1 - 3 BED"
+# (often a building range). Capture the range; the normaliser takes the low end.
+_BEDS_TEXT_RE = re.compile(
+    r"(studio|bachelor|\d+(?:\s*[-–]\s*\d+)?)\s*bed", re.IGNORECASE
+)
 
 
 async def fetch_listings(browser: Browser) -> list[RawRentalListing]:
@@ -87,16 +92,17 @@ async def _parse_card(card: object) -> RawRentalListing | None:
         address = (await address_el.inner_text()).strip()
         rent_raw = (await rent_el.inner_text()).strip()
 
-        beds_el = await card.query_selector(_BEDS_SELECTOR)
-        baths_el = await card.query_selector(_BATHS_SELECTOR)
         sqft_el = await card.query_selector(_SQFT_SELECTOR)
         link_el = await card.query_selector(_LINK_SELECTOR)
 
+        # Beds come from the card's visible text, not a dedicated element.
+        beds_match = _BEDS_TEXT_RE.search(await card.inner_text())
+
         href = await link_el.get_attribute("href") if link_el else None
         source_url = (
-            href if href and href.startswith("http")
-            else _BASE_URL + href if href
-            else _BASE_URL
+            href
+            if href and href.startswith("http")
+            else _BASE_URL + href if href else _BASE_URL
         )
 
         return RawRentalListing(
@@ -104,8 +110,8 @@ async def _parse_card(card: object) -> RawRentalListing | None:
             source_url=source_url,
             address=address,
             rent_raw=rent_raw,
-            beds_raw=(await beds_el.inner_text()).strip() if beds_el else "",
-            baths_raw=(await baths_el.inner_text()).strip() if baths_el else None,
+            beds_raw=beds_match.group(0) if beds_match else "",
+            baths_raw=None,
             sqft_raw=(await sqft_el.inner_text()).strip() if sqft_el else None,
         )
     except Exception:

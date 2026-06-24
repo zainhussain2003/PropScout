@@ -7,6 +7,7 @@ than on other sources — normalization handles the ×4.33 conversion.
 """
 
 import logging
+import re
 
 from playwright.async_api import Browser
 
@@ -26,8 +27,42 @@ _CARD_SELECTOR = "[data-testid='listing-card'], .search-item"
 _TITLE_SELECTOR = "[data-testid='listing-title'], .title"
 _RENT_SELECTOR = "[data-testid='listing-price'], .price"
 _LOCATION_SELECTOR = "[data-testid='listing-location'], .location"
-_BEDS_SELECTOR = "[data-testid='listing-details'], .details"
 _LINK_SELECTOR = "a[href*='/v-']"
+
+# Beds live in the free-text title AND description preview, usually spelled out
+# ("two bedroom"). They are parsed from the card's full visible text.
+#
+# GUARD: a number is only read as a bed count when it is bound to a
+# bed/bedroom/br/bdrm suffix — so a listing ID, unit number, or street number
+# ("Indian Road - ID 544") can never be mistaken for beds. A wrong bed count is
+# worse than a null: null is excluded from comps, wrong is included and skews them.
+_STUDIO_RE = re.compile(r"\b(?:studio|bachelor)\b", re.IGNORECASE)
+_NUM_BED_RE = re.compile(
+    r"\b(?:one|two|three|four|five|six|seven|eight|nine|\d+)"
+    r"[\s-]*(?:\+?\s*den\s*)?(?:bed(?:room)?s?|br|bdrm?s?)\b",
+    re.IGNORECASE,
+)
+
+
+def _beds_from_text(text: str) -> str:
+    """
+    Extract a bed-count phrase from a Kijiji card's full text, or '' if none.
+
+    Tie-break: the EARLIEST bed indicator in the text wins. The unit's own bed
+    count is stated in the title / first line, ahead of any building-range or
+    amenity mention — so a real "2 bedroom" is never overridden by a later
+    "fitness studio". studio/bachelor → 0, but only when it is the earliest
+    indicator.
+    """
+    num = _NUM_BED_RE.search(text)
+    studio = _STUDIO_RE.search(text)
+    if num and studio:
+        return "studio" if studio.start() < num.start() else num.group(0)
+    if num:
+        return num.group(0)
+    if studio:
+        return "studio"
+    return ""
 
 
 async def fetch_listings(browser: Browser) -> list[RawRentalListing]:
@@ -93,16 +128,21 @@ async def _parse_card(card: object) -> RawRentalListing | None:
         location = (await location_el.inner_text()).strip() if location_el else ""
         address = f"{title}, {location}".strip(", ")
 
-        beds_el = await card.query_selector(_BEDS_SELECTOR)
+        # Beds from the full card text (title + description preview), not just the
+        # title — the description often states beds the title omits.
+        beds_raw = _beds_from_text(await card.inner_text())
+
         link_el = await card.query_selector(_LINK_SELECTOR)
         href = await link_el.get_attribute("href") if link_el else None
 
         return RawRentalListing(
             source=SOURCE,
-            source_url=_BASE_URL + href if href and href.startswith("/") else href or _BASE_URL,
+            source_url=(
+                _BASE_URL + href if href and href.startswith("/") else href or _BASE_URL
+            ),
             address=address,
             rent_raw=(await rent_el.inner_text()).strip(),
-            beds_raw=(await beds_el.inner_text()).strip() if beds_el else "",
+            beds_raw=beds_raw,
         )
     except Exception:
         logger.exception("Failed to parse a kijiji card")

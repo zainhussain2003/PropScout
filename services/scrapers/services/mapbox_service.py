@@ -7,6 +7,7 @@ and the comp query falls back to FSA matching (spec Section 11.2).
 
 import logging
 import os
+from dataclasses import dataclass
 
 import httpx
 
@@ -16,16 +17,38 @@ _GEOCODE_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places/{query}.json"
 _REQUEST_TIMEOUT_SECONDS = 10
 
 
-async def geocode_address(address: str) -> tuple[float, float] | None:
+@dataclass
+class GeocodeResult:
+    """A geocoded location. ``postal_code`` is the Mapbox-resolved FSA+LDU, no space."""
+
+    lat: float
+    lng: float
+    postal_code: str | None
+
+
+def _postal_from_feature(feature: dict) -> str | None:
+    """Pull the postcode out of a Mapbox feature's context (FSA+LDU, no space)."""
+    for ctx in feature.get("context", []):
+        if str(ctx.get("id", "")).startswith("postcode"):
+            text = ctx.get("text")
+            return text.replace(" ", "").upper() if text else None
+    return None
+
+
+async def geocode_address(address: str) -> GeocodeResult | None:
     """
-    Geocode an address to (lat, lng) using the Mapbox Geocoding API.
+    Geocode an address using the Mapbox Geocoding API.
+
+    Returns lat/lng AND the resolved postal code — many source listings omit the
+    postal code in their card markup, so the geocode response is the cheapest
+    place to recover it (no extra request beyond this one).
 
     Args:
-        address: Full address string, ideally including city and postal code.
+        address: Full address string, ideally including city and province.
 
     Returns:
-        (lat, lng) tuple, or None when the token is missing, the request
-        fails, or no result is found. Never raises.
+        GeocodeResult, or None when the token is missing, the request fails, or
+        no result is found. Never raises.
     """
     token = os.environ.get("MAPBOX_TOKEN")
     if not token:
@@ -48,5 +71,8 @@ async def geocode_address(address: str) -> tuple[float, float] | None:
     if not features:
         return None
 
-    lng, lat = features[0]["center"]
-    return (float(lat), float(lng))
+    feature = features[0]
+    lng, lat = feature["center"]
+    return GeocodeResult(
+        lat=float(lat), lng=float(lng), postal_code=_postal_from_feature(feature)
+    )
