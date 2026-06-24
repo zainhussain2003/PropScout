@@ -64,6 +64,56 @@ finished feature. Validate AND build the cells before any doc, commit, or status
 **None of the above is "do it now."** It's the list to see before context-switching to the
 scraper, so validation is scheduled, not forgotten.
 
+---
+
+## 🕓 Scraper freshness + comp-query semantic debt (2026-06-24)
+
+Recorded while adding `first_seen_at` (migration `20260624_…`). Two known-debt items
+the backfill run surfaced — neither built yet, both required decisions before the cron
+runs unattended.
+
+### Freshness window N is NOT a single number — it's bounded by rotation × scrape depth
+
+The query-time freshness filter (`scraped_at >= now() - N`) ages "ghost" rows out of the
+comp set. But the right N is **per-source**, and the real constraint is **scrape depth**,
+not cron cadence:
+
+- We scrape **page 1 only** (`MAX_PAGES_PER_CITY = 1`). A still-live listing pushed to
+  page 2 by newer posts **stops appearing in our scrape** — so its `scraped_at` stops
+  refreshing and it ages out of comps **even though it's still on the market.** Freshness
+  can't tell "delisted" from "pushed off page 1."
+- Backfill evidence (one night, toronto p1): **padmapper** 20/22 URLs recurred (persistent
+  building URLs, low rotation) → a tight window is safe. **rentals_ca** 7/25 recurred
+  (~72% page-1 turnover/day) → live listings drop off fast. **kijiji** 0/45 recurred (100%
+  page-1 turnover/day) → listings are effectively one-night-visible at depth 1.
+- So for high-rotation sources the lever is **deeper scraping** (raise `MAX_PAGES_PER_CITY`
+  so live listings keep reappearing and refreshing `scraped_at`), paired with a wider N.
+  Widening N alone just keeps stale rows around un-refreshed.
+
+**Proposed (named constant, not hardcoded — same discipline as `MIN_RAW_ROWS_PER_SOURCE`):**
+`FRESHNESS_WINDOW_DAYS_BY_SOURCE = {padmapper: 3, rentals_ca: 7, kijiji: 10}` as a _starting_
+guess, explicitly tied to each source's measured rotation + the scrape depth in force. Revisit
+the moment `MAX_PAGES_PER_CITY` changes. Validation: measure per-source recurrence over a week
+of real runs.
+
+### Comp-query equality on `beds` / `postal_code` is lossy — a phantom-in-waiting
+
+The freshness/comp query keys on exact `postal_code` and `beds`. Both are stored lossy:
+
+- **`beds` for padmapper is a building RANGE FLOOR**, not a unit count: `beds=1` means
+  "cheapest unit is a 1-bed", from a `1–3 Bedrooms` building. An exact `beds=2` comp query
+  **silently excludes** every padmapper building whose range covers 2-beds but whose stored
+  floor is 1. Looks correct, returns thin/skewed comps.
+- **`postal_code` precision is mixed**: card-extracted + normalized on some rows,
+  **geocode-approximate** on the ~89% of kijiji rows that got postal from Mapbox (often from
+  a messy title, so neighbourhood-level, not unit-level).
+
+Equality-matching a range-floor `beds` and mixed-precision `postal` is the next phantom:
+a query that _runs_ and returns _confidently wrong_ comps because the keys don't mean what
+`=` assumes. **Known debt — needs a deliberate decision later** (range-aware beds matching;
+postal precision tiers / FSA-level fallback), same as the source-provenance tag. Do not
+solve at write time; it's a read-path concern. Flagged so it's a choice, not a surprise.
+
 ### Step 3 — investment severe-gate: calc engine DONE, frontend wiring REMAINS (don't hide the seam)
 
 Built (calc engine, authoritative): `mode` threaded through the payload/schema;
