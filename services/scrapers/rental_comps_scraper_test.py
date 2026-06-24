@@ -11,6 +11,7 @@ import pytest
 
 import rental_comps_scraper
 from normalization import RawRentalListing
+from services.mapbox_service import GeocodeResult
 
 
 def _raw(
@@ -18,10 +19,16 @@ def _raw(
     rent_raw: str = "$2,150/mo",
     beds_raw: str = "2 Beds",
     source: str = "rentals_ca",
+    url: str | None = None,
 ) -> RawRentalListing:
+    # source_url is the ingestion identity; derive a distinct URL per address so
+    # fixtures with different addresses model different listings (not collapsed).
+    if url is None:
+        slug = "-".join(address.lower().split())
+        url = f"https://example.com/{slug}"
     return RawRentalListing(
         source=source,
-        source_url="https://example.com/x",
+        source_url=url,
         address=address,
         rent_raw=rent_raw,
         beds_raw=beds_raw,
@@ -65,7 +72,7 @@ def mock_pipeline():
     ):
         fetch_keys.return_value = []
         insert.side_effect = lambda listings: len(listings)
-        geocode.return_value = (43.79, -79.53)
+        geocode.return_value = GeocodeResult(43.79, -79.53, None)
         yield sources, fetch_keys, insert, geocode
 
 
@@ -128,32 +135,52 @@ async def test_garbage_listings_discarded(mock_pipeline):
 
 
 @pytest.mark.asyncio
-async def test_cross_source_duplicate_stored_once(mock_pipeline):
+async def test_same_url_repeat_collapsed_in_batch(mock_pipeline):
+    # An over-broad selector emitting the SAME url twice collapses to one row.
     sources, _, insert, _ = mock_pipeline
     sources.return_value = _result(
         [
-            _raw(source="rentals_ca"),
-            _raw(source="kijiji"),  # same unit found on second source
+            _raw(source="rentals_ca", url="https://x/same"),
+            _raw(source="rentals_ca", url="https://x/same"),
         ]
     )
 
     outcome = await rental_comps_scraper.run_nightly_scrape()
-    inserted = outcome.inserted
 
-    assert inserted == 1
+    assert outcome.inserted == 1
 
 
 @pytest.mark.asyncio
-async def test_second_run_same_day_inserts_nothing(mock_pipeline):
-    # TESTING.md Test 8 — running twice must not double the row count
+async def test_distinct_url_crossposts_both_reach_upsert(mock_pipeline):
+    # Same content, different URLs (cross-post) are BOTH kept at ingestion —
+    # cross-post collapse is a comp-query-time concern, not write-time.
+    sources, _, insert, _ = mock_pipeline
+    sources.return_value = _result(
+        [
+            _raw(source="rentals_ca", url="https://rentals.ca/x"),
+            _raw(source="kijiji", url="https://kijiji.ca/x"),
+        ]
+    )
+
+    outcome = await rental_comps_scraper.run_nightly_scrape()
+
+    assert outcome.inserted == 2
+
+
+@pytest.mark.asyncio
+async def test_reseen_listing_reaches_upsert_to_refresh(mock_pipeline):
+    # The freshness fix: a re-seen listing is NOT content-dropped before the
+    # upsert — it reaches insert_rental_listings so its scraped_at refreshes.
+    # No-double-count is now the DB unique index's job, not a write-time filter.
     sources, fetch_keys, insert, _ = mock_pipeline
     sources.return_value = _result([_raw()])
+    # Even with a matching content key "already in the DB", the row still flows
+    # through — content-axis filtering no longer gates ingestion.
     fetch_keys.return_value = [("5 Buttermill Ave, Vaughan, ON L4K 5W4", 2150, 2)]
 
     outcome = await rental_comps_scraper.run_nightly_scrape()
-    inserted = outcome.inserted
 
-    assert inserted == 0
+    assert outcome.inserted == 1  # reached the upsert (would have been 0 before)
 
 
 @pytest.mark.asyncio
@@ -206,7 +233,7 @@ async def test_partial_geocode_failure_all_listings_still_inserted(mock_pipeline
             _raw(address="10 Main St, Toronto, ON M5V 1J1", source="kijiji"),
         ]
     )
-    geocode.side_effect = [(43.79, -79.53), None]
+    geocode.side_effect = [GeocodeResult(43.79, -79.53, None), None]
 
     outcome = await rental_comps_scraper.run_nightly_scrape()
     inserted = outcome.inserted
@@ -215,6 +242,32 @@ async def test_partial_geocode_failure_all_listings_still_inserted(mock_pipeline
     stored = insert.call_args[0][0]
     assert stored[0].lat == 43.79 and stored[0].lng == -79.53
     assert stored[1].lat is None and stored[1].lng is None
+
+
+@pytest.mark.asyncio
+async def test_postal_code_backfilled_from_geocode_when_absent(mock_pipeline):
+    # rentals_ca/kijiji addresses often lack a postal code; the geocode supplies it.
+    sources, _, insert, geocode = mock_pipeline
+    sources.return_value = _result([_raw(address="485 Perth Avenue, Toronto, ON")])
+    geocode.return_value = GeocodeResult(43.66, -79.45, "M6N2W2")
+
+    await rental_comps_scraper.run_nightly_scrape()
+
+    stored = insert.call_args[0][0]
+    assert stored[0].postal_code == "M6N2W2"  # filled from geocode, not the card
+
+
+@pytest.mark.asyncio
+async def test_non_ontario_geocode_postal_not_stored(mock_pipeline):
+    # A geocode landing out of province must not write a non-Ontario postal (MVP scope).
+    sources, _, insert, geocode = mock_pipeline
+    sources.return_value = _result([_raw(address="100 Granville St, Vancouver, BC")])
+    geocode.return_value = GeocodeResult(49.28, -123.12, "V6C1T2")
+
+    await rental_comps_scraper.run_nightly_scrape()
+
+    stored = insert.call_args[0][0]
+    assert stored[0].postal_code is None  # BC postal rejected, left null
 
 
 @pytest.mark.asyncio

@@ -1,9 +1,17 @@
 """
 Deduplication of normalised rental listings.
 
-Rule (spec Section 11.2): same address + rent + beds within DEDUPE_WINDOW_DAYS
-= one record. Applies both within a scrape batch and against rows already
-stored in rental_listings. Historical records are never deleted.
+Ingestion identity is **source_url** (see `dedupe_by_source_url`): one row per
+listing URL, so a re-scraped listing UPDATES its row (refreshing last-seen)
+instead of being dropped. This is what keeps scraped_at trustworthy on rotating
+sources.
+
+The content-key functions below (`dedupe_batch`, `filter_existing`: same
+address + rent + beds) are NO LONGER in the ingestion path — content-axis dedup
+at write time wrongly merges distinct-URL listings and breaks freshness. They are
+retained as the building block for collapsing same-physical-unit cross-posts at
+comp-QUERY time (spec Section 11.2), where read-side comp quality is the concern
+rather than write-side identity.
 
 Pure functions only — the caller supplies existing records; no database here.
 """
@@ -11,7 +19,9 @@ Pure functions only — the caller supplies existing records; no database here.
 from normalization import CleanRentalListing
 
 
-def _dedupe_key(address: str, rent_monthly: int, beds: int | None) -> tuple[str, int, int | None]:
+def _dedupe_key(
+    address: str, rent_monthly: int, beds: int | None
+) -> tuple[str, int, int | None]:
     """
     Build the identity key used for duplicate detection.
 
@@ -28,6 +38,36 @@ def _dedupe_key(address: str, rent_monthly: int, beds: int | None) -> tuple[str,
     """
     normalised_address = " ".join(address.lower().split())
     return (normalised_address, rent_monthly, beds)
+
+
+def dedupe_by_source_url(
+    listings: list[CleanRentalListing],
+) -> list[CleanRentalListing]:
+    """
+    Remove in-batch duplicates by source_url — the sole ingestion identity.
+
+    First occurrence wins. Collapses an over-broad card selector's repeated
+    same-URL cards within one scrape (before geocoding, to save Mapbox calls)
+    WITHOUT collapsing distinct-URL listings that happen to share content — two
+    real identical units, or the same unit cross-posted under different URLs, are
+    kept as separate rows and de-duplicated at comp-QUERY time instead. Keeping
+    them here preserves per-listing last-seen fidelity (each URL refreshes its own
+    scraped_at on re-scrape), which content-axis dedup would destroy.
+
+    Args:
+        listings: Normalised listings from all sources in this run.
+
+    Returns:
+        Listings with duplicate source_urls removed, original order preserved.
+    """
+    seen: set[str] = set()
+    unique: list[CleanRentalListing] = []
+    for listing in listings:
+        if listing.source_url in seen:
+            continue
+        seen.add(listing.source_url)
+        unique.append(listing)
+    return unique
 
 
 def dedupe_batch(listings: list[CleanRentalListing]) -> list[CleanRentalListing]:
@@ -73,5 +113,6 @@ def filter_existing(
     return [
         listing
         for listing in listings
-        if _dedupe_key(listing.address, listing.rent_monthly, listing.beds) not in existing
+        if _dedupe_key(listing.address, listing.rent_monthly, listing.beds)
+        not in existing
     ]

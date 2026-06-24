@@ -24,8 +24,13 @@ import sys
 from dataclasses import dataclass, field
 
 from constants import MIN_RAW_ROWS_PER_SOURCE
-from dedupe import dedupe_batch, filter_existing
-from normalization import CleanRentalListing, RawRentalListing, normalize_listing
+from dedupe import dedupe_by_source_url
+from normalization import (
+    CleanRentalListing,
+    RawRentalListing,
+    is_ontario_postal_code,
+    normalize_listing,
+)
 from services import mapbox_service, supabase_service
 from sources import kijiji, padmapper, rentals_ca
 from sources.browser import launch_browser
@@ -109,18 +114,28 @@ async def geocode_listings(listings: list[CleanRentalListing]) -> None:
     """
     Geocode listings in place, sequentially (Mapbox free-tier friendly).
 
+    Also backfills ``postal_code`` from the geocode response when the source
+    card did not carry one (rentals.ca / kijiji rarely do) — the comp query keys
+    on postal_code, so an empty one makes a row near-useless. Only Ontario
+    postal codes are accepted (MVP scope; a geocode landing out-of-province is
+    left null rather than stored wrong).
+
     Args:
         listings: New listings to geocode. Failures leave lat/lng as None.
     """
     for listing in listings:
-        coords = await mapbox_service.geocode_address(listing.address)
-        if coords is not None:
-            listing.lat, listing.lng = coords
+        geo = await mapbox_service.geocode_address(listing.address)
+        if geo is None:
+            continue
+        listing.lat, listing.lng = geo.lat, geo.lng
+        if listing.postal_code is None and is_ontario_postal_code(geo.postal_code):
+            listing.postal_code = geo.postal_code
 
 
 async def run_nightly_scrape() -> NightlyOutcome:
     """
-    Execute the full nightly pipeline: scrape → normalise → dedupe → geocode
+    Execute the full nightly pipeline: scrape → normalise → dedupe (by
+    source_url) → geocode
     → store, then check per-source yields for broken selectors.
 
     Healthy sources' rows are always stored first — a dead source never costs us
@@ -141,19 +156,22 @@ async def run_nightly_scrape() -> NightlyOutcome:
     ]
     logger.info("Normalised to %d valid listings", len(normalized))
 
-    unique = dedupe_batch(normalized)
-    existing_keys = supabase_service.fetch_recent_dedupe_keys()
-    new_listings = filter_existing(unique, existing_keys)
+    # source_url is the sole ingestion identity. In-batch dedup collapses an
+    # over-broad selector's repeated same-URL cards before geocoding; the upsert
+    # then refreshes every re-seen listing's row (last-seen). NO content-axis
+    # filter against the DB — that would drop still-live listings before their
+    # scraped_at could refresh, making them look delisted (see dedupe.py).
+    unique = dedupe_by_source_url(normalized)
     logger.info(
-        "Deduped: %d in-batch unique, %d new after window check",
+        "In-batch unique by source_url: %d of %d normalised",
         len(unique),
-        len(new_listings),
+        len(normalized),
     )
 
-    await geocode_listings(new_listings)
+    await geocode_listings(unique)
 
-    inserted = supabase_service.insert_rental_listings(new_listings)
-    logger.info("Inserted %d new rental listings", inserted)
+    inserted = supabase_service.insert_rental_listings(unique)
+    logger.info("Upserted %d rental listings (insert + in-place refresh)", inserted)
 
     # ── Per-source yield honesty check ────────────────────────────────────────
     # "The scraper ran" and "the scraper extracted rows" are different claims.
