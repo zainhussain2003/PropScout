@@ -114,6 +114,30 @@ a query that _runs_ and returns _confidently wrong_ comps because the keys don't
 postal precision tiers / FSA-level fallback), same as the source-provenance tag. Do not
 solve at write time; it's a read-path concern. Flagged so it's a choice, not a surprise.
 
+### `scraped_at` / `first_seen_at` timestamp caveats (verified in prod 2026-06-24)
+
+The `first_seen_at` migration is applied and verified: across all 40 recurring rows in the
+verification run, `first_seen_at` stayed frozen while `scraped_at` advanced — the insert-only
+(payload-omitted) vs last-seen (payload-stamped) split works on real writes. Two caveats the
+verification surfaced, both **read-path concerns to handle when the days-on-market / freshness
+query is built** (not code yet):
+
+1. **`days_on_market` needs a `greatest(0, scraped_at - first_seen_at)` clamp.** The two
+   columns use different clocks by necessity — `scraped_at` is **client-stamped** (Python
+   `now()` in the upsert payload, so it can refresh on every upsert) and `first_seen_at` is the
+   **server-side column default** (Postgres `now()` at INSERT, so it stays insert-only). On a
+   brand-new row `scraped_at` lands microseconds _before_ `first_seen_at`, so the subtraction
+   goes very slightly negative (`dom ≈ -0.0`). Benign (sub-second on a days-scale metric), but
+   clamp it at query time so dom is never negative.
+
+2. **`scraped_at` is BATCH-BUILD time, not per-listing fetch time.** It's stamped once when the
+   upsert payload is built, so every row in one run shares the same `scraped_at` regardless of
+   when in the run (scrape → geocode → upsert, possibly many minutes) it was actually fetched.
+   Fine for days-on-market (measured across _days_) and fine for the freshness window (day-scale).
+   But it makes `scraped_at` **unsuitable as a precise "seen at" for any future sub-day freshness
+   need** — if something downstream ever assumes `scraped_at` is when _this listing_ was seen, it
+   will be wrong by up to the run duration. Invisible until depended on; recorded so it isn't.
+
 ### Step 3 — investment severe-gate: calc engine DONE, frontend wiring REMAINS (don't hide the seam)
 
 Built (calc engine, authoritative): `mode` threaded through the payload/schema;
