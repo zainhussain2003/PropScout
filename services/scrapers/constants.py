@@ -3,6 +3,28 @@ Shared constants for the scraper workers.
 No magic numbers in scraper code — every meaningful value lives here.
 """
 
+import os
+
+
+def _env_int(name: str, default: int) -> int:
+    """Read an int from the environment, falling back to ``default`` if unset/invalid.
+
+    Lets the two load-shaping knobs (depth, politeness delay) be overridden from
+    Railway's Variables tab WITHOUT a redeploy — the incident-response lever for
+    the first unattended runs: if the datacenter IP starts getting throttled, drop
+    SCRAPER_MAX_PAGES_PER_CITY to 1 or raise SCRAPER_REQUEST_DELAY_SECONDS from the
+    dashboard and re-run, no deploy cycle. The constant default keeps local
+    behaviour unchanged.
+    """
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
 # ── Rent normalisation ────────────────────────────────────────────────────────
 WEEKS_PER_MONTH = 4.33  # weekly rent → monthly conversion
 DAILY_RENT_THRESHOLD = 200  # a "rent" at or below this is per-day/garbage — discard
@@ -61,7 +83,11 @@ TARGET_CITIES = (
 KIJIJI_CITIES = ("toronto",)
 
 # ── Politeness ────────────────────────────────────────────────────────────────
-REQUEST_DELAY_SECONDS = 4  # min delay between page loads per source
+# Env-overridable (see _env_int) — raise from Railway without a redeploy if the
+# datacenter IP gets throttled on the first unattended runs.
+REQUEST_DELAY_SECONDS = _env_int(
+    "SCRAPER_REQUEST_DELAY_SECONDS", 4
+)  # min delay per page load
 PAGE_LOAD_TIMEOUT_MS = 30_000  # Playwright navigation timeout
 # Depth: search result pages crawled per city per source. Set to 2 as the FIRST
 # datacenter-IP ratchet — the prior default (5) was never run (all validation was
@@ -71,7 +97,9 @@ PAGE_LOAD_TIMEOUT_MS = 30_000  # Playwright navigation timeout
 # working sources; coverage scales ~linearly with no plateau (measured 2026-06-26,
 # see NIGHT_NOTES), so depth 3 is a clean one-variable ratchet AFTER one clean
 # Railway run with the per-source yield alarm watching.
-MAX_PAGES_PER_CITY = 2  # search result pages crawled per city per source
+# Env-overridable (see _env_int): drop to 1 from Railway without a redeploy if the
+# first unattended runs get throttled.
+MAX_PAGES_PER_CITY = _env_int("SCRAPER_MAX_PAGES_PER_CITY", 2)
 
 # ── Per-source yield alarm ──────────────────────────────────────────────────────
 # A source crawling 12 cities × up to 5 pages should return far more than a
