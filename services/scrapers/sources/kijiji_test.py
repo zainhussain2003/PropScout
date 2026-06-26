@@ -189,3 +189,29 @@ async def test_no_link_element_falls_back_to_base_url():
     result = await kijiji._parse_card(_card(href=None))
     assert result is not None
     assert result.source_url == _BASE_URL
+
+
+@pytest.mark.asyncio
+async def test_kijiji_is_gated_to_toronto_only(monkeypatch):
+    # Kijiji's location-ID slug bug means non-Toronto cities return Toronto data,
+    # so it MUST run Toronto only — never fan out and store Toronto under other
+    # city labels (which would corrupt per-city comps). Enforced, not just labeled.
+    from sources.kijiji import KIJIJI_CITIES
+
+    assert KIJIJI_CITIES == ("toronto",)  # the gate is a single city
+
+    called_urls: list[str] = []
+
+    async def fake_open_page(_browser: object, url: str) -> AsyncMock:
+        called_urls.append(url)
+        page = AsyncMock()
+        page.query_selector_all.return_value = []  # no cards → break after page 1
+        return page
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+    await kijiji.fetch_listings(object())
+
+    assert called_urls, "kijiji should have scraped Toronto"
+    assert all("toronto" in u for u in called_urls)  # ONLY Toronto, never other cities
+    for other in ("mississauga", "ottawa", "hamilton", "vaughan"):
+        assert not any(other in u for u in called_urls)

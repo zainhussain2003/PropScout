@@ -138,6 +138,47 @@ query is built** (not code yet):
    need** — if something downstream ever assumes `scraped_at` is when _this listing_ was seen, it
    will be wrong by up to the run duration. Invisible until depended on; recorded so it isn't.
 
+### Kijiji multi-city blocker — DEFERRED, not forgotten (2026-06-25)
+
+The 12-city baseline probe (depth 1) caught a silent phantom: **Kijiji's city slug is
+ignored** — the URL filters by a location ID (`.../c37l1700273`), not the slug, so every
+one of the 12 cities returns the _same_ Toronto/GTA listings (verified: 87–93% URL overlap
+with Toronto, 0 addresses matching the requested city). It returns 200 with full rows for
+every city, so a row-count check passes while 11 of 12 are the **wrong city**. Caught at
+depth-1 multi-city — the cheapest place; a depth ratchet first would have multiplied wrong
+data and made it _harder_ to see.
+
+**Action taken now:** Kijiji is gated to Toronto only — `KIJIJI_CITIES = ("toronto",)` in
+`constants.py`, used by `kijiji.fetch_listings` instead of `TARGET_CITIES`, with an
+enforcement test (`test_kijiji_is_gated_to_toronto_only`). This is **enforced, not labeled**.
+
+**Correction to the rationale (traced 2026-06-25):** the gate is about WASTE, not comp
+corruption. The `rental_listings` table has **no city column** — search-city is never stored;
+rows are located by their geocoded `postal_code` and comps key on `postal_code`. So Kijiji's
+12 identical result sets would just collapse by `source_url` and locate correctly — they would
+NOT mislabel or corrupt per-city comps. The real cost of running it per-city is **11×
+redundant requests for the exact same listings on a bot-aggressive source** (load + block
+risk, zero new coverage). The gate is still correct; the reason is efficiency/safety.
+
+**rentals_ca / padmapper across 12 cities — a sharper characterization (this corrects an
+earlier overstatement):** the 0% cross-city overlap proved each seed returns _distinct_ data,
+but a Vaughan postal-FSA spot-check (positive confirmation, not reasoning) showed rentals_ca's
+city search is a **proximity/radius search, NOT a strict municipal filter**: a "vaughan" seed
+returned 2/8 actually in Vaughan (Thornhill L3T) and 6/8 in adjacent North York (M2R) /
+Richmond Hill (L4C) / Toronto (M9M). **This is fine** — same reason as above: every listing is
+stored + queried by its real geocoded postal, so a North-York-via-Vaughan-search row correctly
+serves North York comps. The city slugs are discovery seeds whose only job is to collectively
+cover the province; per-seed precision doesn't matter. (It does mean per-seed row counts
+overlap at borders, so "12 cities" ≠ 12× distinct inventory.)
+
+**Deferred fix (own sub-project, do NOT bolt onto the depth/Railway work):** build a verified
+`city → Kijiji location-ID` map. The `l#######` codes are undocumented, hierarchical
+(province → region → city), and some target cities may only exist as a broader region code —
+so building it means harvesting + verifying the correct code per city (the same phantom check,
+12 more times). Until then Kijiji is a known Toronto-only coverage limitation (Toronto is the
+densest market anyway). Validate the map the same way: per-city URL distinctness + address
+sanity, before trusting it.
+
 ### Step 3 — investment severe-gate: calc engine DONE, frontend wiring REMAINS (don't hide the seam)
 
 Built (calc engine, authoritative): `mode` threaded through the payload/schema;

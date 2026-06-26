@@ -4,6 +4,11 @@ Kijiji (rental category) source scraper — spec Section 11.2 (TEMPLATE CODE).
 Kijiji rotates markup frequently and is aggressive about bot detection.
 Selectors WILL need tuning on first deploy. Weekly rents appear here more
 than on other sources — normalization handles the ×4.33 conversion.
+
+TORONTO-ONLY (for now): Kijiji filters by a location ID in the URL, not the city
+slug, so every city currently returns Toronto/GTA results. Scraping uses
+KIJIJI_CITIES (= Toronto only), NOT TARGET_CITIES, until a verified
+city→location-ID map exists. See constants.KIJIJI_CITIES and NIGHT_NOTES.
 """
 
 import logging
@@ -11,7 +16,7 @@ import re
 
 from playwright.async_api import Browser
 
-from constants import MAX_PAGES_PER_CITY, TARGET_CITIES
+from constants import KIJIJI_CITIES, MAX_PAGES_PER_CITY
 from normalization import RawRentalListing
 from sources.browser import open_page
 
@@ -67,19 +72,22 @@ def _beds_from_text(text: str) -> str:
 
 async def fetch_listings(browser: Browser) -> list[RawRentalListing]:
     """
-    Scrape active rental listings from Kijiji's apartments category for all
-    target cities.
+    Scrape active rental listings from Kijiji's apartments category.
+
+    Iterates KIJIJI_CITIES (Toronto only) — NOT TARGET_CITIES — because Kijiji's
+    city slug is ignored in favour of a URL location ID, so other cities would
+    return Toronto data under the wrong label (see module docstring / NIGHT_NOTES).
 
     Args:
         browser: Running Playwright browser from sources.browser.
 
     Returns:
-        Raw listings across all cities and pages. Failures are logged and
+        Raw listings across the gated cities and pages. Failures are logged and
         skipped — one broken city never kills the run.
     """
     listings: list[RawRentalListing] = []
 
-    for city in TARGET_CITIES:
+    for city in KIJIJI_CITIES:
         for page_num in range(1, MAX_PAGES_PER_CITY + 1):
             url = _SEARCH_URL.format(city=city, page=page_num)
             page = await open_page(browser, url)

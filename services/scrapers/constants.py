@@ -22,7 +22,14 @@ DEDUPE_WINDOW_DAYS = 7  # same address + rent + beds within 7 days = one record
 ONTARIO_FSA_PREFIXES = ("K", "L", "M", "N", "P")
 
 # City slugs crawled each night. Start with the GTA + major Ontario markets;
-# grow this list as coverage expands.
+# grow this list as coverage expands. rentals_ca and padmapper fan out across ALL
+# of these. NOTE (verified 2026-06-25): these are DISCOVERY SEEDS, not strict
+# municipal filters — rentals_ca runs a proximity/radius search, so a "vaughan"
+# seed also surfaces nearby North York / Richmond Hill listings. That's fine:
+# rows are located by their GEOCODED postal_code (the search city is never
+# stored), and comps key on postal_code — so every discovered listing serves the
+# comps for wherever it actually is. The seeds just need to collectively cover the
+# province; precise per-seed accuracy doesn't matter.
 TARGET_CITIES = (
     "toronto",
     "mississauga",
@@ -37,6 +44,21 @@ TARGET_CITIES = (
     "kitchener",
     "waterloo",
 )
+
+# Kijiji is the EXCEPTION — it is gated to Toronto only, by design, for now.
+# Kijiji filters by a location ID baked into the URL (.../c37l1700273), NOT by the
+# city slug, so every slug currently resolves to the same Toronto/GTA results
+# (verified 2026-06-25: 87–93% URL overlap across all 12 cities, 0 addresses
+# matching the requested city). The cost of running it per-city is NOT corrupted
+# comps — rows are located by their geocoded postal_code (search city is never
+# stored), so the 12 identical result sets just collapse by source_url and locate
+# correctly. The cost is PURELY WASTE: 11× redundant requests for the exact same
+# listings, on a source that is aggressive about bot detection — load + block risk
+# for zero new coverage. So gate it to one city. Until a verified
+# city→Kijiji-location-ID map exists (deferred sub-project — see NIGHT_NOTES
+# "Kijiji multi-city blocker"), Kijiji runs Toronto only. Known coverage
+# limitation, not a silent skip — change it only when the map is built and verified.
+KIJIJI_CITIES = ("toronto",)
 
 # ── Politeness ────────────────────────────────────────────────────────────────
 REQUEST_DELAY_SECONDS = 4  # min delay between page loads per source
