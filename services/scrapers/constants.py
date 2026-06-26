@@ -63,7 +63,15 @@ KIJIJI_CITIES = ("toronto",)
 # ── Politeness ────────────────────────────────────────────────────────────────
 REQUEST_DELAY_SECONDS = 4  # min delay between page loads per source
 PAGE_LOAD_TIMEOUT_MS = 30_000  # Playwright navigation timeout
-MAX_PAGES_PER_CITY = 5  # search result pages crawled per city per source
+# Depth: search result pages crawled per city per source. Set to 2 as the FIRST
+# datacenter-IP ratchet — the prior default (5) was never run (all validation was
+# depth-1, residential IP), so making the first unattended Railway run the deepest
+# would stack two unvalidated risks (does the IP get blocked × does it get blocked
+# hammering deep pages fast). Depth 2 ≈ 1040 distinct listings/night across the 2
+# working sources; coverage scales ~linearly with no plateau (measured 2026-06-26,
+# see NIGHT_NOTES), so depth 3 is a clean one-variable ratchet AFTER one clean
+# Railway run with the per-source yield alarm watching.
+MAX_PAGES_PER_CITY = 2  # search result pages crawled per city per source
 
 # ── Per-source yield alarm ──────────────────────────────────────────────────────
 # A source crawling 12 cities × up to 5 pages should return far more than a

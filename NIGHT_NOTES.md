@@ -179,6 +179,42 @@ so building it means harvesting + verifying the correct code per city (the same 
 densest market anyway). Validate the map the same way: per-city URL distinctness + address
 sanity, before trusting it.
 
+### Multi-city coverage — depth pays out, DON'T prune the city list (measured 2026-06-26)
+
+The depth-vs-prune fork was resolved by measurement (run-wide distinct after whole-run dedup,
+pages 1–3 × 12 cities, rentals_ca + padmapper), not judgment. Whole-run dedup is confirmed
+double-layered (`dedupe_by_source_url` over the full concatenated batch before geocode, +
+`insert_rental_listings` re-dedup), so cross-city URL collision is safe.
+
+**Cross-city overlap is high but depth still pays out, linearly:**
+
+| source     | depth 1 | depth 2 | depth 3 | per-depth marginal | cross-city dup |
+| ---------- | ------- | ------- | ------- | ------------------ | -------------- |
+| rentals_ca | 352     | 630     | 909     | +278 / +279 (flat) | ~62%           |
+| padmapper  | 200     | 366     | 508     | +166 / +142        | ~20%           |
+
+The "overlap eats depth" pessimistic case is **false** — dup % stays flat while absolute
+distinct-new per depth is large and steady (no plateau, consistent with the earlier
+Toronto-only depth-5 finding).
+
+**DON'T prune the city list — the depth-1 redundancy was a shallow-scraping artifact.** At
+depth 1, Waterloo/Richmond-Hill added only +8/+16 distinct (looked prunable). At depth 3, each
+city's _unique-to-city_ contribution (listings found via NO other city) is real: london 99,
+ottawa 90, hamilton 89, toronto/brampton 80, … kitchener/waterloo 31 each. **820 of 909
+distinct rentals_ca listings (90%) are surfaced by exactly one city** — every city pulls its
+weight at depth. Each suburb's distinct inventory lives DEEPER in its own results; pruning on
+depth-1 marginals would cut ~31+ real listings per "redundant" city. (Corrects an earlier
+"prune the leaky city list" suggestion that was based on the misleading depth-1 number.)
+
+**Coverage / cost curve** (distinct listings/night, both sources + ~46 kijiji Toronto):
+depth 1 ≈ 600, depth 2 ≈ 1040, depth 3 ≈ 1460. Nightly = `25 × D` page loads
+(12 rentals_ca + 12 padmapper + 1 kijiji). Depth 3 ≈ 75 loads ≈ 7–8 min + geocoding. No
+blocking through the 72-request probe — Railway-IP caveat still live at real nightly volume.
+
+**Decision pending:** ratchet `MAX_PAGES_PER_CITY` to 2 or 3 (keep all cities), with the
+per-source yield alarm watching the first real Railway runs. Freshness-window retune still
+waits for multi-night recurrence data at the chosen depth.
+
 ### Step 3 — investment severe-gate: calc engine DONE, frontend wiring REMAINS (don't hide the seam)
 
 Built (calc engine, authoritative): `mode` threaded through the payload/schema;
