@@ -1023,7 +1023,7 @@ propscout/
 │
 ├── docs/                              # All project documentation — keep every file up to date
 │   ├── propscout_platform_spec.md     # Single source of truth — features, formulas, architecture
-│   ├── CLAUDE.md                      # This file — coding standards, structure, session rules
+│   ├── CLAUDE.md                      # POINTER ONLY → root CLAUDE.md is canonical (decision 2026-07-01)
 │   ├── TODO.md                        # Full backlog across all phases
 │   ├── MVP_TODO.md                    # MVP scope only — tick off as completed
 │   ├── TESTING.md                     # Test for every feature — update when features are added
@@ -1080,6 +1080,8 @@ propscout/
 │   │       │   │   ├── ModeModal.tsx          # For-sale/for-rent routing modal
 │   │       │   │   ├── ProgressDisplay.tsx    # Scraping progress screen
 │   │       │   │   ├── SignInModal.tsx        # Sign-in / sign-up bottom-sheet
+│   │       │   │   ├── BottomSheet.tsx        # Mobile bottom-sheet wrapper (slide-up from bottom)
+│   │       │   │   ├── StickyActionBar.tsx    # Mobile-only sticky bottom bar (Save / Share / PDF)
 │   │       │   │   └── ErrorBoundary.tsx      # Root error boundary — app never blank-screens
 │   │       │   │
 │   │       │   ├── analysis/          # Domain components — used across investor + landlord reports
@@ -1158,18 +1160,22 @@ propscout/
 │   │       │   ├── tiers.ts           # Tier names, prices, analysis limits
 │   │       │   └── thresholds.ts      # Deal score brackets, confidence thresholds
 │   │       │
-│   │       └── pages/                 # One file per route
-│   │           ├── index.tsx                  # / — Landing + URL paste home
-│   │           ├── analyzing.tsx              # /analyzing — Scraping progress screen
-│   │           ├── analyzing-manual.tsx       # /analyzing/manual — Manual entry fallback
-│   │           ├── report.[token].tsx         # /r/[token] — Shareable report (all 4 modes)
-│   │           ├── account.tsx                # /account — Saved, profile, plan, notifications
-│   │           ├── welcome-to-pro.tsx         # /welcome-to-pro — Stripe success return
-│   │           ├── checkout-cancelled.tsx     # /checkout/cancelled — Stripe cancel return
-│   │           ├── auth.confirm.tsx           # /auth/confirm — Magic link
-│   │           ├── auth.reset.tsx             # /auth/reset — Password reset request
-│   │           ├── auth.reset.confirm.tsx     # /auth/reset/confirm
-│   │           ├── auth.verified.tsx          # /auth/verified
+│   │       └── pages/                 # One file per route (see App.tsx for the router)
+│   │           ├── LandingPage.tsx            # / — Landing + URL paste home (+ landing.test.tsx)
+│   │           ├── analyzing.tsx              # /analyzing — Scraping progress + manual-entry fallback
+│   │           ├── ReportPage.tsx             # /r/:token — LIVE shareable report, all 4 modes (+ ReportPage.test.tsx)
+│   │           ├── InvestorReport.tsx         # /investor-report — demo route (fixtures)
+│   │           ├── TenantReport.tsx           # /tenant-report — demo route (fixtures)
+│   │           ├── PersonalBuyerPage.tsx      # /personal-report demo + real renderer used by ReportPage for mode=personal
+│   │           ├── LandlordPage.tsx           # /landlord-report — demo route (fixtures)
+│   │           ├── AccountPage.tsx            # /account — saved, profile, plan, notifications
+│   │           ├── StripeWelcomePage.tsx      # /welcome-to-pro — Stripe success return
+│   │           ├── StripeCancelledPage.tsx    # /checkout/cancelled — Stripe cancel return
+│   │           ├── MagicLinkConfirmedPage.tsx # /auth/confirm
+│   │           ├── MagicLinkSentPage.tsx      # (shown from sign-in flow)
+│   │           ├── PasswordResetRequestPage.tsx  # /auth/reset
+│   │           ├── PasswordResetConfirmPage.tsx  # /auth/reset/confirm
+│   │           ├── EmailVerifiedPage.tsx      # /auth/verified
 │   │           ├── PrivacyPage.tsx            # /privacy — PIPEDA privacy policy with TOC
 │   │           ├── TermsPage.tsx              # /terms — Terms of Service with TOC
 │   │           ├── legal/
@@ -1252,28 +1258,41 @@ propscout/
 │   │           ├── golden_cases.json  # 50+ labelled listing descriptions
 │   │           └── test_extraction.py # Accuracy gate — must pass 95%+ before merging
 │   │
-│   └── scrapers/                      # Playwright workers — Railway scheduled jobs
+│   └── scrapers/                      # Python scrapers — per-listing service + nightly Railway job
 │       ├── README.md                  # Deploy + first-run checklist (env vars, run #1 = selector test, yield-check)
 │       ├── requirements.txt           # playwright, supabase, httpx, pytest
 │       ├── railway.json               # Nightly cron config — 0 6 * * * UTC (2am ET)
 │       ├── conftest.py                # Pytest path setup
-│       ├── constants.py               # Rent bounds, dedupe window, target cities, politeness delays
-│       ├── realtor_scraper.py         # STUB — Week 1–2, not yet implemented
+│       ├── constants.py               # Rent bounds, dedupe window, target cities, depth, politeness delays
+│       ├── main.py                    # FastAPI scraper service — POST /scrape (called by the API's scrape route)
+│       ├── realtor_scraper.py         # Per-listing Realtor.ca scraper via ScraperAPI premium (dataLayer + JSON-LD parse)
 │       ├── rental_comps_scraper.py + rental_comps_scraper_test.py  # Nightly pipeline orchestrator
 │       ├── normalization.py + normalization_test.py  # Rent/beds/postal parsing — pure functions
 │       ├── dedupe.py + dedupe_test.py # Same address + rent + beds within 7 days = one record
 │       ├── sources/                   # One module per rental site (selectors are TEMPLATE)
-│       │   ├── browser.py             # Shared Playwright launch + politeness delay
-│       │   ├── rentals_ca.py
-│       │   ├── kijiji.py
-│       │   └── padmapper.py
+│       │   ├── browser.py + browser_test.py  # Shared Playwright launch, politeness delay, PageFetch block detection
+│       │   ├── rentals_ca.py + rentals_ca_test.py
+│       │   ├── kijiji.py + kijiji_test.py    # Gated to Toronto (city slug ignored by Kijiji — enforced by test)
+│       │   └── padmapper.py + padmapper_test.py
 │       └── services/                  # Service layer — external calls never inline
-│           ├── supabase_service.py    # Dedupe-key fetch + insert-only writes
+│           ├── supabase_service.py    # source_url upsert writes (scraped_at refresh, first_seen_at insert-only)
 │           └── mapbox_service.py      # Geocoding, non-fatal on failure
 │
-└── supabase/
-    └── migrations/                    # All schema changes — never edit DB directly in dashboard
-        └── 20260610_initial_schema.sql  # All 10 tables + RLS + comp-query/dedupe indexes
+├── supabase/
+│   └── migrations/                    # All schema changes — never edit DB directly in dashboard
+│       ├── 20260610_initial_schema.sql  # All 10 tables + RLS + comp-query/dedupe indexes
+│       ├── 20260622_align_to_initial_schema.sql
+│       ├── 20260622_add_listing_extras.sql   # rent_monthly, city, walk_score, has_sanity_warnings
+│       ├── 20260623_add_rental_listings_source_url_unique.sql
+│       ├── 20260623_add_score_version.sql
+│       └── 20260624_add_rental_listings_first_seen_at.sql
+│
+└── Week3-4 Front end/                 # External test suites — referenced from vite.config.ts includes
+    ├── PR4/                           # Investor report + shared component tests
+    ├── PR5/                           # Tenant report component tests
+    ├── PR6/                           # Personal buyer + landlord report tests
+    ├── PR7/                           # Paywall, Account, Auth, States tests
+    └── PR8/                           # Mobile responsive pass tests (legal, bottom sheet, sticky bar, routes, regression)
 ```
 
 ### Keeping the structure accurate

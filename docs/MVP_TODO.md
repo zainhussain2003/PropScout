@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026 — ticked items confirmed complete as of PR 10 (fix/visual-qa-pr1-pr3)
+Last updated: 2026-07-01 — Realtor.ca scraper section reconciled to shipped code (was stale; the per-listing pipeline works end-to-end against live Realtor.ca URLs via ScraperAPI)
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -17,17 +17,21 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Realtor.ca scraper
 
-- [ ] Extract listing ID from Realtor.ca URL
-- [ ] Call Realtor.ca internal JSON API with correct headers (spec Section 11.2)
-- [ ] Parse: address, price, beds, baths, sqft, property type
-- [ ] Parse: annual taxes (taxes_known = true/false)
-- [ ] Parse: condo fee (condo_fee_known = true/false)
-- [ ] Parse: year built (year_built_known = true/false)
-- [ ] Parse: listing type (for_sale vs for_rent)
-- [ ] Parse: days on market, photo URLs, listing description
-- [ ] Store to `listings` table in Supabase
-- [ ] Handle scraper failure → return partial data for manual entry fallback
-- [ ] Rate limiting: 1 request per 4 seconds, rotate 3 proxy IPs
+> Implemented in `services/scrapers/realtor_scraper.py` — approach changed from the spec's
+> internal JSON API (Incapsula blocks direct api2.realtor.ca calls) to fetching the listing
+> page via **ScraperAPI `premium=true`** and parsing dataLayer + JSON-LD + details labels.
+
+- [x] Validate/extract listing ID from Realtor.ca URL (`/real-estate/<id>/` pattern gate)
+- [x] ~~Call Realtor.ca internal JSON API with correct headers~~ — superseded: ScraperAPI premium page fetch (render=true 500s on Realtor.ca; premium HTML already contains all parsed blocks)
+- [x] Parse: address, price, beds, baths, sqft (m²→sqft), property type
+- [x] Parse: annual taxes (taxes_known = true/false)
+- [x] Parse: condo fee (condo_fee_known = true/false — sometimes JS-injected, stays unknown then)
+- [x] Parse: year built (year_built_known = true/false)
+- [x] Parse: listing type (for_sale vs for_rent — leasePrice vs price in dataLayer)
+- [ ] Parse: days on market (still `None` — not present in premium HTML) — photo URLs ✅ + listing description ✅ are done
+- [x] Store to `listings` table in Supabase (via API `POST /scrape` → `saveListing`)
+- [x] Handle scraper failure → partial data + `missingFields` for manual entry fallback (incl. implausible for-rent rent → `rent_monthly`)
+- [x] ~~Rate limiting: 1 req/4s, rotate 3 proxy IPs~~ — superseded: ScraperAPI manages proxies; scrapes are per-listing on demand, not bulk
 
 ### Zillow.ca scraper
 

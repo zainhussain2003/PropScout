@@ -22,11 +22,11 @@
 
 ## Phase 2 — Blocked on user input 🔒
 
-| Item                   | Blocked on                             | Notes                                                                                                                                                                                                                 |
-| ---------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ScrapeAPI wiring**   | API key from user                      | Realtor.ca returns 403 from cloud IPs (`x-deny-reason: host_not_allowed`). User has ScrapeAPI subscription. Fix = `SCRAPER_API_KEY` env var + route httpx through proxy in `realtor_scraper.py`. ~1 env var + 1 line. |
-| **F — Golden dataset** | 47 real listing descriptions from user | `golden_cases.json` has 3 of 50 required entries. The 95% gate passes trivially but is meaningless at this size.                                                                                                      |
-| **Stripe products**    | Price IDs from user's Stripe dashboard | Create Investor Pro / Professional / Team products, put price IDs in `.env` (`STRIPE_PRICE_PRO` etc. — placeholders already in `.env.example`).                                                                       |
+| Item                     | Blocked on                             | Notes                                                                                                                                                                                                                                                                                                          |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~**ScrapeAPI wiring**~~ | ✅ resolved                            | `realtor_scraper.py` fetches via ScraperAPI `premium=true` with `SCRAPER_API_KEY`; per-listing pipeline verified end-to-end against live Realtor.ca URLs (see NIGHT_NOTES). Remaining nicety: `render=true` 500s on Realtor.ca (ScraperAPI support ticket) — would recover JS-injected condo fee / year built. |
+| **F — Golden dataset**   | 47 real listing descriptions from user | `golden_cases.json` has 3 of 50 required entries. The 95% gate passes trivially but is meaningless at this size.                                                                                                                                                                                               |
+| **Stripe products**      | Price IDs from user's Stripe dashboard | Create Investor Pro / Professional / Team products, put price IDs in `.env` (`STRIPE_PRICE_PRO` etc. — placeholders already in `.env.example`).                                                                                                                                                                |
 
 ## Phase 3 — Deferred (requires full pipeline live)
 
@@ -41,19 +41,25 @@
 
 ---
 
-## Current test baseline (keep green)
+## Current test baseline (keep green) — measured 2026-07-01
 
 | Suite              | Count | Command                                               |
 | ------------------ | ----- | ----------------------------------------------------- |
-| Python calc-engine | 286   | `python3 -m pytest services/calc-engine/ -q`          |
-| API (Jest)         | 123   | `npm test --workspace=apps/api`                       |
-| Web (Vitest)       | 779   | `cd apps/web && npx vitest run`                       |
+| Python calc-engine | 314   | `python -m pytest services/calc-engine/ -q`           |
+| API (Jest)         | 136   | `npm test --workspace=apps/api`                       |
+| Web (Vitest)       | 809   | `cd apps/web && npx vitest run`                       |
+| Scrapers (pytest)  | 146   | `python -m pytest services/scrapers/ -q`              |
 | Typecheck          | clean | `npm run typecheck --workspace=apps/web` / `apps/api` |
 
-> Scraper tests (`services/scrapers/`) error on collection in this environment (missing playwright deps) — pre-existing, not a regression.
+> The old "scraper tests error on collection (missing playwright deps)" caveat no longer
+> holds on the current dev machine — the scraper suite collects and passes; treat scraper
+> failures as real regressions, not environment noise.
 
 ## Working agreement
 
-- Branch: `claude/codebase-status-next-b2uufc` (PR #16). Never push elsewhere.
+- Branch: `feat/combined-route-wiring-and-status` — `claude/codebase-status-next-b2uufc`
+  (PR #16) was merged into it and is stale; verify `git branch --show-current` rather than
+  trusting this line if they ever disagree again.
 - After every item: run affected suites + typecheck, update this file, commit, push.
-- All Phase 1 items done. Next: decide on the two 🟡 remainders (Python inf clamp in `investment.py:190`, realistic rent bounds enforcement).
+- All Phase 1 items done (items 3 + 4 closed 2026-07-01: non-finite break-even sanity guard,
+  $500–$10k rent bounds).
