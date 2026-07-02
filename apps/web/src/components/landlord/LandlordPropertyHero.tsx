@@ -276,6 +276,8 @@ export function LandlordPropertyHero({
               tone={score.tone}
               size="lg"
               label="Landlord score / 100"
+              showVerdict
+              verdictLabel={score.label}
               animate
             />
           </div>

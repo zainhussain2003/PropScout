@@ -108,19 +108,21 @@ describe('useInvestorReport — sunScout wiring', () => {
     vi.clearAllMocks()
   })
 
-  it('demo mode (vaughan): sunScout is null — no live analysis', () => {
+  it('demo mode (vaughan): sunScout is the Vaughan design fixture (score 84)', () => {
     const { result } = renderHook(() => useInvestorReport(VAUGHAN_LISTING, VAUGHAN_RENTAL))
 
-    expect(result.current.sunScout).toBeNull()
+    expect(result.current.sunScout?.sunScore).toBe(84)
+    expect(result.current.sunScout?.verdict).toBe('excellent')
   })
 
-  it('demo mode (hamilton): sunScout is null — no live analysis', () => {
+  it('demo mode (hamilton): sunScout is the Hamilton design fixture (score 62)', () => {
     const { result } = renderHook(() => {
       const hamiltonListing: ListingData = { ...VAUGHAN_LISTING, id: 'hamilton' }
       return useInvestorReport(hamiltonListing, VAUGHAN_RENTAL)
     })
 
-    expect(result.current.sunScout).toBeNull()
+    expect(result.current.sunScout?.sunScore).toBe(62)
+    expect(result.current.sunScout?.verdict).toBe('good')
   })
 
   it('live mode: sunScout propagates from analysis when available', async () => {

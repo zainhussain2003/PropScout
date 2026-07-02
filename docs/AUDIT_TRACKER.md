@@ -41,15 +41,52 @@
 
 ---
 
-## Current test baseline (keep green) — measured 2026-07-01
+## Current test baseline (keep green) — measured 2026-07-02
 
 | Suite              | Count | Command                                               |
 | ------------------ | ----- | ----------------------------------------------------- |
-| Python calc-engine | 314   | `python -m pytest services/calc-engine/ -q`           |
-| API (Jest)         | 136   | `npm test --workspace=apps/api`                       |
-| Web (Vitest)       | 809   | `cd apps/web && npx vitest run`                       |
+| Python calc-engine | 324   | `python -m pytest services/calc-engine/ -q`           |
+| API (Jest)         | 152   | `npm test --workspace=apps/api`                       |
+| Web (Vitest)       | 838   | `cd apps/web && npx vitest run`                       |
 | Scrapers (pytest)  | 146   | `python -m pytest services/scrapers/ -q`              |
 | Typecheck          | clean | `npm run typecheck --workspace=apps/web` / `apps/api` |
+
+## Visual-polish pass (2026-07-02) — prototype-fidelity fixes
+
+Side-by-side audit of every built page against the 13 HTML prototypes
+(headless tile screenshots, app vs `npx serve docs/…/designs`). Fixed:
+
+- **Photo placeholders** — `PropertyHero` + `TenantReport` hero hard-coded flat
+  `var(--line)` tiles with centered labels; now use the design's `.photo-ph`
+  hatch texture with bottom-left mono labels (class already existed in
+  global.css, was unused on these pages).
+- **DealScore gauge** — number was small + tone-coloured; now large ink serif
+  (`size*0.42`) per report-preview.jsx, with the verdict pill rendered INSIDE
+  the ring (border + 8% tint). All hero gauges pass `showVerdict`; tenant,
+  personal and sunscout gauges pass `max={100}` (arc was drawn against /95).
+- **RentalCompsBar** — rebuilt to the prototype composition: "Asking rent"
+  serif header + market-position pill, accent gradient bar with P25/P50/P75
+  ticks, CSS-hover diamond tooltip, percentile labels, optional 12-mo
+  trend/DOM/vacancy context strip (new `context` prop).
+- **MiniMap placeholder** — flat grid replaced with the prototype's street-grid
+  mock (park, river, road casings, buildings, halo subject pin, price-tag
+  comp pins, zoom controls, attribution).
+- **Section question copy** — InvestorReport + ReportPage(live) + TenantReport
+  (live sections) had invented questions; restored the prototype wording
+  ("What could break this thesis?", "Will the bank actually fund this?", …).
+  LandlordPage's rewrites are deliberate owner-POV adaptations — kept.
+- **AI verdict eyebrows** — TruncatedVerdict hardcoded "investor verdict" on
+  all four modes; now a prop, mode-correct everywhere (tenant / home buyer /
+  landlord / investor), including landlord mode on /r/:token.
+- **SunScout demo fixtures** — demo routes showed the Phase-2 placeholder while
+  every prototype shows the full sun section; added design-fixture SunScout
+  data (Vaughan 84 / Hamilton 62 / Charles 84) + mode-specific question prop.
+  (Landlord demo keeps the placeholder — the landlord prototype has no sun
+  section. Tenant window-by-window card skipped: no per-window data exists.)
+- **Metric tiles** — values were mono; design uses Instrument Serif.
+- **Dark-mode parity** — 46 raw `rgba(255,255,255,…)` on ink cards (invisible
+  on the cream-inverted dark-mode cards) → `color-mix(in oklab, var(--bg) N%)`.
+  This fixes dark-mode readability the prototypes themselves get wrong.
 
 > The old "scraper tests error on collection (missing playwright deps)" caveat no longer
 > holds on the current dev machine — the scraper suite collects and passes; treat scraper

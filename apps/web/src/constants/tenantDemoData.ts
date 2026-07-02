@@ -23,6 +23,7 @@ import type {
   TenantCostLine,
   TenantRealityItem,
   TenantChecklistItem,
+  SunScoutResult,
 } from '../types/analysis'
 
 // ── Listing ────────────────────────────────────────────────────────────────────
@@ -261,6 +262,20 @@ export const CHARLES_COST_LINES: TenantCostLine[] = [
   { k: 'Heat + water + A/C', asking: 0, target: 0, included: true, note: 'included in rent' },
   { k: 'Parking', asking: 150, target: 0, included: 'maybe', note: 'unclear — confirm' },
 ]
+
+// ── SunScout (§09) ───────────────────────────────────────────────────────────
+// Fixture matching tenant-sections-2.jsx::TenantSunScoutSection — south-facing
+// 37th-floor unit, no obstruction within 100m.
+
+export const CHARLES_SUNSCOUT: SunScoutResult = {
+  annualPeakSunHours: 1512,
+  summerDailyHours: 6.1,
+  winterDailyHours: 1.8,
+  seasonalGrid: { Dec: 52, Mar: 110, Jun: 184, Sep: 132 },
+  monthlyHours: [62, 78, 110, 138, 168, 184, 188, 168, 132, 96, 64, 52],
+  sunScore: 84,
+  verdict: 'excellent',
+}
 
 // ── Confirm-before-signing checklist (§12) ───────────────────────────────────
 

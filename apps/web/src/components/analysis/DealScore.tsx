@@ -71,7 +71,7 @@ export function DealScore({
   verdictLabel,
 }: DealScoreProps): JSX.Element {
   const px = SIZE_MAP[size]
-  const strokeWidth = Math.round(px * 0.085)
+  const strokeWidth = Math.max(5, Math.round(px * 0.075))
   const R = (px - strokeWidth) / 2
   const circumference = 2 * Math.PI * R
   const cx = px / 2
@@ -134,7 +134,7 @@ export function DealScore({
           />
         </svg>
 
-        {/* Numeric score + optional label */}
+        {/* Numeric score + optional label + optional verdict pill (all inside the ring) */}
         <div
           style={{
             position: 'absolute',
@@ -143,16 +143,16 @@ export function DealScore({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 3,
+            padding: strokeWidth + 2,
           }}
         >
           <span
             className="serif tabular"
             style={{
-              fontSize: px * 0.235,
+              fontSize: px >= 80 ? px * 0.42 : px * 0.52,
               lineHeight: 1,
-              letterSpacing: '-0.02em',
-              color,
+              fontWeight: 400,
+              color: 'var(--ink)',
             }}
           >
             {clamped}
@@ -161,34 +161,37 @@ export function DealScore({
             <span
               className="mono"
               style={{
-                fontSize: Math.max(8, px * 0.071),
+                fontSize: 9,
                 color: 'var(--muted)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.12em',
                 textAlign: 'center',
-                paddingInline: 6,
-                lineHeight: 1.2,
+                marginTop: 6,
+                whiteSpace: 'nowrap',
               }}
             >
               {label}
             </span>
           )}
+          {showVerdict && (
+            <span
+              style={{
+                marginTop: 6,
+                fontSize: 11,
+                fontWeight: 500,
+                color,
+                padding: '3px 10px',
+                borderRadius: 999,
+                border: `1px solid ${color}`,
+                background: `color-mix(in oklab, ${color} 8%, transparent)`,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {verdictLabel ?? verdictLabelForScore(clamped)}
+            </span>
+          )}
         </div>
       </div>
-
-      {showVerdict && (
-        <span
-          className="mono"
-          style={{
-            fontSize: 10,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color,
-          }}
-        >
-          {verdictLabel ?? verdictLabelForScore(clamped)}
-        </span>
-      )}
     </div>
   )
 }

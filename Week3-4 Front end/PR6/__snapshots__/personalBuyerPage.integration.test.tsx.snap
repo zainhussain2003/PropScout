@@ -377,7 +377,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           style="align-items: center; gap: 8px;"
         >
           <div
-            aria-label="Deal score: 74 out of 95"
+            aria-label="Deal score: 74 out of 100"
             style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
           >
             <div
@@ -391,19 +391,24 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
                 width="180"
               />
               <div
-                style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+                style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px;"
               >
                 <span
                   class="serif tabular"
-                  style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--pass);"
+                  style="font-size: 75.6px; line-height: 1; font-weight: 400; color: var(--ink);"
                 >
                   74
                 </span>
                 <span
                   class="mono"
-                  style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+                  style="font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; text-align: center; margin-top: 6px; white-space: nowrap;"
                 >
                   Home score / 100
+                </span>
+                <span
+                  style="margin-top: 6px; font-size: 11px; font-weight: 500; color: var(--pass); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--pass); background: color-mix(in oklab, var(--pass) 8%, transparent); white-space: nowrap;"
+                >
+                  Good deal
                 </span>
               </div>
             </div>
@@ -690,7 +695,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       </div>
       <div
         class="row gap-8"
-        style="color: rgba(255, 255, 255, 0.55); margin-bottom: 20px; position: relative; z-index: 1;"
+        style="color: color-mix(in oklab, var(--bg) 55%, transparent); margin-bottom: 20px; position: relative; z-index: 1;"
       >
         <span
           class="live-dot"
@@ -707,7 +712,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         />
         <span
           class="mono"
-          style="font-size: 10px; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.4);"
+          style="font-size: 10px; letter-spacing: 0.12em; color: color-mix(in oklab, var(--bg) 40%, transparent);"
         >
           claude · sonnet 4.6
         </span>
@@ -726,7 +731,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       </div>
       <div
         class="serif"
-        style="line-height: 1.5; color: rgba(255, 255, 255, 0.78); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
+        style="line-height: 1.5; color: color-mix(in oklab, var(--bg) 78%, transparent); margin-top: 22px; max-width: 880px; position: relative; z-index: 1;"
       >
         At 
         <span
@@ -755,7 +760,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       </div>
       <div
         class="row gap-16"
-        style="margin-top: 28px; color: rgba(255, 255, 255, 0.5); font-size: 12px; position: relative; z-index: 1; flex-wrap: wrap;"
+        style="margin-top: 28px; color: color-mix(in oklab, var(--bg) 50%, transparent); font-size: 12px; position: relative; z-index: 1; flex-wrap: wrap;"
       >
         <span
           class="row gap-6"
@@ -3569,17 +3574,17 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               width="180"
             />
             <div
-              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px;"
             >
               <span
                 class="serif tabular"
-                style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--pass);"
+                style="font-size: 75.6px; line-height: 1; font-weight: 400; color: var(--ink);"
               >
                 76
               </span>
               <span
                 class="mono"
-                style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+                style="font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; text-align: center; margin-top: 6px; white-space: nowrap;"
               >
                 Light score / 100
               </span>
@@ -4445,7 +4450,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       >
         <span
           class="mono"
-          style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5);"
+          style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 50%, transparent);"
         >
           Next step
         </span>
@@ -4462,7 +4467,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
            from a local agent?
         </h3>
         <p
-          style="font-size: 15px; color: rgba(255, 255, 255, 0.7);"
+          style="font-size: 15px; color: color-mix(in oklab, var(--bg) 70%, transparent);"
         >
           We'll send this report to a verified 
           Burlington
@@ -4489,7 +4494,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           </button>
           <button
             class="btn"
-            style="background: transparent; color: var(--bg); border: 1px solid rgba(255, 255, 255, 0.25);"
+            style="background: transparent; color: var(--bg); border: 1px solid color-mix(in oklab, var(--bg) 25%, transparent);"
           >
             How this works
           </button>

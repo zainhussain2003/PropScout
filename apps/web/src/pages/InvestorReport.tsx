@@ -145,7 +145,7 @@ function DueDiligenceSection(): JSX.Element {
         topic="Due diligence"
         question={
           <>
-            What to check before you <em>sign</em>.
+            Get these <em>answered</em> first.
           </>
         }
         verdict={`${doneCount} / ${totalItems} complete`}
@@ -278,7 +278,7 @@ function CashToCloseSection({
         topic="Cash to close"
         question={
           <>
-            What do you need <em>on day one</em>?
+            What you need in the <em>bank</em> on closing day.
           </>
         }
         verdict={fmtMoney(computedTotal)}
@@ -394,7 +394,7 @@ function RentalCompsSection({
         topic="Rental comps"
         question={
           <>
-            What will tenants <em>actually</em> pay?
+            What can it <em>realistically</em> rent for?
           </>
         }
         verdict={verdictLabel}
@@ -473,7 +473,7 @@ function RiskFlagsSection({ listing }: RiskFlagsSectionProps): JSX.Element {
         topic="Risk flags"
         question={
           <>
-            What could go <em>wrong</em>?
+            What could <em>break</em> this thesis?
           </>
         }
         verdict={verdictLabel}
@@ -548,7 +548,7 @@ function FinancingSection({
         topic="Financing scenarios"
         question={
           <>
-            How does leverage change the <em>return</em>?
+            How do the <em>numbers</em> change?
           </>
         }
       />
@@ -864,7 +864,7 @@ export function InvestorReport({
                 topic="OSFI stress test"
                 question={
                   <>
-                    Can you <em>qualify</em> at the stress-test rate?
+                    Will the bank actually <em>fund</em> this?
                   </>
                 }
                 verdict={metrics.osfi.pass ? 'Passes GDS test' : 'Fails GDS test'}
@@ -887,7 +887,7 @@ export function InvestorReport({
                 topic="Equity build"
                 question={
                   <>
-                    How does your wealth grow over <em>20 years</em>?
+                    What <em>builds</em> over time?
                   </>
                 }
               />

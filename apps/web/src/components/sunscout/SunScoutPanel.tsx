@@ -5,7 +5,7 @@
  * Falls back to the Phase 2 placeholder when sunScout is null.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { SunScoutResult } from '../../types/analysis'
 import { DealScore } from '../analysis/DealScore'
 import { SectionHead } from '../shared/SectionHead'
@@ -50,17 +50,19 @@ function verdictTone(v: SunScoutResult['verdict']): 'pass' | 'caution' | 'fail' 
 
 // ── Placeholder (shown when lat/lng unavailable) ──────────────────────────────
 
-function SunScoutPlaceholder({ sectionNumber }: { sectionNumber: string }): JSX.Element {
+function SunScoutPlaceholder({
+  sectionNumber,
+  question,
+}: {
+  sectionNumber: string
+  question: ReactNode
+}): JSX.Element {
   return (
     <section className="container tr-section" data-section={sectionNumber}>
       <SectionHead
         n={sectionNumber}
         topic="SunScout"
-        question={
-          <>
-            How <em>well-lit</em> is the unit?
-          </>
-        }
+        question={question}
         verdict="Modeling · Phase 2"
         tone="caution"
       />
@@ -106,9 +108,23 @@ interface Props {
   /** Live analysis token — enables the facade-direction recalc input.
    * Demo pages pass nothing (there is no analysis to recalculate against). */
   token?: string | null
+  /** Mode-specific section question — each report type words it differently
+   * in the designs (investor "How well-lit…", tenant "How much light…"). */
+  question?: ReactNode
 }
 
-export function SunScoutPanel({ sunScout, sectionNumber = '09', token }: Props): JSX.Element {
+const DEFAULT_QUESTION = (
+  <>
+    How <em>well-lit</em> is the unit?
+  </>
+)
+
+export function SunScoutPanel({
+  sunScout,
+  sectionNumber = '09',
+  token,
+  question = DEFAULT_QUESTION,
+}: Props): JSX.Element {
   // Local copy so a facade-direction recalc updates the panel in place.
   const [current, setCurrent] = useState<SunScoutResult | null>(sunScout)
   const [bearing, setBearing] = useState(180)
@@ -119,7 +135,7 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09', token }: Props):
   }, [sunScout])
 
   if (!current) {
-    return <SunScoutPlaceholder sectionNumber={sectionNumber} />
+    return <SunScoutPlaceholder sectionNumber={sectionNumber} question={question} />
   }
   const sunScoutData = current
 
@@ -142,11 +158,7 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09', token }: Props):
       <SectionHead
         n={sectionNumber}
         topic="SunScout"
-        question={
-          <>
-            How <em>well-lit</em> is the unit?
-          </>
-        }
+        question={question}
         verdict={`${verdictLabel(sunScoutData.verdict)} · ${sunScoutData.sunScore.toFixed(0)}/100`}
         tone={verdictTone(sunScoutData.verdict)}
       />
@@ -163,7 +175,13 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09', token }: Props):
           className="card col"
           style={{ padding: 28, alignItems: 'center', textAlign: 'center', gap: 16 }}
         >
-          <DealScore score={sunScoutData.sunScore} size="md" label="" showVerdict={false} />
+          <DealScore
+            score={sunScoutData.sunScore}
+            max={100}
+            size="lg"
+            label=""
+            showVerdict={false}
+          />
           <div
             className="mono"
             style={{

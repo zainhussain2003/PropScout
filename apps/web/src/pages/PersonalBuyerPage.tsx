@@ -328,7 +328,14 @@ function PersonalPropertyHero({
           ) : (
             <>
               <div className="col" style={{ alignItems: 'center', gap: 8 }}>
-                <DealScore score={score.total} size="lg" label="Home score / 100" animate />
+                <DealScore
+                  score={score.total}
+                  max={100}
+                  size="lg"
+                  label="Home score / 100"
+                  showVerdict
+                  animate
+                />
               </div>
 
               <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
@@ -501,6 +508,7 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         <TruncatedVerdict
           firstParagraph={narrative ? narrative.split('. ')[0] + '.' : PB_FIRST_PARA}
+          eyebrow="Scout AI · home buyer verdict"
           onUnlock={() => openUpgradeModal('verdict')}
         />
       </section>
@@ -534,7 +542,7 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
         <div
           className="row gap-8"
           style={{
-            color: 'rgba(255,255,255,0.55)',
+            color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
             marginBottom: 20,
             position: 'relative',
             zIndex: 1,
@@ -560,7 +568,7 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
             style={{
               fontSize: 10,
               letterSpacing: '0.12em',
-              color: 'rgba(255,255,255,0.4)',
+              color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
             claude · sonnet 4.6
@@ -598,7 +606,7 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
             style={{
               fontSize: 'clamp(17px, 1.7vw, 21px)',
               lineHeight: 1.5,
-              color: 'rgba(255,255,255,0.78)',
+              color: 'color-mix(in oklab, var(--bg) 78%, transparent)',
               marginTop: 22,
               maxWidth: 880,
               position: 'relative',
@@ -643,7 +651,7 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
           className="row gap-16"
           style={{
             marginTop: 28,
-            color: 'rgba(255,255,255,0.5)',
+            color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
             fontSize: 12,
             position: 'relative',
             zIndex: 1,
@@ -1440,7 +1448,7 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
               fontSize: 10,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.5)',
+              color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
             }}
           >
             Next step
@@ -1458,7 +1466,7 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
           >
             Want a <em style={{ color: 'var(--accent)' }}>second opinion</em> from a local agent?
           </h3>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)' }}>
+          <p style={{ fontSize: 15, color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
             We'll send this report to a verified {city} agent who knows the area. No obligation —
             they reach out only if you reply.
           </p>
@@ -1471,7 +1479,7 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
               style={{
                 background: 'transparent',
                 color: 'var(--bg)',
-                border: '1px solid rgba(255,255,255,0.25)',
+                border: '1px solid color-mix(in oklab, var(--bg) 25%, transparent)',
               }}
             >
               How this works
@@ -1613,6 +1621,11 @@ export function PersonalBuyerPage({
           sunScout={realAnalysis?.sunScout ?? null}
           sectionNumber="06"
           token={realAnalysis?.token}
+          question={
+            <>
+              Which rooms will the <em>light</em> reach?
+            </>
+          }
         />
       ) : (
         <SunScoutSection />

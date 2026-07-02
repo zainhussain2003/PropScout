@@ -12,7 +12,7 @@
  *   §06  What's included        — WhatsIncludedSection
  *   §07  Location & commute     — LocationCommuteSection
  *   §08  Schools                — TenantSchoolsSection
- *   §09  SunScout               — Phase 2 placeholder
+ *   §09  SunScout               — SunScoutPanel (fixture on demo, live when analysis present)
  *   §10  Comps map              — MiniMap
  *   §11  Unit & building details — collapsible spec sheet
  *   §12  Before you sign        — confirm checklist
@@ -58,6 +58,7 @@ import {
   CHARLES_MESSAGE_REASONS,
   CHARLES_COST_LINES,
   CHARLES_CHECKLIST,
+  CHARLES_SUNSCOUT,
 } from '../constants/tenantDemoData'
 import type {
   Analysis,
@@ -170,15 +171,8 @@ function TenantPropertyHero({
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, height: 360 }}>
             {/* Hero photo */}
             <div
-              style={{
-                borderRadius: 18,
-                height: '100%',
-                background: 'var(--line)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
+              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
+              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
             >
               {listing.photoUrls?.[0] ? (
                 <img
@@ -187,17 +181,7 @@ function TenantPropertyHero({
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <span
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--muted)',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  unit · skyline view
-                </span>
+                <span>unit · skyline view</span>
               )}
             </div>
 
@@ -206,13 +190,10 @@ function TenantPropertyHero({
               {(['living', 'kitchen', 'bedroom'] as const).map((label, idx) => (
                 <div
                   key={label}
+                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
                   style={{
                     borderRadius: 14,
                     flex: 1,
-                    background: 'var(--line)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     position: 'relative',
                     overflow: 'hidden',
                   }}
@@ -224,17 +205,7 @@ function TenantPropertyHero({
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--muted)',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {label}
-                    </span>
+                    <span>{label}</span>
                   )}
                   {idx === 2 && (
                     <div
@@ -311,7 +282,14 @@ function TenantPropertyHero({
         <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
           {/* Tenant score gauge */}
           <div className="col" style={{ gap: 8, alignItems: 'center' }}>
-            <DealScore score={listing.scoreNumber} size="lg" label="Tenant score / 100" animate />
+            <DealScore
+              score={listing.scoreNumber}
+              max={100}
+              size="lg"
+              label="Tenant score / 100"
+              showVerdict
+              animate
+            />
           </div>
 
           {/* Verdict */}
@@ -461,7 +439,13 @@ function RentPositioningSection(): JSX.Element {
       >
         {/* Comp bar */}
         <div className="card" style={{ padding: 28 }}>
-          <RentalCompsBar low={1800} mid={1950} high={2300} ask={2150} />
+          <RentalCompsBar
+            low={1800}
+            mid={1950}
+            high={2300}
+            ask={2150}
+            context={{ trendPct: -1.4, medianDom: 18, vacancyPct: 1.8 }}
+          />
         </div>
 
         {/* Narrative + metric grid */}
@@ -1261,6 +1245,7 @@ export function TenantReport({
                 ? realAnalysis.narrative.split('. ')[0] + '.'
                 : TENANT_FIRST_PARA
             }
+            eyebrow="Scout AI · tenant verdict"
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
@@ -1348,7 +1333,7 @@ export function TenantReport({
             topic="Listing accuracy"
             question={
               <>
-                Does this listing <em>tell the truth</em>?
+                Is the listing <em>honest</em>?
               </>
             }
             week="Week 5–6 · extraction pipeline"
@@ -1368,7 +1353,7 @@ export function TenantReport({
           topic="Negotiation"
           question={
             <>
-              What's your <em>leverage</em>?
+              Should you <em>negotiate</em>?
             </>
           }
           week="Week 5–6 · extraction pipeline"
@@ -1390,7 +1375,7 @@ export function TenantReport({
           topic="Monthly cost"
           question={
             <>
-              What does it <em>really</em> cost?
+              What will it <em>really</em> cost?
             </>
           }
           week="Week 5–6 · extraction pipeline"
@@ -1470,8 +1455,16 @@ export function TenantReport({
         <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
       )}
 
-      {/* §09 SunScout */}
-      <SunScoutPanel sunScout={realAnalysis?.sunScout ?? null} sectionNumber="09" />
+      {/* §09 SunScout — live data when present, demo fixture on the demo route */}
+      <SunScoutPanel
+        sunScout={realAnalysis ? (realAnalysis.sunScout ?? null) : CHARLES_SUNSCOUT}
+        sectionNumber="09"
+        question={
+          <>
+            How much <em>light</em> will you actually get?
+          </>
+        }
+      />
 
       {/* §10 Comps map */}
       <CompsMapSection />

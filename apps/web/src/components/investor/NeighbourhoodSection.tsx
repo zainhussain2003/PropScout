@@ -188,7 +188,7 @@ export function NeighbourhoodSection({
               fontSize: 10,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.55)',
+              color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
             }}
           >
             Appreciation
@@ -205,7 +205,9 @@ export function NeighbourhoodSection({
             >
               {n.appreciation5y !== 0 ? `+${fmtPct(n.appreciation5y, 1)}` : '—'}
             </span>
-            <span style={{ fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
+            <span
+              style={{ fontSize: 14, color: 'color-mix(in oklab, var(--bg) 75%, transparent)' }}
+            >
               5-year median sale price
             </span>
           </div>
@@ -217,7 +219,7 @@ export function NeighbourhoodSection({
               marginTop: 6,
               alignItems: 'center',
               fontSize: 13,
-              color: 'rgba(255,255,255,.7)',
+              color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
             }}
           >
             <span>10-year:</span>
@@ -229,7 +231,7 @@ export function NeighbourhoodSection({
           <div
             style={{
               height: 1,
-              background: 'rgba(255,255,255,.15)',
+              background: 'color-mix(in oklab, var(--bg) 15%, transparent)',
               margin: '4px 0',
             }}
           />
@@ -237,7 +239,7 @@ export function NeighbourhoodSection({
           <p
             style={{
               fontSize: 13,
-              color: 'rgba(255,255,255,.7)',
+              color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
               lineHeight: 1.55,
             }}
           >

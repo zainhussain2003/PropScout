@@ -229,7 +229,7 @@ function ShowcaseAIVerdictBlock({ addr, headline, sub }: ShowcaseAIVerdictBlockP
             fontSize: 10,
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.5)',
+            color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
             display: 'block',
             marginBottom: 8,
           }}
@@ -246,7 +246,15 @@ function ShowcaseAIVerdictBlock({ addr, headline, sub }: ShowcaseAIVerdictBlockP
         >
           {headline}
         </p>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{sub}</p>
+        <p
+          style={{
+            fontSize: 13,
+            color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
+            lineHeight: 1.6,
+          }}
+        >
+          {sub}
+        </p>
       </div>
     </div>
   )
@@ -1948,7 +1956,9 @@ function PricingSection(): JSX.Element {
                     fontSize: 11,
                     letterSpacing: '0.14em',
                     textTransform: 'uppercase',
-                    color: t.featured ? 'rgba(255,255,255,0.55)' : 'var(--muted)',
+                    color: t.featured
+                      ? 'color-mix(in oklab, var(--bg) 55%, transparent)'
+                      : 'var(--muted)',
                   }}
                 >
                   {t.name}
@@ -1956,7 +1966,9 @@ function PricingSection(): JSX.Element {
                 <p
                   style={{
                     fontSize: 13,
-                    color: t.featured ? 'rgba(255,255,255,0.75)' : 'var(--ink-2)',
+                    color: t.featured
+                      ? 'color-mix(in oklab, var(--bg) 75%, transparent)'
+                      : 'var(--ink-2)',
                   }}
                 >
                   {t.sub}
@@ -1971,7 +1983,9 @@ function PricingSection(): JSX.Element {
                   className="mono"
                   style={{
                     fontSize: 11,
-                    color: t.featured ? 'rgba(255,255,255,0.5)' : 'var(--muted)',
+                    color: t.featured
+                      ? 'color-mix(in oklab, var(--bg) 50%, transparent)'
+                      : 'var(--muted)',
                   }}
                 >
                   {'priceSuffix' in t && t.priceSuffix === '+' ? '/ mo base' : '/ mo'}
@@ -1982,7 +1996,9 @@ function PricingSection(): JSX.Element {
                   className="mono"
                   style={{
                     fontSize: 11,
-                    color: t.featured ? 'rgba(255,255,255,0.55)' : 'var(--muted)',
+                    color: t.featured
+                      ? 'color-mix(in oklab, var(--bg) 55%, transparent)'
+                      : 'var(--muted)',
                     marginTop: -8,
                   }}
                 >
@@ -2009,7 +2025,9 @@ function PricingSection(): JSX.Element {
                     style={{
                       alignItems: 'flex-start',
                       fontSize: 13,
-                      color: t.featured ? 'rgba(255,255,255,0.85)' : 'var(--ink-2)',
+                      color: t.featured
+                        ? 'color-mix(in oklab, var(--bg) 85%, transparent)'
+                        : 'var(--ink-2)',
                     }}
                   >
                     <span style={{ color: 'var(--accent)', marginTop: 2 }}>
@@ -2150,7 +2168,7 @@ function CTASection(): JSX.Element {
         >
           <span
             className="section-tag"
-            style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 24 }}
+            style={{ color: 'color-mix(in oklab, var(--bg) 60%, transparent)', marginBottom: 24 }}
           >
             The next listing you save
           </span>
@@ -2165,7 +2183,7 @@ function CTASection(): JSX.Element {
           </h2>
           <p
             style={{
-              color: 'rgba(255,255,255,0.7)',
+              color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
               fontSize: 18,
               maxWidth: 540,
               marginBottom: 28,
@@ -2190,7 +2208,7 @@ function CTASection(): JSX.Element {
                 fontSize: 15,
                 background: 'transparent',
                 color: 'var(--bg)',
-                border: '1px solid rgba(255,255,255,0.25)',
+                border: '1px solid color-mix(in oklab, var(--bg) 25%, transparent)',
               }}
             >
               See pricing

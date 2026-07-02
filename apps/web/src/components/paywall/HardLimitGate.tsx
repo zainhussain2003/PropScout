@@ -75,7 +75,10 @@ export function HardLimitGate({
 
         <div className="col" style={{ position: 'relative', zIndex: 1, gap: 20 }}>
           {/* Header label */}
-          <div className="row gap-8" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <div
+            className="row gap-8"
+            style={{ color: 'color-mix(in oklab, var(--bg) 55%, transparent)' }}
+          >
             <span style={{ width: 7, height: 7, borderRadius: 999, background: 'var(--accent)' }} />
             <span
               className="mono"
@@ -106,7 +109,7 @@ export function HardLimitGate({
           <p
             style={{
               fontSize: 16,
-              color: 'rgba(255,255,255,0.78)',
+              color: 'color-mix(in oklab, var(--bg) 78%, transparent)',
               lineHeight: 1.55,
               maxWidth: 480,
             }}
@@ -129,7 +132,8 @@ export function HardLimitGate({
                   flex: 1,
                   height: 6,
                   borderRadius: 999,
-                  background: i < used ? 'var(--accent)' : 'rgba(255,255,255,0.15)',
+                  background:
+                    i < used ? 'var(--accent)' : 'color-mix(in oklab, var(--bg) 15%, transparent)',
                 }}
               />
             ))}
@@ -141,7 +145,7 @@ export function HardLimitGate({
             style={{
               justifyContent: 'space-between',
               fontSize: 12,
-              color: 'rgba(255,255,255,0.5)',
+              color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
             }}
           >
             {cycleStart != null && <span>Started this cycle {cycleStart}</span>}
@@ -153,7 +157,10 @@ export function HardLimitGate({
 
           <div
             className="divider"
-            style={{ background: 'rgba(255,255,255,0.12)', margin: '6px 0' }}
+            style={{
+              background: 'color-mix(in oklab, var(--bg) 12%, transparent)',
+              margin: '6px 0',
+            }}
           />
 
           {/* Price block + CTAs */}
@@ -169,9 +176,16 @@ export function HardLimitGate({
             <div className="col" style={{ gap: 2 }}>
               <span className="serif tabular" style={{ fontSize: 36, lineHeight: 1 }}>
                 $10
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>/mo</span>
+                <span
+                  style={{ fontSize: 13, color: 'color-mix(in oklab, var(--bg) 50%, transparent)' }}
+                >
+                  /mo
+                </span>
               </span>
-              <span className="mono" style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+              <span
+                className="mono"
+                style={{ fontSize: 11, color: 'color-mix(in oklab, var(--bg) 50%, transparent)' }}
+              >
                 or $100/yr · 2 months free
               </span>
             </div>
@@ -185,7 +199,7 @@ export function HardLimitGate({
                 style={{
                   background: 'transparent',
                   color: 'var(--bg)',
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  border: '1px solid color-mix(in oklab, var(--bg) 20%, transparent)',
                   padding: '14px 20px',
                 }}
               >

@@ -241,7 +241,8 @@ describe('ReportPage — risk-flag overrides', () => {
     // backend's verdict (good_deal → "Good deal") — number and label can't disagree
     // because both come from the same calc-engine result, not a frontend recompute.
     expect(await screen.findByLabelText(/Deal score: 68 out of 100/i)).toBeInTheDocument()
-    expect(screen.getByText(/Good deal/i)).toBeInTheDocument()
+    // Per the design the verdict renders twice — pill inside the gauge + eyebrow.
+    expect(screen.getAllByText(/Good deal/i).length).toBeGreaterThanOrEqual(1)
 
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }))
 

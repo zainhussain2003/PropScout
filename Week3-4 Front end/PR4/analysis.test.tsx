@@ -127,19 +127,19 @@ describe('Metric', () => {
   it('applies fail colour variable for status=fail', () => {
     const { container } = render(<Metric label="Cash flow" value="−$2,431" status="fail" />)
     // The value element uses STATUS_COLOR which maps fail → var(--fail)
-    const valueEl = container.querySelector('.mono.tabular') as HTMLElement
+    const valueEl = container.querySelector('.serif.tabular') as HTMLElement
     expect(valueEl.style.color).toBe('var(--fail)')
   })
 
   it('applies pass colour variable for status=pass', () => {
     const { container } = render(<Metric label="DSCR" value="1.16×" status="pass" />)
-    const valueEl = container.querySelector('.mono.tabular') as HTMLElement
+    const valueEl = container.querySelector('.serif.tabular') as HTMLElement
     expect(valueEl.style.color).toBe('var(--pass)')
   })
 
   it('applies neutral colour (var(--ink)) by default', () => {
     const { container } = render(<Metric label="GRM" value="20.97" />)
-    const valueEl = container.querySelector('.mono.tabular') as HTMLElement
+    const valueEl = container.querySelector('.serif.tabular') as HTMLElement
     expect(valueEl.style.color).toBe('var(--ink)')
   })
 
@@ -171,11 +171,20 @@ describe('RentalCompsBar', () => {
     )
   })
 
-  it('renders low, mid, and high dollar labels', () => {
-    render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
+  it('renders the P25/P50/P75 percentile values', () => {
+    render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2950} />)
     expect(screen.getByText('$2,700')).toBeInTheDocument()
     expect(screen.getByText('$2,900')).toBeInTheDocument()
     expect(screen.getByText('$3,200')).toBeInTheDocument()
+    expect(screen.getByText('P25 · low')).toBeInTheDocument()
+    expect(screen.getByText('P50 · median')).toBeInTheDocument()
+    expect(screen.getByText('P75 · high')).toBeInTheDocument()
+  })
+
+  it('renders the asking-rent header with the ask value', () => {
+    render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2950} />)
+    expect(screen.getByText('Asking rent')).toBeInTheDocument()
+    expect(screen.getByText('$2,950')).toBeInTheDocument()
   })
 
   it('diamond marker has aria-label with the estimate value', () => {
@@ -183,31 +192,41 @@ describe('RentalCompsBar', () => {
     expect(screen.getByLabelText('Estimated rent: $2,900')).toBeInTheDocument()
   })
 
-  it('shows "above comp range" warning when ask > high', () => {
+  it('shows "Above market" pill when ask ≥ high', () => {
     render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={3500} />)
-    expect(screen.getByText(/above comp range/i)).toBeInTheDocument()
+    expect(screen.getByText(/Above market/)).toBeInTheDocument()
   })
 
-  it('shows "below comp range" warning when ask < low', () => {
+  it('shows "At market" pill when ask is inside the comp range', () => {
+    render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
+    expect(screen.getByText(/At market/)).toBeInTheDocument()
+  })
+
+  it('shows "Below market" pill when ask ≤ low', () => {
     render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2400} />)
-    expect(screen.getByText(/below comp range/i)).toBeInTheDocument()
+    expect(screen.getByText(/Below market/)).toBeInTheDocument()
   })
 
-  it('shows hover tooltip when diamond is moused over', () => {
+  it('renders the hover tooltip content (CSS-hover — always in the DOM)', () => {
     render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
-    const diamond = screen.getByLabelText('Estimated rent: $2,900')
-    fireEvent.mouseEnter(diamond)
-    // Tooltip header appears
-    expect(screen.getByText('Rent estimate')).toBeInTheDocument()
-    expect(screen.getByText('Estimate')).toBeInTheDocument()
+    expect(screen.getByText('$2,900/mo')).toBeInTheDocument()
   })
 
-  it('hides tooltip after mouse leave', () => {
-    render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
-    const diamond = screen.getByLabelText('Estimated rent: $2,900')
-    fireEvent.mouseEnter(diamond)
-    fireEvent.mouseLeave(diamond)
-    expect(screen.queryByText('Rent estimate')).not.toBeInTheDocument()
+  it('renders the market-context strip only when context is provided', () => {
+    const { rerender } = render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
+    expect(screen.queryByText('12-mo trend')).not.toBeInTheDocument()
+    rerender(
+      <RentalCompsBar
+        low={2700}
+        mid={2900}
+        high={3200}
+        ask={2900}
+        context={{ trendPct: -1.4, medianDom: 18, vacancyPct: 1.8 }}
+      />
+    )
+    expect(screen.getByText('12-mo trend')).toBeInTheDocument()
+    expect(screen.getByText('18 days')).toBeInTheDocument()
+    expect(screen.getByText('1.8%')).toBeInTheDocument()
   })
 
   it('has no axe accessibility violations', async () => {
@@ -451,8 +470,9 @@ describe('PropertyHero', () => {
         dscr={dscr}
       />
     )
-    // 'Hard pass' is the label for verdict = hard_pass
-    expect(screen.getByText('Hard pass')).toBeInTheDocument()
+    // 'Hard pass' is the label for verdict = hard_pass. Per the design it
+    // appears twice: as the pill inside the gauge AND as the eyebrow below.
+    expect(screen.getAllByText('Hard pass').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders all listing chips', () => {

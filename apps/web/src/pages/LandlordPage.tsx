@@ -433,6 +433,7 @@ export function LandlordPage({
                 ? realAnalysis.narrative.split('. ')[0] + '.'
                 : `You're above the building median, and ${property.ownership.daysOnMarket} days on market is telling you exactly what the tenants think of it.`
             }
+            eyebrow="Scout AI · landlord verdict"
             onUnlock={() => openUpgradeModal('verdict')}
           />
         </section>

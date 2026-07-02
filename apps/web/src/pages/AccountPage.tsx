@@ -855,7 +855,7 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
                 fontSize: 10,
                 letterSpacing: '0.16em',
                 textTransform: 'uppercase',
-                color: isFree ? 'rgba(255,255,255,0.55)' : 'var(--accent)',
+                color: isFree ? 'color-mix(in oklab, var(--bg) 55%, transparent)' : 'var(--accent)',
               }}
             >
               You&rsquo;re on
@@ -864,7 +864,10 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
               {tierDetail.label}
             </h2>
             <span
-              style={{ fontSize: 14, color: isFree ? 'rgba(255,255,255,0.7)' : 'var(--ink-2)' }}
+              style={{
+                fontSize: 14,
+                color: isFree ? 'color-mix(in oklab, var(--bg) 70%, transparent)' : 'var(--ink-2)',
+              }}
             >
               {isFree
                 ? 'Three sale-listing analyses per month + unlimited tenant reports. Headlines on AI verdicts; no PDF.'
@@ -880,7 +883,10 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
             </span>
             <span
               className="mono"
-              style={{ fontSize: 11, color: isFree ? 'rgba(255,255,255,0.5)' : 'var(--muted)' }}
+              style={{
+                fontSize: 11,
+                color: isFree ? 'color-mix(in oklab, var(--bg) 50%, transparent)' : 'var(--muted)',
+              }}
             >
               {tierDetail.cycleNote}
             </span>

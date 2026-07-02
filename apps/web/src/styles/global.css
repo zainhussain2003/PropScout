@@ -287,8 +287,8 @@ img {
 /* Chips inside the dark footer need inverted colours for contrast */
 footer .chip {
   color: var(--bg);
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: color-mix(in oklab, var(--bg) 10%, transparent);
+  border-color: color-mix(in oklab, var(--bg) 15%, transparent);
 }
 
 /* ── Cards ───────────────────────────────────────────────────── */
@@ -675,7 +675,7 @@ footer a:hover {
 }
 
 .acc-nav-item.active .acc-nav-count {
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in oklab, var(--bg) 18%, transparent);
   color: var(--bg);
 }
 

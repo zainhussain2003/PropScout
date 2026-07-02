@@ -23,6 +23,8 @@ import {
   HAMILTON_STABLE_METRICS,
   VAUGHAN_DEAL_SCORE,
   HAMILTON_DEAL_SCORE,
+  VAUGHAN_SUNSCOUT,
+  HAMILTON_SUNSCOUT,
 } from '../constants/demoData'
 import type {
   Analysis,
@@ -194,7 +196,11 @@ export function useInvestorReport(
     financing,
     metrics: isDemo ? demoMetrics : apiMetrics,
     dealScore: isDemo ? demoDealScore : apiDealScore,
-    sunScout: isDemo ? null : (analysis?.sunScout ?? null),
+    sunScout: isDemo
+      ? listing.id === 'hamilton'
+        ? HAMILTON_SUNSCOUT
+        : VAUGHAN_SUNSCOUT
+      : (analysis?.sunScout ?? null),
     updateFinancing,
   }
 }

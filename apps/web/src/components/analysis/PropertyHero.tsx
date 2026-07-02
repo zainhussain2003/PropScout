@@ -144,15 +144,8 @@ export function PropertyHero({
           >
             {/* Main photo */}
             <div
-              style={{
-                borderRadius: 18,
-                height: '100%',
-                background: 'var(--line)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
+              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
+              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
             >
               {listing.photoUrls?.[0] ? (
                 <img
@@ -161,17 +154,7 @@ export function PropertyHero({
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <span
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--muted)',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  exterior · {listing.propertyType.toLowerCase()}
-                </span>
+                <span>exterior · {listing.propertyType.toLowerCase()}</span>
               )}
             </div>
 
@@ -180,13 +163,10 @@ export function PropertyHero({
               {(['living', 'kitchen', 'floorplan'] as const).map((label, idx) => (
                 <div
                   key={label}
+                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
                   style={{
                     borderRadius: 14,
                     flex: 1,
-                    background: 'var(--line)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     position: 'relative',
                     overflow: 'hidden',
                   }}
@@ -198,17 +178,7 @@ export function PropertyHero({
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--muted)',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {label}
-                    </span>
+                    <span>{label}</span>
                   )}
                   {idx === 2 && (
                     <div
@@ -306,6 +276,8 @@ export function PropertyHero({
               tone={score.tone}
               size={isMobile ? 'sm' : 'lg'}
               label="Deal score / 100"
+              showVerdict={!isMobile}
+              verdictLabel={score.label}
               animate
             />
           </div>

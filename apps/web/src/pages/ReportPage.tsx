@@ -227,7 +227,7 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
         topic="Rental comps"
         question={
           <>
-            What does the <em>market</em> pay?
+            What can it <em>realistically</em> rent for?
           </>
         }
         verdict={`${compCount} comparable rentals`}
@@ -308,7 +308,7 @@ function RiskFlagsSection({
         topic="Risk flags"
         question={
           <>
-            What could go <em>wrong</em>?
+            What could <em>break</em> this thesis?
           </>
         }
         verdict={verdictLabel}
@@ -369,7 +369,7 @@ function CashToCloseSection({
         topic="Cash to close"
         question={
           <>
-            What do you need <em>upfront</em>?
+            What you need in the <em>bank</em> on closing day.
           </>
         }
         verdict={fmtMoney(total)}
@@ -473,7 +473,7 @@ function OSFISection({
         topic="OSFI stress test"
         question={
           <>
-            Can you <em>qualify</em>?
+            Will the bank actually <em>fund</em> this?
           </>
         }
         verdict={
@@ -536,7 +536,7 @@ function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.E
         topic="Equity build"
         question={
           <>
-            How does the wealth <em>grow</em>?
+            What <em>builds</em> over time?
           </>
         }
         verdict={`${fmtMoney(year20Equity)} at year 20`}
@@ -632,23 +632,32 @@ function TenantReportContent({
                 style={{
                   fontSize: 10,
                   letterSpacing: '0.16em',
-                  color: 'rgba(255,255,255,0.5)',
+                  color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
                   textTransform: 'uppercase',
                 }}
               >
                 Tenant report
               </div>
-              <h1 className="serif" style={{ fontSize: 28, color: '#fff', lineHeight: 1.2 }}>
+              <h1 className="serif" style={{ fontSize: 28, color: 'var(--bg)', lineHeight: 1.2 }}>
                 {addressLine1}
               </h1>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>{addressLine2}</p>
+              <p style={{ fontSize: 14, color: 'color-mix(in oklab, var(--bg) 60%, transparent)' }}>
+                {addressLine2}
+              </p>
             </div>
             {asking > 0 && (
               <div className="col" style={{ alignItems: 'flex-end', gap: 4 }}>
-                <div className="mono" style={{ fontSize: 26, fontWeight: 700, color: '#fff' }}>
+                <div className="mono" style={{ fontSize: 26, fontWeight: 700, color: 'var(--bg)' }}>
                   {fmtMoney(asking)}/mo
                 </div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Asking rent</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
+                  }}
+                >
+                  Asking rent
+                </div>
               </div>
             )}
           </div>
@@ -661,8 +670,8 @@ function TenantReportContent({
                   fontSize: 11,
                   padding: '4px 10px',
                   borderRadius: 999,
-                  background: 'rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.7)',
+                  background: 'color-mix(in oklab, var(--bg) 10%, transparent)',
+                  color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
                 }}
               >
                 {c}
@@ -721,7 +730,7 @@ function TenantReportContent({
             topic="Listing flags"
             question={
               <>
-                What should you <em>verify</em>?
+                Is the listing <em>honest</em>?
               </>
             }
             verdict={
@@ -759,13 +768,16 @@ function InvestorReportContent({
   analysis,
   tier,
   flagOverrides,
+  mode = 'investor',
 }: {
   listing: Listing
   analysis: Analysis
   tier: string
   flagOverrides: FlagOverrideControls
+  mode?: 'investor' | 'landlord'
 }): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const verdictEyebrow = `Scout AI · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
   const financing = toFinancingInputs(analysis.metrics, listingData)
 
@@ -827,11 +839,12 @@ function InvestorReportContent({
                 ? (analysis.narrative.split('.')[0] ?? '') + '.'
                 : `At ${fmtMoney(listingData.price)}, this property shows ${dealScore.label.toLowerCase()} fundamentals.`
             }
+            eyebrow={verdictEyebrow}
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
           <AIVerdictBlock
-            eyebrow="Scout AI · investor verdict"
+            eyebrow={verdictEyebrow}
             headline={buildHeadline(analysis.narrative, dealScore.label, listingData.price)}
             sub={buildSub(analysis.narrative, metrics.capRate, metrics.cashFlowMonthly)}
           />
@@ -953,6 +966,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
               analysis={analysis}
               tier={tier}
               flagOverrides={flagOverrides}
+              mode={mode}
             />
           )}
 
