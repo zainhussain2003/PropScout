@@ -541,6 +541,58 @@ broken URL) through all four modes after the flag severity matrix shipped:
 
 ---
 
+## 🔴 FULL E2E PROOF RUN — 2 fresh listings × 4 modes, browser-verified (2026-07-02)
+
+Scrape → analyze → render proven end-to-end on 1205-33 Helendale Ave (Whitehaus
+condo rental, $2,650/mo) and 662 Byngmount Ave (detached sale, $3,499,000), with
+every field checked against the live Realtor.ca pages in a real browser. Six
+bugs found and fixed (commits c1ebc1d, 92f707e, 57c626b):
+
+1. **ScraperAPI single-attempt** — premium succeeds ~1-in-3 vs Realtor.ca;
+   added a 4-attempt retry (failures unbilled, their documented guidance).
+2. **Condo mapped to detached** — Realtor's propertyType is "Single Family"
+   for condos AND houses; now discriminate on dataLayer buildingType.
+3. **parkingSpots hardcoded 0** — now parsed from "Total Parking Spaces"
+   (Helendale 1, Byngmount 8). Photos: JSON-LD carries only #1 — page sweep
+   now captures the set (capped 12). Beds: "2 + 1" arrives as dataLayer 3 —
+   above-grade count (2) used instead (a den is not a legal bedroom; comps
+   key on beds).
+4. **Rent-bounds gate killed >$2M sales** — the $500–$10k mid check tripped on
+   the for-sale price proxy ($17.5k/mo at $3.5M); gate now applies only to
+   observed rents.
+5. **Live-report rendering lies** — "2 bed bed", fabricated "Built 2016",
+   "Asking $0" on rentals, $0-LTT card, all-dash expense card, pass-green
+   amber chip.
+6. **Personal-report copy phantoms on live** — "8 verified comparable sales"
+   from fixture DEFAULTS (PBFMVSection compCount=8/avgDOM=12) + the verdict
+   hero's Burlington fixture prose ("At $875,000… Tom Thomson catchment") on
+   real addresses. Now honest "no source yet" provenance.
+
+**Matrix live again:** condo_fee_unknown amber for landlord / hidden for
+tenant on the SAME listing; basement_unit amber for investor / info-dropped
+for personal on the SAME description (deterministic regex → matrix, not
+Haiku variance).
+
+**Comps scraper (pre-Railway selector check, depth-1 Toronto, live run):**
+rentals_ca 75 raw · kijiji 46 · padmapper 19 → 100 rows upserted after dedup
+(geocoded, 201s). No blocks, yield alarm quiet — selectors have NOT rotted.
+NOTE: the nightly scrapers' supabase/mapbox services read env vars only (no
+.env fallback like realtor_scraper) — fine on Railway, remember locally.
+
+**Remaining honesty wart (product decision needed):** the personal §03
+comparable-SALES table still renders the Burlington fixture rows on live
+reports — labeled "Sample comparables · real sales data in Phase 2", but the
+"8 sales · last 6 mo" chip reads real. Decide: keep the labeled sample, or
+hide the table until a sales source exists.
+
+**SunScout numbers sanity-checked, not a bug:** a south window sees the sun
+in front of its plane nearly all of a short winter day (~9h/day) but loses
+the high NE/NW summer sun (~8h/day); "annual peak sun hours" (~3,600) is the
+geometric direct-sun-hours sum per the spec §17 template model + 2,500-hour
+benchmark. Coarse (no obstruction/intensity), but internally consistent.
+
+---
+
 ## Blocked on you — handle when you have time
 
 In priority order:

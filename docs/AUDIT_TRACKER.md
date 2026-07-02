@@ -41,14 +41,14 @@
 
 ---
 
-## Current test baseline (keep green) — measured 2026-07-02 (end of session)
+## Current test baseline (keep green) — measured 2026-07-02 (post E2E proof run)
 
 | Suite              | Count | Command                                               |
 | ------------------ | ----- | ----------------------------------------------------- |
 | Python calc-engine | 344   | `python -m pytest services/calc-engine/ -q`           |
-| API (Jest)         | 164   | `npm test --workspace=apps/api`                       |
-| Web (Vitest)       | 848   | `cd apps/web && npx vitest run`                       |
-| Scrapers (pytest)  | 146   | `python -m pytest services/scrapers/ -q`              |
+| API (Jest)         | 167   | `npm test --workspace=apps/api`                       |
+| Web (Vitest)       | 849   | `cd apps/web && npx vitest run`                       |
+| Scrapers (pytest)  | 151   | `python -m pytest services/scrapers/ -q`              |
 | Typecheck          | clean | `npm run typecheck --workspace=apps/web` / `apps/api` |
 
 > Golden dataset gate: passes but is still **trivial at 3/50 labelled cases** —
