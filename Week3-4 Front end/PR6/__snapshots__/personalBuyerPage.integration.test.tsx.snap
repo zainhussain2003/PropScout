@@ -1453,8 +1453,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="tabular"
             style="color: var(--ink); font-weight: 500;"
           >
-            8
-             verified
+            8 verified
           </span>
         </span>
         <span

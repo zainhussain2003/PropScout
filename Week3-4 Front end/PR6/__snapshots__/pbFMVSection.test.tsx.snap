@@ -187,8 +187,7 @@ exports[`PBFMVSection > matches snapshot 1`] = `
           class="tabular"
           style="color: var(--ink); font-weight: 500;"
         >
-          8
-           verified
+          8 verified
         </span>
       </span>
       <span
@@ -203,20 +202,6 @@ exports[`PBFMVSection > matches snapshot 1`] = `
         >
           12
            days
-        </span>
-      </span>
-      <span
-        class="row gap-8"
-      >
-        <span>
-          Median $/sqft
-        </span>
-        <span
-          class="tabular"
-          style="color: var(--ink); font-weight: 500;"
-        >
-          $
-          543
         </span>
       </span>
       <span
