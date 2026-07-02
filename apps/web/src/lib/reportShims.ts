@@ -13,9 +13,20 @@ import type {
   InvestorRiskFlag,
   NeighbourhoodData,
   TenantListingData,
+  SchoolsResult,
+  NearbySchool,
+  TenantSchools,
+  TenantSchool,
+  SchoolBoard,
+  SchoolQuality,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
-import type { PersonalProperty, PersonalNeighbourhood } from '../types/personal'
+import type {
+  PersonalProperty,
+  PersonalNeighbourhood,
+  PersonalSchools,
+  PersonalSchool,
+} from '../types/personal'
 import type { LandlordProperty } from '../types/landlord'
 import {
   FINANCING_DEFAULTS,
@@ -316,5 +327,81 @@ export function shimToLandlordProperty(listing: Listing, analysis: Analysis): La
       deduct: 0,
     })),
     chips: buildInvestorChips(listing),
+  }
+}
+
+// ── School shims (real schools table → report display shapes) ─────────────────
+
+/** 12 min per km — average walking pace used for the tenant walk estimate. */
+const WALK_MIN_PER_KM = 12
+/** ~2 min per km city driving — used for the personal drive-time estimate. */
+const DRIVE_MIN_PER_KM = 2
+
+function classifyBoard(board: string | null): SchoolBoard {
+  const b = (board ?? '').toLowerCase()
+  if (b.includes('catholic') || b.includes('csdc') || b.includes('cdsb')) return 'catholic'
+  if (b.includes('french') || b.includes('viamonde') || b.includes('monavenir')) return 'french'
+  return 'public'
+}
+
+function qualityFor(school: NearbySchool): SchoolQuality {
+  if (school.fraserRankPct != null) {
+    if (school.fraserRankPct >= 67) return 'above'
+    if (school.fraserRankPct >= 33) return 'avg'
+    return 'below'
+  }
+  if (school.eqaoScore != null) {
+    if (school.eqaoScore >= 8) return 'above'
+    if (school.eqaoScore >= 6.5) return 'avg'
+    return 'below'
+  }
+  return 'avg'
+}
+
+function toPersonalSchool(school: NearbySchool): PersonalSchool {
+  return {
+    name: school.name,
+    board: school.board ?? '—',
+    distance: `${school.distanceKm.toFixed(1)} km`,
+    driveTime: `${Math.max(1, Math.round(school.distanceKm * DRIVE_MIN_PER_KM))} min`,
+    eqao: school.eqaoScore ?? 0,
+    fraser: school.fraserRankPct ?? 0,
+    // Attendance boundaries are NOT ingested — never claim catchment.
+    inCatchment: false,
+    grades: '—',
+    gradRate: school.graduationRate ?? undefined,
+  }
+}
+
+/** Map the API's distance-ranked schools to the personal-buyer display shape. */
+export function shimToPersonalSchools(schools: SchoolsResult): PersonalSchools {
+  return {
+    elementary: schools.elementary.map(toPersonalSchool),
+    middle: schools.middle.map(toPersonalSchool),
+    high: schools.high.map(toPersonalSchool),
+  }
+}
+
+function toTenantSchool(school: NearbySchool): TenantSchool {
+  const board = classifyBoard(school.board)
+  return {
+    board,
+    boardLabel: school.board ?? board,
+    name: school.name,
+    grades: '—',
+    distance: `${school.distanceKm.toFixed(1)} km`,
+    walk: `${Math.max(1, Math.round(school.distanceKm * WALK_MIN_PER_KM))} min`,
+    quality: qualityFor(school),
+    // Attendance boundaries are NOT ingested — never claim catchment.
+    inCatchment: false,
+  }
+}
+
+/** Map the API's distance-ranked schools to the tenant slim-schools shape. */
+export function shimToTenantSchools(schools: SchoolsResult): TenantSchools {
+  return {
+    elementary: schools.elementary.map(toTenantSchool),
+    middle: schools.middle.map(toTenantSchool),
+    high: schools.high.map(toTenantSchool),
   }
 }

@@ -24,7 +24,14 @@ jest.mock('crypto', () => ({
 
 // ── Import after mocks are installed ──────────────────────────────────────────
 
-import { fetchRentalComps, saveAnalysis, getAnalysisByToken } from './supabaseService'
+import {
+  fetchRentalComps,
+  saveAnalysis,
+  getAnalysisByToken,
+  getNearbySchools,
+  haversineKm,
+  SCHOOL_CATCHMENT_NOTE,
+} from './supabaseService'
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
 
@@ -704,5 +711,80 @@ describe('getAnalysisByToken', () => {
 
     expect(result).toBeNull()
     consoleSpy.mockRestore()
+  })
+})
+
+// ── getNearbySchools ──────────────────────────────────────────────────────────
+
+describe('haversineKm', () => {
+  it('is ~0 for identical points and ~1.11 km per 0.01 deg of latitude', () => {
+    expect(haversineKm(43.65, -79.38, 43.65, -79.38)).toBeCloseTo(0, 5)
+    expect(haversineKm(43.65, -79.38, 43.66, -79.38)).toBeCloseTo(1.11, 1)
+  })
+})
+
+describe('getNearbySchools', () => {
+  const HOME = { lat: 43.65, lng: -79.38 }
+
+  function schoolRow(
+    name: string,
+    type: string,
+    latOffset: number,
+    extra: Partial<Record<string, unknown>> = {}
+  ): Record<string, unknown> {
+    return {
+      name,
+      school_type: type,
+      board: 'TDSB',
+      lat: HOME.lat + latOffset,
+      lng: HOME.lng,
+      eqao_score: 8.0,
+      fraser_rank_pct: 70,
+      graduation_rate: null,
+      ...extra,
+    }
+  }
+
+  it('returns the closest 3 per level, distance-ranked, with the catchment note', async () => {
+    const rows = [
+      schoolRow('Elem D (far)', 'elementary', 0.09),
+      schoolRow('Elem B', 'elementary', 0.02),
+      schoolRow('Elem A (closest)', 'elementary', 0.005),
+      schoolRow('Elem C', 'elementary', 0.05),
+      schoolRow('High A', 'high', 0.01),
+    ]
+    mockFrom.mockReturnValue(makeQueryChain({ data: rows, error: null }))
+
+    const result = await getNearbySchools(HOME.lat, HOME.lng)
+
+    expect(result).not.toBeNull()
+    expect(result!.elementary.map((s) => s.name)).toEqual(['Elem A (closest)', 'Elem B', 'Elem C'])
+    expect(result!.elementary[0]!.distanceKm).toBeLessThan(result!.elementary[1]!.distanceKm)
+    expect(result!.middle).toEqual([])
+    expect(result!.high).toHaveLength(1)
+    expect(result!.catchmentNote).toBe(SCHOOL_CATCHMENT_NOTE)
+  })
+
+  it('returns null when the table has no rows in range (CSV not loaded yet)', async () => {
+    mockFrom.mockReturnValue(makeQueryChain({ data: [], error: null }))
+    expect(await getNearbySchools(HOME.lat, HOME.lng)).toBeNull()
+  })
+
+  it('returns null on a query error (report shows data pending, never an error)', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    mockFrom.mockReturnValue(makeQueryChain({ data: null, error: { message: 'boom' } }))
+    expect(await getNearbySchools(HOME.lat, HOME.lng)).toBeNull()
+    consoleSpy.mockRestore()
+  })
+
+  it('skips rows without coordinates instead of crashing', async () => {
+    const rows = [
+      schoolRow('No coords', 'elementary', 0, { lat: null, lng: null }),
+      schoolRow('Has coords', 'elementary', 0.01),
+    ]
+    mockFrom.mockReturnValue(makeQueryChain({ data: rows, error: null }))
+
+    const result = await getNearbySchools(HOME.lat, HOME.lng)
+    expect(result!.elementary.map((s) => s.name)).toEqual(['Has coords'])
   })
 })

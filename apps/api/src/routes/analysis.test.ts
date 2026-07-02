@@ -33,6 +33,7 @@ import {
   updateAnalysisByToken,
   fetchRentalComps,
   getFlagOverrides,
+  getNearbySchools,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -48,6 +49,7 @@ const mockGenerateNarrative = jest.mocked(generateNarrative)
 const mockGeocodeAddress = jest.mocked(geocodeAddress)
 const mockGetWalkScore = jest.mocked(getWalkScore)
 const mockGetFlagOverrides = jest.mocked(getFlagOverrides)
+const mockGetNearbySchools = jest.mocked(getNearbySchools)
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -595,5 +597,122 @@ describe('POST / - SunScout wiring', () => {
     }
     expect(sentBody.property_data.lat ?? null).toBeNull()
     expect(sentBody.property_data.lng ?? null).toBeNull()
+  })
+})
+
+// -- Schools read path: nearest schools attached + persisted -------------------
+
+describe('POST / - schools wiring', () => {
+  let app: FastifyInstance
+
+  const SCHOOLS_FIXTURE = {
+    elementary: [
+      {
+        name: 'Jesse Ketchum Jr & Sr PS',
+        schoolType: 'elementary' as const,
+        board: 'TDSB',
+        distanceKm: 0.6,
+        eqaoScore: 8.2,
+        fraserRankPct: 74,
+        graduationRate: null,
+      },
+    ],
+    middle: [],
+    high: [
+      {
+        name: 'Jarvis Collegiate Institute',
+        schoolType: 'high' as const,
+        board: 'TDSB',
+        distanceKm: 0.8,
+        eqaoScore: 7.4,
+        fraserRankPct: 61,
+        graduationRate: 0.89,
+      },
+    ],
+    catchmentNote:
+      'Nearest schools by straight-line distance - attendance boundaries are not verified.',
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockGeocodeAddress.mockResolvedValue({
+      lat: 43.7942,
+      lng: -79.5268,
+      formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+    })
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('attaches nearest schools to the analysis when the table has rows', async () => {
+    mockGetNearbySchools.mockResolvedValue(SCHOOLS_FIXTURE)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(mockGetNearbySchools).toHaveBeenCalledWith(43.7942, -79.5268)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.schools).toEqual(SCHOOLS_FIXTURE)
+    // Persisted with the analysis so /r/:token reads it back
+    const saved = mockSaveAnalysis.mock.calls[0]![1]
+    expect(saved.schools).toEqual(SCHOOLS_FIXTURE)
+  })
+
+  it('schools stays null when the table is empty (data pending, not an error)', async () => {
+    mockGetNearbySchools.mockResolvedValue(null)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
+  })
+
+  it('schools stays null when geocoding fails (no lookup attempted)', async () => {
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetNearbySchools.mockResolvedValue(SCHOOLS_FIXTURE)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(mockGetNearbySchools).not.toHaveBeenCalled()
+    expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
+  })
+
+  it('a schools lookup failure never fails the analysis (spec s8 isolation)', async () => {
+    mockGetNearbySchools.mockRejectedValue(new Error('db down'))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
   })
 })

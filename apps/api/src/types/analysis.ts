@@ -94,6 +94,30 @@ export interface SunScoutResult {
   verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
 }
 
+/** One school from the schools table, ranked by straight-line distance. */
+export interface NearbySchool {
+  name: string
+  schoolType: 'elementary' | 'middle' | 'high'
+  board: string | null
+  /** Straight-line distance from the subject property, km (1 decimal). */
+  distanceKm: number
+  eqaoScore: number | null // 0–10 (EQAO)
+  fraserRankPct: number | null // 0–100 percentile (Fraser Institute)
+  graduationRate: number | null // 0–1, high schools only
+}
+
+/**
+ * Nearest schools per level (max 3 each). IMPORTANT: distance-ranked only —
+ * we do NOT ingest attendance-boundary data, so nothing here may be presented
+ * as "in catchment" (copy-honesty rule). catchmentNote carries the disclaimer.
+ */
+export interface SchoolsResult {
+  elementary: NearbySchool[]
+  middle: NearbySchool[]
+  high: NearbySchool[]
+  catchmentNote: string
+}
+
 export interface Analysis {
   id: string
   token: string
@@ -112,4 +136,8 @@ export interface Analysis {
    * SunScout's sun-path input). Optional: analyses stored before 2026-07-01
    * don't carry it; null when geocoding failed. */
   coordinates?: { lat: number; lng: number } | null
+  /** Nearest schools per level from the schools table. Optional: analyses
+   * stored before 2026-07-02 don't carry it; null until the EQAO/Fraser CSV
+   * is loaded (empty table) or when geocoding failed. */
+  schools?: SchoolsResult | null
 }

@@ -33,7 +33,11 @@ import {
   computeMonthlyCost,
   computeHomeScore,
 } from '../data/personalBuyerData'
-import { shimToPersonalProperty, shimToPersonalNeighbourhood } from '../lib/reportShims'
+import {
+  shimToPersonalProperty,
+  shimToPersonalNeighbourhood,
+  shimToPersonalSchools,
+} from '../lib/reportShims'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -681,17 +685,28 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
 
 interface SchoolsSectionProps {
   isReal: boolean
+  /** Real schools from the schools table — null until the CSV is loaded. */
+  realSchools?: PersonalSchools | null
+  /** Honesty disclaimer from the API (catchment is never verified). */
+  catchmentNote?: string | null
 }
 
-function SchoolsSection({ isReal }: SchoolsSectionProps): JSX.Element {
-  const schools = PB_SCHOOLS
-  const topRanked = [...schools.elementary, ...schools.middle, ...schools.high]
-    .filter((s) => s.inCatchment)
+function SchoolsSection({ isReal, realSchools, catchmentNote }: SchoolsSectionProps): JSX.Element {
+  // Real analyses only ever show real rows — fixture schools on a real
+  // address would be a fabrication. Demo route keeps the design fixture.
+  const schools = isReal ? realSchools : PB_SCHOOLS
+  const hasData = schools != null
+
+  const allSchools = hasData ? [...schools.elementary, ...schools.middle, ...schools.high] : []
+  const topRanked = [...allSchools]
+    .filter((s) => (isReal ? s.eqao > 0 : s.inCatchment))
     .sort((a, b) => b.eqao - a.eqao)[0]
 
-  const verdictLabel = topRanked
-    ? `${topRanked.name.split(' ').slice(0, 2).join(' ')} · EQAO ${topRanked.eqao.toFixed(1)}`
-    : 'No catchment data'
+  const verdictLabel = !hasData
+    ? 'Data pending'
+    : topRanked
+      ? `${topRanked.name.split(' ').slice(0, 2).join(' ')} · EQAO ${topRanked.eqao.toFixed(1)}`
+      : `${allSchools.length} nearby`
 
   return (
     <section className="container tr-section">
@@ -704,45 +719,58 @@ function SchoolsSection({ isReal }: SchoolsSectionProps): JSX.Element {
           </>
         }
         verdict={verdictLabel}
-        tone="pass"
+        tone={hasData ? 'pass' : 'caution'}
       />
-      {isReal && (
-        <p
-          className="mono"
-          style={{
-            fontSize: 11,
-            color: 'var(--muted)',
-            letterSpacing: '0.12em',
-            marginBottom: 16,
-          }}
-        >
-          School catchment data · real lookup in Phase 2
-        </p>
+
+      {!hasData ? (
+        <div className="card col" style={{ padding: 32, gap: 10 }}>
+          <div className="serif" style={{ fontSize: 20 }}>
+            School data pending
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--ink-2)', maxWidth: 560, lineHeight: 1.55 }}>
+            The EQAO / Fraser Institute dataset hasn&apos;t been loaded yet. Once it is, this
+            section shows the nearest elementary, middle, and high schools with their scores — a
+            real address never shows placeholder schools.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div
+            className="grid-1col-mobile"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}
+          >
+            <SchoolColumn label="Elementary" schools={schools.elementary} />
+            <SchoolColumn label="Middle" schools={schools.middle} />
+            <SchoolColumn label="High school" schools={schools.high} />
+          </div>
+
+          <p
+            style={{
+              marginTop: 24,
+              fontSize: 13,
+              color: 'var(--muted)',
+              maxWidth: 720,
+            }}
+          >
+            {isReal ? (
+              <>
+                EQAO scores (out of 10) are from the Ontario Education Quality and Accountability
+                Office; Fraser percentile from the Fraser Institute school report card.{' '}
+                {catchmentNote ??
+                  'Nearest schools by straight-line distance — attendance boundaries are not verified.'}
+              </>
+            ) : (
+              <>
+                EQAO scores (out of 10) are 2024 results from the Ontario Education Quality and
+                Accountability Office. Fraser percentile is from the Fraser Institute&apos;s 2025
+                school report card. Catchment boundaries pulled live from board GIS data.{' '}
+                <span style={{ color: 'var(--accent)' }}>Highlighted</span> = this property is
+                inside the school&apos;s attendance boundary.
+              </>
+            )}
+          </p>
+        </>
       )}
-
-      <div
-        className="grid-1col-mobile"
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}
-      >
-        <SchoolColumn label="Elementary" schools={schools.elementary} />
-        <SchoolColumn label="Middle" schools={schools.middle} />
-        <SchoolColumn label="High school" schools={schools.high} />
-      </div>
-
-      <p
-        style={{
-          marginTop: 24,
-          fontSize: 13,
-          color: 'var(--muted)',
-          maxWidth: 720,
-        }}
-      >
-        EQAO scores (out of 10) are 2024 results from the Ontario Education Quality and
-        Accountability Office. Fraser percentile is from the Fraser Institute's 2025 school report
-        card. Catchment boundaries pulled live from board GIS data.{' '}
-        <span style={{ color: 'var(--accent)' }}>Highlighted</span> = this property is inside the
-        school's attendance boundary.
-      </p>
     </section>
   )
 }
@@ -1538,10 +1566,17 @@ export function PersonalBuyerPage({
     [property]
   )
 
-  // When isReal: schools pass 0 until EQAO data is loaded — the score reflects
-  // only what's known. Light is REAL when the analysis carries pvlib sun
-  // output (geocoding succeeded); otherwise 0 (honest floor), never a fixture.
-  const schoolsForScore = isReal ? EMPTY_SCHOOLS : PB_SCHOOLS
+  // Real schools from the schools table (null until the EQAO/Fraser CSV is
+  // loaded). When present they feed both the §04 section and the HomeScore
+  // schools component — and they are the documented re-enable trigger for the
+  // numeric gauge ("FMV or schools has a real source"). Light is REAL when the
+  // analysis carries pvlib sun output; otherwise 0 (honest floor), never a fixture.
+  const realSchools = isReal && realAnalysis!.schools ? realAnalysis!.schools : null
+  const personalSchools = useMemo(
+    () => (realSchools ? shimToPersonalSchools(realSchools) : null),
+    [realSchools]
+  )
+  const schoolsForScore = isReal ? (personalSchools ?? EMPTY_SCHOOLS) : PB_SCHOOLS
   const lightScore = isReal ? (realAnalysis!.sunScout?.sunScore ?? 0) : STATIC_LIGHT_SCORE
 
   // Real flags feed the risk component + severe-gate ceiling. The aggregate
@@ -1583,7 +1618,7 @@ export function PersonalBuyerPage({
         property={property}
         score={score}
         monthly={monthly}
-        scoreSuppressed={isReal}
+        scoreSuppressed={isReal && personalSchools == null}
         photoUrls={
           isReal ? (realListing!.photos.length > 0 ? realListing!.photos : undefined) : undefined
         }
@@ -1598,9 +1633,13 @@ export function PersonalBuyerPage({
               letterSpacing: '0.12em',
             }}
           >
-            {realAnalysis?.sunScout != null
-              ? 'School data · available in Phase 2'
-              : 'School and sun data · available in Phase 2'}
+            {personalSchools != null
+              ? realAnalysis?.sunScout != null
+                ? 'Schools + sun data · live'
+                : 'School data · live — sun data pending geocode'
+              : realAnalysis?.sunScout != null
+                ? 'School data · pending EQAO/Fraser dataset load'
+                : 'School and sun data · pending'}
           </p>
         </div>
       )}
@@ -1616,7 +1655,11 @@ export function PersonalBuyerPage({
         isEstimated={isReal}
       />
       <PBSalesSection comps={PB_COMPS} isSampleData={isReal} />
-      <SchoolsSection isReal={isReal} />
+      <SchoolsSection
+        isReal={isReal}
+        realSchools={personalSchools}
+        catchmentNote={realSchools?.catchmentNote ?? null}
+      />
       <NeighbourhoodSection neigh={neighbourhood} />
       {isReal ? (
         <SunScoutPanel

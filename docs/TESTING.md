@@ -390,6 +390,15 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
    🤖 Automated coverage: `apps/api/src/routes/pdf.test.ts` (gate + error states), `apps/api/src/services/pdfService.test.ts` (footer branding + QR), `apps/web/src/hooks/usePdfExport.test.tsx` (frontend gating + session + server-fallback)
 
+**✋ Test 33h — Schools read path (nearest 3 per level)**
+
+1. With the schools table EMPTY (pre-CSV): a live personal report shows the honest "School data pending" card (never fixture schools for a real address), the HomeScore gauge stays suppressed, and a live tenant report shows the schools placeholder
+2. After `node scripts/load-schools.mjs <csv>` (requires migration `20260701_add_schools_name_postal_unique.sql` — **verified NOT applied as of 2026-07-02**): re-running an analysis attaches the nearest ≤3 elementary/middle/high schools by straight-line distance, the personal §04 section and tenant §08 section render them, and the personal gauge un-suppresses (schools = the documented re-enable trigger)
+3. No report ever claims "in catchment" for real data — the disclaimer states boundaries are not verified
+4. A schools lookup failure or missing coordinates never fails the analysis (data pending, not an error)
+
+   🤖 Automated coverage: `apps/api/src/services/supabaseService.test.ts` (ranking/cap/null states), `apps/api/src/routes/analysis.test.ts` (attach + persist + isolation), `apps/web/src/lib/reportShims.schools.test.ts` (display shims), `apps/web/src/pages/ReportPage.test.tsx` (live tenant render)
+
 **✋ Test 33g — Flag polarity + value handling (live-data regression)**
 
 1. A listing whose description says "all utilities included · 1 parking included" shows NO red flags for those phrases and loses no points (live E2E 2026-07-01 found −15 from three amenity "risks")

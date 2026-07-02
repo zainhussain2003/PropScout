@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Analysis, ReportMode } from '../types/analysis'
+import type { Analysis, ReportMode, SchoolsResult, NearbySchool } from '../types/analysis'
 import type { Listing } from '../types/property'
 
 // Lazy singleton — only created on first DB call so tests can import
@@ -145,6 +145,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     sunScout?: Analysis['sunScout']
     walkScore?: Analysis['walkScore']
     coordinates?: Analysis['coordinates']
+    schools?: Analysis['schools']
     hasSanityWarnings?: boolean
   } | null
   const dealScore = marketData?.dealScore ?? null
@@ -174,6 +175,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     neighbourhood: null,
     sunScout: marketData?.sunScout ?? null,
     coordinates: marketData?.coordinates ?? null,
+    schools: marketData?.schools ?? null,
   }
 }
 
@@ -262,6 +264,7 @@ export async function saveAnalysis(
         sunScout: analysis.sunScout,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
+        schools: analysis.schools ?? null,
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,
@@ -801,6 +804,7 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
         sunScout: analysis.sunScout,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
+        schools: analysis.schools ?? null,
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,
@@ -812,6 +816,102 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
 
   if (error != null) {
     throw new Error(`updateAnalysisByToken failed: ${error.message}`)
+  }
+}
+
+// ── getNearbySchools ──────────────────────────────────────────────────────────
+
+/** Bounding half-box for the school candidate query: ~15 km of latitude and
+ * (at Ontario latitudes) roughly the same in longitude. */
+const SCHOOL_SEARCH_LAT_DELTA = 0.14
+const SCHOOL_SEARCH_LNG_DELTA = 0.19
+const SCHOOLS_PER_LEVEL = 3
+
+/** Straight-line (haversine) distance between two coordinates in km. */
+export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number): number => (d * Math.PI) / 180
+  const R = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(a))
+}
+
+interface SchoolRow {
+  name: string
+  school_type: string
+  board: string | null
+  lat: number | null
+  lng: number | null
+  eqao_score: number | null
+  fraser_rank_pct: number | null
+  graduation_rate: number | null
+}
+
+/** Honesty disclaimer — we do NOT ingest attendance-boundary data, so results
+ * are distance-ranked only and must never be presented as "in catchment". */
+export const SCHOOL_CATCHMENT_NOTE =
+  'Nearest schools by straight-line distance — attendance boundaries are not ' +
+  'verified. Confirm catchment with the school board before deciding.'
+
+/**
+ * Nearest schools (max 3 per level) to the subject property, from the
+ * `schools` table loaded by scripts/load-schools.mjs.
+ *
+ * Query shape: a lat/lng bounding box (~15 km) narrows candidates using the
+ * table scan Supabase can do without PostGIS, then haversine ranks them in
+ * Node and the closest 3 per school_type are returned.
+ *
+ * Returns null when the table has no rows in range (not loaded yet, or a
+ * remote address) or on any error — the report shows "data pending", never
+ * an error (spec §8 error isolation).
+ */
+export async function getNearbySchools(lat: number, lng: number): Promise<SchoolsResult | null> {
+  try {
+    const { data, error } = await db()
+      .from('schools')
+      .select('name, school_type, board, lat, lng, eqao_score, fraser_rank_pct, graduation_rate')
+      .gte('lat', lat - SCHOOL_SEARCH_LAT_DELTA)
+      .lte('lat', lat + SCHOOL_SEARCH_LAT_DELTA)
+      .gte('lng', lng - SCHOOL_SEARCH_LNG_DELTA)
+      .lte('lng', lng + SCHOOL_SEARCH_LNG_DELTA)
+
+    if (error != null) {
+      console.error('[supabaseService] getNearbySchools query failed', error)
+      return null
+    }
+    const rows = (data ?? []) as SchoolRow[]
+    if (rows.length === 0) return null
+
+    const ranked: NearbySchool[] = rows
+      .filter((r) => r.lat != null && r.lng != null)
+      .map((r) => ({
+        name: r.name,
+        schoolType: r.school_type as NearbySchool['schoolType'],
+        board: r.board,
+        distanceKm: Math.round(haversineKm(lat, lng, r.lat!, r.lng!) * 10) / 10,
+        eqaoScore: r.eqao_score,
+        fraserRankPct: r.fraser_rank_pct,
+        graduationRate: r.graduation_rate,
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+
+    if (ranked.length === 0) return null
+
+    const byLevel = (level: NearbySchool['schoolType']): NearbySchool[] =>
+      ranked.filter((r) => r.schoolType === level).slice(0, SCHOOLS_PER_LEVEL)
+
+    return {
+      elementary: byLevel('elementary'),
+      middle: byLevel('middle'),
+      high: byLevel('high'),
+      catchmentNote: SCHOOL_CATCHMENT_NOTE,
+    }
+  } catch (err) {
+    console.error('[supabaseService] getNearbySchools unexpected error', err)
+    return null
   }
 }
 

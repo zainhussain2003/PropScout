@@ -68,7 +68,7 @@ import type {
   TenantListingData,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
-import { shimToTenantListingData } from '../lib/reportShims'
+import { shimToTenantListingData, shimToTenantSchools } from '../lib/reportShims'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1446,18 +1446,23 @@ export function TenantReport({
         }
       />
 
-      {/* §08 Schools — requires Google Places + EQAO data */}
+      {/* §08 Schools — real rows from the schools table when loaded; honest
+          placeholder until the EQAO/Fraser CSV lands. Demo keeps the fixture. */}
       {isReal ? (
-        <SectionPlaceholder
-          n="08"
-          topic="Schools"
-          question={
-            <>
-              What schools are <em>nearby</em>?
-            </>
-          }
-          week="Week 4–5 · Google Places + EQAO"
-        />
+        realAnalysis?.schools ? (
+          <TenantSchoolsSection schools={shimToTenantSchools(realAnalysis.schools)} />
+        ) : (
+          <SectionPlaceholder
+            n="08"
+            topic="Schools"
+            question={
+              <>
+                What schools are <em>nearby</em>?
+              </>
+            }
+            week="Pending EQAO / Fraser dataset load"
+          />
+        )
       ) : (
         <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
       )}

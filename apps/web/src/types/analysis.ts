@@ -129,6 +129,29 @@ export interface SunScoutResult {
   verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
 }
 
+/** One school from the schools table, ranked by straight-line distance. */
+export interface NearbySchool {
+  name: string
+  schoolType: 'elementary' | 'middle' | 'high'
+  board: string | null
+  /** Straight-line distance from the subject property, km (1 decimal). */
+  distanceKm: number
+  eqaoScore: number | null // 0–10 (EQAO)
+  fraserRankPct: number | null // 0–100 percentile (Fraser Institute)
+  graduationRate: number | null // 0–1, high schools only
+}
+
+/**
+ * Nearest schools per level (max 3 each). Distance-ranked only — attendance
+ * boundaries are NOT ingested, so nothing here may render as "in catchment".
+ */
+export interface SchoolsResult {
+  elementary: NearbySchool[]
+  middle: NearbySchool[]
+  high: NearbySchool[]
+  catchmentNote: string
+}
+
 export interface Analysis {
   id: string
   token: string // share token for /r/[token]
@@ -147,6 +170,9 @@ export interface Analysis {
    * Optional: analyses stored before 2026-07-01 don't carry it; null when
    * geocoding failed. */
   coordinates?: { lat: number; lng: number } | null
+  /** Nearest schools per level. Optional: analyses stored before 2026-07-02
+   * don't carry it; null until the schools CSV is loaded. */
+  schools?: SchoolsResult | null
 }
 
 // ── Investor report extended types ────────────────────────────────────────────

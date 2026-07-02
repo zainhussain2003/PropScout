@@ -24,6 +24,7 @@ import {
   updateAnalysisByToken,
   fetchRentalComps,
   getFlagOverrides,
+  getNearbySchools,
 } from '../services/supabaseService'
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -397,6 +398,19 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         ? await getWalkScore(listing.address, coords.lat, coords.lng)
         : null
 
+      // Step 7b — nearest schools from the schools table (spec: 3 per level,
+      // distance-ranked, catchment NOT verified). Null until the EQAO/Fraser
+      // CSV is loaded or when geocoding failed — the report shows "data
+      // pending", and this lights up the moment the table has rows.
+      let schools: Analysis['schools'] = null
+      if (coords) {
+        try {
+          schools = (await getNearbySchools(coords.lat, coords.lng)) ?? null
+        } catch {
+          schools = null
+        }
+      }
+
       // Step 8 — generate narrative (never throws)
       // The Python calc engine returns flag_id (not id) and no label; resolve
       // human-readable labels here for both the narrative + the UI payload.
@@ -466,6 +480,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         neighbourhood: null,
         sunScout: toSunScout(pyData.sun_scout),
         coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
+        schools,
         hasSanityWarnings: pyData.has_sanity_warnings,
       }
 

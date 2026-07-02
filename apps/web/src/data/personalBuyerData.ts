@@ -345,15 +345,22 @@ export function computeHomeScore(
   else if (askVsMid <= 0.03) pricing = 14
   else if (askVsMid <= 0.06) pricing = 8
 
-  // 2. Schools — average EQAO of in-catchment schools.
-  // When no school data is available (EMPTY_SCHOOLS passed for real listings),
-  // all arrays are empty so inCatch.length === 0 → schoolPts = 0, not 7.5 fallback.
+  // 2. Schools — average EQAO of in-catchment schools. Real data carries no
+  // catchment (boundaries not ingested), so fall back to the mean EQAO of the
+  // NEAREST schools when they have real scores; the flat 7.5 assumption only
+  // remains for schools with no EQAO at all. When no school data is available
+  // (EMPTY_SCHOOLS for real listings pre-CSV), arrays are empty → schoolPts 0.
   const allSchools = [...schools.elementary, ...schools.middle, ...schools.high]
   const inCatch = allSchools.filter((s) => s.inCatchment)
+  const scored = allSchools.filter((s) => s.eqao > 0)
   let schoolPts = 0
   let avgEqao = 0
   if (allSchools.length > 0) {
-    avgEqao = inCatch.length ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length : 7.5
+    avgEqao = inCatch.length
+      ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length
+      : scored.length
+        ? scored.reduce((s, x) => s + x.eqao, 0) / scored.length
+        : 7.5
     if (avgEqao >= 9.0) schoolPts = 20
     else if (avgEqao >= 8.5) schoolPts = 17
     else if (avgEqao >= 8.0) schoolPts = 14

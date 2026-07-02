@@ -38,6 +38,8 @@ import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
+import { TenantSchoolsSection } from '../components/tenant/TenantSchoolsSection'
+import { shimToTenantSchools } from '../lib/reportShims'
 import { DEFAULT_FINANCING_INPUTS } from '../constants/demoData'
 import type {
   Analysis,
@@ -758,7 +760,15 @@ function TenantReportContent({
         </section>
       )}
 
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="03" token={analysis.token} />
+      {analysis.schools && (
+        <TenantSchoolsSection schools={shimToTenantSchools(analysis.schools)} sectionNumber="03" />
+      )}
+
+      <SunScoutPanel
+        sunScout={analysis.sunScout}
+        sectionNumber={analysis.schools ? '04' : '03'}
+        token={analysis.token}
+      />
     </main>
   )
 }

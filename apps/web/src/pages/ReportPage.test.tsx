@@ -381,3 +381,54 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(await screen.findByText(/Passes at .* income/i)).toBeInTheDocument()
   })
 })
+
+// ── Schools read path (tenant live report) ────────────────────────────────────
+
+describe('ReportPage — live tenant schools', () => {
+  const SCHOOLS = {
+    elementary: [
+      {
+        name: 'Jesse Ketchum Jr & Sr PS',
+        schoolType: 'elementary' as const,
+        board: 'TDSB',
+        distanceKm: 0.6,
+        eqaoScore: 8.2,
+        fraserRankPct: 74,
+        graduationRate: null,
+      },
+    ],
+    middle: [],
+    high: [],
+    catchmentNote: 'Nearest by distance — catchment not verified.',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+  })
+
+  it('renders the real nearest schools when analysis.schools is present', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...ANALYSIS, schools: SCHOOLS },
+      listing: LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    expect(await screen.findByText('Jesse Ketchum Jr & Sr PS')).toBeInTheDocument()
+    // Distance-derived walk estimate (0.6 km × 12 min/km)
+    expect(screen.getByText(/7 min/)).toBeInTheDocument()
+  })
+
+  it('shows no schools section when the table has no data yet', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...ANALYSIS, schools: null },
+      listing: LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    await screen.findByText(/Is the listing/i)
+    expect(screen.queryByText('Jesse Ketchum Jr & Sr PS')).not.toBeInTheDocument()
+  })
+})
