@@ -463,6 +463,47 @@ install --with-deps chromium`, cron `0 6 * * *` UTC, restart NEVER). ✅
   manual run → check `rental_listings` → tune selectors if sparse. (`realtor_scraper.py` is a
   stub, but that's the per-listing scraper, not the nightly cron — irrelevant to this deploy.)
 
+## 🔴 LIVE E2E RUN — real Realtor.ca listings through the full local pipeline (2026-07-01)
+
+7 live listings (Toronto condos, Hamilton detached, Toronto rentals incl. a basement and a
+2nd-floor unit) + 1 deliberately broken URL, through scrape → analysis in all 4 modes
+(10 analyses). Full results in the session log; what matters:
+
+**Works end-to-end on real data:** 6/7 scraped (address/price/beds/condo fees where present —
+$718 and $953 fees + $1,410 taxes parsed correctly); every analysis returned real
+coordinates, real Walk Scores (Yorkville walk 100/transit 91), live SunScout (same-day
+feature), real narratives; partial-scrape detection flagged missing year_built/taxes
+consistently; broken URL and the failed basement listing both returned clean 422
+SCRAPER_FAILED → manual entry. All error paths behaved.
+
+**BUG FOUND + FIXED — flag polarity + value handling (`logic_gate.py`):**
+
+1. Every extracted field was treated as a RISK: amenity facts (`utilities_included`,
+   `parking_included`, `den_present`) became red flags at ≥85 confidence and deducted
+   −5 each. A real Gerrard St rental lost 15 points _for including utilities_.
+2. Haiku's `value` was ignored — a confident FALSE ("not a basement", value=false,
+   conf 90) still fired. A live _2nd-floor_ unit showed `is_basement_unit:red` +
+   `basement_unit:red` (duplicate ids for the same fact, also fixed via alias).
+
+Fixed with `INFO_FLAG_IDS` (11 amenity/lease facts filtered from risk output) +
+`value is True` gate + `FLAG_ID_ALIASES` in `constants/thresholds.py`. Re-verified against
+the same live listings: Gerrard 5 flags/score 1 → 0 flags/score 16; Mimico 5 flags →
+one legitimate `illegal_unit_risk:amber`. 7 unit tests in the NEW `logic_gate_test.py`
+(the gate had no test file at all). Info facts are extracted but not yet surfaced —
+they should feed a future amenities panel, not the risk section.
+
+**Known-gap observations (data-blocked, not bugs):**
+
+- `comps=null` on ALL 7 listings — even Toronto FSAs the June probe runs covered. Worth a
+  targeted look at `fetchRentalComps` vs the actual `rental_listings` rows (beds range-floor
+  - postal precision debt above are suspects) before blaming thin data.
+- Every live listing scores 0–16 `hard_pass` — real cash-flow math at 4.79%/20% down is
+  brutal, but with comps always null the mid-rent is the price×0.005 proxy, so the score
+  distribution is currently driven by fallback assumptions. Deploy the nightly scraper +
+  real comps before reading anything into live score levels.
+
+---
+
 ## Blocked on you — handle when you have time
 
 In priority order:
