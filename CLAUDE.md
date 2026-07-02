@@ -1287,7 +1287,8 @@ propscout/
 │       ├── 20260622_add_listing_extras.sql   # rent_monthly, city, walk_score, has_sanity_warnings
 │       ├── 20260623_add_rental_listings_source_url_unique.sql
 │       ├── 20260623_add_score_version.sql
-│       └── 20260624_add_rental_listings_first_seen_at.sql
+│       ├── 20260624_add_rental_listings_first_seen_at.sql
+│       └── 20260701_add_schools_name_postal_unique.sql  # NOT applied — required by load-schools.mjs upsert
 │
 └── Week3-4 Front end/                 # External test suites — referenced from vite.config.ts includes
     ├── PR4/                           # Investor report + shared component tests
