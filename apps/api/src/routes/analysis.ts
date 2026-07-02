@@ -431,6 +431,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         walkScore,
         neighbourhood: null,
         sunScout: null,
+        coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
         hasSanityWarnings: pyData.has_sanity_warnings,
       }
 

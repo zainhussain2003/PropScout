@@ -140,6 +140,10 @@ export interface Analysis {
   neighbourhood: NeighbourhoodData | null
   hasSanityWarnings: boolean
   sunScout: SunScoutResult | null
+  /** Geocoded subject-property coordinates — enables the real MiniMap.
+   * Optional: analyses stored before 2026-07-01 don't carry it; null when
+   * geocoding failed. */
+  coordinates?: { lat: number; lng: number } | null
 }
 
 // ── Investor report extended types ────────────────────────────────────────────

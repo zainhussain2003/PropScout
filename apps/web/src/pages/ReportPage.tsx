@@ -816,6 +816,7 @@ function InvestorReportContent({
         capRate={metrics.capRate}
         dscr={metrics.dscr}
         onBack={handleBack}
+        mapCenter={analysis.coordinates ?? null}
       />
 
       <div className="container" style={{ marginBottom: 32 }}>

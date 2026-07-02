@@ -102,4 +102,8 @@ export interface Analysis {
   walkScore: WalkScoreResult | null
   neighbourhood: null // placeholder for Phase 2; always null in MVP
   sunScout: SunScoutResult | null
+  /** Geocoded subject-property coordinates — feeds the real MiniMap (and
+   * SunScout's sun-path input). Optional: analyses stored before 2026-07-01
+   * don't carry it; null when geocoding failed. */
+  coordinates?: { lat: number; lng: number } | null
 }

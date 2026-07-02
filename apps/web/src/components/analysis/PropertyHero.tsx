@@ -28,6 +28,8 @@ interface PropertyHeroProps {
   dscr: number
   /** Called when the user clicks "Analyze another listing" */
   onBack?: () => void
+  /** Subject coordinates — renders the real Mapbox map when provided. */
+  mapCenter?: { lat: number; lng: number } | null
 }
 
 export function PropertyHero({
@@ -37,6 +39,7 @@ export function PropertyHero({
   capRate,
   dscr,
   onBack,
+  mapCenter,
 }: PropertyHeroProps): JSX.Element {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
 
@@ -286,6 +289,7 @@ export function PropertyHero({
             height={180}
             address={`${listing.addressLine1}, ${listing.addressLine2}`}
             pins={[]}
+            center={mapCenter}
           />
         </div>
 

@@ -360,6 +360,14 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
    🤖 Automated coverage: `apps/web/src/data/personalBuyerData.test.ts` (mechanism), `apps/web/src/pages/ReportPage.test.tsx` (real flags reach the breakdown via /r/:token)
 
+**✋ Test 33d — Real MiniMap (Mapbox GL) with placeholder fallback**
+
+1. With `VITE_MAPBOX_TOKEN` set and a geocoded analysis, the report hero shows a real Mapbox map centred on the property (ink subject pin) — no "Map placeholder" badge
+2. Remove the token (or analyse an address that fails geocoding) — the SVG placeholder renders instead; the report never shows a blank hole
+3. Reload a shared `/r/:token` link — coordinates persist (stored in `market_data`), so the real map still renders
+
+   🤖 Automated coverage: `apps/web/src/components/analysis/MiniMap.test.tsx`, `apps/web/src/pages/ReportPage.test.tsx` (coordinates wiring), `apps/api/src/routes/analysis.test.ts` (coordinates in payload)
+
 ### SunScout
 
 **✋ Test 34 — Sun hours calculation**

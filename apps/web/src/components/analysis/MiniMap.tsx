@@ -1,20 +1,27 @@
 /**
- * MiniMap — SVG placeholder map with rental comp price pins.
+ * MiniMap — real Mapbox GL JS map when a token + subject coordinates exist,
+ * design-faithful SVG placeholder otherwise.
  *
- * This is a design-faithful placeholder. Replace the SVG body with a real
- * Mapbox GL JS <Map> component when the Mapbox integration ships.
+ * The real map mounts via mapboxGlService (lazy mapbox-gl import, subject
+ * ink pin, accent comp markers). Any failure — no token, no coordinates, no
+ * WebGL, init error — falls back to the SVG placeholder so the report never
+ * shows a blank hole.
  *
- * Pins are rendered as circles with price labels. Lat/lng coords from
- * the MapPin type are converted to SVG x/y positions via a simple linear
+ * Placeholder pins are rendered as circles with price labels. Lat/lng coords
+ * from the MapPin type are converted to SVG x/y positions via a simple linear
  * mapping against a fixed bounding box that approximates the Ontario area.
  */
 
+import { useEffect, useRef, useState } from 'react'
 import type { MapPin } from '../../types/analysis'
+import { getMapboxToken, mountMiniMap } from '../../lib/services/mapboxGlService'
 
 interface MiniMapProps {
   height?: number
   address: string
   pins?: MapPin[]
+  /** Subject property coordinates — enables the real Mapbox map. */
+  center?: { lat: number; lng: number } | null
 }
 
 // Simple lat/lng → SVG coordinate mapping
@@ -38,9 +45,76 @@ function latLngToXY(
 // Grid lines for the fake map background
 const GRID_COUNT = 8
 
-export function MiniMap({ height = 280, address, pins = [] }: MiniMapProps): JSX.Element {
+export function MiniMap({ height = 280, address, pins = [], center }: MiniMapProps): JSX.Element {
   const W = 720
   const H = height
+
+  const token = getMapboxToken()
+  const wantRealMap = token != null && center != null
+  const [mapFailed, setMapFailed] = useState(false)
+  const mapContainerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!wantRealMap || mapContainerRef.current == null) return
+    let cancelled = false
+    let teardown: (() => void) | undefined
+
+    void mountMiniMap(mapContainerRef.current, { token, center, pins }).then((handle) => {
+      if (handle == null) {
+        if (!cancelled) setMapFailed(true)
+        return
+      }
+      if (cancelled) {
+        handle.remove()
+      } else {
+        teardown = () => handle.remove()
+      }
+    })
+
+    return () => {
+      cancelled = true
+      teardown?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantRealMap, token, center?.lat, center?.lng])
+
+  if (wantRealMap && !mapFailed) {
+    return (
+      <div
+        style={{
+          borderRadius: 14,
+          overflow: 'hidden',
+          background: 'var(--bg-elev)',
+          border: '1px solid var(--line)',
+          position: 'relative',
+        }}
+        role="img"
+        aria-label={`Map showing rental comps near ${address}`}
+      >
+        <div ref={mapContainerRef} style={{ width: '100%', height, display: 'block' }} />
+
+        {/* Address label overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 12,
+            left: 12,
+            background: 'color-mix(in oklab, var(--surface) 92%, transparent)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 8,
+            padding: '6px 12px',
+            fontSize: 11,
+            fontFamily: "'Geist Mono', monospace",
+            color: 'var(--ink)',
+            border: '1px solid var(--line)',
+            pointerEvents: 'none',
+          }}
+        >
+          {address}
+        </div>
+      </div>
+    )
+  }
 
   // If no real lat/lng data yet, distribute pins evenly as demo positions
   const hasPins = pins.length > 0

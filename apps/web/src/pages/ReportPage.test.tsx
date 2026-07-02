@@ -44,6 +44,14 @@ vi.mock('../lib/services/overrideService', () => ({
   removeOverride: (token: string, flagId: string) => removeOverride(token, flagId),
 }))
 
+// ── Mapbox GL service (jsdom has no WebGL) ────────────────────────────────────
+const getMapboxToken = vi.fn()
+const mountMiniMap = vi.fn()
+vi.mock('../lib/services/mapboxGlService', () => ({
+  getMapboxToken: () => getMapboxToken(),
+  mountMiniMap: (el: HTMLElement, opts: unknown) => mountMiniMap(el, opts),
+}))
+
 const LISTING: Listing = {
   id: 'listing-1',
   url: 'https://www.realtor.ca/real-estate/9999/55-front-st-toronto',
@@ -300,6 +308,24 @@ describe('ReportPage — risk-flag overrides', () => {
     // (10 → 5), not the hardcoded no-flags baseline.
     expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
     expect(await screen.findByText('5 / 10')).toBeInTheDocument()
+  })
+
+  it('passes the analysis coordinates into the real MiniMap (live map, not the placeholder)', async () => {
+    getMapboxToken.mockReturnValue('pk.test-token')
+    mountMiniMap.mockResolvedValue({ remove: vi.fn() })
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, coordinates: { lat: 43.7942, lng: -79.5268 } },
+      listing: SALE_LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    await waitFor(() => {
+      expect(mountMiniMap).toHaveBeenCalledTimes(1)
+    })
+    const [, opts] = mountMiniMap.mock.calls[0]! as [HTMLElement, { center: unknown }]
+    expect(opts.center).toEqual({ lat: 43.7942, lng: -79.5268 })
+    expect(screen.queryByText(/Map placeholder/i)).not.toBeInTheDocument()
   })
 
   it('recomputes the OSFI verdict live when household income changes', async () => {

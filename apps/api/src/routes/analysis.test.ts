@@ -436,3 +436,62 @@ describe('POST / - rent plausibility bounds', () => {
     expect(res.statusCode).toBe(200)
   })
 })
+
+// -- Coordinates threading (real MiniMap + SunScout both need lat/lng) --------
+
+describe('POST / - coordinates in the analysis payload', () => {
+  let app: FastifyInstance
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('includes geocoded coordinates so the frontend can render a real map', async () => {
+    mockGeocodeAddress.mockResolvedValue({
+      lat: 43.7942,
+      lng: -79.5268,
+      formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.coordinates).toEqual({ lat: 43.7942, lng: -79.5268 })
+  })
+
+  it('coordinates are null when geocoding fails - analysis still returns', async () => {
+    mockGeocodeAddress.mockResolvedValue(null)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.coordinates).toBeNull()
+  })
+})

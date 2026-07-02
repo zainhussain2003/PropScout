@@ -1090,7 +1090,7 @@ propscout/
 │   │       │   │   ├── RentalCompsBar.tsx     # Percentile range bar + hover marker
 │   │       │   │   ├── AIVerdictBlock.tsx     # Dark full-bleed AI verdict card
 │   │       │   │   ├── RiskRow.tsx            # Inline risk flag row
-│   │       │   │   ├── MiniMap.tsx            # Mapbox placeholder → real Mapbox GL JS
+│   │       │   │   ├── MiniMap.tsx            # Real Mapbox GL JS map (token + coords) with SVG placeholder fallback
 │   │       │   │   └── PropertyHero.tsx       # Photo grid + chips + address + sticky score card
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
@@ -1148,7 +1148,9 @@ propscout/
 │   │       │   └── services/          # Frontend services — call Fastify API, never Supabase directly
 │   │       │       ├── analysisService.ts   # POST /analysis, GET /analysis/:token
 │   │       │       ├── authService.ts       # Supabase auth only (signup, login, session)
-│   │       │       └── reportService.ts     # PDF generation, share link creation
+│   │       │       ├── billingService.ts    # Stripe checkout/portal sessions via the API
+│   │       │       ├── overrideService.ts   # Risk-flag dismissal persistence
+│   │       │       └── mapboxGlService.ts   # Lazy mapbox-gl loader + mini-map mount (VITE_MAPBOX_TOKEN)
 │   │       │
 │   │       ├── types/                 # All shared TypeScript types — never inline
 │   │       │   ├── analysis.ts        # Analysis, ReportMode, DealScore, RiskFlag
