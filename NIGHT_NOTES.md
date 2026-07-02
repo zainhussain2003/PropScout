@@ -51,16 +51,22 @@ later; this is the promise made visible so validation is a _choice_, not a forgo
 
 ### ⛔ gate ≠ matrix — DO NOT remember the gate as "the matrix is done"
 
-**The per-flag × mode severity matrix is NOT implemented.** This thread opened as "build the
-matrix" (the four-mode colour table: `needs_work` amber-for-investor / red-for-personal-buyer,
-`tenant_occupied` flipping meaning across roles). What actually shipped is the **severe gate**
-(the 4 catastrophic flags capping the score for investor/landlord) **+ the personal-buyer
-correctness/safety fixes** + a flat standard-red −5. The rich per-mode _cells_ — the original
-Item 1 — remain a **design on paper**. Flags do **not** get mode-specific severity yet.
+> **RESOLVED 2026-07-02 — the matrix IS now implemented.** Zain approved the
+> per-flag × per-mode ruleset (`docs/FLAG_SEVERITY_MATRIX.md`, v1) and it shipped:
+> `constants/flag_matrix.py` + mode-aware `merge_flags(…, mode)` in the calc
+> engine, tier threaded through the API to the frontend, unit + functionality +
+> regression tests pinning every distinctive cell. Magnitudes unchanged (−5 cap
+> −15, gate 40/30/20/10, HomeScore 34/20/10) and still unsourced (ledger rows
+> 1/2/15). The paragraph below is retained as history of why this warning existed.
 
-This line is load-bearing: months from now "the matrix is done" would be believed by everyone
-(including future-me) and it would be **false**. The matrix is **unbuilt scope**, not a
-finished feature. Validate AND build the cells before any doc, commit, or status says "matrix".
+**(Historical, pre-2026-07-02)** The per-flag × mode severity matrix was NOT implemented.
+This thread opened as "build the matrix" (the four-mode colour table: `needs_work`
+amber-for-investor / red-for-personal-buyer, `tenant_occupied` flipping meaning across
+roles). What actually shipped first was the **severe gate** (the 4 catastrophic flags
+capping the score for investor/landlord) **+ the personal-buyer correctness/safety fixes**
+
+- a flat standard-red −5. The rich per-mode _cells_ remained a design on paper until the
+  approved ruleset landed.
 
 **None of the above is "do it now."** It's the list to see before context-switching to the
 scraper, so validation is scheduled, not forgotten.

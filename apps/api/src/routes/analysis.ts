@@ -108,6 +108,8 @@ interface PyRiskFlag {
   flag_id?: string
   id?: string
   severity?: string
+  /** Per-mode severity tier from the flag matrix: severe|red|amber. */
+  tier?: string
   /** Calc engine doesn't send a label — orchestrator resolves it via flagLabel(). */
   label?: string
   evidence?: string | null
@@ -403,6 +405,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         return {
           id,
           severity: (f.severity as 'red' | 'amber') ?? 'amber',
+          tier: (f.tier as 'severe' | 'red' | 'amber') ?? 'amber',
           label: flagLabel(id),
           evidence: (f.evidence as string | null) ?? null,
           confidence: Number(f.confidence ?? 0),

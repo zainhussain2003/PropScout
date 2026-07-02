@@ -38,6 +38,7 @@ from calculations.sanity import sanity_check_metrics
 from extraction.regex_rules import extract_regex_flags
 from extraction.haiku_extraction import extract_flags_with_haiku
 from extraction.logic_gate import merge_flags, MergedFlag
+from constants.flag_matrix import get_flag_tier
 
 logger = logging.getLogger(__name__)
 
@@ -51,19 +52,13 @@ _DEFAULT_RENT_TREND: str = "flat"
 # Points deducted from the deal score per confirmed STANDARD red flag
 _DEDUCTION_PER_RED_FLAG: int = 5
 
-# Severe dealbreakers — these GATE the score's ceiling instead of deducting
-# points (spec §10a). Each must have a deterministic regex floor (verified in
-# extraction/regex_rules_test.py) so the gate never runs on nothing when Haiku
-# is unavailable. Modes that show the investment score (investor/landlord) apply
-# the gate; personal/tenant don't use this score.
-_SEVERE_FLAGS: frozenset[str] = frozenset(
-    {
-        "grow_op_history",
-        "flooding_history",
-        "illegal_unit_risk",
-        "special_assessment_risk",
-    }
-)
+# Severe/red/amber tiers now come from the per-mode flag severity matrix
+# (constants/flag_matrix.py, docs/FLAG_SEVERITY_MATRIX.md) applied inside
+# merge_flags. Every matrix severe cell has a deterministic regex floor
+# (verified in extraction/regex_rules_test.py) so the §10a gate never runs on
+# nothing when Haiku is unavailable. Modes that show the investment score
+# (investor/landlord) apply the gate; personal uses HomeScore (gated in the
+# frontend with its own 34/20/10 ceilings), tenant has no deal score.
 _GATED_MODES: frozenset[str] = frozenset({"investor", "landlord"})
 
 
@@ -256,19 +251,14 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         try:
             regex_flags = extract_regex_flags(body.description)
             haiku_flags = await extract_flags_with_haiku(body.description)
-            merged_flags = merge_flags(regex_flags, haiku_flags)
+            merged_flags = merge_flags(regex_flags, haiku_flags, mode=body.mode)
 
-            # Active = red and not dismissed. Severe flags GATE the ceiling;
-            # standard reds deduct −5 each (capped in calculate_deal_score).
-            active_reds = [
-                f
-                for f in merged_flags
-                if f.severity == "red" and f.flag_id not in dismissed_flags
-            ]
-            severe_flag_count = sum(
-                1 for f in active_reds if f.flag_id in _SEVERE_FLAGS
-            )
-            standard_red_count = len(active_reds) - severe_flag_count
+            # Active = not dismissed. The per-mode tier decides the impact:
+            # 'severe' GATES the ceiling; 'red' deducts −5 each (capped in
+            # calculate_deal_score); 'amber' displays only.
+            active = [f for f in merged_flags if f.flag_id not in dismissed_flags]
+            severe_flag_count = sum(1 for f in active if f.tier == "severe")
+            standard_red_count = sum(1 for f in active if f.tier == "red")
             risk_flag_deductions = float(standard_red_count * _DEDUCTION_PER_RED_FLAG)
         except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
             logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
@@ -279,14 +269,20 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
     # The calculation uses $0 when condo_fee_monthly is not provided, which may
     # silently understate carrying costs by hundreds per month for condos.
-    # Surface an amber warning so the user can correct it in the financing sliders.
-    if prop.property_type == "condo" and not prop.condo_fee_known:
+    # Surface an amber warning so the user can correct it in the financing
+    # sliders. Matrix: hidden for tenants (they don't pay the fee).
+    if (
+        prop.property_type == "condo"
+        and not prop.condo_fee_known
+        and get_flag_tier("condo_fee_unknown", body.mode) != "hidden"
+    ):
         condo_fee_flag = MergedFlag(
             flag_id="condo_fee_unknown",
             severity="amber",
             confidence=100,
             evidence="Condo fee not provided — costs calculated assuming $0/month",
             source="structural",
+            tier="amber",
         )
         if not any(f.flag_id == "condo_fee_unknown" for f in merged_flags):
             merged_flags.append(condo_fee_flag)
@@ -387,6 +383,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             "confidence": f.confidence,
             "evidence": f.evidence,
             "source": f.source,
+            "tier": f.tier,
         }
         for f in merged_flags
     ]

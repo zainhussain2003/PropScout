@@ -505,10 +505,13 @@ def test_dismissed_red_flag_removes_its_score_deduction() -> None:
     risk_flags so the UI can show it greyed out.
 
     'currently rented' deterministically triggers the regex 'tenanted' flag at
-    confidence 92 (>= 85 -> red), worth a -5 deduction.
+    confidence 92 (>= 85 -> red-eligible). Per the flag severity matrix,
+    tenanted is only a RED tier for the PERSONAL mode (N12 own-use risk) —
+    for an investor it is amber and never deducts.
     """
     base = {
         **_HAMILTON_PAYLOAD,
+        "mode": "personal",
         "description": "Bright duplex, currently rented to great tenants.",
     }
     dismissed = {**base, "dismissed_flag_ids": ["tenanted"]}
@@ -661,3 +664,97 @@ def test_sunscout_endpoint_rejects_invalid_bearing() -> None:
         json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 400},
     )
     assert res.status_code == 422
+
+
+# ── Flag severity matrix — per-mode severities (docs/FLAG_SEVERITY_MATRIX.md) ──
+
+
+def _flags_for_mode(description: str, mode: str) -> dict[str, dict]:
+    """Run the same listing through one mode; return {flag_id: flag dict}."""
+    payload = {**_HAMILTON_PAYLOAD, "mode": mode, "description": description}
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        resp = client.post("/analysis/", json=payload)
+    assert resp.status_code == 200, resp.text
+    return {f["flag_id"]: f for f in resp.json()["risk_flags"]}
+
+
+def test_matrix_same_listing_gets_mode_specific_severities() -> None:
+    """One tenanted + needs-work listing through all four modes: the flag set
+    and tones must follow the matrix, not a single global severity."""
+    desc = "Sold as-is, handyman special. Currently rented to great tenants."
+
+    investor = _flags_for_mode(desc, "investor")
+    assert investor["tenanted"]["severity"] == "amber"
+    assert investor["needs_work"]["severity"] == "amber"
+
+    personal = _flags_for_mode(desc, "personal")
+    assert personal["tenanted"]["severity"] == "red"  # N12 own-use risk
+    assert personal["needs_work"]["severity"] == "red"
+
+    tenant = _flags_for_mode(desc, "tenant")
+    assert "tenanted" not in tenant  # hidden — the reader IS the tenant
+    assert "needs_work" not in tenant
+
+    landlord = _flags_for_mode(desc, "landlord")
+    assert landlord["tenanted"]["severity"] == "amber"
+
+
+def test_matrix_amber_tiers_do_not_deduct_from_the_investor_score() -> None:
+    """Under the approved matrix, tenanted/needs_work are amber for an
+    investor — the score must match the no-description baseline exactly."""
+    desc = "Sold as-is, handyman special. Currently rented to great tenants."
+    flagged = {**_HAMILTON_PAYLOAD, "mode": "investor", "description": desc}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        flagged_resp = client.post("/analysis/", json=flagged)
+        base_resp = client.post("/analysis/", json=_HAMILTON_PAYLOAD)
+
+    flagged_data = flagged_resp.json()
+    assert flagged_data["deal_score"]["breakdown"]["deduction"] == 0
+    assert (
+        flagged_data["deal_score"]["total"] == base_resp.json()["deal_score"]["total"]
+    )
+
+
+def test_matrix_severe_gate_still_fires_for_investor() -> None:
+    """The §10a severe gate is unchanged: a grow-op caps the investor score
+    at the 1-severe ceiling (40)."""
+    desc = "Former grow op, fully remediated with city sign-off."
+    payload = {**_HAMILTON_PAYLOAD, "mode": "investor", "description": desc}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        resp = client.post("/analysis/", json=payload)
+
+    data = resp.json()
+    assert any(
+        f["flag_id"] == "grow_op_history" and f["tier"] == "severe"
+        for f in data["risk_flags"]
+    )
+    assert data["deal_score"]["total"] <= 40
+
+
+def test_matrix_condo_fee_unknown_is_hidden_from_tenants() -> None:
+    """The structural condo-fee flag doesn't apply to tenants — they don't
+    pay the fee."""
+    condo = {
+        **_VAUGHAN_PAYLOAD,
+        "property_data": {
+            **_VAUGHAN_PAYLOAD["property_data"],
+            "condo_fee_known": False,
+            "condo_fee_monthly": 0,
+        },
+    }
+    investor = {**condo, "mode": "investor"}
+    tenant = {**condo, "mode": "tenant"}
+
+    inv_flags = {
+        f["flag_id"]
+        for f in client.post("/analysis/", json=investor).json()["risk_flags"]
+    }
+    ten_flags = {
+        f["flag_id"]
+        for f in client.post("/analysis/", json=tenant).json()["risk_flags"]
+    }
+
+    assert "condo_fee_unknown" in inv_flags
+    assert "condo_fee_unknown" not in ten_flags

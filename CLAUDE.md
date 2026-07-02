@@ -1032,6 +1032,7 @@ propscout/
 │   ├── COMPONENT_MANIFEST.md          # Every design surface → React component + build order
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
 │   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
+│   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
 │   └── design_handoff_propscout_mvp/  # Design files — living documents, will be updated
 │       ├── tokens.css                 # CSS variables — copy to apps/web/src/styles/tokens.css
 │       └── designs/                   # 13 pixel-final HTML prototypes + JSX source
@@ -1253,7 +1254,8 @@ propscout/
 │   │   ├── models/
 │   │   │   └── schemas.py             # Pydantic models for all inputs/outputs — no raw dicts
 │   │   ├── constants/
-│   │   │   ├── thresholds.py          # Confidence thresholds, deal score brackets
+│   │   │   ├── thresholds.py          # Confidence thresholds, deal score brackets, INFO_FLAG_IDS
+│   │   │   ├── flag_matrix.py + flag_matrix_test.py  # Per-flag × per-mode severity tiers (docs/FLAG_SEVERITY_MATRIX.md)
 │   │   │   ├── rates.py               # Vacancy allowance, management fee, insurance rate
 │   │   │   └── provinces.py           # Ontario FSA prefixes, LTT brackets by province
 │   │   └── tests/

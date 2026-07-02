@@ -360,6 +360,16 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
    🤖 Automated coverage: `apps/web/src/data/personalBuyerData.test.ts` (mechanism), `apps/web/src/pages/ReportPage.test.tsx` (real flags reach the breakdown via /r/:token)
 
+**✋ Test 33e — Flag severity matrix: per-mode tiers (docs/FLAG_SEVERITY_MATRIX.md)**
+
+1. Analyze one tenanted + needs-work listing in all four modes and confirm the flags follow the matrix, not a single global severity: investor/landlord show `tenanted`/`needs_work` amber; personal shows both red (N12 own-use / project risk); tenant hides both
+2. `no_pets` appears (amber) only on the tenant report; `basement_unit` is info for personal but amber for tenant; `condo_fee_unknown` never appears on a tenant report
+3. Amber tiers never move the investor score (same total as the no-description baseline); the §10a severe gate still caps a grow-op listing at 40
+4. A flag id not in the matrix renders amber in every mode and never deducts — even at 95 confidence
+5. A 60–84% confidence flag renders at most amber even in a severe/red matrix cell
+
+   🤖 Automated coverage: `services/calc-engine/constants/flag_matrix_test.py` (cells), `extraction/logic_gate_test.py` (mode mapping + confidence cap), `routers/analysis_test.py` (4-mode functionality), `tests/test_regression.py::test_matrix_regression_approved_cells` (pinned cells)
+
 **✋ Test 33d — Real MiniMap (Mapbox GL) with placeholder fallback**
 
 1. With `VITE_MAPBOX_TOKEN` set and a geocoded analysis, the report hero shows a real Mapbox map centred on the property (ink subject pin) — no "Map placeholder" badge

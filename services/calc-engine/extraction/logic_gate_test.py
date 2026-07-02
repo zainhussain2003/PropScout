@@ -29,11 +29,21 @@ def test_confident_false_haiku_flag_never_fires() -> None:
     assert merged == []
 
 
-def test_confident_true_haiku_risk_flag_fires_red() -> None:
-    merged = merge_flags([], {"renovation_needed": _haiku(True, 90, "needs TLC")})
-    assert len(merged) == 1
-    assert merged[0].flag_id == "renovation_needed"
-    assert merged[0].severity == "red"
+def test_confident_true_haiku_risk_flag_fires() -> None:
+    """A confident value=True Haiku risk fires (renovation_needed aliases to
+    needs_work). Matrix: amber for an investor, red for a personal buyer."""
+    haiku = {"renovation_needed": _haiku(True, 90, "needs TLC")}
+
+    investor = merge_flags([], haiku, mode="investor")
+    assert len(investor) == 1
+    assert investor[0].flag_id == "needs_work"
+    assert investor[0].severity == "amber"
+    assert investor[0].tier == "amber"
+
+    personal = merge_flags([], haiku, mode="personal")
+    assert len(personal) == 1
+    assert personal[0].severity == "red"
+    assert personal[0].tier == "red"
 
 
 # ── Flag polarity — info/amenity fields are not risks ──────────────────────────
@@ -56,9 +66,9 @@ def test_risk_flags_survive_alongside_filtered_amenities() -> None:
         RegexFlag("utilities_included", 90, "all utilities included"),
         RegexFlag("needs_work", 92, "sold as-is"),
     ]
-    merged = merge_flags(regex, {})
+    merged = merge_flags(regex, {}, mode="personal")
     assert [f.flag_id for f in merged] == ["needs_work"]
-    assert merged[0].severity == "red"
+    assert merged[0].severity == "red"  # needs_work is red for a personal buyer
 
 
 # ── Duplicate basement ids collapse to one flag ────────────────────────────────
@@ -98,3 +108,74 @@ def test_regex_and_haiku_same_flag_takes_higher_confidence() -> None:
     assert len(merged) == 1
     assert merged[0].confidence == 92
     assert merged[0].source == "both"
+
+
+# ── Flag severity matrix — per-mode tiers (docs/FLAG_SEVERITY_MATRIX.md) ───────
+
+
+def test_hidden_cells_drop_the_flag_for_that_mode_only() -> None:
+    """tenanted is hidden for tenants (they ARE the tenant) but shown to
+    every other mode."""
+    regex = [RegexFlag("tenanted", 92, "tenant in place")]
+    assert merge_flags(regex, {}, mode="tenant") == []
+    assert len(merge_flags(regex, {}, mode="investor")) == 1
+    assert len(merge_flags(regex, {}, mode="landlord")) == 1
+
+
+def test_info_cells_drop_the_flag_for_that_mode_only() -> None:
+    """basement_unit is neutral info for a personal buyer but an amber
+    (light/egress questions) for a tenant."""
+    regex = [RegexFlag("basement_unit", 88, "basement suite")]
+    assert merge_flags(regex, {}, mode="personal") == []
+    tenant = merge_flags(regex, {}, mode="tenant")
+    assert len(tenant) == 1
+    assert tenant[0].severity == "amber"
+
+
+def test_no_pets_fires_amber_for_tenant_only() -> None:
+    """no_pets left INFO_FLAG_IDS: the matrix shows it to tenants (RTA s.14
+    nuance) and hides it from investors/personal buyers."""
+    regex = [RegexFlag("no_pets", 90, "no pets allowed")]
+    tenant = merge_flags(regex, {}, mode="tenant")
+    assert [f.flag_id for f in tenant] == ["no_pets"]
+    assert tenant[0].severity == "amber"
+    assert merge_flags(regex, {}, mode="investor") == []
+    assert merge_flags(regex, {}, mode="personal") == []
+    assert merge_flags(regex, {}, mode="landlord") == []  # info for landlord
+
+
+def test_severe_cell_yields_severe_tier_and_red_severity() -> None:
+    regex = [RegexFlag("grow_op_history", 90, "former grow op")]
+    merged = merge_flags(regex, {}, mode="investor")
+    assert len(merged) == 1
+    assert merged[0].tier == "severe"
+    assert merged[0].severity == "red"
+    # Tenant column: red display tone, but never 'severe' (no score to gate)
+    tenant = merge_flags(regex, {}, mode="tenant")
+    assert tenant[0].tier == "red"
+    assert tenant[0].severity == "red"
+
+
+def test_confidence_caps_the_matrix_tier_at_amber() -> None:
+    """A 60–84% flag can never render above amber, whatever its matrix cell
+    says — soft evidence stays a soft warning."""
+    haiku = {"tenanted": _haiku(True, 70, "may be rented")}
+    personal = merge_flags([], haiku, mode="personal")  # matrix cell: red
+    assert personal[0].tier == "amber"
+    assert personal[0].severity == "amber"
+
+    haiku_severe = {"illegal_unit_risk": _haiku(True, 70, "in-law suite?")}
+    investor = merge_flags([], haiku_severe, mode="investor")  # matrix: severe
+    assert investor[0].tier == "amber"
+    assert investor[0].severity == "amber"
+
+
+def test_unlisted_id_defaults_to_amber_even_at_high_confidence() -> None:
+    """Ids the matrix hasn't reviewed can be shown but never deduct — a brand
+    new Haiku invention must not move the score until it's in the matrix."""
+    haiku = {"brand_new_flag": _haiku(True, 95, "something scary")}
+    for mode in ("investor", "personal", "tenant", "landlord"):
+        merged = merge_flags([], haiku, mode=mode)
+        assert len(merged) == 1
+        assert merged[0].tier == "amber"
+        assert merged[0].severity == "amber"

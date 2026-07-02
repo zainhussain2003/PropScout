@@ -88,6 +88,9 @@ export type FlagSeverity = 'red' | 'amber'
 export interface RiskFlag {
   id: string
   severity: FlagSeverity
+  /** Per-mode severity tier from the flag matrix (docs/FLAG_SEVERITY_MATRIX.md).
+   * Optional: analyses stored before the matrix shipped don't carry it. */
+  tier?: 'severe' | 'red' | 'amber'
   label: string
   evidence: string | null // quote from listing description
   confidence: number // 0–100

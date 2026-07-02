@@ -54,9 +54,15 @@ export interface InvestmentMetrics {
 
 export type FlagSeverity = 'red' | 'amber'
 
+/** Per-mode severity tier from the flag matrix (docs/FLAG_SEVERITY_MATRIX.md).
+ * 'severe' gates the score ceiling, 'red' deducts, 'amber' displays only. */
+export type FlagTier = 'severe' | 'red' | 'amber'
+
 export interface RiskFlag {
   id: string
   severity: FlagSeverity
+  /** Optional: analyses stored before the matrix shipped don't carry it. */
+  tier?: FlagTier
   label: string
   evidence: string | null
   confidence: number

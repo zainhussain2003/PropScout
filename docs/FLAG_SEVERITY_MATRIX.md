@@ -1,5 +1,10 @@
 # Flag Severity Matrix — approved ruleset (v1)
 
+> **IMPLEMENTED 2026-07-02** — `services/calc-engine/constants/flag_matrix.py`,
+> applied in `extraction/logic_gate.py::merge_flags(…, mode)`. Cells below are
+> pinned by `constants/flag_matrix_test.py` + `tests/test_regression.py`.
+> Spec: §10a (gating) and §19 (pipeline). This file remains the ruleset of record.
+
 Tiers: SEVERE (gates ceiling) · RED (−5, red) · AMBER (shown, no deduction) · INFO (neutral) · — (hidden)
 Magnitudes unchanged: −5/flag cap −15; investor/landlord gate 40/30/20/10; HomeScore ceilings 34/20/10.
 Tenant (C) has no score — its column is display tone only.

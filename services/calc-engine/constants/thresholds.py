@@ -20,13 +20,15 @@ DEAL_SCORE_DO_NOT_BUY = 20
 # risks may become red/amber and deduct from the deal score; info facts are
 # filtered out of the risk output (they'll feed an amenities panel later).
 # Without this, "all utilities included" fired as a −5 red flag.
+# NOTE: only ids that are info in EVERY mode belong here. Ids with any
+# non-info cell in the flag severity matrix (e.g. no_pets — amber for
+# tenants per RTA s.14 nuance) are tiered by constants/flag_matrix.py.
 INFO_FLAG_IDS: frozenset[str] = frozenset(
     {
         "parking_included",
         "utilities_included",
         "utilities_extra",
         "pets_allowed",
-        "no_pets",
         "furnished",
         "den_present",
         "no_smoking",
@@ -38,7 +40,9 @@ INFO_FLAG_IDS: frozenset[str] = frozenset(
 
 # Duplicate flag ids that describe the same fact — normalised at merge time so
 # a listing never shows two rows for one issue (seen live: is_basement_unit +
-# basement_unit both firing on the same unit).
+# basement_unit both firing on the same unit; the Haiku prompt says
+# renovation_needed where the regex rules say needs_work).
 FLAG_ID_ALIASES: dict[str, str] = {
     "is_basement_unit": "basement_unit",
+    "renovation_needed": "needs_work",
 }

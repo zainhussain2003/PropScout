@@ -334,7 +334,7 @@ export function computeHomeScore(
   schools: PersonalSchools,
   neigh: PersonalNeighbourhood,
   lightScore: number,
-  flags?: readonly Pick<RiskFlag, 'id' | 'severity'>[]
+  flags?: readonly Pick<RiskFlag, 'id' | 'severity' | 'tier'>[]
 ): HomeScore {
   // 1. Pricing vs FMV
   const askVsMid = (property.price - property.fmv.mid) / property.fmv.mid
@@ -380,9 +380,13 @@ export function computeHomeScore(
   // 5. Lot / value-add (baseline)
   const lotPts = 8
 
-  // 6. Risks — standard reds deduct; severe dealbreakers gate the total below
+  // 6. Risks — standard reds deduct; severe dealbreakers gate the total below.
+  // Prefer the calc engine's per-mode tier (flag matrix); analyses stored
+  // before the matrix shipped fall back to the SEVERE_FLAG_IDS mirror.
   const reds = (flags ?? []).filter((f) => f.severity === 'red')
-  const severeCount = reds.filter((f) => SEVERE_FLAG_IDS.has(f.id)).length
+  const severeCount = reds.filter((f) =>
+    f.tier != null ? f.tier === 'severe' : SEVERE_FLAG_IDS.has(f.id)
+  ).length
   const standardRedCount = reds.length - severeCount
   const riskPts = Math.max(
     0,

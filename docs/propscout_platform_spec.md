@@ -653,9 +653,12 @@ Maximum total deduction: -15. Score never goes below 0.
 
 ### 10a. Mode-aware severity & gating (v2)
 
-> Status: design locked, implementation pending. Every magnitude below (deduction
-> points, gate ceilings, floor, the flag×mode mapping) is an **unsourced placeholder**
-> tracked in `NIGHT_NOTES.md` → "Unsourced / assumed values". Do not present as researched.
+> Status: **SHIPPED 2026-07-02.** The per-flag × per-mode severity matrix is
+> implemented in `services/calc-engine/constants/flag_matrix.py`, applied inside
+> `extraction/logic_gate.py::merge_flags(…, mode)`. The approved ruleset lives in
+> `docs/FLAG_SEVERITY_MATRIX.md` (v1, approved 2026-07-01) — any change to a SEVERE
+> cell needs product sign-off. Magnitudes (deduction points, gate ceilings, floor)
+> remain **unsourced placeholders** tracked in `NIGHT_NOTES.md`.
 
 **Per-mode score models — there is no single scale.** Verified in code:
 
@@ -666,8 +669,10 @@ Maximum total deduction: -15. Score never goes below 0.
 | Tenant (C)                  | none (rent positioning + flags) | —     | display-only                       |
 
 **Two axes, kept separate.** Flag **display-severity (colour)** applies in **all four
-modes** — flags render in every report. Flag **score-impact** applies only where a score
-exists: the investment formula (A/D) and HomeScore (B). Tenant flags are display-only.
+modes** — flags render in every report (per that mode's matrix column; `hidden` cells
+drop the flag, `info` cells route it to amenities, not risks). Flag **score-impact**
+applies only where a score exists: the investment formula (A/D) and HomeScore (B).
+Tenant flags are display-only.
 
 **Severe flags GATE; they do not deduct.** A small set of dealbreakers
 (`grow_op_history`, `flooding_history`, `illegal_unit_risk`, `special_assessment_risk`)
@@ -677,10 +682,13 @@ can't express "this one fact sinks it no matter how good the rest is" (a grow-op
 model. Order of operations for the investment score (A/D):
 
 ```
-1. Each flag gets a base confidence-severity (≥85 red, 60–84 amber).
-2. Mode override: look up (flag_id, mode) in the matrix → it REPLACES the base
-   severity (absent → keep base; a base red is a standard −5).
-3. Standard tier (additive):  standard_deduction = min(15, Σ standard −5s)
+1. Confidence gate: ≥85 red-eligible, 60–84 amber-only, <60 discarded.
+2. Matrix tier: look up (flag_id, mode) in docs/FLAG_SEVERITY_MATRIX.md →
+   severe / red / amber / info / hidden. Confidence CAPS the tier (a 60–84%
+   flag renders at most amber even in a severe cell). info/hidden cells drop
+   the flag for that mode. UNLISTED ids default to amber in every mode —
+   shown, never deducting — until reviewed into the matrix.
+3. Standard tier (additive):  standard_deduction = min(15, Σ red-tier −5s)
    additive_score = component_subtotal(max 95) − standard_deduction
 4. Severe tier (gating):  severe_ceiling = no-severe → 95; else max(10, 40 − (n−1)×10)
        1 severe → 40 ("marginal") · 2 → 30 · 3 → 20 · 4+ → 10
@@ -689,6 +697,12 @@ model. Order of operations for the investment score (A/D):
 7. floor = max(5, raw)                     ← "a property is always worth something"
 8. display = round(floor × 100 / 95)       ← display-normalize to /100, brackets unchanged
 ```
+
+> **Consequence of the v1 matrix worth knowing:** the investor/landlord columns
+> contain no plain-red cells — every non-severe flag is amber for those modes, so
+> the −5 standard deduction currently only fires for **personal** red cells
+> (`tenanted`, `needs_work`, computed by the same engine and consumed by
+> HomeScore's riskPts). The deduction machinery stays for future red cells.
 
 The cap applies to the standard-deduction subtotal (per tier); the severe gate is a
 **ceiling on the whole score**; the floor is applied last (after the label) so it can
@@ -1682,6 +1696,26 @@ def resolve_flags(regex_flags: dict, ai_flags: dict) -> dict:
 | AI result   | 85–100       | Red flag           | Yes                |
 | AI result   | 60–84        | Amber soft warning | No                 |
 | AI result   | 0–59         | Not shown          | No                 |
+
+**As shipped (2026-07-02) — the confidence gate feeds the flag severity matrix.**
+The template above shows base confidence-severity only. The shipped
+`extraction/logic_gate.py::merge_flags(regex_flags, haiku_flags, mode)` applies
+two gates in order:
+
+1. **Confidence** (as above): ≥85 red-eligible · 60–84 amber-only · <60 discarded.
+   Regex flags carry their hand-assigned confidences (not a flat 100), and Haiku
+   entries only count when `value is True`.
+2. **Per-mode matrix tier** (`constants/flag_matrix.py`, ruleset in
+   `docs/FLAG_SEVERITY_MATRIX.md`): `severe` (gates the §10a ceiling) · `red`
+   (−5, capped −15) · `amber` (display only) · `info` (excluded — amenity, not
+   risk) · `hidden` (dropped for that mode). Confidence caps the tier: a 60–84%
+   flag renders at most amber even in a severe/red cell. Unlisted flag ids
+   default to amber in every mode — shown, never deducting.
+
+Each returned flag carries both `severity` (red/amber display tone) and `tier`
+(severe/red/amber score impact), and the tier is threaded through the API to
+the frontend (`RiskFlag.tier`) so HomeScore's severe gate reads the calc
+engine's decision instead of re-deriving it.
 
 ### Step 4 — User override toggles (UI)
 
