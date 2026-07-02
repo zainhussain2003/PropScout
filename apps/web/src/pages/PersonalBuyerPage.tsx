@@ -1533,10 +1533,15 @@ export function PersonalBuyerPage({
   const schoolsForScore = isReal ? EMPTY_SCHOOLS : PB_SCHOOLS
   const lightScore = isReal ? 0 : STATIC_LIGHT_SCORE
 
+  // Real flags feed the risk component + severe-gate ceiling. The aggregate
+  // gauge is suppressed while isReal, but the risk breakdown bar stays visible —
+  // a red flag must read as a real deduction, not the no-flags baseline.
+  const flagsForScore = isReal ? realAnalysis!.riskFlags : undefined
+
   const score = useMemo(
-    () => computeHomeScore(property, schoolsForScore, neighbourhood, lightScore),
+    () => computeHomeScore(property, schoolsForScore, neighbourhood, lightScore, flagsForScore),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [property, neighbourhood, lightScore]
+    [property, neighbourhood, lightScore, flagsForScore]
   )
 
   const addressSlug = realListing

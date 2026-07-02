@@ -276,6 +276,32 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(growOp.compareDocumentPosition(verify) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('feeds real risk flags into the HomeScore risk component (standard red → 5/10)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...PERSONAL_ANALYSIS,
+        riskFlags: [
+          {
+            id: 'needs_work',
+            severity: 'red',
+            label: 'Needs significant work',
+            evidence: 'sold as-is, needs TLC',
+            confidence: 88,
+          },
+        ],
+      },
+      listing: SALE_LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    // The score breakdown bars render even while the aggregate gauge is
+    // suppressed — a standard red flag must show up as a real deduction
+    // (10 → 5), not the hardcoded no-flags baseline.
+    expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
+    expect(await screen.findByText('5 / 10')).toBeInTheDocument()
+  })
+
   it('recomputes the OSFI verdict live when household income changes', async () => {
     getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
     listOverrides.mockResolvedValue([])

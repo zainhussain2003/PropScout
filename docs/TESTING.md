@@ -351,6 +351,14 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
    🤖 Automated coverage: `services/calc-engine/routers/analysis_test.py` (vacancy flows into demand), `apps/api/src/routes/analysis.test.ts` (payload forwards the per-city rate)
 
+**✋ Test 33c — HomeScore risk flags + severe-gate ceilings (Report B)**
+
+1. Run a personal-buyer analysis on a listing whose description fires a standard red flag (e.g. "sold as-is, needs TLC") — the Risk breakdown bar in the score card must read 5/10, not the 10/10 no-flags baseline
+2. On a listing with a severe flag (grow-op / flood / illegal unit / special assessment) the HomeScore total is capped at 34 (2 severe → 20, 3+ → 10, floor 5) — invisible while the gauge is suppressed, but locked by tests for when it turns on
+3. Amber flags never move the score
+
+   🤖 Automated coverage: `apps/web/src/data/personalBuyerData.test.ts` (mechanism), `apps/web/src/pages/ReportPage.test.tsx` (real flags reach the breakdown via /r/:token)
+
 ### SunScout
 
 **✋ Test 34 — Sun hours calculation**
