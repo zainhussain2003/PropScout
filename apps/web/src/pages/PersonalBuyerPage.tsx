@@ -283,10 +283,12 @@ function PersonalPropertyHero({
                 <Icon name="key" size={14} />
                 {property.parking}
               </span>
-              <span className="row gap-8">
-                <Icon name="chart" size={14} />
-                Built {property.yearBuilt}
-              </span>
+              {property.yearBuilt > 0 && (
+                <span className="row gap-8">
+                  <Icon name="chart" size={14} />
+                  Built {property.yearBuilt}
+                </span>
+              )}
               <span className="row gap-8">
                 <Icon name="dot" size={10} />
                 {property.lotSize}

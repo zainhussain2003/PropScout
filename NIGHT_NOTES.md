@@ -513,6 +513,34 @@ they should feed a future amenities panel, not the risk section.
 
 ---
 
+## 🔴 LIVE MODE-MATRIX RUN — 6 listings × 4 modes (2026-07-02)
+
+Re-ran the stored live listings (6 usable tokens; the 7th was the deliberately
+broken URL) through all four modes after the flag severity matrix shipped:
+
+- **Matrix verified on real data:** `needs_work` renders amber for
+  investor/personal/landlord but is HIDDEN for tenant (Rowanwood, the matrix's
+  hidden cell working live); the unlisted `parking_unclear` id lands on the
+  default-amber path; every low-confidence flag capped at amber in every mode.
+  No severe flags fired in the sample (no grow-ops in the wild) — the gate
+  itself is pinned by unit/route/regression tests.
+- **⚠️ Haiku extraction is nondeterministic run-to-run:** the SAME Gerrard St
+  description produced `unverified_bedroom` + `parking_unclear` on two runs and
+  zero flags on two others (Haiku sampling variance; both are Haiku-only ids).
+  Regex-floored flags are deterministic; soft Haiku-only flags can flicker
+  between re-runs. Not new behaviour, but first time observed side-by-side.
+  Watch item: if flicker bothers users, pin extraction per listing (cache the
+  merged flags) rather than re-extracting on every mode re-run.
+- **Schools:** every analysis returned `schools:null` — correct, the table is
+  empty AND (verified by probe, not assumption) migration
+  `20260701_add_schools_name_postal_unique.sql` is NOT applied. Apply it, load
+  the CSV, and the personal §04 / tenant §08 sections + HomeScore schools
+  component light up on the next analysis with zero further code.
+- Note: these re-runs updated each stored analysis's `report_mode` to the last
+  mode run (test data only — pre-launch, no user impact).
+
+---
+
 ## Blocked on you — handle when you have time
 
 In priority order:
