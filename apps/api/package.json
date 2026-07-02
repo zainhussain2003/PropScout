@@ -20,11 +20,13 @@
     "dotenv": "^17.4.2",
     "fastify": "^4.28.1",
     "puppeteer": "^25.3.0",
+    "qrcode": "^1.5.4",
     "stripe": "^16.9.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^20.14.12",
+    "@types/qrcode": "^1.5.6",
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
     "eslint": "^8.57.0",

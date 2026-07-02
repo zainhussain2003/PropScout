@@ -21,6 +21,8 @@ import {
 import { DEFAULT_HOUSEHOLD_INCOME, INCOME_SLIDER } from '../constants/osfi'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
+import { LockedButton } from '../components/paywall/LockedButton'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -913,6 +915,9 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
     })
   }, [])
 
+  // Pro-gated PDF export (spec §14) — shared by the share bar + mobile action bar
+  const pdf = usePdfExport(token)
+
   const mode = analysis?.mode ?? 'investor'
   const reportLabel =
     mode === 'investor'
@@ -992,13 +997,28 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
               <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
                 Share this report · expires in 30 days
               </div>
-              <button
-                className="btn btn-ghost"
-                style={{ fontSize: 13 }}
-                onClick={() => void navigator.clipboard.writeText(window.location.href)}
-              >
-                <Icon name="share" size={14} /> Copy link
-              </button>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-ghost"
+                  style={{ fontSize: 13 }}
+                  onClick={() => void navigator.clipboard.writeText(window.location.href)}
+                >
+                  <Icon name="share" size={14} /> Copy link
+                </button>
+                {pdf.isLocked ? (
+                  <LockedButton label="Download PDF" icon="doc" onClick={pdf.exportPdf} />
+                ) : (
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 13, opacity: pdf.exporting ? 0.6 : 1 }}
+                    disabled={pdf.exporting}
+                    onClick={pdf.exportPdf}
+                  >
+                    <Icon name="doc" size={14} />{' '}
+                    {pdf.exporting ? 'Preparing PDF…' : 'Download PDF'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1021,7 +1041,10 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         </>
       )}
 
-      <StickyActionBar />
+      <StickyActionBar
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
       <Footer />
     </div>
   )

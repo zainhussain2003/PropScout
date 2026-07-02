@@ -25,6 +25,7 @@ import { useState } from 'react'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -82,12 +83,15 @@ interface TenantPropertyHeroProps {
   onBack?: () => void
   /** Real listing data — when provided replaces the CHARLES_LISTING fixture. */
   listing?: TenantListingData
+  /** Pro PDF download handler (usePdfExport) — no-op on the demo route. */
+  onPDF?: () => void
 }
 
 function TenantPropertyHero({
   dark: _dark,
   onBack,
   listing: listingProp,
+  onPDF,
 }: TenantPropertyHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const listing = listingProp ?? CHARLES_LISTING
@@ -399,6 +403,7 @@ function TenantPropertyHero({
                 <button
                   className="btn btn-ghost"
                   style={{ flex: 1, justifyContent: 'center', padding: '11px 12px', fontSize: 13 }}
+                  onClick={() => onPDF?.()}
                 >
                   <Icon name="doc" size={13} /> PDF
                 </button>
@@ -1198,6 +1203,7 @@ export function TenantReport({
   listing: realListing,
 }: TenantReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const pdf = usePdfExport(realAnalysis?.token ?? null)
   const [dark, setDark] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
 
@@ -1234,6 +1240,7 @@ export function TenantReport({
         dark={dark}
         onBack={() => window.history.back()}
         listing={tenantListing}
+        onPDF={pdf.exportPdf}
       />
 
       {/* AI verdict */}
@@ -1494,7 +1501,11 @@ export function TenantReport({
       <Footer />
 
       <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
-      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <StickyActionBar
+        onSave={() => undefined}
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
     </div>
   )
 }

@@ -828,3 +828,40 @@ body::-webkit-scrollbar-thumb {
     order: -1;
   }
 }
+
+/* ── Print stylesheet (spec §14 — PDF export pagination) ─────── */
+/* The PDF is Puppeteer's print capture of the live report, so these
+   rules ARE the PDF layout. Keep pagination aligned with the §14
+   page tables: whole cards never split, section heads stay with
+   their content, interactive chrome disappears. */
+
+@media print {
+  /* Interactive chrome has no meaning on paper */
+  header,
+  [data-testid='dev-toolbar'],
+  .btn,
+  button {
+    display: none !important;
+  }
+
+  /* Sticky elements print at their natural position */
+  [style*='position: sticky'],
+  [style*='position:sticky'] {
+    position: static !important;
+  }
+
+  /* §14 pagination: sections start clean, cards never split */
+  .tr-section {
+    break-inside: auto;
+    padding-top: 24px;
+  }
+  .card {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  /* Backgrounds print via printBackground; drop heavy shadows */
+  * {
+    box-shadow: none !important;
+  }
+}

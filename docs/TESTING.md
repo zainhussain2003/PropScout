@@ -382,11 +382,13 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
 **✋ Test 33f — Pro-gated PDF export**
 
-1. As a signed-in Pro user, `GET /analysis/:token/pdf` returns an `application/pdf` attachment whose pages match the live web report, with the PropScout footer (branding + "Not financial or legal advice" + timestamp + token) on every page
+1. As a signed-in Pro user, `GET /analysis/:token/pdf` returns an `application/pdf` attachment whose pages match the live web report, with the PropScout footer (branding + "Not financial or legal advice" + timestamp + token + share-link QR code) on every page
 2. Free tier gets 403 `UPGRADE_REQUIRED` (frontend shows the upgrade modal); no Chrome launch happens for gated/404 requests
 3. A rendering failure returns 502 `PDF_FAILED`, never a hung request
+4. Frontend wiring: the Download PDF button on the live report (share bar + mobile sticky bar + tenant hero PDF button) downloads for Pro; free tier sees a LockedButton that opens the 'pdf' UpgradeModal; demo routes (no token) are a safe no-op; a server `UPGRADE_REQUIRED` (stale local tier) also opens the modal
+5. Print pass: in the PDF, nav/buttons/dev toolbar are hidden, sticky cards print in place, and no card is split across a page boundary
 
-   🤖 Automated coverage: `apps/api/src/routes/pdf.test.ts` (gate + error states), `apps/api/src/services/pdfService.test.ts` (footer branding)
+   🤖 Automated coverage: `apps/api/src/routes/pdf.test.ts` (gate + error states), `apps/api/src/services/pdfService.test.ts` (footer branding + QR), `apps/web/src/hooks/usePdfExport.test.tsx` (frontend gating + session + server-fallback)
 
 **✋ Test 33g — Flag polarity + value handling (live-data regression)**
 

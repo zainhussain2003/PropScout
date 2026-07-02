@@ -1141,6 +1141,7 @@ propscout/
 │   │       │   ├── useAuth.ts         # Auth state and methods
 │   │       │   ├── useTier.ts         # Current user tier + feature access checks
 │   │       │   ├── useRentalComps.ts  # Rental comps data and loading state
+│   │       │   ├── usePdfExport.ts + usePdfExport.test.tsx  # Pro-gated §14 PDF download (LockedButton for free)
 │   │       │   └── useSunScout.ts     # Sun hours calculation state
 │   │       │
 │   │       ├── lib/
@@ -1150,6 +1151,7 @@ propscout/
 │   │       │       ├── billingService.ts    # Stripe checkout/portal sessions via the API
 │   │       │       ├── overrideService.ts   # Risk-flag dismissal persistence
 │   │       │       ├── sunScoutService.ts   # Facade-direction SunScout recalculation
+│   │       │       ├── reportService.ts     # Pro-gated PDF download + share-link helpers
 │   │       │       └── mapboxGlService.ts   # Lazy mapbox-gl loader + mini-map mount (VITE_MAPBOX_TOKEN)
 │   │       │
 │   │       ├── types/                 # All shared TypeScript types — never inline

@@ -30,6 +30,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { SignInModal } from '../components/shared/SignInModal'
 import {
   LL_PROPERTY,
@@ -301,6 +302,7 @@ export function LandlordPage({
   listing: realListing,
 }: LandlordPageProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const pdf = usePdfExport(realAnalysis?.token ?? null)
   const [dark, setDark] = useState(false)
   const isReal = !!(realAnalysis && realListing)
   const [showSignIn, setShowSignIn] = useState(false)
@@ -639,7 +641,11 @@ export function LandlordPage({
       <LandlordChecklistSection />
 
       <Footer />
-      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <StickyActionBar
+        onSave={() => undefined}
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
       <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
     </div>
   )

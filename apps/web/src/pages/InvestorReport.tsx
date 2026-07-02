@@ -22,6 +22,7 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { useInvestorReport } from '../hooks/useInvestorReport'
 import {
   VAUGHAN_LISTING,
@@ -726,6 +727,7 @@ export function InvestorReport({
   listing: realListing,
 }: InvestorReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const pdf = usePdfExport(realAnalysis?.token ?? null)
   const [dark, setDark] = useState<boolean>(false)
   const demoData = getDemoDataset()
 
@@ -913,7 +915,11 @@ export function InvestorReport({
       </main>
 
       <Footer />
-      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <StickyActionBar
+        onSave={() => undefined}
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
     </div>
   )
 }
