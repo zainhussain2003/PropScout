@@ -1194,6 +1194,7 @@ propscout/
 │           │   ├── analysisToken.ts   # GET/POST /analysis/:token — fetch + trigger by share token
 │           │   ├── overrides.ts       # GET/POST/DELETE /analysis/:token/overrides — risk-flag dismissals
 │           │   ├── sunscout.ts        # POST /analysis/:token/sunscout — facade-direction SunScout recalc
+│           │   ├── pdf.ts             # GET /analysis/:token/pdf — Pro-gated Puppeteer PDF export
 │           │   ├── scrape.ts          # POST /scrape — scrape a listing URL into a pending analysis
 │           │   ├── rates.ts           # GET /rates/mortgage — live Bank of Canada rate proxy
 │           │   ├── billing.ts         # Stripe checkout + billing portal sessions
@@ -1208,6 +1209,7 @@ propscout/
 │           │   ├── stripeService.ts         # Subscriptions + billing portal
 │           │   ├── cmhcService.ts           # Vacancy rates (getVacancyRateByCity)
 │           │   ├── bankOfCanadaService.ts   # Current mortgage rates
+│           │   ├── pdfService.ts            # Puppeteer renders /r/:token → branded PDF (spec §14)
 │           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint

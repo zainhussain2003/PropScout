@@ -370,6 +370,22 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
 ### SunScout
 
+**✋ Test 33f — Pro-gated PDF export**
+
+1. As a signed-in Pro user, `GET /analysis/:token/pdf` returns an `application/pdf` attachment whose pages match the live web report, with the PropScout footer (branding + "Not financial or legal advice" + timestamp + token) on every page
+2. Free tier gets 403 `UPGRADE_REQUIRED` (frontend shows the upgrade modal); no Chrome launch happens for gated/404 requests
+3. A rendering failure returns 502 `PDF_FAILED`, never a hung request
+
+   🤖 Automated coverage: `apps/api/src/routes/pdf.test.ts` (gate + error states), `apps/api/src/services/pdfService.test.ts` (footer branding)
+
+**✋ Test 33g — Flag polarity + value handling (live-data regression)**
+
+1. A listing whose description says "all utilities included · 1 parking included" shows NO red flags for those phrases and loses no points (live E2E 2026-07-01 found −15 from three amenity "risks")
+2. A confident NOT-detected Haiku answer (value=false, high confidence) never fires a flag — a 2nd-floor unit must not show `is_basement_unit`
+3. `is_basement_unit` and `basement_unit` never render as two rows for one unit
+
+   🤖 Automated coverage: `services/calc-engine/extraction/logic_gate_test.py`
+
 **✋ Test 33e — SunScout end-to-end + facade-direction input**
 
 1. Analyse a geocodable Ontario address — the SunScout section shows a real light score, monthly sun-hour bars, and summer/winter daily hours (not the "Phase 2" placeholder)
