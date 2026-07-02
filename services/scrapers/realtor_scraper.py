@@ -46,6 +46,10 @@ def _load_env_var(name: str) -> str:
 
 SCRAPER_API_KEY = _load_env_var("SCRAPER_API_KEY")
 _SCRAPER_API_URL = "https://api.scraperapi.com"
+# Attempts per listing — ScraperAPI premium is ~1-in-3 against Realtor.ca
+# (measured live 2026-07-02); failures are not billed, retries are their
+# documented recommendation. 4 attempts ≈ 87% expected success at that rate.
+_SCRAPER_API_ATTEMPTS = 4
 
 
 @dataclass
@@ -70,6 +74,14 @@ class ScrapedListing:
     photo_urls: list[str]
     days_on_market: int | None
     raw: dict[str, object]
+    # Realtor.ca's propertyType is "Single Family" for BOTH a detached house
+    # and a condo apartment — buildingType ('Apartment' / 'House' / 'Row …')
+    # is the real discriminator (found live 2026-07-02: a Whitehaus condo
+    # mapped to 'detached').
+    building_type: str | None = None
+    # "Total Parking Spaces" from the details section (was never captured —
+    # the API hardcoded 0).
+    parking_spaces: int | None = None
 
 
 def _dl(field: str, block: str) -> str | None:
@@ -82,11 +94,23 @@ def _dl(field: str, block: str) -> str | None:
     return m.group(1) if m else None
 
 
-def _parse_rendered_fields(
-    page: str,
-) -> tuple[int | None, bool, int | None, bool, int | None, bool]:
+@dataclass
+class _DetailFields:
+    """Fields parsed from the propertyDetailsSection label/value pairs."""
+
+    annual_taxes: int | None = None
+    taxes_known: bool = False
+    condo_fee_monthly: int | None = None
+    condo_fee_known: bool = False
+    year_built: int | None = None
+    year_built_known: bool = False
+    parking_spaces: int | None = None
+    beds_above_grade: int | None = None
+
+
+def _parse_rendered_fields(page: str) -> _DetailFields:
     """
-    Extract annual_taxes, condo_fee_monthly, and year_built from rendered HTML.
+    Extract detail-section fields from the listing HTML.
 
     Uses BeautifulSoup to walk propertyDetailsSectionContentLabel →
     propertyDetailsSectionContentValue sibling pairs. Each field is only
@@ -94,19 +118,12 @@ def _parse_rendered_fields(
     _known flag stays False so the calc engine treats the field as missing.
 
     Args:
-        page: Fully rendered HTML string returned by ScraperAPI.
+        page: HTML string returned by ScraperAPI.
 
     Returns:
-        (annual_taxes, taxes_known,
-         condo_fee_monthly, condo_fee_known,
-         year_built, year_built_known)
+        _DetailFields with whichever fields the page exposed.
     """
-    annual_taxes: int | None = None
-    taxes_known = False
-    condo_fee_monthly: int | None = None
-    condo_fee_known = False
-    year_built: int | None = None
-    year_built_known = False
+    out = _DetailFields()
 
     try:
         soup = BeautifulSoup(page, "lxml")
@@ -124,8 +141,8 @@ def _parse_rendered_fields(
                 # e.g. "$2,696.29(CAD)" or "$3,326.00"
                 m = re.search(r"\$([\d,]+\.?\d*)", val)
                 if m:
-                    annual_taxes = int(float(m.group(1).replace(",", "")))
-                    taxes_known = True
+                    out.annual_taxes = int(float(m.group(1).replace(",", "")))
+                    out.taxes_known = True
 
             elif (
                 "maintenance fees" in label
@@ -135,27 +152,55 @@ def _parse_rendered_fields(
                 # e.g. "$511.06 Monthly(CAD)" or "$761.00 Monthly"
                 m = re.search(r"\$([\d,]+\.?\d*)", val)
                 if m:
-                    condo_fee_monthly = int(float(m.group(1).replace(",", "")))
-                    condo_fee_known = True
+                    out.condo_fee_monthly = int(float(m.group(1).replace(",", "")))
+                    out.condo_fee_known = True
 
             elif "year built" in label or "construction year" in label:
                 # e.g. "2019" or "2015 approx"
                 m = re.search(r"\b(19|20)\d{2}\b", val)
                 if m:
-                    year_built = int(m.group())
-                    year_built_known = True
+                    out.year_built = int(m.group())
+                    out.year_built_known = True
+
+            elif "total parking spaces" in label:
+                # e.g. "1" or "8" — the API previously hardcoded 0
+                m = re.search(r"\d+", val)
+                if m:
+                    out.parking_spaces = int(m.group())
+
+            elif label == "above grade":
+                # Bedrooms section: "2 + 1" listings carry dataLayer bedrooms=3;
+                # the den is NOT a legal bedroom (the whole tenant §02 story),
+                # and comps key on beds — use the above-grade count instead.
+                # The label only appears under Bedrooms (Bathrooms uses
+                # Total/Partial), so no section disambiguation is needed.
+                m = re.search(r"\d+", val)
+                if m:
+                    out.beds_above_grade = int(m.group())
 
     except Exception:
         logging.exception("_parse_rendered_fields failed")
 
-    return (
-        annual_taxes,
-        taxes_known,
-        condo_fee_monthly,
-        condo_fee_known,
-        year_built,
-        year_built_known,
-    )
+    return out
+
+
+# CDN photo URL: .../highres/<n>/<mls>_<seq>.jpg — the JSON-LD block only
+# carries the first photo; the page HTML references the full set.
+_PHOTO_RE = re.compile(
+    r"https://cdn\.realtor\.ca/listings/[^\"'\s?]+/highres/[^\"'\s?]+?_(\d+)\.jpg"
+)
+_MAX_PHOTOS = 12
+
+
+def _parse_photo_urls(page: str) -> list[str]:
+    """All distinct highres CDN photo URLs on the page, in gallery order."""
+    seen: dict[str, int] = {}
+    for m in _PHOTO_RE.finditer(page):
+        url = m.group(0)
+        if url not in seen:
+            seen[url] = int(m.group(1))
+    ordered = sorted(seen, key=lambda u: seen[u])
+    return ordered[:_MAX_PHOTOS]
 
 
 async def scrape_listing(url: str) -> ScrapedListing | None:
@@ -187,18 +232,36 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
             logging.error("SCRAPER_API_KEY is not set")
             return None
 
-        async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.get(
-                _SCRAPER_API_URL,
-                params={
-                    "api_key": SCRAPER_API_KEY,
-                    "url": url,
-                    "premium": "true",
-                },
+        # ScraperAPI premium fetches fail intermittently (~1-in-3 succeeded in
+        # live probing, 2026-07-02) as their proxy pool rotates against
+        # Realtor.ca's bot detection. ScraperAPI's own guidance is to retry
+        # failed requests — failures are not billed. Bounded retry, no backoff
+        # needed (each attempt already takes ~25-30s through the proxy).
+        response = None
+        for attempt in range(1, _SCRAPER_API_ATTEMPTS + 1):
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                response = await client.get(
+                    _SCRAPER_API_URL,
+                    params={
+                        "api_key": SCRAPER_API_KEY,
+                        "url": url,
+                        "premium": "true",
+                    },
+                )
+            if response.status_code == 200:
+                break
+            logging.warning(
+                "ScraperAPI attempt %s/%s returned %s for %s",
+                attempt,
+                _SCRAPER_API_ATTEMPTS,
+                response.status_code,
+                url,
             )
 
-        if response.status_code != 200:
-            logging.error("ScraperAPI returned %s for %s", response.status_code, url)
+        if response is None or response.status_code != 200:
+            logging.error(
+                "ScraperAPI failed after %s attempts for %s", _SCRAPER_API_ATTEMPTS, url
+            )
             return None
 
         page = response.text
@@ -215,6 +278,7 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
         beds_raw = _dl("bedrooms", dl) or "0"
         baths_raw = _dl("bathrooms", dl) or "0"
         prop_type = _dl("propertyType", dl) or ""
+        building_type = _dl("buildingType", dl)
         sqft_raw = _dl("interiorFloorSpace", dl) or ""
 
         # For-rent: leasePrice is populated; for-sale: price is populated.
@@ -267,18 +331,26 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
             except (json.JSONDecodeError, AttributeError):
                 pass
 
+        # The JSON-LD image list only carries the first photo — sweep the page
+        # for the full CDN set (18–42 photos on live listings).
+        page_photos = _parse_photo_urls(page)
+        if len(page_photos) > len(photo_urls):
+            photo_urls = page_photos
+
         if not address or price_val <= 0:
             return None
 
-        # ── JS-rendered fields (taxes, condo fee, year built) ─────────────────
-        (
-            annual_taxes,
-            taxes_known,
-            condo_fee_monthly,
-            condo_fee_known,
-            year_built,
-            year_built_known,
-        ) = _parse_rendered_fields(page)
+        # ── Detail-section fields (taxes, fee, year, parking, beds) ──────────
+        details = _parse_rendered_fields(page)
+
+        # "2 + 1" listings carry dataLayer bedrooms=3; the above-grade count is
+        # the honest bedroom number (a den is not a legal bedroom) and the one
+        # rental comps should key on.
+        if (
+            details.beds_above_grade is not None
+            and 0 < details.beds_above_grade <= beds
+        ):
+            beds = details.beds_above_grade
 
         return ScrapedListing(
             url=url,
@@ -288,12 +360,12 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
             baths=baths,
             sqft=sqft,
             property_type=prop_type,
-            annual_taxes=annual_taxes,
-            taxes_known=taxes_known,
-            condo_fee_monthly=condo_fee_monthly,
-            condo_fee_known=condo_fee_known,
-            year_built=year_built,
-            year_built_known=year_built_known,
+            annual_taxes=details.annual_taxes,
+            taxes_known=details.taxes_known,
+            condo_fee_monthly=details.condo_fee_monthly,
+            condo_fee_known=details.condo_fee_known,
+            year_built=details.year_built,
+            year_built_known=details.year_built_known,
             listing_type=listing_type,
             listing_description=listing_description,
             photo_urls=photo_urls,
@@ -303,6 +375,8 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
                 "city": _dl("city", dl),
                 "province": _dl("province", dl),
             },
+            building_type=building_type,
+            parking_spaces=details.parking_spaces,
         )
 
     except Exception:

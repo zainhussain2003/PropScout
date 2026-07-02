@@ -231,3 +231,57 @@ describe('POST /scrape - for-rent rent bounds', () => {
     expect(body.missingFields).toContain('rent_monthly')
   })
 })
+
+// ── Building-type discriminator + real parking (live bugs, 2026-07-02) ─────────
+
+describe('POST / — buildingType + parking mapping', () => {
+  it("maps a 'Single Family' + buildingType 'Apartment' listing to condo with real parking", async () => {
+    // A live Whitehaus condo rental mapped to 'detached' with 0 parking:
+    // Realtor's propertyType is 'Single Family' for condos AND houses.
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          ...ONTARIO_FIXTURE,
+          property_type: 'Single Family',
+          building_type: 'Apartment',
+          parking_spaces: 1,
+        },
+        200
+      )
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as {
+      listing: { propertyType: string; parkingSpots: number }
+    }
+    expect(body.listing.propertyType).toBe('condo')
+    expect(body.listing.parkingSpots).toBe(1)
+  })
+
+  it("keeps 'Single Family' + buildingType 'House' as detached, parking defaults to 0", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        { ...ONTARIO_FIXTURE, property_type: 'Single Family', building_type: 'House' },
+        200
+      )
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    const body = JSON.parse(res.body) as {
+      listing: { propertyType: string; parkingSpots: number }
+    }
+    expect(body.listing.propertyType).toBe('detached')
+    expect(body.listing.parkingSpots).toBe(0)
+  })
+})

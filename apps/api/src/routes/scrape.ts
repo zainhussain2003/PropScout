@@ -53,9 +53,24 @@ interface ScrapedListingResponse {
   photo_urls: string[]
   days_on_market: number | null
   raw: Record<string, unknown>
+  /** Realtor.ca buildingType ('Apartment' | 'House' | 'Row / Townhouse' …) —
+   * the real dwelling discriminator; propertyType is "Single Family" for
+   * both a condo apartment and a detached house. */
+  building_type?: string | null
+  /** "Total Parking Spaces" from the details section. */
+  parking_spaces?: number | null
 }
 
-function mapPropertyType(raw: string): PropertyType {
+function mapPropertyType(raw: string, buildingType?: string | null): PropertyType {
+  // Realtor.ca's propertyType is "Single Family" for BOTH a condo apartment
+  // and a detached house — buildingType is the real dwelling discriminator
+  // (a live Whitehaus condo mapped to 'detached' before this, 2026-07-02).
+  const building = (buildingType ?? '').toLowerCase()
+  if (building.includes('apartment') || building.includes('condo')) return 'condo'
+  if (building.includes('town') || building.includes('row')) return 'townhouse'
+  if (building.includes('duplex') || building.includes('triplex') || building.includes('fourplex'))
+    return 'multiplex'
+
   const lower = raw.toLowerCase()
   if (lower.includes('town') || lower.includes('row')) return 'townhouse'
   if (lower.includes('semi')) return 'semi-detached'
@@ -178,9 +193,9 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
         beds: scraped.beds,
         baths: scraped.baths,
         sqft: scraped.sqft,
-        propertyType: mapPropertyType(scraped.property_type),
+        propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
         yearBuilt: scraped.year_built,
-        parkingSpots: 0,
+        parkingSpots: scraped.parking_spaces ?? 0,
         condoFeeMonthly: scraped.condo_fee_monthly,
         condoFeeKnown: scraped.condo_fee_known,
         annualTaxes: scraped.annual_taxes,
