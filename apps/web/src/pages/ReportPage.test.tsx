@@ -328,6 +328,42 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(screen.queryByText(/Map placeholder/i)).not.toBeInTheDocument()
   })
 
+  it('feeds real pvlib sun output into the HomeScore light component', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...PERSONAL_ANALYSIS,
+        riskFlags: [],
+        sunScout: {
+          annualPeakSunHours: 1400,
+          summerDailyHours: 8.4,
+          winterDailyHours: 3.1,
+          seasonalGrid: { Dec: 3.1, Mar: 5.5, Jun: 8.4, Sep: 6.2 },
+          monthlyHours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
+          sunScore: 85,
+          verdict: 'excellent',
+        },
+      },
+      listing: SALE_LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    // sunScore 85 → ≥80 bracket → full 15/15 light points, not the 4/15 that
+    // the old hardcoded lightScore=0 produced.
+    expect(await screen.findByText('15 / 15')).toBeInTheDocument()
+  })
+
+  it('light component stays at the honest 4/15 floor when sun data is unavailable', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...PERSONAL_ANALYSIS, riskFlags: [], sunScout: null },
+      listing: SALE_LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    expect(await screen.findByText('4 / 15')).toBeInTheDocument()
+  })
+
   it('recomputes the OSFI verdict live when household income changes', async () => {
     getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
     listOverrides.mockResolvedValue([])

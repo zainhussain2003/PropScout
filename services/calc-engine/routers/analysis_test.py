@@ -616,3 +616,48 @@ def test_analysis_response_has_all_required_fields() -> None:
     assert (
         not missing_maxes
     ), f"component_maxes keys missing from response: {missing_maxes}"
+
+
+# -- POST /analysis/sunscout - facade-direction recalculation ------------------
+
+
+def test_sunscout_endpoint_recalculates_for_facade_bearing() -> None:
+    """A south-facing facade in Toronto must out-score a north-facing one -
+    the endpoint exists so the UI can turn the assumed-south default into a
+    user-supplied input."""
+    south = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 180},
+    )
+    north = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 0},
+    )
+    assert south.status_code == 200
+    assert north.status_code == 200
+    s = south.json()["sun_scout"]
+    n = north.json()["sun_scout"]
+    assert s is not None and n is not None
+    assert s["sun_score"] > n["sun_score"]
+    assert len(s["monthly_hours"]) == 12
+
+
+def test_sunscout_endpoint_defaults_to_south_facade() -> None:
+    """Omitting azimuth_deg uses the same south (180) assumption as the main
+    analysis pipeline."""
+    default = client.post("/analysis/sunscout", json={"lat": 43.65, "lng": -79.38})
+    explicit = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 180},
+    )
+    assert default.status_code == 200
+    assert default.json() == explicit.json()
+
+
+def test_sunscout_endpoint_rejects_invalid_bearing() -> None:
+    """Bearings outside 0-360 are a caller bug, not a calculation input."""
+    res = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 400},
+    )
+    assert res.status_code == 422

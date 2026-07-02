@@ -115,14 +115,39 @@ interface PyRiskFlag {
   [key: string]: unknown
 }
 
+export interface PySunScout {
+  annual_peak_sun_hours: number
+  summer_daily_hours: number
+  winter_daily_hours: number
+  seasonal_grid: { Dec: number; Mar: number; Jun: number; Sep: number }
+  monthly_hours: number[]
+  sun_score: number
+  verdict: string
+}
+
 interface PyAnalysisOutput {
   metrics: PyInvestmentMetrics
   deal_score: PyDealScore
   risk_flags: PyRiskFlag[]
   has_sanity_warnings: boolean
+  /** Present only when lat/lng were sent and the sun-path calc succeeded. */
+  sun_scout?: PySunScout | null
 }
 
 // ── snake_case → camelCase output transforms ──────────────────────────────────
+
+export function toSunScout(py: PySunScout | null | undefined): Analysis['sunScout'] {
+  if (py == null) return null
+  return {
+    annualPeakSunHours: py.annual_peak_sun_hours,
+    summerDailyHours: py.summer_daily_hours,
+    winterDailyHours: py.winter_daily_hours,
+    seasonalGrid: py.seasonal_grid,
+    monthlyHours: py.monthly_hours,
+    sunScore: py.sun_score,
+    verdict: py.verdict as NonNullable<Analysis['sunScout']>['verdict'],
+  }
+}
 
 function toMetrics(py: PyInvestmentMetrics): InvestmentMetrics {
   return {
@@ -289,6 +314,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         dismissedFlagIds = []
       }
 
+      // Geocode BEFORE the calc engine call — lat/lng in property_data is what
+      // makes the calc engine's SunScout (sun-path) branch fire. Non-fatal:
+      // null coords just skip SunScout and the real map.
+      const coords = await geocodeAddress(listing.address)
+
       const calcPayload = {
         // Forwarded so the calc engine runs the extraction pipeline and
         // deducts from the deal score for confirmed red flags.
@@ -306,6 +336,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           year_built: listing.yearBuilt,
           property_type: listing.propertyType,
           is_toronto: listing.city === 'Toronto',
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
         },
         financing: financingForCalc,
         rental: {
@@ -358,8 +390,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
       const pyData = (await pyResponse.json()) as PyAnalysisOutput
 
-      // Step 7 — geocode then walk score (sequential — walk score requires coordinates)
-      const coords = await geocodeAddress(listing.address)
+      // Step 7 — walk score (uses the coordinates geocoded before the calc call)
       const walkScore: WalkScoreResult | null = coords
         ? await getWalkScore(listing.address, coords.lat, coords.lng)
         : null
@@ -430,7 +461,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         narrative,
         walkScore,
         neighbourhood: null,
-        sunScout: null,
+        sunScout: toSunScout(pyData.sun_scout),
         coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
         hasSanityWarnings: pyData.has_sanity_warnings,
       }

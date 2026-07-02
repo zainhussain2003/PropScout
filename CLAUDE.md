@@ -1118,9 +1118,7 @@ propscout/
 │   │       │   │   └── PBSalesSection.tsx          # Comparable sales table
 │   │       │   │
 │   │       │   ├── sunscout/
-│   │       │   │   ├── SunScoutPanel.tsx
-│   │       │   │   ├── SunArcViz.tsx          # SVG summer vs winter arc
-│   │       │   │   └── SeasonalGrid.tsx       # Dec/Mar/Jun/Sep hours grid
+│   │       │   │   └── SunScoutPanel.tsx + SunScoutPanel.test.tsx  # Live sun section: gauge, monthly bars, facade-direction input (SunArcViz/SeasonalGrid never existed — not in the designs)
 │   │       │   │
 │   │       │   ├── paywall/           # Tier gating — wired into every report
 │   │       │   │   ├── ProBadge.tsx
@@ -1150,6 +1148,7 @@ propscout/
 │   │       │       ├── authService.ts       # Supabase auth only (signup, login, session)
 │   │       │       ├── billingService.ts    # Stripe checkout/portal sessions via the API
 │   │       │       ├── overrideService.ts   # Risk-flag dismissal persistence
+│   │       │       ├── sunScoutService.ts   # Facade-direction SunScout recalculation
 │   │       │       └── mapboxGlService.ts   # Lazy mapbox-gl loader + mini-map mount (VITE_MAPBOX_TOKEN)
 │   │       │
 │   │       ├── types/                 # All shared TypeScript types — never inline
@@ -1194,6 +1193,7 @@ propscout/
 │           │   ├── analysis.ts        # POST /analysis — orchestrates full pipeline (incl. flag overrides + vacancy)
 │           │   ├── analysisToken.ts   # GET/POST /analysis/:token — fetch + trigger by share token
 │           │   ├── overrides.ts       # GET/POST/DELETE /analysis/:token/overrides — risk-flag dismissals
+│           │   ├── sunscout.ts        # POST /analysis/:token/sunscout — facade-direction SunScout recalc
 │           │   ├── scrape.ts          # POST /scrape — scrape a listing URL into a pending analysis
 │           │   ├── rates.ts           # GET /rates/mortgage — live Bank of Canada rate proxy
 │           │   ├── billing.ts         # Stripe checkout + billing portal sessions

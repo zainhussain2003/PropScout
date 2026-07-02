@@ -747,7 +747,7 @@ function TenantReportContent({
         </section>
       )}
 
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="03" />
+      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="03" token={analysis.token} />
     </main>
   )
 }
@@ -844,7 +844,7 @@ function InvestorReportContent({
       <OSFISection financing={financing} listing={listingData} />
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
       <EquitySection metrics={metrics} />
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" />
+      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" token={analysis.token} />
     </main>
   )
 }

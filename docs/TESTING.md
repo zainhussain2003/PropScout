@@ -370,6 +370,15 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
 ### SunScout
 
+**✋ Test 33e — SunScout end-to-end + facade-direction input**
+
+1. Analyse a geocodable Ontario address — the SunScout section shows a real light score, monthly sun-hour bars, and summer/winter daily hours (not the "Phase 2" placeholder)
+2. Change "Primary facade faces" from South to North — the score drops and the bars update without a full re-analysis; reload the page and the chosen orientation persists
+3. The personal report's HomeScore Light breakdown reflects `sunScout.sunScore` (e.g. score ≥80 → 15/15), and drops to the honest 4/15 floor when geocoding fails
+4. Demo report pages show "Assumes south-facing primary facade" instead of the selector (no analysis to recalculate against)
+
+   🤖 Automated coverage: `services/calc-engine/routers/analysis_test.py` (sunscout endpoint + bearing validation), `apps/api/src/routes/sunscout.test.ts` (proxy + persistence + error states), `apps/api/src/routes/analysis.test.ts` (lat/lng forwarded, sun_scout mapped), `apps/web/src/components/sunscout/SunScoutPanel.test.tsx` (selector + fallback), `apps/web/src/pages/ReportPage.test.tsx` (HomeScore light)
+
 **✋ Test 34 — Sun hours calculation**
 
 1. Use coordinates for Toronto (lat: 43.65, lng: -79.38) and a south-facing window (bearing: 180)

@@ -17,6 +17,8 @@ from models.schemas import (
     DealScoreBreakdownOutput,
     ComponentMaxes,
     SunScoutOutput,
+    SunScoutRequest,
+    SunScoutResponse,
 )
 from sunscout.sun_path import calculate_sun_hours
 from constants.rates import get_maintenance_rate
@@ -85,6 +87,61 @@ class AnalysisRequest(BaseModel):
     # Report mode — only investor/landlord apply the investment severe-gate
     # (personal uses HomeScore, tenant has no deal score). Spec §10a.
     mode: str = "investor"
+
+
+def _build_sun_scout(
+    lat: float, lng: float, azimuth_deg: float = 180.0, context: str = ""
+) -> SunScoutOutput | None:
+    """
+    Run the pvlib sun-path calculation and shape it for the API.
+
+    Args:
+        lat: Property latitude (decimal degrees).
+        lng: Property longitude (decimal degrees).
+        azimuth_deg: Primary facade bearing (0=N, 90=E, 180=S, 270=W).
+        context: Address or label for error logs.
+
+    Returns:
+        SunScoutOutput, or None on any calculation failure (non-fatal —
+        the rest of the report must still load).
+    """
+    try:
+        ss = calculate_sun_hours(lat, lng, azimuth_deg)
+        bedroom_main = ss.window_hours.get("bedroom_main", {})
+        monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
+        return SunScoutOutput(
+            annual_peak_sun_hours=ss.annual_peak_sun_hours,
+            summer_daily_hours=ss.summer_daily_hours,
+            winter_daily_hours=ss.winter_daily_hours,
+            seasonal_grid=ss.seasonal_grid,
+            monthly_hours=monthly_hours,
+            sun_score=ss.sun_score,
+            verdict=ss.verdict,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("SunScout failed for %s: %s", context or f"({lat},{lng})", exc)
+        return None
+
+
+@router.post("/sunscout", response_model=SunScoutResponse)
+async def recalculate_sun_scout(body: SunScoutRequest) -> SunScoutResponse:
+    """
+    Recalculate SunScout for a facade bearing chosen by the user.
+
+    The main pipeline assumes a south-facing primary facade (180°); this
+    endpoint lets the UI turn that assumption into an input without
+    re-running the whole analysis (no extraction, no narrative).
+
+    Args:
+        body: lat/lng plus the facade bearing in degrees (0=N … 270=W).
+
+    Returns:
+        SunScoutResponse with sun_scout, or sun_scout=null when the
+        calculation fails.
+    """
+    return SunScoutResponse(
+        sun_scout=_build_sun_scout(body.lat, body.lng, body.azimuth_deg)
+    )
 
 
 @router.post("/", response_model=AnalysisOutput)
@@ -299,21 +356,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     # ── 6. SunScout (non-fatal — skipped when lat/lng unavailable) ───────────
     sun_scout_result: SunScoutOutput | None = None
     if prop.lat is not None and prop.lng is not None:
-        try:
-            ss = calculate_sun_hours(prop.lat, prop.lng)
-            bedroom_main = ss.window_hours.get("bedroom_main", {})
-            monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
-            sun_scout_result = SunScoutOutput(
-                annual_peak_sun_hours=ss.annual_peak_sun_hours,
-                summer_daily_hours=ss.summer_daily_hours,
-                winter_daily_hours=ss.winter_daily_hours,
-                seasonal_grid=ss.seasonal_grid,
-                monthly_hours=monthly_hours,
-                sun_score=ss.sun_score,
-                verdict=ss.verdict,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.error("SunScout failed for %s: %s", prop.address, exc)
+        sun_scout_result = _build_sun_scout(prop.lat, prop.lng, context=prop.address)
 
     # ── 7. Assemble and return output ─────────────────────────────────────────
     metrics = InvestmentMetricsOutput(

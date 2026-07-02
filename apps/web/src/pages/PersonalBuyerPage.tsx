@@ -1528,10 +1528,11 @@ export function PersonalBuyerPage({
     [property]
   )
 
-  // When isReal: pass 0 for schools and light — score reflects only what's known.
-  // Week 4-5 will replace these with real EQAO data and pvlib sun output.
+  // When isReal: schools pass 0 until EQAO data is loaded — the score reflects
+  // only what's known. Light is REAL when the analysis carries pvlib sun
+  // output (geocoding succeeded); otherwise 0 (honest floor), never a fixture.
   const schoolsForScore = isReal ? EMPTY_SCHOOLS : PB_SCHOOLS
-  const lightScore = isReal ? 0 : STATIC_LIGHT_SCORE
+  const lightScore = isReal ? (realAnalysis!.sunScout?.sunScore ?? 0) : STATIC_LIGHT_SCORE
 
   // Real flags feed the risk component + severe-gate ceiling. The aggregate
   // gauge is suppressed while isReal, but the risk breakdown bar stays visible —
@@ -1587,7 +1588,9 @@ export function PersonalBuyerPage({
               letterSpacing: '0.12em',
             }}
           >
-            School and sun data · available in Phase 2
+            {realAnalysis?.sunScout != null
+              ? 'School data · available in Phase 2'
+              : 'School and sun data · available in Phase 2'}
           </p>
         </div>
       )}
@@ -1606,7 +1609,11 @@ export function PersonalBuyerPage({
       <SchoolsSection isReal={isReal} />
       <NeighbourhoodSection neigh={neighbourhood} />
       {isReal ? (
-        <SunScoutPanel sunScout={realAnalysis?.sunScout ?? null} sectionNumber="06" />
+        <SunScoutPanel
+          sunScout={realAnalysis?.sunScout ?? null}
+          sectionNumber="06"
+          token={realAnalysis?.token}
+        />
       ) : (
         <SunScoutSection />
       )}

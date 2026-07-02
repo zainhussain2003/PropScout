@@ -382,15 +382,8 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 
 ### SunScout (moved from Week 5–6 — location intelligence block, fits here alongside Walk Score)
 
-- [x] pvlib installed in Python calc engine
-- [ ] `window_sun_hours_by_month()` function fully implemented (`sun_path.py` is a stub)
-- [ ] `annual_light_score()` function
-- [ ] Window direction input UI (compass direction dropdown per window)
-- [ ] Monthly sun hours grid output (Dec / Mar / Jun / Sep columns)
-- [ ] Sun arc SVG visualization (summer vs winter day)
-- [ ] Score interpretation labels (80–100 excellent, etc.)
-- [ ] SunScout section rendering in all 4 report types
-- [ ] `STATIC_LIGHT_SCORE` placeholder replaced with real pvlib output in PersonalBuyerPage home score
+> This block was a stale duplicate — the maintained SunScout checklist lives in the
+> Week 5–6 section below. As of 2026-07-01 SunScout is wired end-to-end.
 
 ---
 
@@ -425,11 +418,12 @@ All tasks reference spec Section 19.
 - [x] `SunScoutOutput` Pydantic model + `sun_scout` field on `AnalysisOutput` in calc engine
 - [x] Calc engine router calls `calculate_sun_hours()` when lat/lng present (non-fatal)
 - [x] `SunScoutResult` TypeScript interface in both API and web type trees
-- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase
-- [ ] Window direction input UI (compass direction dropdown per window) — Phase 2
-- [ ] Monthly sun hours grid output wired to real data (SeasonalGrid component exists, needs Analysis.sunScout)
-- [ ] Sun arc SVG visualization wired to real data (SunArcViz component exists, needs summer/winter hours)
-- [ ] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data
+- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase _(actually true as of 2026-07-01 — previously ticked while `sunScout` was hardcoded null and no lat/lng was sent; the geocode now runs before the calc call)_
+- [x] Window direction input UI — facade compass dropdown in `SunScoutPanel` (live analyses only) → `POST /analysis/:token/sunscout` → calc engine `/analysis/sunscout` (recalc without extraction/narrative re-run); result persisted so reloads keep the orientation
+- [x] Monthly sun hours wired to real data — SunScoutPanel's 12-month bar chart renders `analysis.sunScout.monthlyHours` _(the design has no separate Dec/Mar/Jun/Sep grid; a "SeasonalGrid component" never existed — `seasonalGrid` data stays available on the payload)_
+- [x] ~~Sun arc SVG visualization~~ — dropped: not in any design prototype and no SunArcViz component ever existed; summer/winter daily hours render as text in the panel
+- [x] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data (`ReportPage` investor/tenant contents + routed PersonalBuyerPage + LandlordPage)
+- [x] `STATIC_LIGHT_SCORE` replaced — PersonalBuyerPage HomeScore light component now uses real `sunScout.sunScore` (0 honest floor when sun data unavailable)
 
 ---
 

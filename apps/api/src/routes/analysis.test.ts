@@ -495,3 +495,105 @@ describe('POST / - coordinates in the analysis payload', () => {
     expect(body.analysis.coordinates).toBeNull()
   })
 })
+
+// -- SunScout end-to-end: lat/lng to calc engine, sun_scout mapped back -------
+
+describe('POST / - SunScout wiring', () => {
+  let app: FastifyInstance
+
+  const PY_SUN_SCOUT = {
+    annual_peak_sun_hours: 1350,
+    summer_daily_hours: 8.4,
+    winter_daily_hours: 3.1,
+    seasonal_grid: { Dec: 3.1, Mar: 5.5, Jun: 8.4, Sep: 6.2 },
+    monthly_hours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
+    sun_score: 72,
+    verdict: 'good',
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockGeocodeAddress.mockResolvedValue({
+      lat: 43.7942,
+      lng: -79.5268,
+      formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+    })
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(makeCalcResponse({ ...CALC_ENGINE_FIXTURE, sun_scout: PY_SUN_SCOUT }))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('forwards geocoded lat/lng in property_data so the sun-path branch fires', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    expect(calcCall).toBeDefined()
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      property_data: { lat?: number | null; lng?: number | null }
+    }
+    expect(sentBody.property_data.lat).toBe(43.7942)
+    expect(sentBody.property_data.lng).toBe(-79.5268)
+  })
+
+  it('maps the calc engine sun_scout into analysis.sunScout (camelCase)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.sunScout).toEqual({
+      annualPeakSunHours: 1350,
+      summerDailyHours: 8.4,
+      winterDailyHours: 3.1,
+      seasonalGrid: { Dec: 3.1, Mar: 5.5, Jun: 8.4, Sep: 6.2 },
+      monthlyHours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
+      sunScore: 72,
+      verdict: 'good',
+    })
+  })
+
+  it('sunScout stays null when geocoding fails (calc engine gets no lat/lng)', async () => {
+    mockGeocodeAddress.mockResolvedValue(null)
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.sunScout).toBeNull()
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      property_data: { lat?: number | null; lng?: number | null }
+    }
+    expect(sentBody.property_data.lat ?? null).toBeNull()
+    expect(sentBody.property_data.lng ?? null).toBeNull()
+  })
+})

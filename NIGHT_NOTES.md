@@ -407,6 +407,15 @@ calc engine's sun-path branch never fires. Light can't come from sunScout withou
 that pipeline first. **Only trusted live components: walk + flags/risk.** Light joins
 FMV/schools as "data pending."
 
+> **CLOSED 2026-07-01 — light is REAL now.** Geocode moved before the calc call; lat/lng
+> ride in `property_data`, the calc engine's sun-path branch fires, `sun_scout` maps back
+> to `analysis.sunScout` (camelCase) and persists in `market_data`. PersonalBuyerPage's
+> HomeScore light component consumes `sunScout.sunScore` (honest 0 floor when geocoding
+> fails). Bonus: the assumed-south facade is now an INPUT — compass dropdown in
+> SunScoutPanel → `POST /analysis/:token/sunscout` → calc `/analysis/sunscout` (light
+> recalc, no extraction/narrative), result persisted. Trusted live components are now
+> walk + flags/risk + light; FMV/schools remain "data pending" and keep the gauge suppressed.
+
 **DECISION — gauge suppression (option iii):** A live HomeScore would be ~80% constants
 (pricing pinned to "asking = fair", schools 0, light 4, lot 8) — a confident number that
 can't tell a buyer they're overpaying. So: route personal → HomeScore, wire the risk

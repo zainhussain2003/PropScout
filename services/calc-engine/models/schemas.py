@@ -119,6 +119,25 @@ class SunScoutOutput(BaseModel):
     verdict: str
 
 
+class SunScoutRequest(BaseModel):
+    """Standalone SunScout recalculation request (facade-direction input UI)."""
+
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+    azimuth_deg: float = Field(
+        180.0,
+        ge=0,
+        le=360,
+        description="Primary facade bearing in degrees; 180 = south (the pipeline default)",
+    )
+
+
+class SunScoutResponse(BaseModel):
+    """Standalone SunScout recalculation response."""
+
+    sun_scout: SunScoutOutput | None
+
+
 class AnalysisOutput(BaseModel):
     """Full analysis result returned to the Fastify API."""
 
