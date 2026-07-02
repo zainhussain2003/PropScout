@@ -32,6 +32,7 @@ import { getVacancyRateByCity } from '../services/cmhcService'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
 import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
+import { RENT_BOUNDS } from '../constants/thresholds'
 import {
   RENT_TO_PRICE_MONTHLY,
   FALLBACK_RENT_BAND,
@@ -224,6 +225,25 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         high: Math.round(rentalFallback * (1 + FALLBACK_RENT_BAND)),
         compCount: 0,
         confidence: 'low' as const,
+      }
+
+      // Rent plausibility gate (decision 2026-07-01): a mid outside
+      // $500–$10,000/mo means the listing carried no usable rent/price (or a
+      // legacy row stored a unit error) — scoring it would produce confident
+      // garbage. Fail the analysis with a friendly message instead.
+      if (
+        rentalForCalc.mid < RENT_BOUNDS.MIN_MONTHLY ||
+        rentalForCalc.mid > RENT_BOUNDS.MAX_MONTHLY
+      ) {
+        await updateAnalysisStatus(token, 'failed')
+        return reply
+          .code(422)
+          .send(
+            makeError(
+              'RENT_OUT_OF_BOUNDS',
+              'The rent on this listing looks implausible — check the listing or enter details manually.'
+            )
+          )
       }
 
       // Step 4b — live mortgage rate (falls back to FINANCING_DEFAULTS.mortgage_rate

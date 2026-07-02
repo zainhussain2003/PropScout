@@ -163,3 +163,71 @@ describe('POST /scrape', () => {
     expect(body.code).toBe('POSTAL_CODE_NOT_FOUND')
   })
 })
+
+// -- Rent plausibility bounds (decision 2026-07-01: $500-$10,000/mo) ----------
+
+describe('POST /scrape - for-rent rent bounds', () => {
+  const FOR_RENT_FIXTURE = {
+    ...ONTARIO_FIXTURE,
+    listing_type: 'for_rent',
+    price: 2_400,
+  }
+
+  it('plausible rent is stored as rentMonthly with no partial-scrape flag for rent', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse(FOR_RENT_FIXTURE, 200))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as {
+      listing: { rentMonthly: number | null }
+      missingFields?: string[]
+    }
+    expect(body.listing.rentMonthly).toBe(2_400)
+    expect(body.missingFields ?? []).not.toContain('rent_monthly')
+  })
+
+  it('implausibly low rent ($29) is nulled and flagged as a missing field', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ ...FOR_RENT_FIXTURE, price: 29 }, 200))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as {
+      listing: { rentMonthly: number | null }
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+    expect(body.listing.rentMonthly).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('rent_monthly')
+  })
+
+  it('implausibly high rent ($290,000 - a unit error) is nulled and flagged', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ ...FOR_RENT_FIXTURE, price: 290_000 }, 200))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body) as {
+      listing: { rentMonthly: number | null }
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+    expect(body.listing.rentMonthly).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('rent_monthly')
+  })
+})

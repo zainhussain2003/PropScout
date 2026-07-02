@@ -351,3 +351,88 @@ describe('POST / — analysis orchestrator', () => {
     expect(analysisArg.mode).toBe('investor')
   })
 })
+
+// -- Rent plausibility bounds (decision 2026-07-01: $500-$10,000/mo) ----------
+
+describe('POST / - rent plausibility bounds', () => {
+  let app: FastifyInstance
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('for-rent listing with no rent and no price -> 422 RENT_OUT_OF_BOUNDS, never reaches the calc engine', async () => {
+    // Fallback rent computes to $0 - previously this proceeded to score garbage.
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-rent',
+      price: null,
+      rentMonthly: null,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'tenant' },
+    })
+
+    expect(res.statusCode).toBe(422)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('RENT_OUT_OF_BOUNDS')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
+    const fetchMock = global.fetch as jest.Mock
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('legacy listing row with implausible stored rent ($49/mo) -> 422 RENT_OUT_OF_BOUNDS', async () => {
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-rent',
+      price: null,
+      rentMonthly: 49,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'landlord' },
+    })
+
+    expect(res.statusCode).toBe(422)
+    expect((res.json() as ApiError).code).toBe('RENT_OUT_OF_BOUNDS')
+  })
+
+  it('plausible comps-based rent still analyses normally (bounds do not over-reject)', async () => {
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-rent',
+      price: null,
+      rentMonthly: 2400,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'tenant' },
+    })
+
+    expect(res.statusCode).toBe(200)
+  })
+})

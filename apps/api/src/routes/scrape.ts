@@ -11,6 +11,7 @@ import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
 import type { Listing, ListingType, PropertyType } from '../types/property'
 import { isOntarioPostalCode } from '../constants/provinces'
+import { RENT_BOUNDS } from '../constants/thresholds'
 import { saveListing, createPendingAnalysis } from '../services/supabaseService'
 
 const SCRAPER_URL = process.env.SCRAPER_URL ?? 'http://localhost:8001'
@@ -145,15 +146,26 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       // Step 3 — detect partial scrape failure
+      const listingType: ListingType = scraped.listing_type === 'for_rent' ? 'for-rent' : 'for-sale'
+
+      // A for-rent price outside plausible monthly-rent bounds is a scrape/unit
+      // error ($29 or $290,000/mo), not a real rent — null it and route the user
+      // to manual entry rather than scoring garbage downstream.
+      const rentMonthly =
+        listingType === 'for-rent' &&
+        scraped.price >= RENT_BOUNDS.MIN_MONTHLY &&
+        scraped.price <= RENT_BOUNDS.MAX_MONTHLY
+          ? scraped.price
+          : null
+
       const missingFields: string[] = []
       if (scraped.sqft == null) missingFields.push('sqft')
       if (!scraped.taxes_known) missingFields.push('annual_taxes')
       if (!scraped.year_built_known) missingFields.push('year_built')
+      if (listingType === 'for-rent' && rentMonthly === null) missingFields.push('rent_monthly')
       const scraperFailed = missingFields.length > 0
 
       // Step 4 — map scraper output to Listing type
-      const listingType: ListingType = scraped.listing_type === 'for_rent' ? 'for-rent' : 'for-sale'
-
       const listing: Omit<Listing, 'id'> = {
         url: scraped.url,
         listingType,
@@ -162,7 +174,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
         province: 'ON',
         postalCode,
         price: listingType === 'for-sale' ? scraped.price : null,
-        rentMonthly: listingType === 'for-rent' ? scraped.price : null,
+        rentMonthly,
         beds: scraped.beds,
         baths: scraped.baths,
         sqft: scraped.sqft,

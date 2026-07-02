@@ -261,3 +261,20 @@ def test_custom_bounds_override_defaults() -> None:
     # Vaughan 1.97% cap rate is below the tight minimum
     result = sanity_check_metrics(**_VAUGHAN_OK, bounds=tight)
     assert any("Cap rate" in w for w in result)
+
+
+# -- Non-finite break-even rent (inf clamp, AUDIT_TRACKER item C) --------------
+
+
+def test_infinite_break_even_rent_triggers_nonfinite_warning() -> None:
+    """float('inf') from calculate_break_even_rent (net_factor <= 0) is named
+    explicitly - not just caught incidentally by the 3x-ratio check."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "break_even_rent": float("inf")})
+    assert any("not a finite number" in w for w in result)
+
+
+def test_nan_break_even_rent_triggers_nonfinite_warning() -> None:
+    """NaN slips through every comparison-based check - the finite guard must
+    catch it."""
+    result = sanity_check_metrics(**{**_VAUGHAN_OK, "break_even_rent": float("nan")})
+    assert any("not a finite number" in w for w in result)

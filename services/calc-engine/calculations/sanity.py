@@ -13,6 +13,7 @@ Rule of thumb for bounds:
   - If it would require a data entry error, flag it.
 """
 
+import math
 from dataclasses import dataclass
 
 
@@ -130,6 +131,20 @@ def sanity_check_metrics(
             f"DSCR of {dscr:.2f}x exceeds {bounds.dscr_max:.1f}x — "
             "this is unusually high and may indicate a data entry error in rent or expenses."
         )
+
+    # ── Break-even rent must be a finite number ───────────────────────────────
+    # calculate_break_even_rent returns float("inf") when net_factor <= 0
+    # (unreachable with current constants, but constants change) and NaN would
+    # slip through every comparison-based check below. Named explicitly so the
+    # warning says what happened rather than relying on the 3×-ratio check to
+    # catch infinity by accident.
+    if not math.isfinite(break_even_rent):
+        warnings.append(
+            f"Break-even rent ({break_even_rent}) is not a finite number — "
+            "expense factors (vacancy + management) consumed the entire rent. "
+            "Verify rate constants."
+        )
+        break_even_rent = 0.0  # neutralise for the comparison checks below
 
     # ── Break-even rent vs market rent ────────────────────────────────────────
     if (
