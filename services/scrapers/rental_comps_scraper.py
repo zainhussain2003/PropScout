@@ -33,7 +33,7 @@ from normalization import (
 )
 from services import mapbox_service, supabase_service
 from sources import kijiji, padmapper, rentals_ca
-from sources.browser import launch_browser
+from sources.browser import PageFetch, SourceFetchResult, launch_browser
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,19 +54,24 @@ class SourceYield:
 
 @dataclass
 class ScrapeResult:
-    """Combined raw listings plus the per-source yield breakdown."""
+    """Combined raw listings, the per-source yield breakdown, and the per-page
+    fetch records (status / row count / blocked) for the yield alarm."""
 
     listings: list[RawRentalListing] = field(default_factory=list)
     yields: list[SourceYield] = field(default_factory=list)
+    pages: list[PageFetch] = field(default_factory=list)
 
 
 @dataclass
 class NightlyOutcome:
-    """Result of a nightly run: rows stored, per-source yields, and any dead sources."""
+    """Result of a nightly run: rows stored, per-source yields, any dead sources,
+    and the raw per-page fetch records (the yield-alarm signal — recorded here,
+    classified later by a separate port)."""
 
     inserted: int
     yields: list[SourceYield]
     underperforming: list[SourceYield]
+    pages: list[PageFetch] = field(default_factory=list)
 
 
 def find_underperforming_sources(
@@ -101,12 +106,13 @@ async def scrape_all_sources() -> ScrapeResult:
     async with launch_browser() as browser:
         for source in _SOURCES:
             try:
-                rows = await source.fetch_listings(browser)
+                fetched = await source.fetch_listings(browser)
             except Exception:
                 logger.exception("Source %s failed — continuing", source.SOURCE)
-                rows = []
-            result.listings.extend(rows)
-            result.yields.append(SourceYield(source.SOURCE, len(rows)))
+                fetched = SourceFetchResult()
+            result.listings.extend(fetched.listings)
+            result.pages.extend(fetched.pages)
+            result.yields.append(SourceYield(source.SOURCE, len(fetched.listings)))
     return result
 
 
@@ -180,6 +186,11 @@ async def run_nightly_scrape() -> NightlyOutcome:
     for y in result.yields:
         logger.info("Source yield: %-12s %5d raw listings", y.source, y.raw_count)
 
+    # Per-page fetch signal — recorded and surfaced raw for the (later, separate)
+    # yield alarm. No classification here: just make the {status, rows, blocked}
+    # breakdown available so a block can later be told apart from end-of-results.
+    logger.info("Recorded %d per-page fetch result(s)", len(result.pages))
+
     underperforming = find_underperforming_sources(result.yields)
     if underperforming:
         names = ", ".join(f"{y.source}={y.raw_count}" for y in underperforming)
@@ -193,7 +204,10 @@ async def run_nightly_scrape() -> NightlyOutcome:
         )
 
     return NightlyOutcome(
-        inserted=inserted, yields=result.yields, underperforming=underperforming
+        inserted=inserted,
+        yields=result.yields,
+        underperforming=underperforming,
+        pages=result.pages,
     )
 
 

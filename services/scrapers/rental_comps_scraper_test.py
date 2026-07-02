@@ -12,6 +12,7 @@ import pytest
 import rental_comps_scraper
 from normalization import RawRentalListing
 from services.mapbox_service import GeocodeResult
+from sources.browser import SourceFetchResult
 
 
 def _raw(
@@ -274,7 +275,7 @@ async def test_non_ontario_geocode_postal_not_stored(mock_pipeline):
 async def test_failed_source_never_kills_run():
     """A source module that raises contributes nothing but the run continues."""
     failing = AsyncMock(side_effect=RuntimeError("blocked"))
-    working = AsyncMock(return_value=[_raw()])
+    working = AsyncMock(return_value=SourceFetchResult(listings=[_raw()]))
 
     fake_failing = type("S", (), {"SOURCE": "kijiji", "fetch_listings": failing})
     fake_working = type("S", (), {"SOURCE": "rentals_ca", "fetch_listings": working})

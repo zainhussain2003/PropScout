@@ -8,7 +8,9 @@ title + location.
 import pytest
 from unittest.mock import AsyncMock
 
+from normalization import RawRentalListing
 from sources import kijiji
+from sources.browser import PageResult
 from sources.kijiji import (
     _BASE_URL,
     _LINK_SELECTOR,
@@ -202,11 +204,11 @@ async def test_kijiji_is_gated_to_toronto_only(monkeypatch):
 
     called_urls: list[str] = []
 
-    async def fake_open_page(_browser: object, url: str) -> AsyncMock:
+    async def fake_open_page(_browser: object, url: str) -> PageResult:
         called_urls.append(url)
         page = AsyncMock()
         page.query_selector_all.return_value = []  # no cards → break after page 1
-        return page
+        return PageResult(page=page, status=200, blocked=False)
 
     monkeypatch.setattr(kijiji, "open_page", fake_open_page)
     await kijiji.fetch_listings(object())
@@ -215,3 +217,86 @@ async def test_kijiji_is_gated_to_toronto_only(monkeypatch):
     assert all("toronto" in u for u in called_urls)  # ONLY Toronto, never other cities
     for other in ("mississauga", "ottawa", "hamilton", "vaughan"):
         assert not any(other in u for u in called_urls)
+
+
+# ── fetch_listings per-page signal (status / row count / blocked) ──────────────
+
+
+def _listing(url: str = "https://kijiji.ca/x") -> RawRentalListing:
+    """A minimal RawRentalListing so a mocked _parse_card returns something real."""
+    return RawRentalListing(
+        source=SOURCE,
+        source_url=url,
+        address="2BR, Toronto, ON M5V 1J1",
+        rent_raw="$2,150/mo",
+        beds_raw="2BR",
+    )
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_per_page_rows_status_blocked(monkeypatch):
+    # A clean 200 page with 3 cards must record rows=3, status=200, blocked=False.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    page = AsyncMock()
+    page.query_selector_all.return_value = [object(), object(), object()]
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=page, status=200, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+    monkeypatch.setattr(
+        kijiji, "_parse_card", AsyncMock(return_value=_listing()), raising=True
+    )
+
+    result = await kijiji.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert (pf.source, pf.city, pf.page) == (SOURCE, "toronto", 1)
+    assert pf.status == 200
+    assert pf.rows == 3  # the per-page row count is captured
+    assert pf.blocked is False
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_blocked_page_distinct_from_empty(monkeypatch):
+    # A blocked page (403) is recorded as blocked=True — NOT the same as a real
+    # empty page. This is the ambiguity the change exists to end.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    page = AsyncMock()
+    page.query_selector_all.return_value = []  # block pages carry no listing cards
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=page, status=403, blocked=True)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+
+    result = await kijiji.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert pf.blocked is True
+    assert pf.status == 403
+    assert pf.rows == 0
+    assert result.listings == []
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_navigation_failure(monkeypatch):
+    # A navigation failure (page None, status 0) is recorded — distinguishable
+    # from both a block and an end-of-results page.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=None, status=0, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+
+    result = await kijiji.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert pf.status == 0
+    assert pf.rows == 0
+    assert pf.blocked is False
+    assert result.listings == []

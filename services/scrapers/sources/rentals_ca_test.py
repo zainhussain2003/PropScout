@@ -7,7 +7,9 @@ element; address / rent / sqft / link still come from selectors.
 import pytest
 from unittest.mock import AsyncMock
 
+from normalization import RawRentalListing
 from sources import rentals_ca
+from sources.browser import PageResult
 from sources.rentals_ca import (
     _ADDRESS_SELECTOR,
     _BASE_URL,
@@ -122,3 +124,67 @@ async def test_inner_text_exception_returns_none():
 
     card.query_selector.side_effect = qs
     assert await rentals_ca._parse_card(card) is None
+
+
+# ── fetch_listings per-page signal (status / row count / blocked) ──────────────
+
+
+def _listing(url: str = "https://rentals.ca/x") -> RawRentalListing:
+    """A minimal RawRentalListing so a mocked _parse_card returns something real."""
+    return RawRentalListing(
+        source=SOURCE,
+        source_url=url,
+        address="5 Buttermill Ave, Vaughan, ON L4K 5W4",
+        rent_raw="$2,150/mo",
+        beds_raw="2 BED",
+    )
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_per_page_rows_status_blocked(monkeypatch):
+    # Bound the crawl to one city/page; a clean 200 with 4 cards records rows=4.
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto",))
+    monkeypatch.setattr(rentals_ca, "MAX_PAGES_PER_CITY", 1)
+    page = AsyncMock()
+    page.query_selector_all.return_value = [object()] * 4
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=page, status=200, blocked=False)
+
+    monkeypatch.setattr(rentals_ca, "open_page", fake_open_page)
+    monkeypatch.setattr(
+        rentals_ca, "_parse_card", AsyncMock(return_value=_listing()), raising=True
+    )
+
+    result = await rentals_ca.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert (pf.source, pf.city, pf.page) == (SOURCE, "toronto", 1)
+    assert pf.status == 200
+    assert pf.rows == 4  # the per-page row count is captured
+    assert pf.blocked is False
+    assert len(result.listings) == 4
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_blocked_page(monkeypatch):
+    # A 429 block is recorded as blocked=True with rows=0 — not an empty results page.
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto",))
+    monkeypatch.setattr(rentals_ca, "MAX_PAGES_PER_CITY", 1)
+    page = AsyncMock()
+    page.query_selector_all.return_value = []
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=page, status=429, blocked=True)
+
+    monkeypatch.setattr(rentals_ca, "open_page", fake_open_page)
+
+    result = await rentals_ca.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert pf.blocked is True
+    assert pf.status == 429
+    assert pf.rows == 0
+    assert result.listings == []

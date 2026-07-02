@@ -27,7 +27,7 @@ from playwright.async_api import Browser
 
 from constants import MAX_PAGES_PER_CITY, TARGET_CITIES
 from normalization import RawRentalListing
-from sources.browser import open_page
+from sources.browser import PageFetch, SourceFetchResult, open_page
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ _BEDS_RE = re.compile(
 )
 
 
-async def fetch_listings(browser: Browser) -> list[RawRentalListing]:
+async def fetch_listings(browser: Browser) -> SourceFetchResult:
     """
     Scrape active rental listings from PadMapper for all target cities.
 
@@ -60,41 +60,59 @@ async def fetch_listings(browser: Browser) -> list[RawRentalListing]:
         browser: Running Playwright browser from sources.browser.
 
     Returns:
-        Raw listings across all cities and pages, deduplicated by listing URL.
-        Failures are logged and skipped — one broken city never kills the run.
+        SourceFetchResult: the raw listings across all cities and pages
+        (deduplicated by listing URL), plus a PageFetch per (city, page) fetched
+        carrying status / row count / blocked (the yield-alarm signal). The
+        recorded row count is the raw cards rendered on the page, before the
+        in-source URL dedupe. Failures are logged and skipped — one broken city
+        never kills the run.
     """
-    listings: list[RawRentalListing] = []
+    result = SourceFetchResult()
     seen_urls: set[str] = set()
 
     for city in TARGET_CITIES:
         for page_num in range(1, MAX_PAGES_PER_CITY + 1):
             url = _SEARCH_URL.format(city=city, page=page_num)
-            page = await open_page(browser, url)
-            if page is None:
+            fetch = await open_page(browser, url)
+            if fetch.page is None:
+                result.pages.append(
+                    PageFetch(SOURCE, city, page_num, fetch.status, 0, fetch.blocked)
+                )
                 break
+            page = fetch.page
 
             try:
                 # Client-side render — wait for cards rather than DOM-ready
                 await page.wait_for_selector(_CARD_SELECTOR, timeout=10_000)
             except Exception:
+                # No cards rendered — past last page or blocked. Record the
+                # signal (0 rows, with the captured status/blocked) before break.
+                result.pages.append(
+                    PageFetch(SOURCE, city, page_num, fetch.status, 0, fetch.blocked)
+                )
                 await page.close()
                 break  # no cards rendered — past last page or blocked
 
             try:
                 cards = await page.query_selector_all(_CARD_SELECTOR)
+                result.pages.append(
+                    PageFetch(
+                        SOURCE, city, page_num, fetch.status, len(cards), fetch.blocked
+                    )
+                )
                 for card in cards:
                     listing = await _parse_card(card)
                     if listing is None or listing.source_url in seen_urls:
                         continue
                     seen_urls.add(listing.source_url)
-                    listings.append(listing)
+                    result.listings.append(listing)
             except Exception:
                 logger.exception("Card parsing failed for %s page %d", city, page_num)
             finally:
                 await page.close()
 
-    logger.info("padmapper: scraped %d raw listings", len(listings))
-    return listings
+    logger.info("padmapper: scraped %d raw listings", len(result.listings))
+    return result
 
 
 async def _prop(card: object, selector: str) -> str:
