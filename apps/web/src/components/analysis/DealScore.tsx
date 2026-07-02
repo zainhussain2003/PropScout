@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from 'react'
 import { DEAL_SCORE } from '../../constants/thresholds'
+import { verdictLabelForScore } from '../../lib/investorCalc'
 
 interface DealScoreProps {
   score: number
@@ -33,6 +34,12 @@ interface DealScoreProps {
    * number (a normalized number against raw brackets would mismatch the label).
    */
   tone?: 'pass' | 'caution' | 'fail'
+  /**
+   * Verdict text rendered verbatim when showVerdict is set. Pass the backend
+   * verdict label on live paths; when omitted, the label is derived from the
+   * raw score via the shared verdict brackets (demo gauges only).
+   */
+  verdictLabel?: string
 }
 
 const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
@@ -61,6 +68,7 @@ export function DealScore({
   animate = true,
   max = 95,
   tone,
+  verdictLabel,
 }: DealScoreProps): JSX.Element {
   const px = SIZE_MAP[size]
   const strokeWidth = Math.round(px * 0.085)
@@ -178,17 +186,7 @@ export function DealScore({
             color,
           }}
         >
-          {clamped <= 25
-            ? 'Hard pass'
-            : clamped <= 35
-              ? 'Do not buy'
-              : clamped <= 50
-                ? 'Marginal'
-                : clamped <= 65
-                  ? 'Caution'
-                  : clamped <= 80
-                    ? 'Good deal'
-                    : 'Strong deal'}
+          {verdictLabel ?? verdictLabelForScore(clamped)}
         </span>
       )}
     </div>

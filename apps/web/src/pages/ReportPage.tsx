@@ -791,7 +791,13 @@ function InvestorReportContent({
           </h2>
           <p style={{ color: 'var(--ink-2)', fontSize: 14 }}>{listingData.addressLine2}</p>
           {dealScore && (
-            <DealScoreWidget score={dealScore.total} label={dealScore.label} showVerdict />
+            <DealScoreWidget
+              score={dealScore.total}
+              label="Deal score"
+              showVerdict
+              verdictLabel={dealScore.label}
+              tone={dealScore.tone}
+            />
           )}
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>
             Detailed metrics are not available for this report.

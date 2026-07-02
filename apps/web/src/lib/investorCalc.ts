@@ -26,6 +26,7 @@ import type {
   FinancingInputs,
   ListingData,
 } from '../types/analysis'
+import { DEAL_SCORE } from '../constants/thresholds'
 
 // ── Deal score display metadata ────────────────────────────────────────────────
 
@@ -63,6 +64,30 @@ const VERDICT_DISPLAY: Record<
     tagline: 'Fails on multiple fundamentals.',
     tone: 'fail',
   },
+}
+
+/**
+ * Derive a verdict for a score that has NO backend verdict — demo/standalone
+ * gauges only. Mirrors the calc engine's get_verdict brackets exactly
+ * (DEAL_SCORE: ≥80 strong / ≥65 good / ≥50 caution / ≥35 marginal / ≥20 do
+ * not buy / <20 hard pass).
+ *
+ * NEVER use this on the live /r/:token path: the backend verdict is the one
+ * source of truth there. A frontend re-derivation once inflated a gated
+ * grow-op property from 40 to ~90 by ignoring the severe-flag ceiling.
+ */
+export function verdictForScore(score: number): DealVerdict {
+  if (score >= DEAL_SCORE.STRONG) return 'strong_buy'
+  if (score >= DEAL_SCORE.GOOD) return 'good_deal'
+  if (score >= DEAL_SCORE.CAUTION) return 'caution'
+  if (score >= DEAL_SCORE.MARGINAL) return 'marginal'
+  if (score >= DEAL_SCORE.DO_NOT_BUY) return 'do_not_buy'
+  return 'hard_pass'
+}
+
+/** Display label for verdictForScore — same demo-only caveat applies. */
+export function verdictLabelForScore(score: number): string {
+  return VERDICT_DISPLAY[verdictForScore(score)].label
 }
 
 /**

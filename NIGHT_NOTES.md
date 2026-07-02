@@ -338,6 +338,13 @@ properties. I audited every consumer:
   gauge (≤25 fail / ≤60 caution) and `LandingPage.tsx` (≥65 / ≥40). The re-base makes
   label↔colour disagreements more visible. Worth a small cleanup to unify all colour
   bands on the verdict brackets. Separate from the matrix.
+  > **CLOSED 2026-07-01.** Colour bands were already unified on `DEAL_SCORE` in a prior
+  > pass; the last stragglers were the `showVerdict` LABEL ladder inside `DealScore.tsx`
+  > (wrong at every bracket edge — exactly 80 read "Good deal", 25 read "Hard pass") and
+  > the degraded ReportPage path re-deriving the verdict text. Now: `verdictForScore` /
+  > `verdictLabelForScore` in `investorCalc.ts` mirror `get_verdict` exactly (demo-only,
+  > docstring warns against live use), `DealScore` takes `verdictLabel` for backend
+  > verdicts, and the degraded path passes the backend label + tone. 12 boundary tests.
 
 ### Per-mode score model — verified in code (don't assume one scale)
 
