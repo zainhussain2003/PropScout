@@ -82,6 +82,9 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
   const price = listing.price ?? 0
   const annualTaxes = listing.annualTaxes ?? 0
   const condoFeeMonthly = listing.condoFeeMonthly ?? 0
+  // Internal fallback only (maintenance-rate display buckets); the hero hides
+  // the "Built" fact when the listing didn't carry a year (a fabricated
+  // "Built 2016" rendered live 2026-07-02).
   const yearBuilt = listing.yearBuilt ?? new Date().getFullYear() - 10
   const isToronto =
     listing.city.toLowerCase().includes('toronto') ||
@@ -103,16 +106,21 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     province: listing.province,
     isToronto,
     propertyType: listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1),
-    beds: `${listing.beds} bed`,
-    baths: `${listing.baths} bath`,
+    // PropertyHero renders "{beds} bed · {baths} bath" / "{parking} parking" —
+    // these carry the bare numbers (was "2 bed bed · 2 bath bath", live 2026-07-02)
+    beds: String(listing.beds),
+    baths: String(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking: listing.parkingSpots > 0 ? `${listing.parkingSpots} spot` : 'None',
+    parking: String(listing.parkingSpots),
     yearBuilt,
     rentControl: yearBuilt <= 2018,
     price,
     annualTaxes,
     condoFeeMonthly,
-    rentEstimate: analysis.rentalComps?.mid ?? 0,
+    // Comps mid when available; otherwise the listing's own asking rent —
+    // the hero once rendered "Asking rent $0/mo" on a $2,650 rental because
+    // comps were null (live 2026-07-02).
+    rentEstimate: analysis.rentalComps?.mid ?? listing.rentMonthly ?? 0,
     rentLow: analysis.rentalComps?.low ?? 0,
     rentHigh: analysis.rentalComps?.high ?? 0,
     compCount: analysis.rentalComps?.compCount ?? 0,
@@ -121,6 +129,7 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     riskFlags,
     chips: buildChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
+    yearBuiltKnown: listing.yearBuilt != null,
   }
 }
 
@@ -297,7 +306,13 @@ function RiskFlagsSection({
   // the second computation that drifts from the calc engine. The score itself is
   // shown (from the backend) in the hero gauge.
 
-  const verdictTone = redFlags.length > 1 ? 'fail' : redFlags.length === 1 ? 'caution' : 'pass'
+  // Ambers are soft warnings — the chip must read caution, not pass-green
+  const verdictTone =
+    redFlags.length > 1
+      ? 'fail'
+      : redFlags.length === 1 || amberFlags.length > 0
+        ? 'caution'
+        : 'pass'
   const verdictLabel =
     redFlags.length > 0
       ? `${redFlags.length} red · ${amberFlags.length} amber`
@@ -865,7 +880,12 @@ function InvestorReportContent({
 
       <InvestmentMetricsSection metrics={metrics} listing={listingData} />
       <RentalCompsSection analysis={analysis} listing={listingData} />
-      <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
+      {/* Purchase-transaction section — meaningless for a for-rent listing
+          (no sale price: the LTT table computed $0 while the totals card used
+          the estimated value, live 2026-07-02). */}
+      {listingData.price > 0 && (
+        <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
+      )}
       <OSFISection financing={financing} listing={listingData} />
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
       <EquitySection metrics={metrics} />

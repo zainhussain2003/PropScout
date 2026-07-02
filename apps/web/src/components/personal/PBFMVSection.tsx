@@ -46,8 +46,10 @@ function getFMVVerdict(
 export function PBFMVSection({
   property,
   score,
-  compCount = 8,
-  avgDOM = 12,
+  // No fixture defaults: an undefined count on a real report once rendered
+  // "8 verified" comparable sales that don't exist (live 2026-07-02).
+  compCount,
+  avgDOM,
   medianPPSqft,
   isEstimated = false,
 }: PBFMVSectionProps): JSX.Element {
@@ -232,21 +234,25 @@ export function PBFMVSection({
           <span className="row gap-8">
             <span>Comparable sales considered</span>
             <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              {compCount} verified
+              {compCount != null ? `${compCount} verified` : 'no source yet'}
             </span>
           </span>
-          <span className="row gap-8">
-            <span>Average days on market</span>
-            <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              {avgDOM} days
+          {avgDOM != null && (
+            <span className="row gap-8">
+              <span>Average days on market</span>
+              <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                {avgDOM} days
+              </span>
             </span>
-          </span>
-          <span className="row gap-8">
-            <span>Median $/sqft</span>
-            <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              ${medianPP}
+          )}
+          {medianPPSqft != null && (
+            <span className="row gap-8">
+              <span>Median $/sqft</span>
+              <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                ${medianPP}
+              </span>
             </span>
-          </span>
+          )}
           <span className="row gap-8">
             <span>This listing $/sqft</span>
             <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>

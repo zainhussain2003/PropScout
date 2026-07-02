@@ -291,6 +291,9 @@ export interface ListingData {
   sqft: number
   parking: string
   yearBuilt: number
+  /** False when the listing carried no build year — yearBuilt is then an
+   * internal maintenance-bucket fallback and must not render as a fact. */
+  yearBuiltKnown?: boolean
   rentControl: boolean
   price: number
   annualTaxes: number

@@ -169,78 +169,82 @@ export function InvestmentMetricsSection({
         ))}
       </div>
 
-      {/* Expense breakdown */}
-      <div className="card" style={{ marginTop: 22, padding: 28 }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 18,
-            alignItems: 'baseline',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <div className="col" style={{ gap: 4 }}>
-            <span
-              className="mono"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: 'var(--muted)',
-              }}
-            >
-              Operating expenses · annual
-            </span>
-            <h3 className="serif" style={{ fontSize: 22 }}>
-              Where the money goes.
-            </h3>
-          </div>
-          <span
-            className="serif tabular"
-            style={{ fontSize: 26, lineHeight: 1, color: 'var(--accent)' }}
+      {/* Expense breakdown — value-derived (insurance/maintenance are % of
+          value), so a for-rent listing with no sale price would render an
+          all-dash card with a "$0/yr" total (live 2026-07-02). Hide it. */}
+      {listing.price > 0 && (
+        <div className="card" style={{ marginTop: 22, padding: 28 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: 18,
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+              gap: 12,
+            }}
           >
-            {fmtMoney(metrics.expenses.total)}
-            <span style={{ fontSize: 13, color: 'var(--muted)' }}>/yr</span>
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-          {expenseRows.map(([label, value, note], i) => (
-            <div
-              key={label}
-              style={{
-                padding: '12px 0',
-                borderBottom: i < 4 ? '1px solid var(--line)' : 'none',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                gap: 12,
-                paddingRight: i % 2 === 0 ? 24 : 0,
-                paddingLeft: i % 2 === 1 ? 24 : 0,
-                borderLeft: i % 2 === 1 ? '1px solid var(--line)' : 'none',
-              }}
-            >
-              <div className="col" style={{ gap: 2 }}>
-                <span style={{ fontSize: 14, color: 'var(--ink)' }}>{label}</span>
-                <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {note}
-                </span>
-              </div>
+            <div className="col" style={{ gap: 4 }}>
               <span
-                className="mono tabular"
+                className="mono"
                 style={{
-                  fontWeight: 500,
-                  color: value > 0 ? 'var(--ink)' : 'var(--muted)',
+                  fontSize: 10,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
                 }}
               >
-                {value > 0 ? fmtMoney(value) : '—'}
+                Operating expenses · annual
               </span>
+              <h3 className="serif" style={{ fontSize: 22 }}>
+                Where the money goes.
+              </h3>
             </div>
-          ))}
+            <span
+              className="serif tabular"
+              style={{ fontSize: 26, lineHeight: 1, color: 'var(--accent)' }}
+            >
+              {fmtMoney(metrics.expenses.total)}
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>/yr</span>
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+            {expenseRows.map(([label, value, note], i) => (
+              <div
+                key={label}
+                style={{
+                  padding: '12px 0',
+                  borderBottom: i < 4 ? '1px solid var(--line)' : 'none',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  gap: 12,
+                  paddingRight: i % 2 === 0 ? 24 : 0,
+                  paddingLeft: i % 2 === 1 ? 24 : 0,
+                  borderLeft: i % 2 === 1 ? '1px solid var(--line)' : 'none',
+                }}
+              >
+                <div className="col" style={{ gap: 2 }}>
+                  <span style={{ fontSize: 14, color: 'var(--ink)' }}>{label}</span>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    {note}
+                  </span>
+                </div>
+                <span
+                  className="mono tabular"
+                  style={{
+                    fontWeight: 500,
+                    color: value > 0 ? 'var(--ink)' : 'var(--muted)',
+                  }}
+                >
+                  {value > 0 ? fmtMoney(value) : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   )
 }

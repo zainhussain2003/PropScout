@@ -247,10 +247,12 @@ export function PropertyHero({
                 <Icon name="key" size={14} />
                 {listing.parking} parking
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Icon name="chart" size={14} />
-                Built {listing.yearBuilt}
-              </span>
+              {listing.yearBuiltKnown !== false && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="chart" size={14} />
+                  Built {listing.yearBuilt}
+                </span>
+              )}
             </div>
           </div>
 
@@ -401,10 +403,19 @@ export function PropertyHero({
                   color: 'var(--muted)',
                 }}
               >
-                Asking
+                {listing.price > 0 ? 'Asking' : 'Asking rent'}
               </span>
               <span className="serif tabular" style={{ fontSize: 32, lineHeight: 1 }}>
-                {fmtMoney(listing.price)}
+                {/* For-rent listings carry no sale price — showing "$0" as the
+                    asking figure is a data lie (live 2026-07-02). */}
+                {listing.price > 0 ? (
+                  fmtMoney(listing.price)
+                ) : (
+                  <>
+                    {fmtMoney(listing.rentEstimate)}
+                    <span style={{ fontSize: 16, color: 'var(--muted)' }}>/mo</span>
+                  </>
+                )}
               </span>
             </div>
             {[

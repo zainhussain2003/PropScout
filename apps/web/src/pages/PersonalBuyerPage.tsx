@@ -492,12 +492,18 @@ interface PersonalVerdictHeroProps {
   monthly: PersonalMonthlyCost
   /** Real AI narrative — when provided replaces the demo verdict text. */
   narrative?: string | null
+  /** Live report — provenance strip must only claim sources we have. */
+  isReal?: boolean
 }
 
 const PB_FIRST_PARA =
   'This is fairly priced for what it is — and the school catchment alone is reason enough to consider it seriously.'
 
-function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): JSX.Element {
+function PersonalVerdictHero({
+  monthly,
+  narrative,
+  isReal = false,
+}: PersonalVerdictHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const property = PB_PROPERTY
   const extraCost = Math.round(monthly.total - monthly.mortgage)
@@ -599,6 +605,13 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
         >
           {narrative ? (
             narrative.split('. ')[0] + '.'
+          ) : isReal ? (
+            // Live report whose narrative failed — never show fixture prose
+            // about a different property (copy-honesty rule).
+            <>
+              The verdict couldn&apos;t be generated for this report — the numbers below still
+              stand.
+            </>
           ) : (
             <>
               This is <span style={{ color: 'var(--accent)' }}>fairly priced</span> for what it is —
@@ -620,15 +633,23 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
               zIndex: 1,
             }}
           >
-            At <span className="tabular">${property.price.toLocaleString()}</span> the asking is
-            sitting almost exactly at the local median for a 3-bed semi on this lot size. Your true
-            monthly carry comes to{' '}
-            <span className="tabular" style={{ color: 'var(--accent)' }}>
-              {fmtMoney(monthly.total)}
-            </span>{' '}
-            — about <span className="tabular">${extraCost.toLocaleString()}</span> more than the
-            mortgage payment alone. The Tom Thomson catchment is the upside; the 1972 build and a
-            Walk Score of 64 are the trade-offs to consider.
+            {isReal ? (
+              // Live: the narrative remainder — never the Burlington fixture
+              // prose ("At $875,000… Tom Thomson catchment") on a real address.
+              (narrative?.split('. ').slice(1).join('. ') ?? '')
+            ) : (
+              <>
+                At <span className="tabular">${property.price.toLocaleString()}</span> the asking is
+                sitting almost exactly at the local median for a 3-bed semi on this lot size. Your
+                true monthly carry comes to{' '}
+                <span className="tabular" style={{ color: 'var(--accent)' }}>
+                  {fmtMoney(monthly.total)}
+                </span>{' '}
+                — about <span className="tabular">${extraCost.toLocaleString()}</span> more than the
+                mortgage payment alone. The Tom Thomson catchment is the upside; the 1972 build and
+                a Walk Score of 64 are the trade-offs to consider.
+              </>
+            )}
           </div>
         )}
 
@@ -665,18 +686,38 @@ function PersonalVerdictHero({ monthly, narrative }: PersonalVerdictHeroProps): 
             flexWrap: 'wrap',
           }}
         >
-          <span className="row gap-6">
-            <Icon name="check" size={12} />
-            {PB_COMPS.length} verified comparable sales · last 6 months
-          </span>
-          <span className="row gap-6">
-            <Icon name="check" size={12} />
-            School data · EQAO 2024 + Fraser 2025
-          </span>
-          <span className="row gap-6">
-            <Icon name="check" size={12} />
-            Walk/Transit/Bike via Walk Score
-          </span>
+          {isReal ? (
+            <>
+              {/* Copy-honesty: only claim sources we actually have. */}
+              <span className="row gap-6">
+                <Icon name="flag" size={12} />
+                Comparable sales · no source yet (value estimated)
+              </span>
+              <span className="row gap-6">
+                <Icon name="flag" size={12} />
+                School data · pending dataset load
+              </span>
+              <span className="row gap-6">
+                <Icon name="check" size={12} />
+                Walk/Transit via Walk Score
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="row gap-6">
+                <Icon name="check" size={12} />
+                {PB_COMPS.length} verified comparable sales · last 6 months
+              </span>
+              <span className="row gap-6">
+                <Icon name="check" size={12} />
+                School data · EQAO 2024 + Fraser 2025
+              </span>
+              <span className="row gap-6">
+                <Icon name="check" size={12} />
+                Walk/Transit/Bike via Walk Score
+              </span>
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -1645,7 +1686,7 @@ export function PersonalBuyerPage({
           </p>
         </div>
       )}
-      <PersonalVerdictHero monthly={monthly} narrative={realAnalysis?.narrative} />
+      <PersonalVerdictHero monthly={monthly} narrative={realAnalysis?.narrative} isReal={isReal} />
 
       <PBTrueCostSection property={property} monthly={monthly} />
       <PBFMVSection

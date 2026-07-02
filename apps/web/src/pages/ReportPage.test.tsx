@@ -432,3 +432,38 @@ describe('ReportPage — live tenant schools', () => {
     expect(screen.queryByText('Jesse Ketchum Jr & Sr PS')).not.toBeInTheDocument()
   })
 })
+
+// ── For-rent listing through the investor/landlord renderer (live bugs 2026-07-02) ──
+
+describe('ReportPage — for-rent landlord hero honesty', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+  })
+
+  it('shows asking RENT (not $0), hides the fabricated build year, and does not duplicate units', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        mode: 'landlord',
+        rentalComps: null,
+        riskFlags: [],
+      },
+      // For-rent: no sale price, no build year (LISTING has yearBuilt 2015 — null it)
+      listing: { ...LISTING, price: null, rentMonthly: 2650, yearBuilt: null },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    // Asking rent, not "Asking $0" (rentEstimate comes from comps — null here → 0,
+    // so the label is the assertion target)
+    expect(await screen.findByText('Asking rent')).toBeInTheDocument()
+    // No fabricated "Built <currentYear-10>"
+    expect(screen.queryByText(/Built \d{4}/)).not.toBeInTheDocument()
+    // No duplicated unit words
+    expect(screen.queryByText(/bed bed/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/bath bath/)).not.toBeInTheDocument()
+    // Purchase-transaction section hidden without a sale price
+    expect(screen.queryByText(/on closing day/i)).not.toBeInTheDocument()
+  })
+})
