@@ -403,6 +403,28 @@ describe('POST / - rent plausibility bounds', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('a $3.5M for-sale listing with no comps analyses normally (price proxy exceeds the rent ceiling by design)', async () => {
+    // Live bug 2026-07-02: 662 Byngmount ($3,499,000, no comps) proxies to
+    // ~$17.5k/mo and hard-failed the analysis. The bounds gate only protects
+    // against garbage OBSERVED rents, not our own for-sale price proxy.
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-sale',
+      price: 3_499_000,
+      rentMonthly: null,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const fetchMock = global.fetch as jest.Mock
+    expect(fetchMock).toHaveBeenCalled() // reached the calc engine
+  })
+
   it('legacy listing row with implausible stored rent ($49/mo) -> 422 RENT_OUT_OF_BOUNDS', async () => {
     mockGetListingByToken.mockResolvedValue({
       ...LISTING_FIXTURE,

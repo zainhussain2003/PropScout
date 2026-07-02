@@ -259,9 +259,19 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // $500–$10,000/mo means the listing carried no usable rent/price (or a
       // legacy row stored a unit error) — scoring it would produce confident
       // garbage. Fail the analysis with a friendly message instead.
+      //
+      // The gate only applies to OBSERVED rents (the listing's own rent or a
+      // comps mid). A for-sale listing with no comps derives its mid from the
+      // asking price (~6% gross-yield proxy) — a $3.5M home legitimately
+      // proxies to >$10k/mo and must not hard-fail (live bug 2026-07-02);
+      // the calc engine's sanity bounds still flag extreme proxy rents. A
+      // rent-less FOR-RENT listing has no price either, so its $0 mid still
+      // fails the gate as designed.
+      const midIsSalePriceProxy =
+        comps == null && listing.rentMonthly == null && (listing.price ?? 0) > 0
       if (
-        rentalForCalc.mid < RENT_BOUNDS.MIN_MONTHLY ||
-        rentalForCalc.mid > RENT_BOUNDS.MAX_MONTHLY
+        !midIsSalePriceProxy &&
+        (rentalForCalc.mid < RENT_BOUNDS.MIN_MONTHLY || rentalForCalc.mid > RENT_BOUNDS.MAX_MONTHLY)
       ) {
         await updateAnalysisStatus(token, 'failed')
         return reply
