@@ -494,9 +494,12 @@ they should feed a future amenities panel, not the risk section.
 
 **Known-gap observations (data-blocked, not bugs):**
 
-- `comps=null` on ALL 7 listings — even Toronto FSAs the June probe runs covered. Worth a
-  targeted look at `fetchRentalComps` vs the actual `rental_listings` rows (beds range-floor
-  - postal precision debt above are suspects) before blaming thin data.
+- `comps=null` on ALL 7 listings — **checked directly against `rental_listings`: it IS thin
+  data, not a query bug.** Only 221 rows total, newest `scraped_at` 2026-06-24 (the June
+  25–26 depth probes did not persist rows); the tested FSAs hold 0–4 rows each, mostly
+  studios (M5B: 4 rows all beds=0; M3J/L8H: 0). `fetchRentalComps` correctly returns null
+  at 0 matches. The lever is the Railway nightly deploy (Tier-1 below) — the beds
+  range-floor + postal precision debts only matter once rows exist.
 - Every live listing scores 0–16 `hard_pass` — real cash-flow math at 4.79%/20% down is
   brutal, but with comps always null the mid-rent is the price×0.005 proxy, so the score
   distribution is currently driven by fallback assumptions. Deploy the nightly scraper +
