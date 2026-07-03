@@ -13,8 +13,8 @@
 
 :root {
   /* ── Surfaces ───────────────────────────────────────────── */
-  --bg: #f1ece2; /* page background — warm cream */
-  --bg-elev: #fbf7ee; /* lifted cream — input fields, soft cards */
+  --bg: #f4f2ed; /* page background — neutral limestone (PR10: was #f1ece2 warm cream) */
+  --bg-elev: #faf8f3; /* lifted limestone — input fields, soft cards (PR10: was #fbf7ee) */
   --surface: #ffffff; /* hard surface — primary cards */
 
   /* ── Ink ─────────────────────────────────────────────────── */
@@ -27,8 +27,9 @@
   --line-strong: rgba(14, 19, 32, 0.16);
 
   /* ── Brand accent ────────────────────────────────────────── */
-  --accent: #d97757; /* terracotta — brand + Pro + CTA */
+  --accent: #1f4e68; /* deep harbour blue — brand + Pro + CTA (PR10: was #d97757 terracotta; 8.85:1 on white, AA+AAA) */
   --accent-ink: #ffffff; /* foreground on accent backgrounds */
+  --accent-soft: rgba(31, 78, 104, 0.08); /* tinted fills — chips, hover washes, card headers */
 
   /* ── Data states ─────────────────────────────────────────── */
   --pass: #4f7a48; /* sage — good deal, pass, positive */
@@ -64,6 +65,13 @@
   --line: rgba(241, 236, 224, 0.1);
   --line-strong: rgba(241, 236, 224, 0.18);
   --chip-bg: rgba(241, 236, 224, 0.06);
+  /* PR10: lightened harbour blue for dark surfaces — 6.33:1 on --surface,
+   * 7.08:1 on --bg (AA for normal text). Dark mode previously inherited the
+   * light accent unchanged. accent-ink flips to the dark bg because white on
+   * the lightened blue is only 2.72:1. */
+  --accent: #6fa3c4;
+  --accent-ink: #0a0d14;
+  --accent-soft: rgba(111, 163, 196, 0.1);
   --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 16px 40px -20px rgba(0, 0, 0, 0.6);
   --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
 }

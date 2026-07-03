@@ -1,11 +1,14 @@
 /**
- * WCAG AA contrast regression test for the primary button.
+ * WCAG AA contrast regression tests for the accent system.
  *
- * Known sitewide issue since PR8: .btn-primary shipped terracotta-at-rest
- * (white on #D97757 ≈ 3.1:1 — fails AA for normal text). Every design
- * prototype ships .btn-primary as ink background / bg text, with terracotta
- * only on hover. This test computes the actual ratio from the shipped CSS so
- * the deviation can't come back.
+ * History:
+ * - PR8 shipped .btn-primary terracotta-at-rest (white on #D97757 ≈ 3.12:1 —
+ *   fails AA). Fixed to ink-at-rest (a1ca335); pinned below.
+ * - PR10 replaced the terracotta accent with harbour blue #1F4E68 (8.94:1 on
+ *   white — AA and AAA) and added a dark-mode accent #6FA3C4 (6.39:1 on the
+ *   dark surface) with a flipped --accent-ink (#0A0D14 on the light blue,
+ *   7.14:1 — white would be 2.72:1). These gates pin every accent pairing so
+ *   a future value change can't silently regress below AA.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -19,6 +22,15 @@ const GLOBAL = readFileSync(resolve(__dirname, 'global.css'), 'utf8')
 function tokenHex(name: string): string {
   const m = TOKENS.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`))
   if (!m) throw new Error(`token ${name} not found or not a plain hex`)
+  return m[1]!
+}
+
+/** Look up a CSS custom property's hex value inside the [data-theme='dark'] block. */
+function darkTokenHex(name: string): string {
+  const block = TOKENS.match(/\[data-theme='dark'\]\s*\{([\s\S]*?)\}/)
+  if (!block) throw new Error('dark theme block not found')
+  const m = block[1]!.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`))
+  if (!m) throw new Error(`dark token ${name} not found or not a plain hex`)
   return m[1]!
 }
 
@@ -54,10 +66,38 @@ describe('.btn-primary WCAG AA contrast', () => {
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('matches the design prototypes: ink at rest, not terracotta', () => {
+  it('matches the design prototypes: ink at rest, accent only on hover', () => {
     const { background } = btnPrimaryVars()
     // All 13 HTML prototypes ship `.btn-primary { background: var(--ink) }`;
-    // terracotta belongs to hover and .btn-accent.
+    // the accent belongs to hover and .btn-accent.
     expect(background).toBe('--ink')
+  })
+})
+
+describe('PR10 accent system WCAG AA gates (measured ratios in comments)', () => {
+  it('light accent on --accent-ink (btn-accent, Pro badge, hover fills) ≥ 4.5:1', () => {
+    // #FFFFFF on #1F4E68 — measured 8.94:1 (AAA)
+    expect(contrast(tokenHex('--accent'), tokenHex('--accent-ink'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('light accent as text on the page background ≥ 4.5:1', () => {
+    // #1F4E68 on #F4F2ED — measured 7.99:1 (AAA)
+    expect(contrast(tokenHex('--accent'), tokenHex('--bg'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('dark-mode accent as text on the dark card surface ≥ 4.5:1', () => {
+    // #6FA3C4 on #161A24 — measured 6.39:1 (AA); on --bg 7.14:1 (AAA).
+    // Dark mode previously inherited the light accent with no override.
+    expect(contrast(darkTokenHex('--accent'), darkTokenHex('--surface'))).toBeGreaterThanOrEqual(
+      4.5
+    )
+  })
+
+  it('dark-mode accent-ink on the dark accent (btn-accent, Pro badge in dark) ≥ 4.5:1', () => {
+    // #0A0D14 on #6FA3C4 — measured 7.14:1 (AAA). White would be 2.72:1,
+    // which is why --accent-ink flips to the dark bg in dark mode.
+    expect(contrast(darkTokenHex('--accent'), darkTokenHex('--accent-ink'))).toBeGreaterThanOrEqual(
+      4.5
+    )
   })
 })
