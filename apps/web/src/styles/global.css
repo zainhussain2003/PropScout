@@ -865,3 +865,13 @@ body::-webkit-scrollbar-thumb {
     box-shadow: none !important;
   }
 }
+
+/* ── Sliders ─────────────────────────────────────────────────── */
+/* PR10 discipline fix: .scout-slider (financing + landlord rent sliders)
+   had NO rule — a native UA range control that never picked up the accent
+   token (rendered browser-red in captures). Token-driven like the OSFI
+   income slider's inline accentColor. */
+.scout-slider {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
