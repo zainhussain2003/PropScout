@@ -1302,6 +1302,58 @@ function HeroStaticMap(): JSX.Element | null {
 
 // ── ReportsSection ────────────────────────────────────────────────────
 
+type ModeStat = [string, string, string]
+
+function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
+  return (
+    <div className="row gap-12" style={{ marginTop: 4, flexWrap: 'wrap' }}>
+      {stats.map(([lbl, val, status]) => (
+        <div
+          key={lbl}
+          className="col gap-8"
+          style={{
+            flex: '1 1 0',
+            minWidth: 90,
+            padding: '10px 12px',
+            borderRadius: 10,
+            background: 'var(--bg-elev)',
+            border: '1px solid var(--line)',
+          }}
+        >
+          <div
+            className="mono"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+            }}
+          >
+            {lbl}
+          </div>
+          <div
+            className="serif tabular"
+            style={{
+              fontSize: 22,
+              lineHeight: 1,
+              color:
+                status === 'pass'
+                  ? 'var(--pass)'
+                  : status === 'caution'
+                    ? 'var(--caution)'
+                    : status === 'fail'
+                      ? 'var(--fail)'
+                      : 'var(--ink)',
+            }}
+          >
+            {val}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function ReportsSection(): JSX.Element {
   const modes = [
     {
@@ -1360,6 +1412,8 @@ function ReportsSection(): JSX.Element {
     },
   ]
 
+  const [tenantMode, ...paidModes] = modes
+
   return (
     <section id="reports" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
@@ -1372,28 +1426,20 @@ function ReportsSection(): JSX.Element {
           — so the entire report changes shape.
         </SectionHeader>
 
-        <div
-          className="grid-1col-mobile"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 22,
-            marginTop: 24,
-          }}
-        >
-          {modes.map((m) => (
-            <article
-              key={m.title}
-              className="card"
-              style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        {/* PR10 part 6 — the page's one deliberate asymmetry: the tenant
+            report (the free funnel) gets a full-width dominant card; the
+            three paid modes hold a disciplined row beneath it. */}
+        <div className="col" style={{ gap: 22, marginTop: 24 }}>
+          <article className="card" style={{ overflow: 'hidden' }}>
+            <div
+              className="grid-1col-mobile"
+              style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 0 }}
             >
-              {/* Real product screenshot (PR10 part 4a) — replaces the
-                  gradient placeholder. Slight top-crop reads as a peek into
-                  the report. */}
-              <div style={{ padding: '14px 14px 0', position: 'relative' }}>
+              <div style={{ padding: 14, position: 'relative' }}>
                 <div
                   style={{
-                    height: 200,
+                    height: '100%',
+                    minHeight: 300,
                     overflow: 'hidden',
                     borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--line)',
@@ -1401,26 +1447,29 @@ function ReportsSection(): JSX.Element {
                   }}
                 >
                   <img
-                    src={`${m.img}.webp`}
-                    srcSet={`${m.img}.webp 1x, ${m.img}@2x.webp 2x`}
-                    alt={m.imgAlt}
+                    src={`${tenantMode.img}.webp`}
+                    srcSet={`${tenantMode.img}.webp 1x, ${tenantMode.img}@2x.webp 2x`}
+                    alt={tenantMode.imgAlt}
                     loading="lazy"
                     style={{
                       width: '100%',
+                      height: '100%',
                       display: 'block',
                       objectFit: 'cover',
                       objectPosition: '50% 12%',
-                      height: '100%',
                     }}
                   />
                 </div>
                 <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
-                  <Chip>{m.tag}</Chip>
-                  {'tag2' in m && m.tag2 !== undefined && <Chip accent>{m.tag2}</Chip>}
+                  <Chip>{tenantMode.tag}</Chip>
+                  <Chip accent>Free forever</Chip>
                 </div>
               </div>
 
-              <div className="col gap-16" style={{ padding: '24px 24px 26px' }}>
+              <div
+                className="col gap-16"
+                style={{ padding: 'clamp(24px, 3vw, 40px)', justifyContent: 'center' }}
+              >
                 <div className="col gap-8">
                   <div
                     className="mono"
@@ -1431,65 +1480,91 @@ function ReportsSection(): JSX.Element {
                       color: 'var(--accent)',
                     }}
                   >
-                    For the {m.who.toLowerCase()}
+                    For the tenant
                   </div>
-                  <h3 className="serif" style={{ fontSize: 30, lineHeight: 1.05 }}>
-                    {m.title}
+                  <h3
+                    className="serif"
+                    style={{ fontSize: 'clamp(30px, 2.6vw, 38px)', lineHeight: 1.05 }}
+                  >
+                    {tenantMode.title}
                   </h3>
                 </div>
-                <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 480 }}>{m.copy}</p>
+                <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 480 }}>
+                  {tenantMode.copy}
+                </p>
+                <ModeStatTiles stats={tenantMode.stats} />
+              </div>
+            </div>
+          </article>
 
-                <div className="row gap-12" style={{ marginTop: 4, flexWrap: 'wrap' }}>
-                  {m.stats.map(([lbl, val, status]) => (
-                    <div
-                      key={lbl}
-                      className="col gap-8"
+          <div
+            className="grid-1col-mobile"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22 }}
+          >
+            {paidModes.map((m) => (
+              <article
+                key={m.title}
+                className="card"
+                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+              >
+                {/* Real product screenshot (PR10 part 4a) — a slight top-crop
+                    reads as a peek into the report. */}
+                <div style={{ padding: '14px 14px 0', position: 'relative' }}>
+                  <div
+                    style={{
+                      height: 180,
+                      overflow: 'hidden',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--line)',
+                      background: 'var(--accent-soft)',
+                    }}
+                  >
+                    <img
+                      src={`${m.img}.webp`}
+                      srcSet={`${m.img}.webp 1x, ${m.img}@2x.webp 2x`}
+                      alt={m.imgAlt}
+                      loading="lazy"
                       style={{
-                        flex: '1 1 0',
-                        minWidth: 90,
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        background: 'var(--bg-elev)',
-                        border: '1px solid var(--line)',
+                        width: '100%',
+                        display: 'block',
+                        objectFit: 'cover',
+                        objectPosition: '50% 12%',
+                        height: '100%',
+                      }}
+                    />
+                  </div>
+                  <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
+                    <Chip>{m.tag}</Chip>
+                  </div>
+                </div>
+
+                <div className="col gap-16" style={{ padding: '24px 24px 26px' }}>
+                  <div className="col gap-8">
+                    <div
+                      className="mono"
+                      style={{
+                        fontSize: 11,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                        color: 'var(--accent)',
                       }}
                     >
-                      <div
-                        className="mono"
-                        style={{
-                          fontSize: 10,
-                          letterSpacing: '0.1em',
-                          textTransform: 'uppercase',
-                          color: 'var(--muted)',
-                        }}
-                      >
-                        {lbl}
-                      </div>
-                      <div
-                        className="serif tabular"
-                        style={{
-                          fontSize: 22,
-                          lineHeight: 1,
-                          color:
-                            status === 'pass'
-                              ? 'var(--pass)'
-                              : status === 'caution'
-                                ? 'var(--caution)'
-                                : status === 'fail'
-                                  ? 'var(--fail)'
-                                  : 'var(--ink)',
-                        }}
-                      >
-                        {val}
-                      </div>
+                      For the {m.who.toLowerCase()}
                     </div>
-                  ))}
+                    <h3 className="serif" style={{ fontSize: 26, lineHeight: 1.08 }}>
+                      {m.title}
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 480 }}>{m.copy}</p>
+
+                  <ModeStatTiles stats={m.stats} />
+                  {'verdict' in m && m.verdict !== undefined && (
+                    <VerdictPill tone={m.verdict.tone} label={m.verdict.label} />
+                  )}
                 </div>
-                {'verdict' in m && m.verdict !== undefined && (
-                  <VerdictPill tone={m.verdict.tone} label={m.verdict.label} />
-                )}
-              </div>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1736,6 +1811,52 @@ function CoverageSection(): JSX.Element {
               <p style={{ fontSize: 14, color: 'var(--ink-2)' }}>{f.d}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── FounderNoteSection ────────────────────────────────────────────────
+// PR10 part 5 — founder note ("WHY THIS EXISTS"). The body must be Zain's
+// own words: the spec's rule is "the section ships with your words or it
+// doesn't ship", so the section renders nothing until FOUNDER_NOTE_BODY is
+// filled in. Do NOT invent biographical details here.
+
+// Zain: replace with your actual story — 3-4 first-person sentences
+// (solo developer in Ontario, why listing numbers don't tell the truth,
+// every formula documented and testable).
+const FOUNDER_NOTE_BODY: string | null = null
+
+// Placeholder framing from the PR10 spec — edit alongside the body.
+const FOUNDER_NOTE_HEADING = 'Built by one person who got burned by a bad listing.'
+
+function FounderNoteSection(): JSX.Element | null {
+  if (FOUNDER_NOTE_BODY === null) return null
+
+  return (
+    <section className="container" style={{ paddingTop: 'var(--pad-y)' }}>
+      <div
+        className="card"
+        style={{ padding: 'clamp(36px, 5vw, 64px)', display: 'flex', justifyContent: 'center' }}
+      >
+        <div className="col gap-16" style={{ maxWidth: 680 }}>
+          <span className="section-tag">Why this exists</span>
+          <h2 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
+            {FOUNDER_NOTE_HEADING}
+          </h2>
+          <p style={{ fontSize: 16, color: 'var(--ink-2)', lineHeight: 1.65 }}>
+            {FOUNDER_NOTE_BODY}
+          </p>
+          <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+            PropScout is independent. No brokerage owns it, no listing site pays it.
+          </p>
+          <div className="row gap-12" style={{ alignItems: 'center', marginTop: 8 }}>
+            <ScoutMark size={22} />
+            <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
+              — Zain, founder
+            </span>
+          </div>
         </div>
       </div>
     </section>
@@ -2351,6 +2472,7 @@ export function LandingPage(): JSX.Element {
         <Hero onOpenModal={handleOpenModal} onSignIn={() => setShowSignIn(true)} />
         <ReportsSection />
         <CoverageSection />
+        <FounderNoteSection />
         <SunScoutSection />
         <HowSection />
         <PricingSection />
