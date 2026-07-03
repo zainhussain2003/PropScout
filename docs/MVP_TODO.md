@@ -339,8 +339,10 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Score card moves above content on mobile (gauge shrinks to ~84px)
 
 > Accessibility: footer .chip contrast fixed (WCAG AA).
-> btn-primary contrast (terracotta bg, 3.12:1) is a known
-> sitewide issue — fix in a dedicated a11y PR before launch.
+> btn-primary contrast — ✅ RESOLVED: ink-at-rest fix (a1ca335),
+> re-verified against the PR10 harbour-blue accent (15.94:1 rest;
+> all accent pairings ≥ 6.39:1, pinned in btnContrast.test.ts).
+> A full-site AA audit for other elements stays on the backlog.
 
 ### PR 9 — Route wiring (end-to-end integration)
 
@@ -363,6 +365,21 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [ ] Integration test — mock scraper → real calc engine → mock Claude + Walk Score → assert token roundtrip
 - [x] All existing analysis route tests and useAnalysis hook tests pass
 - [ ] Golden dataset regression passes 95%+
+
+### PR 10 — Design humanization (landing + tokens)
+
+Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tests.md`
+
+- [x] Token revision — `--accent` #D97757→#1F4E68, `--bg`/`--bg-elev` limestone, `--accent-soft` added, dark-mode accent #6FA3C4 (values only, no renames; all pairings AA-pinned in btnContrast.test.ts)
+- [x] Italic-accent-words removed from landing marketing headlines (wordmark + report section questions kept)
+- [x] Landing copy rewritten verbatim per spec (hero, mode cards, feature grid, SunScout, how-it-works, pricing, FAQ); unwired "2,400 listings" stat removed
+- [x] Real imagery — 4 mode-card report screenshots (WebP 1x/2x in `public/marketing/`) + hero Mapbox Static Images comps map (blue diamonds, token-gated fallback)
+- [x] `.scout-slider` accent-color rule (sliders previously rendered browser-default red)
+- [x] Founder-note shell between feature grid and SunScout — renders nothing until real copy lands
+- [ ] 🔒 Founder-note body copy — Zain's own words (never invented)
+- [x] Asymmetric layout moment — tenant card dominant, three paid modes in a row beneath
+- [x] Docs: DESIGN_README token divergence table, PR10-UI-Tests.md, AUDIT_TRACKER known issues
+- [ ] Prototype HTML files still on terracotta palette — resync `designs/` + `design_handoff/tokens.css` when designs are next touched
 
 ---
 

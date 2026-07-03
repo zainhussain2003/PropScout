@@ -51,21 +51,21 @@ design_handoff_propscout_mvp/
 
 ## The 13 designed surfaces
 
-| # | Design surface | File | Built around |
-|---|---|---|---|
-| 1 | Landing / marketing home | `index.html` | URL paste hero · embedded sample report · pricing · FAQ |
-| 2 | Mode-selection modal | `Mode Modal.html` | One-question routing (Investment / Personal · Tenant / Landlord) |
-| 3 | Tenant report | `Tenant Report.html` | Free, no-login, 12 sections incl. schools + listing-accuracy flags |
-| 4 | Investor report | `Investor Report.html` | Live financing sliders · OSFI · LTT · equity chart · deal score |
-| 5 | Personal buyer report | `Personal Buyer Report.html` | True monthly cost · comps · **schools with EQAO/Fraser** |
-| 6 | Landlord report | `Landlord Report.html` | Variant of Investor with **rent-positioning slider** |
-| 7 | Paywall states | `Paywall States.html` | Truncated verdict · locked sections · hard limit gate · upgrade modal |
-| 8 | Account dashboard | `Account.html` | Saved analyses · Profile · Plan + billing · Notifications |
-| 9 | Error & gate states | `Error States.html` | Province gate · US property · expired · scraper fail · no comps · 404 |
-| 10 | Pre-report flows | `Pre Report Flows.html` | Full-screen scraping progress + manual entry fallback form |
-| 11 | Auth + Stripe stubs | `Auth & Billing Stubs.html` | Magic link · reset · verify · Stripe return |
-| 12 | Legal | `Legal Pages.html` | Privacy + Terms with TOC sidebar |
-| 13 | Mobile pass | `Mobile Pass.html` | iOS + Android frames of the funnel |
+| #   | Design surface           | File                         | Built around                                                          |
+| --- | ------------------------ | ---------------------------- | --------------------------------------------------------------------- |
+| 1   | Landing / marketing home | `index.html`                 | URL paste hero · embedded sample report · pricing · FAQ               |
+| 2   | Mode-selection modal     | `Mode Modal.html`            | One-question routing (Investment / Personal · Tenant / Landlord)      |
+| 3   | Tenant report            | `Tenant Report.html`         | Free, no-login, 12 sections incl. schools + listing-accuracy flags    |
+| 4   | Investor report          | `Investor Report.html`       | Live financing sliders · OSFI · LTT · equity chart · deal score       |
+| 5   | Personal buyer report    | `Personal Buyer Report.html` | True monthly cost · comps · **schools with EQAO/Fraser**              |
+| 6   | Landlord report          | `Landlord Report.html`       | Variant of Investor with **rent-positioning slider**                  |
+| 7   | Paywall states           | `Paywall States.html`        | Truncated verdict · locked sections · hard limit gate · upgrade modal |
+| 8   | Account dashboard        | `Account.html`               | Saved analyses · Profile · Plan + billing · Notifications             |
+| 9   | Error & gate states      | `Error States.html`          | Province gate · US property · expired · scraper fail · no comps · 404 |
+| 10  | Pre-report flows         | `Pre Report Flows.html`      | Full-screen scraping progress + manual entry fallback form            |
+| 11  | Auth + Stripe stubs      | `Auth & Billing Stubs.html`  | Magic link · reset · verify · Stripe return                           |
+| 12  | Legal                    | `Legal Pages.html`           | Privacy + Terms with TOC sidebar                                      |
+| 13  | Mobile pass              | `Mobile Pass.html`           | iOS + Android frames of the funnel                                    |
 
 ---
 
@@ -73,16 +73,21 @@ design_handoff_propscout_mvp/
 
 ### Typography
 
-- **Display**: `Instrument Serif` (italic for accented words like *really*, *fairly*, *honest*) — Google Fonts
+- **Display**: `Instrument Serif` (italic for accented words like _really_, _fairly_, _honest_) — Google Fonts
 - **Body**: `Geist` — weights 300, 400, 500, 600, 700
 - **Mono / data**: `Geist Mono` — for eyebrows, percentages, dollar amounts, codes
 
 All three loaded once via:
+
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link
+  href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+  rel="stylesheet"
+/>
 ```
 
 **Type scale (clamp-based, fluid)**
+
 ```
 h1 — clamp(40px, 5vw, 72px)  · line-height 0.98 · letter-spacing -0.035em
 h2 — clamp(30px, 3.6vw, 48px) · line-height 1.06 · letter-spacing -0.03em
@@ -91,29 +96,46 @@ body — 16px                   · line-height 1.5–1.65
 mono eyebrow — 10–11px        · letter-spacing 0.14–0.18em · uppercase
 ```
 
-**Italics are part of the brand** — every section question (`Is the rent fair?`, `Does the deal pencil?`) uses Instrument Serif italic on the key noun. Apply consistently.
+**Italics are part of the brand — inside reports.** Every report section question (`Is the rent fair?`, `Does the deal pencil?`) uses Instrument Serif italic on the key noun. Apply consistently across all four report types. **PR10 (2026-07-02) removed the italic-accent-word device from landing-page marketing headlines** — it read as a template tic when repeated eight times on one page. The wordmark (Prop*Scout*) and report section questions keep it.
 
 ### Colors (full token list in `tokens.css`)
 
 ```css
 /* Light mode */
---bg:           #F1ECE2;  /* warm cream — page background */
---bg-elev:      #FBF7EE;  /* lifted cream — input fields, soft cards */
---surface:      #FFFFFF;  /* hard surface — cards */
---ink:          #0E1320;  /* near-black with cool tint — text + buttons */
---ink-2:        #3B3A35;  /* body copy */
---muted:        #76716A;  /* labels, hints */
---line:         rgba(14,19,32,0.10);
---line-strong:  rgba(14,19,32,0.16);
+--bg: #f4f2ed; /* neutral limestone — page background */
+--bg-elev: #faf8f3; /* lifted limestone — input fields, soft cards */
+--surface: #ffffff; /* hard surface — cards */
+--ink: #0e1320; /* near-black with cool tint — text + buttons */
+--ink-2: #3b3a35; /* body copy */
+--muted: #76716a; /* labels, hints */
+--line: rgba(14, 19, 32, 0.1);
+--line-strong: rgba(14, 19, 32, 0.16);
 
---accent:       #D97757;  /* terracotta — brand + Pro / CTA */
---accent-ink:   #FFFFFF;
+--accent: #1f4e68; /* deep harbour blue — brand + Pro / CTA */
+--accent-ink: #ffffff;
+--accent-soft: rgba(31, 78, 104, 0.08); /* tinted fills — chips, hover washes */
 
 /* Data-state colors — used for verdicts, status pills, deal-score gauge */
---pass:         #4F7A48;  /* sage — good deal, pass */
---caution:      #B98724;  /* amber — caution, soft warning */
---fail:         #B14A37;  /* clay — hard pass, fail */
+--pass: #4f7a48; /* sage — good deal, pass */
+--caution: #b98724; /* amber — caution, soft warning */
+--fail: #b14a37; /* clay — hard pass, fail */
 ```
+
+> **PR10 divergence (2026-07-02) — `tokens.css` is ahead of the prototype HTML files.**
+> The 13 prototypes in `designs/` still ship the original palette; the values below
+> changed in `apps/web/src/styles/tokens.css` only. When comparing a component to its
+> prototype, expect these deltas and nothing else:
+>
+> | Token               | Prototype (old)      | Production (new)       | Rationale                                                                                                              |
+> | ------------------- | -------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+> | `--accent`          | `#D97757` terracotta | `#1F4E68` harbour blue | Terracotta collided with `--fail` clay (#B14A37) at a glance and read "AI-template warm". Blue: 8.94:1 on white (AAA). |
+> | `--bg`              | `#F1ECE2` warm cream | `#F4F2ED` limestone    | Cooler neutral ground so verdict colors and the blue accent carry the temperature.                                     |
+> | `--bg-elev`         | `#FBF7EE`            | `#FAF8F3`              | Follows `--bg`.                                                                                                        |
+> | `--accent-soft`     | — (did not exist)    | `rgba(31,78,104,0.08)` | Tinted fill for chips/washes/image placeholders without hardcoding an alpha hex.                                       |
+> | dark `--accent`     | — (inherited light)  | `#6FA3C4`              | Light terracotta was reused in dark mode unexamined; lightened blue measures 6.39:1 on the dark surface (AA).          |
+> | dark `--accent-ink` | — (inherited)        | `#0A0D14`              | White on `#6FA3C4` is 2.72:1 (fails AA); the dark bg ink measures 7.14:1.                                              |
+>
+> All six pairings are pinned by `apps/web/src/styles/btnContrast.test.ts`.
 
 Dark mode tokens are defined on `[data-theme="dark"]`. See `tokens.css`.
 
@@ -121,10 +143,10 @@ Dark mode tokens are defined on `[data-theme="dark"]`. See `tokens.css`.
 
 ```css
 --radius-sm: 8px;
---radius:    14px;
+--radius: 14px;
 --radius-lg: 22px;
---maxw:      1240–1320px;     /* page container max-width */
---gutter:    clamp(20px, 4vw, 56px);
+--maxw: 1240–1320px; /* page container max-width */
+--gutter: clamp(20px, 4vw, 56px);
 ```
 
 Section padding rhythm: `padding-top: clamp(56px, 7vw, 96px)`.
@@ -132,22 +154,22 @@ Section padding rhythm: `padding-top: clamp(56px, 7vw, 96px)`.
 ### Shadows
 
 ```css
---shadow-card: 0 1px 0 rgba(14,19,32,.04), 0 8px 28px -16px rgba(14,19,32,.18);
---shadow-pop:  0 24px 48px -24px rgba(14,19,32,.35), 0 4px 16px -8px rgba(14,19,32,.16);
+--shadow-card: 0 1px 0 rgba(14, 19, 32, 0.04), 0 8px 28px -16px rgba(14, 19, 32, 0.18);
+--shadow-pop: 0 24px 48px -24px rgba(14, 19, 32, 0.35), 0 4px 16px -8px rgba(14, 19, 32, 0.16);
 ```
 
 ### Component vocabulary (build once, reuse everywhere)
 
-| Token / class | What it is | Where it appears |
-|---|---|---|
-| `.btn-primary` | Ink-background pill, hovers to terracotta | Every CTA across the product |
-| `.btn-ghost` | Transparent pill with line-strong border, hovers to terracotta | Secondary actions |
-| `.btn-accent` | Terracotta pill | Upgrade / save-report CTAs |
-| `.chip` | Small inline tag, chip-bg + line border | Property facts, filter chips |
-| `.card` | Surface + line + shadow-card + radius-lg | Every content card |
-| `.verdict-pill` (pass · caution · fail) | Tonal pill with dot prefix | Section headers, results |
-| `.section-tag` | Mono eyebrow with `―` prefix | Every page header |
-| `Tweaks panel` (top-right) | Design-review only — **does not ship** | Every prototype |
+| Token / class                           | What it is                                                          | Where it appears             |
+| --------------------------------------- | ------------------------------------------------------------------- | ---------------------------- |
+| `.btn-primary`                          | Ink-background pill, hovers to the accent (harbour blue since PR10) | Every CTA across the product |
+| `.btn-ghost`                            | Transparent pill with line-strong border, hovers to the accent      | Secondary actions            |
+| `.btn-accent`                           | Accent pill (harbour blue since PR10; terracotta in the prototypes) | Upgrade / save-report CTAs   |
+| `.chip`                                 | Small inline tag, chip-bg + line border                             | Property facts, filter chips |
+| `.card`                                 | Surface + line + shadow-card + radius-lg                            | Every content card           |
+| `.verdict-pill` (pass · caution · fail) | Tonal pill with dot prefix                                          | Section headers, results     |
+| `.section-tag`                          | Mono eyebrow with `―` prefix                                        | Every page header            |
+| `Tweaks panel` (top-right)              | Design-review only — **does not ship**                              | Every prototype              |
 
 ### Patterns (DRY in production)
 
@@ -172,6 +194,7 @@ These patterns repeat verbatim across reports — extract each into one shared c
 ### Brand mark
 
 Custom SVG glyph: **Scout-Mark** — a roof-line triangulation that doubles as a compass needle. In `components.jsx::ScoutMark`. Use:
+
 - 28–32px alongside "PropScout" wordmark in navs
 - 460–560px at 6–8% opacity as background watermark on dark hero cards (AI verdict, CTAs, hard-limit gate)
 
@@ -181,7 +204,7 @@ The wordmark itself uses Instrument Serif with italic on "Scout": **Prop*Scout**
 
 ## Interactions / motion
 
-- **Hover**: every interactive element transitions border + color to terracotta over 0.15s ease
+- **Hover**: every interactive element transitions border + color to the accent (`--accent`) over 0.15s ease
 - **Slider drag** (financing sliders, rent positioning): every metric on the page recalculates live
 - **Modal open**: backdrop fades in over 0.25s, card translates up 8px + scales 0.98→1
 - **Score gauge**: stroke-dashoffset animates from full → target over 1.4s cubic-bezier(.2,.7,.2,1)
@@ -219,21 +242,21 @@ Every prototype has a tweaks panel in the top-right (theme toggle, accent picker
 
 See `COMPONENT_MANIFEST.md` for the full mapping. Quick reference:
 
-| Design surface | Primary jsx source |
-|---|---|
-| Landing | `app.jsx` + `sections.jsx` + `components.jsx` |
-| Mode modal | `mode-modal.jsx` |
-| Tenant report | `tenant-report.jsx` + `tenant-blocks.jsx` + `tenant-sections.jsx` + `tenant-sections-2.jsx` + `tenant-sections-3.jsx` + `tenant-schools.jsx` |
-| Investor report | `investor-report.jsx` + `investor-calc.jsx` + `investor-blocks.jsx` + `investor-sections.jsx` + `investor-sections-2.jsx` |
-| Personal buyer | `personal-report.jsx` + `personal-data.jsx` + `personal-sections.jsx` + `personal-sections-2.jsx` + `personal-sections-3.jsx` |
-| Landlord | `landlord-report.jsx` + `landlord-data.jsx` + `landlord-sections.jsx` (reuses investor-* heavily) |
-| Paywalls | `paywall-components.jsx` + `paywall-states.jsx` |
-| Account | `account-app.jsx` + `account-views.jsx` |
-| Errors | `error-states.jsx` |
-| Pre-report flows | `pre-report.jsx` |
-| Auth stubs | `auth-stubs.jsx` |
-| Legal | `legal.jsx` |
-| Mobile pass | `mobile-pass.jsx` + `ios-frame.jsx` + `android-frame.jsx` |
+| Design surface   | Primary jsx source                                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Landing          | `app.jsx` + `sections.jsx` + `components.jsx`                                                                                                |
+| Mode modal       | `mode-modal.jsx`                                                                                                                             |
+| Tenant report    | `tenant-report.jsx` + `tenant-blocks.jsx` + `tenant-sections.jsx` + `tenant-sections-2.jsx` + `tenant-sections-3.jsx` + `tenant-schools.jsx` |
+| Investor report  | `investor-report.jsx` + `investor-calc.jsx` + `investor-blocks.jsx` + `investor-sections.jsx` + `investor-sections-2.jsx`                    |
+| Personal buyer   | `personal-report.jsx` + `personal-data.jsx` + `personal-sections.jsx` + `personal-sections-2.jsx` + `personal-sections-3.jsx`                |
+| Landlord         | `landlord-report.jsx` + `landlord-data.jsx` + `landlord-sections.jsx` (reuses investor-\* heavily)                                           |
+| Paywalls         | `paywall-components.jsx` + `paywall-states.jsx`                                                                                              |
+| Account          | `account-app.jsx` + `account-views.jsx`                                                                                                      |
+| Errors           | `error-states.jsx`                                                                                                                           |
+| Pre-report flows | `pre-report.jsx`                                                                                                                             |
+| Auth stubs       | `auth-stubs.jsx`                                                                                                                             |
+| Legal            | `legal.jsx`                                                                                                                                  |
+| Mobile pass      | `mobile-pass.jsx` + `ios-frame.jsx` + `android-frame.jsx`                                                                                    |
 
 ---
 
