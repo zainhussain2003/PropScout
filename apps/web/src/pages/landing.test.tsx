@@ -58,7 +58,7 @@ describe('LandingPage', () => {
 
   it('renders the hero heading', () => {
     renderLanding()
-    expect(screen.getByText(/know what any canadian listing/i)).toBeInTheDocument()
+    expect(screen.getByText(/know what a canadian listing/i)).toBeInTheDocument()
   })
 
   it('renders the URL input with placeholder', () => {

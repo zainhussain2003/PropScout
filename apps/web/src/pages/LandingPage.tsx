@@ -481,15 +481,15 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                   style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
                   className="live-dot"
                 />
-                Live in Ontario · 2,400 listings analyzed last week
+                Live in Ontario
               </span>
               <span className="chip">v0.9 · MVP preview</span>
             </div>
 
             <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
-              Know what any Canadian listing
+              Know what a Canadian listing is
               <br />
-              is <em style={{ color: 'var(--accent)' }}>really</em> worth — before you sign.
+              worth before you sign anything.
             </h1>
 
             <p
@@ -500,10 +500,10 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 marginTop: 22,
               }}
             >
-              Paste any listing. Whether you&apos;re renting, buying a home, hunting an investment,
-              or pricing out your own unit — PropScout returns a full, plain-English report in under
-              sixty seconds. Comps, costs, risks, sun path, and a written verdict. Canadian rules.
-              Real money.
+              Paste a Realtor.ca or Zillow link. In under a minute you get rental comps from live
+              Ontario data, true monthly costs with the OSFI stress test applied, risk flags, and a
+              written verdict. Built for Canadian rules — semi-annual compounding, land transfer
+              tax, CMHC — not US math with a maple leaf on it.
             </p>
           </div>
 
@@ -1272,17 +1272,11 @@ function ReportsSection(): JSX.Element {
       <div className="col gap-32">
         <SectionHeader
           tag="One URL · the report adapts to you"
-          title={
-            <>
-              Whoever you are,{' '}
-              <span className="serif" style={{ color: 'var(--muted)' }}>
-                <em>we ask once.</em>
-              </span>
-            </>
-          }
+          title={<>One link. One question. Four different reports.</>}
         >
-          PropScout auto-detects whether your listing is for sale or for rent, then asks one routing
-          question. Every section, calculation, and verdict downstream is tailored to that answer.
+          PropScout detects whether the listing is for sale or for rent, then asks who you are. A
+          tenant, a buyer, an investor, and a landlord need different answers from the same address
+          — so the entire report changes shape.
         </SectionHeader>
 
         <div
@@ -1407,17 +1401,7 @@ function HowSection(): JSX.Element {
   return (
     <section id="how" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
-        <SectionHeader
-          tag="How it works"
-          title={
-            <>
-              From listing URL to written verdict{' '}
-              <span className="serif" style={{ color: 'var(--muted)' }}>
-                <em>in under sixty seconds.</em>
-              </span>
-            </>
-          }
-        >
+        <SectionHeader tag="How it works" title={<>Three steps. Under sixty seconds.</>}>
           No exports, no spreadsheets, no hand-keying square footage. Three steps and the report is
           on your screen, ready to share.
         </SectionHeader>
@@ -1563,7 +1547,7 @@ function CoverageSection(): JSX.Element {
     {
       icon: 'shield' as const,
       t: 'Risk flags, not vibes',
-      d: 'Ontario rent control, condo-fee burden, flood overlays, basement-bedroom heuristics, supply pressure — each flag with a deduction, source, and override.',
+      d: 'Ontario rent control, condo-fee burden, flood overlays, basement-bedroom heuristics, supply pressure. Each flag carries a deduction, a source, and an override.',
     },
     {
       icon: 'map' as const,
@@ -1597,17 +1581,11 @@ function CoverageSection(): JSX.Element {
       <div className="col gap-32">
         <SectionHeader
           tag="Inside the report"
-          title={
-            <>
-              The work an analyst does in a morning{' '}
-              <span className="serif" style={{ color: 'var(--muted)' }}>
-                <em>— in the time it takes to make coffee.</em>
-              </span>
-            </>
-          }
+          title={<>Every number in the report has a source, a date, and a method.</>}
         >
-          Each section pulls from a different source, then writes itself into the report in the same
-          vocabulary. No tabs to remember, no copy-paste to spreadsheets.
+          Rental comps scraped nightly from Rentals.ca, Kijiji, and PadMapper. Rates from the Bank
+          of Canada feed. Schools from EQAO and Fraser Institute. Walkability from Walk Score. When
+          a number is low-confidence, the report says so instead of guessing.
         </SectionHeader>
 
         <div
@@ -1674,8 +1652,7 @@ function SunScoutSection(): JSX.Element {
             className="serif"
             style={{ textWrap: 'balance', marginBottom: 24 } as React.CSSProperties}
           >
-            How much light <em style={{ color: 'var(--accent)' }}>actually</em> reaches each window
-            — by hour, by month, every season.
+            How much direct sun each window gets, by hour and by month.
           </h2>
           <p style={{ fontSize: 17, color: 'var(--ink-2)', marginBottom: 28 }}>
             We run NREL&apos;s solar position algorithm against the property&apos;s coordinates,
@@ -1861,14 +1838,7 @@ function PricingSection(): JSX.Element {
         >
           <SectionHeader
             tag="Pricing · CAD"
-            title={
-              <>
-                Free for renters.{' '}
-                <span className="serif" style={{ color: 'var(--muted)' }}>
-                  <em>Real money for serious money.</em>
-                </span>
-              </>
-            }
+            title={<>Free for renters. Paid tiers for people running numbers.</>}
           >
             Cancel anytime. Annual saves two months. All prices in Canadian dollars, all tax
             inclusive.
@@ -2089,16 +2059,9 @@ function FAQSection(): JSX.Element {
       >
         <SectionHeader
           tag="Common questions"
-          title={
-            <>
-              If you&apos;ve already asked yourself this,{' '}
-              <em className="serif" style={{ color: 'var(--muted)' }}>
-                good.
-              </em>
-            </>
-          }
+          title={<>Questions people ask before trusting a verdict.</>}
         >
-          Real estate is high-stakes. We over-document because you should.
+          The methodology behind every number, and the honest limits of what a report can tell you.
         </SectionHeader>
 
         <div className="col" style={{ borderTop: '1px solid var(--line-strong)' }}>
@@ -2178,8 +2141,7 @@ function CTASection(): JSX.Element {
               { color: 'var(--bg)', textWrap: 'balance', marginBottom: 24 } as React.CSSProperties
             }
           >
-            Stop building the spreadsheet again.{' '}
-            <em style={{ color: 'var(--accent)' }}>Paste the URL.</em>
+            Stop building the spreadsheet again. Paste the URL.
           </h2>
           <p
             style={{
