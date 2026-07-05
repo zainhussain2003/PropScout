@@ -231,9 +231,10 @@ img {
   transform: translateY(1px);
 }
 
-/* Per the design prototypes (all 13): ink at rest, terracotta on hover.
- * Terracotta-at-rest was a build deviation and failed WCAG AA (white on
- * #D97757 ≈ 3.1:1); ink/bg at rest is ≈ 15.9:1. Locked by btnContrast.test.ts. */
+/* Per the Harbour design system: ink at rest, harbour-blue accent on hover.
+ * Accent-at-rest was an earlier build deviation and failed WCAG AA (white on
+ * the old terracotta ≈ 3.1:1); ink/bg at rest is ≈ 15.9:1 and white on the
+ * harbour accent hover is 8.94:1. Locked by btnContrast.test.ts. */
 .btn-primary {
   background: var(--ink);
   color: var(--bg);
