@@ -865,3 +865,53 @@ app re-skins from tokens alone.
 wasn't reproducible here — the PR8 mobile suite covers 380px deterministically
 and passed. Screenshots also intermittently time out on the WebGL-heavy report
 pages; DOM inspection (reliable) was used for the token/terracotta verification.
+
+---
+
+## 🎨 HARBOUR CLOSEOUT — visual-fidelity pass + 380px overflow fix (2026-07-05, cont.)
+
+Closed out the Harbour re-skin: the visual pass the token session couldn't do,
+the known mobile overflow bug, and the untracked design source.
+
+- **Visual fidelity pass (Chrome, real data, iframe-viewport method).** The
+  harness pins Chrome's layout viewport at ~4608px (devicePixelRatio 0.42) and
+  `resize_window` doesn't move it, so screenshots were taken by mounting each
+  surface in a **same-origin iframe at a real 380/1440px viewport** (media
+  queries evaluate against the iframe width), CSS-transform-scaled to fill the
+  capture, WebGL disabled in-frame so MiniMap renders its SVG fallback. Saved
+  matrix: landing desktop-light (ss_7852a736l), landing mobile-380
+  (ss_161677ggz), investor light (ss_7913l5wfn) + dark (ss_6994vhn01), tenant
+  light (ss_647246eda), personal light (ss_1107aunzj), landlord light
+  (ss_4713dyq2h). Verified against the standalones — **no fidelity gaps found**:
+  - Gauge: large ink Instrument-Serif number, verdict pill inside the ring,
+    "/100" denominator, ring colour = verdict tone (investor/landlord 15/100
+    "Hard pass", red ring). (Last session's "87" was a mis-read Walk/Sun
+    sub-score, not the deal score — the real score is 15, correct for a $3.5M
+    sale underwritten as a rental.)
+  - Section questions: Instrument-Serif italic on the key noun ("Does the deal
+    _pencil?_", "…in the _bank_…", "Will the bank actually _fund_ it?").
+  - Mono for every number (`$2,650/mo`, `$3,499,000`, `$23,534/mo`); card
+    radius 18px (`--radius-lg`); card shadow = `--shadow-card`.
+  - Dark mode: body + cards flip to dark tokens; verdict tokens resolve to the
+    new dark variants; the AIVerdictBlock is a deliberate inverted card
+    (`background:var(--ink); color:var(--bg)` — identical to the standalone
+    rp-chrome.jsx), so it becomes a light hero card with dark text in dark mode
+    (legible, faithful).
+  - Personal HomeScore gauge suppressed → "Pricing & schools data pending"
+    honest card; tenant has a dark hero band + AI verdict + rent positioning,
+    **no deal-score gauge**.
+- **🔴 Fixed the pre-existing 380px landing horizontal overflow** (was
+  scrollWidth 751px). Root causes + fixes (all via existing collapse patterns,
+  no new hardcoded values): nav collapses to wordmark + theme toggle (hide
+  `.nav-links` ≤820px, `.lp-nav-cta` ≤640px); hero / #sunscout / #faq grids
+  get `grid-1col-mobile`; pricing `grid-2col-mobile`→`grid-1col-mobile` (tier
+  cards' min-content overflowed a 2-col split); Footer 5-col →
+  `grid-1col-mobile`; bottom CTA row `flex-wrap`. Verified in a 380px iframe:
+  scrollWidth 369<380, **zero unclipped elements past the edge**, no h-scroll
+  at 360/380/414px. Two landing mobile-collapse regression guards added.
+- **Committed `docs/PropScout Standalones/`** (the design source of truth,
+  previously an untracked dangling reference) — 17MB, no node_modules, nothing
+  > 5MB. `services/agents/` left untracked (unrelated, node_modules inside).
+- **Gates:** calc 344/344 · API 167/167 · web **855/855** (+2 new mobile
+  guards) · scrapers 151/151; typecheck clean both workspaces. 4 Footer
+  snapshots updated one-file-at-a-time (sole diff = the added collapse class).

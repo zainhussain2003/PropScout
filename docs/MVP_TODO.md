@@ -164,6 +164,8 @@ Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 - [x] All VerdictPill tones present on landing (pass, caution, fail) — class-only colour
 - [x] Price values in Pricing section use Geist Mono (not Instrument Serif)
 - [x] How it works section — `auto-fit` responsive grid (no horizontal overflow at any width)
+- [x] **Landing 380px horizontal-overflow fix (2026-07-05)** — nav collapses to wordmark + toggle (`.nav-links`≤820px, `.lp-nav-cta`≤640px); hero/#sunscout/#faq/pricing/footer grids collapse to single column on mobile; bottom CTA row wraps. Verified in a 380px iframe: scrollWidth 369<380, zero unclipped overflow at 360/380/414px. Regression guards in `landing.test.tsx`.
+- [x] **Harbour visual-fidelity pass (2026-07-05)** — all 4 reports + landing screenshot-verified against the `docs/PropScout Standalones/` at 1440 + 380, light + dark (investor); gauge composition, serif-italic section questions, mono numbers, 18px radii, `--shadow-card`, dark verdict variants, HomeScore suppression, tenant no-gauge, inverted AI card all confirmed faithful. No gaps found.
 - [ ] All hover and click interactions match the design exactly (visual QA 18/19 — 1 criterion corrected)
 - [ ] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
 
