@@ -242,6 +242,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
         class="container col gap-32"
       >
         <div
+          class="grid-1col-mobile"
           style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
         >
           <div
@@ -5477,6 +5478,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
         class="container col gap-32"
       >
         <div
+          class="grid-1col-mobile"
           style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
         >
           <div
@@ -5961,6 +5963,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
         class="container col gap-32"
       >
         <div
+          class="grid-1col-mobile"
           style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
         >
           <div

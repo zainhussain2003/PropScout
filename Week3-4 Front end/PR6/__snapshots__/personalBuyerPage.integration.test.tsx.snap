@@ -4508,6 +4508,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       class="container col gap-32"
     >
       <div
+        class="grid-1col-mobile"
         style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 40px;"
       >
         <div
