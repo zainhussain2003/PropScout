@@ -159,15 +159,15 @@ Dark mode is handled entirely by the token system. Never write a `prefers-color-
 
 Key tokens to know by heart:
 
-| Token       | Value (light) | Purpose                                               |
-| ----------- | ------------- | ----------------------------------------------------- |
-| `--bg`      | `#F1ECE2`     | Page background — warm cream                          |
-| `--surface` | `#FFFFFF`     | Card background                                       |
-| `--ink`     | `#0E1320`     | Primary text and buttons                              |
-| `--accent`  | `#D97757`     | Terracotta — brand, Pro badge, CTAs, all hover states |
-| `--pass`    | `#4F7A48`     | Sage — good deal, positive flags                      |
-| `--caution` | `#B98724`     | Amber — soft warnings                                 |
-| `--fail`    | `#B14A37`     | Clay — hard pass, red flags                           |
+| Token       | Value (light) | Purpose                                                                                                                    |
+| ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `--bg`      | `#F4F2ED`     | Page background — neutral limestone (PR10; was #F1ECE2 cream)                                                              |
+| `--surface` | `#FFFFFF`     | Card background                                                                                                            |
+| `--ink`     | `#0E1320`     | Primary text and buttons                                                                                                   |
+| `--accent`  | `#1F4E68`     | Harbour blue — brand, Pro badge, CTAs, all hover states (PR10; was #D97757 terracotta — divergence table in DESIGN_README) |
+| `--pass`    | `#4F7A48`     | Sage — good deal, positive flags                                                                                           |
+| `--caution` | `#B98724`     | Amber — soft warnings                                                                                                      |
+| `--fail`    | `#B14A37`     | Clay — hard pass, red flags                                                                                                |
 
 ### Interactions — standard timing
 
@@ -175,7 +175,7 @@ Every interactive element follows the same motion system. Never deviate:
 
 | Interaction                      | Timing                          | Effect                                                    |
 | -------------------------------- | ------------------------------- | --------------------------------------------------------- |
-| Hover (all interactive elements) | `0.15s ease`                    | Border + color → terracotta (`--accent`)                  |
+| Hover (all interactive elements) | `0.15s ease`                    | Border + color → accent (`--accent`, harbour blue)        |
 | Modal open                       | `0.25s`                         | Backdrop fade + card translates up 8px + scales 0.98→1    |
 | Deal score gauge animation       | `1.4s cubic-bezier(.2,.7,.2,1)` | stroke-dashoffset from full → target                      |
 | Financing slider drag            | Instant (synchronous)           | Every metric on page recalculates live — no debounce      |
@@ -1033,7 +1033,9 @@ propscout/
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
 │   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
 │   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
-│   └── design_handoff_propscout_mvp/  # Design files — living documents, will be updated
+│   ├── PR10-design-humanization-prompt.md  # PR10 spec — token revision, copy, imagery, founder note
+│   ├── PR10-UI-Tests.md               # PR10 Chrome UI test checklist (token propagation, imagery, dark/mobile)
+│   └── design_handoff_propscout_mvp/  # Design files — PALETTE STALE since PR10: production tokens.css is ahead (see DESIGN_README divergence table)
 │       ├── tokens.css                 # CSS variables — copy to apps/web/src/styles/tokens.css
 │       └── designs/                   # 13 pixel-final HTML prototypes + JSX source
 │           ├── index.html             # Landing page
@@ -1055,6 +1057,8 @@ propscout/
 │   │
 │   ├── web/                           # React + TypeScript — hosted on Vercel
 │   │   ├── index.html                 # Vite entry — Google Fonts preconnect + link here
+│   │   ├── public/
+│   │   │   └── marketing/             # Landing mode-card report screenshots (mode-*.webp, 1x + @2x — recapture via PR10 notes when reports change)
 │   │   ├── vite.config.ts
 │   │   ├── tsconfig.json              # strict: true, noImplicitAny, strictNullChecks
 │   │   ├── package.json

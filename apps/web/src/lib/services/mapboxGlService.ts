@@ -75,7 +75,7 @@ export async function mountMiniMap(
     // Comp pins — accent markers with the price label as a popup.
     for (const pin of opts.pins ?? []) {
       const marker = new mapboxgl.Marker({
-        color: cssToken('--accent', '#D97757'),
+        color: cssToken('--accent', '#1F4E68'),
         scale: 0.8,
       }).setLngLat([pin.lng, pin.lat])
       if (pin.label.length > 0) {

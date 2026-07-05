@@ -481,15 +481,15 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                   style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
                   className="live-dot"
                 />
-                Live in Ontario · 2,400 listings analyzed last week
+                Live in Ontario
               </span>
               <span className="chip">v0.9 · MVP preview</span>
             </div>
 
             <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
-              Know what any Canadian listing
+              Know what a Canadian listing is
               <br />
-              is <em style={{ color: 'var(--accent)' }}>really</em> worth — before you sign.
+              worth before you sign anything.
             </h1>
 
             <p
@@ -500,10 +500,10 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 marginTop: 22,
               }}
             >
-              Paste any listing. Whether you&apos;re renting, buying a home, hunting an investment,
-              or pricing out your own unit — PropScout returns a full, plain-English report in under
-              sixty seconds. Comps, costs, risks, sun path, and a written verdict. Canadian rules.
-              Real money.
+              Paste a Realtor.ca or Zillow link. In under a minute you get rental comps from live
+              Ontario data, true monthly costs with the OSFI stress test applied, risk flags, and a
+              written verdict. Built for Canadian rules — semi-annual compounding, land transfer
+              tax, CMHC — not US math with a maple leaf on it.
             </p>
           </div>
 
@@ -882,10 +882,34 @@ function ReportShowcase(): JSX.Element {
           background: 'var(--bg-elev)',
         }}
       >
+        {/* Faux-browser window controls — decorative chrome, so neutral ink
+           shades (not verdict tokens, which are reserved for report data) and
+           theme-aware via color-mix. */}
         <div className="row gap-8">
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#E26060' }} />
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#E2B660' }} />
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#7CB36B' }} />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--ink) 26%, transparent)',
+            }}
+          />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--ink) 18%, transparent)',
+            }}
+          />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--ink) 12%, transparent)',
+            }}
+          />
         </div>
         <div
           className="row gap-8"
@@ -965,7 +989,10 @@ function ReportShowcase(): JSX.Element {
         </div>
 
         {/* Two-column report grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 22 }}>
+        <div
+          className="grid-1col-mobile"
+          style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 22 }}
+        >
           {/* Left column */}
           <div className="col" style={{ gap: 22 }}>
             <ShowcaseAIVerdictBlock
@@ -1208,6 +1235,10 @@ function ReportShowcase(): JSX.Element {
                 ))}
               </div>
             </div>
+
+            {/* Comps map — PR10 part 4b: real Mapbox static map, the fastest
+                "this is real estate" signal in the hero. */}
+            <HeroStaticMap />
           </div>
         </div>
       </div>
@@ -1215,12 +1246,149 @@ function ReportShowcase(): JSX.Element {
   )
 }
 
+// ── HeroStaticMap ─────────────────────────────────────────────────────
+// Mapbox Static Images map of Yonge–Eglinton with comp diamonds drawn as
+// GeoJSON polygons in the accent blue, styled like the in-report comp map.
+// Renders nothing without VITE_MAPBOX_TOKEN (graceful fallback).
+
+function HeroStaticMap(): JSX.Element | null {
+  const mapToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
+  if (!mapToken) return null
+
+  // Yonge–Eglinton (M4R) — the same neighbourhood as the sample report.
+  const center: [number, number] = [-79.3986, 43.708]
+  const comps: Array<[number, number]> = [
+    [-79.4028, 43.7104],
+    [-79.3941, 43.7117],
+    [-79.4007, 43.7042],
+    [-79.3927, 43.706],
+    [-79.3966, 43.7128],
+  ]
+  // Small diamond polygon around each comp — matches the in-report marker.
+  const dLat = 0.0007
+  const dLng = 0.001
+  const diamond = ([lng, lat]: [number, number]): number[][] => [
+    [lng, lat + dLat],
+    [lng + dLng, lat],
+    [lng, lat - dLat],
+    [lng - dLng, lat],
+    [lng, lat + dLat],
+  ]
+  const geojson = {
+    type: 'FeatureCollection',
+    features: comps.map((c) => ({
+      type: 'Feature',
+      // Mapbox Static Images API overlay — needs a literal hex (no CSS vars);
+      // #1F4E68 mirrors the harbour --accent token.
+      properties: { fill: '#1F4E68', 'fill-opacity': 1, stroke: '#ffffff', 'stroke-width': 1 },
+      geometry: { type: 'Polygon', coordinates: [diamond(c)] },
+    })),
+  }
+  const overlay = `geojson(${encodeURIComponent(JSON.stringify(geojson))})`
+  const base = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${overlay}/${center[0]},${center[1]},13.4/640x360`
+  const src = `${base}?access_token=${mapToken}&attribution=false&logo=false`
+  const src2x = `${base}@2x?access_token=${mapToken}&attribution=false&logo=false`
+
+  return (
+    <div className="card col gap-12" style={{ padding: 22 }}>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div
+          className="mono"
+          style={{
+            fontSize: 11,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+          }}
+        >
+          Comps within 1 km
+        </div>
+        <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
+          Toronto · M4R
+        </span>
+      </div>
+      <div
+        style={{
+          overflow: 'hidden',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--line)',
+        }}
+      >
+        <img
+          src={src}
+          srcSet={`${src} 1x, ${src2x} 2x`}
+          alt="Map of the Yonge–Eglinton area with five comparable rentals marked as blue diamonds"
+          loading="lazy"
+          style={{ width: '100%', display: 'block' }}
+        />
+      </div>
+      <span className="mono" style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+        © Mapbox · © OpenStreetMap
+      </span>
+    </div>
+  )
+}
+
 // ── ReportsSection ────────────────────────────────────────────────────
+
+type ModeStat = [string, string, string]
+
+function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
+  return (
+    <div className="row gap-12" style={{ marginTop: 4, flexWrap: 'wrap' }}>
+      {stats.map(([lbl, val, status]) => (
+        <div
+          key={lbl}
+          className="col gap-8"
+          style={{
+            flex: '1 1 0',
+            minWidth: 90,
+            padding: '10px 12px',
+            borderRadius: 10,
+            background: 'var(--bg-elev)',
+            border: '1px solid var(--line)',
+          }}
+        >
+          <div
+            className="mono"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+            }}
+          >
+            {lbl}
+          </div>
+          <div
+            className="serif tabular"
+            style={{
+              fontSize: 22,
+              lineHeight: 1,
+              color:
+                status === 'pass'
+                  ? 'var(--pass)'
+                  : status === 'caution'
+                    ? 'var(--caution)'
+                    : status === 'fail'
+                      ? 'var(--fail)'
+                      : 'var(--ink)',
+            }}
+          >
+            {val}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function ReportsSection(): JSX.Element {
   const modes = [
     {
       who: 'Tenant',
+      img: '/marketing/mode-tenant',
+      imgAlt: 'Tenant report — negotiation target of $1,950–2,000/mo with leverage factors',
       tag: 'For rent',
       title: "I'm looking at a rental",
       copy: "Free, no login. Flags fake bedrooms, basement units, missing parking, and overpriced asks. Tells you exactly where to negotiate to — and saves you the deposit on a unit that wasn't what it said it was.",
@@ -1233,6 +1401,8 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Personal buyer',
+      img: '/marketing/mode-personal',
+      imgAlt: 'Personal buyer report — true monthly cost breakdown totalling $6,057/mo',
       tag: 'For sale',
       title: "I'm buying a home to live in",
       copy: 'True monthly cost of ownership, comparable sales, walk/transit, school catchments. The home you can live in, not just close on.',
@@ -1244,6 +1414,8 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Investor',
+      img: '/marketing/mode-investor',
+      imgAlt: 'Investor report — deal score gauge reading 8/100, hard pass',
       tag: 'For sale',
       title: "I'm running it as a rental",
       copy: 'Cap rate, cash flow, DSCR, OSFI stress test, Ontario LTT, and our 0–100 deal score — modelled for Canadian rules, not bolted on.',
@@ -1256,6 +1428,8 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Landlord',
+      img: '/marketing/mode-landlord',
+      imgAlt: 'Landlord report — rent positioning slider against building comps',
       tag: 'For rent',
       title: "I'm pricing out my own unit",
       copy: 'Test whether your listed rent pencils against the building, the FSA, and the trend line — before you sign a year-long lease at the wrong number.',
@@ -1267,47 +1441,64 @@ function ReportsSection(): JSX.Element {
     },
   ]
 
+  const [tenantMode, ...paidModes] = modes
+
   return (
     <section id="reports" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
         <SectionHeader
           tag="One URL · the report adapts to you"
-          title={
-            <>
-              Whoever you are,{' '}
-              <span className="serif" style={{ color: 'var(--muted)' }}>
-                <em>we ask once.</em>
-              </span>
-            </>
-          }
+          title={<>One link. One question. Four different reports.</>}
         >
-          PropScout auto-detects whether your listing is for sale or for rent, then asks one routing
-          question. Every section, calculation, and verdict downstream is tailored to that answer.
+          PropScout detects whether the listing is for sale or for rent, then asks who you are. A
+          tenant, a buyer, an investor, and a landlord need different answers from the same address
+          — so the entire report changes shape.
         </SectionHeader>
 
-        <div
-          className="grid-1col-mobile"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 22,
-            marginTop: 24,
-          }}
-        >
-          {modes.map((m) => (
-            <article
-              key={m.title}
-              className="card"
-              style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        {/* PR10 part 6 — the page's one deliberate asymmetry: the tenant
+            report (the free funnel) gets a full-width dominant card; the
+            three paid modes hold a disciplined row beneath it. */}
+        <div className="col" style={{ gap: 22, marginTop: 24 }}>
+          <article className="card" style={{ overflow: 'hidden' }}>
+            <div
+              className="grid-1col-mobile"
+              style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 0 }}
             >
-              <div className="photo-ph" style={{ height: 180, position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 14, left: 14 }} className="row gap-8">
-                  <Chip>{m.tag}</Chip>
-                  {'tag2' in m && m.tag2 !== undefined && <Chip accent>{m.tag2}</Chip>}
+              <div style={{ padding: 14, position: 'relative' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    minHeight: 300,
+                    overflow: 'hidden',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--line)',
+                    background: 'var(--accent-soft)',
+                  }}
+                >
+                  <img
+                    src={`${tenantMode.img}.webp`}
+                    srcSet={`${tenantMode.img}.webp 1x, ${tenantMode.img}@2x.webp 2x`}
+                    alt={tenantMode.imgAlt}
+                    loading="lazy"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'block',
+                      objectFit: 'cover',
+                      objectPosition: '50% 12%',
+                    }}
+                  />
+                </div>
+                <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
+                  <Chip>{tenantMode.tag}</Chip>
+                  <Chip accent>Free forever</Chip>
                 </div>
               </div>
 
-              <div className="col gap-16" style={{ padding: '24px 24px 26px' }}>
+              <div
+                className="col gap-16"
+                style={{ padding: 'clamp(24px, 3vw, 40px)', justifyContent: 'center' }}
+              >
                 <div className="col gap-8">
                   <div
                     className="mono"
@@ -1318,65 +1509,91 @@ function ReportsSection(): JSX.Element {
                       color: 'var(--accent)',
                     }}
                   >
-                    For the {m.who.toLowerCase()}
+                    For the tenant
                   </div>
-                  <h3 className="serif" style={{ fontSize: 30, lineHeight: 1.05 }}>
-                    {m.title}
+                  <h3
+                    className="serif"
+                    style={{ fontSize: 'clamp(30px, 2.6vw, 38px)', lineHeight: 1.05 }}
+                  >
+                    {tenantMode.title}
                   </h3>
                 </div>
-                <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 480 }}>{m.copy}</p>
+                <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 480 }}>
+                  {tenantMode.copy}
+                </p>
+                <ModeStatTiles stats={tenantMode.stats} />
+              </div>
+            </div>
+          </article>
 
-                <div className="row gap-12" style={{ marginTop: 4, flexWrap: 'wrap' }}>
-                  {m.stats.map(([lbl, val, status]) => (
-                    <div
-                      key={lbl}
-                      className="col gap-8"
+          <div
+            className="grid-1col-mobile"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22 }}
+          >
+            {paidModes.map((m) => (
+              <article
+                key={m.title}
+                className="card"
+                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+              >
+                {/* Real product screenshot (PR10 part 4a) — a slight top-crop
+                    reads as a peek into the report. */}
+                <div style={{ padding: '14px 14px 0', position: 'relative' }}>
+                  <div
+                    style={{
+                      height: 180,
+                      overflow: 'hidden',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--line)',
+                      background: 'var(--accent-soft)',
+                    }}
+                  >
+                    <img
+                      src={`${m.img}.webp`}
+                      srcSet={`${m.img}.webp 1x, ${m.img}@2x.webp 2x`}
+                      alt={m.imgAlt}
+                      loading="lazy"
                       style={{
-                        flex: '1 1 0',
-                        minWidth: 90,
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        background: 'var(--bg-elev)',
-                        border: '1px solid var(--line)',
+                        width: '100%',
+                        display: 'block',
+                        objectFit: 'cover',
+                        objectPosition: '50% 12%',
+                        height: '100%',
+                      }}
+                    />
+                  </div>
+                  <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
+                    <Chip>{m.tag}</Chip>
+                  </div>
+                </div>
+
+                <div className="col gap-16" style={{ padding: '24px 24px 26px' }}>
+                  <div className="col gap-8">
+                    <div
+                      className="mono"
+                      style={{
+                        fontSize: 11,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                        color: 'var(--accent)',
                       }}
                     >
-                      <div
-                        className="mono"
-                        style={{
-                          fontSize: 10,
-                          letterSpacing: '0.1em',
-                          textTransform: 'uppercase',
-                          color: 'var(--muted)',
-                        }}
-                      >
-                        {lbl}
-                      </div>
-                      <div
-                        className="serif tabular"
-                        style={{
-                          fontSize: 22,
-                          lineHeight: 1,
-                          color:
-                            status === 'pass'
-                              ? 'var(--pass)'
-                              : status === 'caution'
-                                ? 'var(--caution)'
-                                : status === 'fail'
-                                  ? 'var(--fail)'
-                                  : 'var(--ink)',
-                        }}
-                      >
-                        {val}
-                      </div>
+                      For the {m.who.toLowerCase()}
                     </div>
-                  ))}
+                    <h3 className="serif" style={{ fontSize: 26, lineHeight: 1.08 }}>
+                      {m.title}
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 480 }}>{m.copy}</p>
+
+                  <ModeStatTiles stats={m.stats} />
+                  {'verdict' in m && m.verdict !== undefined && (
+                    <VerdictPill tone={m.verdict.tone} label={m.verdict.label} />
+                  )}
                 </div>
-                {'verdict' in m && m.verdict !== undefined && (
-                  <VerdictPill tone={m.verdict.tone} label={m.verdict.label} />
-                )}
-              </div>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1407,17 +1624,7 @@ function HowSection(): JSX.Element {
   return (
     <section id="how" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
-        <SectionHeader
-          tag="How it works"
-          title={
-            <>
-              From listing URL to written verdict{' '}
-              <span className="serif" style={{ color: 'var(--muted)' }}>
-                <em>in under sixty seconds.</em>
-              </span>
-            </>
-          }
-        >
+        <SectionHeader tag="How it works" title={<>Three steps. Under sixty seconds.</>}>
           No exports, no spreadsheets, no hand-keying square footage. Three steps and the report is
           on your screen, ready to share.
         </SectionHeader>
@@ -1563,7 +1770,7 @@ function CoverageSection(): JSX.Element {
     {
       icon: 'shield' as const,
       t: 'Risk flags, not vibes',
-      d: 'Ontario rent control, condo-fee burden, flood overlays, basement-bedroom heuristics, supply pressure — each flag with a deduction, source, and override.',
+      d: 'Ontario rent control, condo-fee burden, flood overlays, basement-bedroom heuristics, supply pressure. Each flag carries a deduction, a source, and an override.',
     },
     {
       icon: 'map' as const,
@@ -1597,17 +1804,11 @@ function CoverageSection(): JSX.Element {
       <div className="col gap-32">
         <SectionHeader
           tag="Inside the report"
-          title={
-            <>
-              The work an analyst does in a morning{' '}
-              <span className="serif" style={{ color: 'var(--muted)' }}>
-                <em>— in the time it takes to make coffee.</em>
-              </span>
-            </>
-          }
+          title={<>Every number in the report has a source, a date, and a method.</>}
         >
-          Each section pulls from a different source, then writes itself into the report in the same
-          vocabulary. No tabs to remember, no copy-paste to spreadsheets.
+          Rental comps scraped nightly from Rentals.ca, Kijiji, and PadMapper. Rates from the Bank
+          of Canada feed. Schools from EQAO and Fraser Institute. Walkability from Walk Score. When
+          a number is low-confidence, the report says so instead of guessing.
         </SectionHeader>
 
         <div
@@ -1645,6 +1846,52 @@ function CoverageSection(): JSX.Element {
   )
 }
 
+// ── FounderNoteSection ────────────────────────────────────────────────
+// PR10 part 5 — founder note ("WHY THIS EXISTS"). The body must be Zain's
+// own words: the spec's rule is "the section ships with your words or it
+// doesn't ship", so the section renders nothing until FOUNDER_NOTE_BODY is
+// filled in. Do NOT invent biographical details here.
+
+// Zain: replace with your actual story — 3-4 first-person sentences
+// (solo developer in Ontario, why listing numbers don't tell the truth,
+// every formula documented and testable).
+const FOUNDER_NOTE_BODY: string | null = null
+
+// Placeholder framing from the PR10 spec — edit alongside the body.
+const FOUNDER_NOTE_HEADING = 'Built by one person who got burned by a bad listing.'
+
+function FounderNoteSection(): JSX.Element | null {
+  if (FOUNDER_NOTE_BODY === null) return null
+
+  return (
+    <section className="container" style={{ paddingTop: 'var(--pad-y)' }}>
+      <div
+        className="card"
+        style={{ padding: 'clamp(36px, 5vw, 64px)', display: 'flex', justifyContent: 'center' }}
+      >
+        <div className="col gap-16" style={{ maxWidth: 680 }}>
+          <span className="section-tag">Why this exists</span>
+          <h2 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
+            {FOUNDER_NOTE_HEADING}
+          </h2>
+          <p style={{ fontSize: 16, color: 'var(--ink-2)', lineHeight: 1.65 }}>
+            {FOUNDER_NOTE_BODY}
+          </p>
+          <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+            PropScout is independent. No brokerage owns it, no listing site pays it.
+          </p>
+          <div className="row gap-12" style={{ alignItems: 'center', marginTop: 8 }}>
+            <ScoutMark size={22} />
+            <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
+              — Zain, founder
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ── SunScoutSection ───────────────────────────────────────────────────
 
 function SunScoutSection(): JSX.Element {
@@ -1655,6 +1902,7 @@ function SunScoutSection(): JSX.Element {
   return (
     <section id="sunscout" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div
+        className="grid-1col-mobile"
         style={{
           background: 'var(--bg-elev)',
           border: '1px solid var(--line)',
@@ -1674,8 +1922,7 @@ function SunScoutSection(): JSX.Element {
             className="serif"
             style={{ textWrap: 'balance', marginBottom: 24 } as React.CSSProperties}
           >
-            How much light <em style={{ color: 'var(--accent)' }}>actually</em> reaches each window
-            — by hour, by month, every season.
+            How much direct sun each window gets, by hour and by month.
           </h2>
           <p style={{ fontSize: 17, color: 'var(--ink-2)', marginBottom: 28 }}>
             We run NREL&apos;s solar position algorithm against the property&apos;s coordinates,
@@ -1861,14 +2108,7 @@ function PricingSection(): JSX.Element {
         >
           <SectionHeader
             tag="Pricing · CAD"
-            title={
-              <>
-                Free for renters.{' '}
-                <span className="serif" style={{ color: 'var(--muted)' }}>
-                  <em>Real money for serious money.</em>
-                </span>
-              </>
-            }
+            title={<>Free for renters. Paid tiers for people running numbers.</>}
           >
             Cancel anytime. Annual saves two months. All prices in Canadian dollars, all tax
             inclusive.
@@ -1907,7 +2147,7 @@ function PricingSection(): JSX.Element {
         </div>
 
         <div
-          className="grid-2col-mobile"
+          className="grid-1col-mobile"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
@@ -2080,6 +2320,7 @@ function FAQSection(): JSX.Element {
   return (
     <section id="faq" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1.4fr',
@@ -2089,16 +2330,9 @@ function FAQSection(): JSX.Element {
       >
         <SectionHeader
           tag="Common questions"
-          title={
-            <>
-              If you&apos;ve already asked yourself this,{' '}
-              <em className="serif" style={{ color: 'var(--muted)' }}>
-                good.
-              </em>
-            </>
-          }
+          title={<>Questions people ask before trusting a verdict.</>}
         >
-          Real estate is high-stakes. We over-document because you should.
+          The methodology behind every number, and the honest limits of what a report can tell you.
         </SectionHeader>
 
         <div className="col" style={{ borderTop: '1px solid var(--line-strong)' }}>
@@ -2178,8 +2412,7 @@ function CTASection(): JSX.Element {
               { color: 'var(--bg)', textWrap: 'balance', marginBottom: 24 } as React.CSSProperties
             }
           >
-            Stop building the spreadsheet again.{' '}
-            <em style={{ color: 'var(--accent)' }}>Paste the URL.</em>
+            Stop building the spreadsheet again. Paste the URL.
           </h2>
           <p
             style={{
@@ -2192,7 +2425,7 @@ function CTASection(): JSX.Element {
             Three free analyses every month. No credit card, no demo call, no team to talk to.
             You&apos;ll know if the deal is dead in sixty seconds.
           </p>
-          <div className="row gap-12">
+          <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
             <a
               href="#hero"
               className="btn btn-accent"
@@ -2270,6 +2503,7 @@ export function LandingPage(): JSX.Element {
         <Hero onOpenModal={handleOpenModal} onSignIn={() => setShowSignIn(true)} />
         <ReportsSection />
         <CoverageSection />
+        <FounderNoteSection />
         <SunScoutSection />
         <HowSection />
         <PricingSection />

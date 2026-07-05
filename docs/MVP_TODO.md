@@ -118,13 +118,14 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 
 - [x] Copy `tokens.css` into `apps/web/src/styles/` and import in global stylesheet
+- [x] **Harbour re-skin (2026-07-05)** — port locked `Landing v2.html` tokens (limestone `#EFEFEA` bg, harbour `#1F4E68` accent, `--accent-hover`, `6/12/18` radii, dark verdict variants); fixes the dark `--pass/--caution/--fail` contrast bug; verified live across all 4 report modes, zero stray terracotta, all suites at floors. `tokens.css` now supersedes the warm-cream prototypes.
 - [x] Add Google Fonts preconnect + link in `apps/web/index.html` (Instrument Serif + Geist + Geist Mono)
 - [x] React + TypeScript project setup (Vite)
 - [x] `<Wordmark height>` — "Prop*Scout*" wordmark with ScoutMark glyph
 - [x] `<ScoutMark size color>` — standalone glyph (used as watermark on dark cards)
 - [x] `<Icon name size stroke>` — full line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot)
 - [x] `<Chip>` — inline pill tag (with and without accent dot variant)
-- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → terracotta 0.15s
+- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → harbour accent 0.15s
 - [x] `<Card>` — surface + line + shadow + radius-lg
 - [x] `<SectionHead n topic question verdict tone>` — every report section header (shared across all 4 reports)
 - [x] `<VerdictPill tone label>` — pass / caution / fail pill, class-only colour (no inline styles)
@@ -163,6 +164,8 @@ Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 - [x] All VerdictPill tones present on landing (pass, caution, fail) — class-only colour
 - [x] Price values in Pricing section use Geist Mono (not Instrument Serif)
 - [x] How it works section — `auto-fit` responsive grid (no horizontal overflow at any width)
+- [x] **Landing 380px horizontal-overflow fix (2026-07-05)** — nav collapses to wordmark + toggle (`.nav-links`≤820px, `.lp-nav-cta`≤640px); hero/#sunscout/#faq/pricing/footer grids collapse to single column on mobile; bottom CTA row wraps. Verified in a 380px iframe: scrollWidth 369<380, zero unclipped overflow at 360/380/414px. Regression guards in `landing.test.tsx`.
+- [x] **Harbour visual-fidelity pass (2026-07-05)** — all 4 reports + landing screenshot-verified against the `docs/PropScout Standalones/` at 1440 + 380, light + dark (investor); gauge composition, serif-italic section questions, mono numbers, 18px radii, `--shadow-card`, dark verdict variants, HomeScore suppression, tenant no-gauge, inverted AI card all confirmed faithful. No gaps found.
 - [ ] All hover and click interactions match the design exactly (visual QA 18/19 — 1 criterion corrected)
 - [ ] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
 
@@ -339,8 +342,10 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Score card moves above content on mobile (gauge shrinks to ~84px)
 
 > Accessibility: footer .chip contrast fixed (WCAG AA).
-> btn-primary contrast (terracotta bg, 3.12:1) is a known
-> sitewide issue — fix in a dedicated a11y PR before launch.
+> btn-primary contrast — ✅ RESOLVED: ink-at-rest fix (a1ca335),
+> re-verified against the PR10 harbour-blue accent (15.94:1 rest;
+> all accent pairings ≥ 6.39:1, pinned in btnContrast.test.ts).
+> A full-site AA audit for other elements stays on the backlog.
 
 ### PR 9 — Route wiring (end-to-end integration)
 
@@ -363,6 +368,21 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [ ] Integration test — mock scraper → real calc engine → mock Claude + Walk Score → assert token roundtrip
 - [x] All existing analysis route tests and useAnalysis hook tests pass
 - [ ] Golden dataset regression passes 95%+
+
+### PR 10 — Design humanization (landing + tokens)
+
+Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tests.md`
+
+- [x] Token revision — `--accent` #D97757→#1F4E68, `--bg`/`--bg-elev` limestone, `--accent-soft` added, dark-mode accent #6FA3C4 (values only, no renames; all pairings AA-pinned in btnContrast.test.ts)
+- [x] Italic-accent-words removed from landing marketing headlines (wordmark + report section questions kept)
+- [x] Landing copy rewritten verbatim per spec (hero, mode cards, feature grid, SunScout, how-it-works, pricing, FAQ); unwired "2,400 listings" stat removed
+- [x] Real imagery — 4 mode-card report screenshots (WebP 1x/2x in `public/marketing/`) + hero Mapbox Static Images comps map (blue diamonds, token-gated fallback)
+- [x] `.scout-slider` accent-color rule (sliders previously rendered browser-default red)
+- [x] Founder-note shell between feature grid and SunScout — renders nothing until real copy lands
+- [ ] 🔒 Founder-note body copy — Zain's own words (never invented)
+- [x] Asymmetric layout moment — tenant card dominant, three paid modes in a row beneath
+- [x] Docs: DESIGN_README token divergence table, PR10-UI-Tests.md, AUDIT_TRACKER known issues
+- [ ] Prototype HTML files still on terracotta palette — resync `designs/` + `design_handoff/tokens.css` when designs are next touched
 
 ---
 

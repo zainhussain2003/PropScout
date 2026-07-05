@@ -817,3 +817,101 @@ those sections in both files.
    independently — I had to edit both. Worth picking one canonical copy (or making
    one a pointer to the other). A full web-component-tree audit of the structure is
    also still pending. Quick decision needed before I invest in either.
+
+---
+
+## 🎨 HARBOUR RE-SKIN — token port + live-verdict dark contrast fix (2026-07-05)
+
+Ported the locked "Harbour" token system into production and verified the whole
+app re-skins from tokens alone.
+
+- **`tokens.css` ported byte-for-byte from `Landing v2.html`** (the locked
+  standalone), onto the repo's own token _names_. bg cream `#F4F2ED` → cool
+  limestone `#EFEFEA`; added `--accent-hover` (`#17405A` light / `#74A5BF`
+  dark); radii → `6/12/18`; added `--sect` (aliases `--pad-y`) and `--r-*`
+  aliases. Accent stays harbour `#1F4E68` / dark `#5E93B0`; caution darkened
+  to `#8A6410` for AA on limestone.
+- **🔴 Live dark-mode contrast bug fixed.** The `[data-theme="dark"]` block
+  never redefined `--pass / --caution / --fail`, so the _light_ verdict colors
+  bled onto dark surfaces (sage/amber/clay under-contrasted on `#171F28`).
+  Added the measured dark variants: `--pass #7FB076` (6.63:1), `--caution
+#D9A83F` (7.62:1), `--fail #E27F63` (5.90:1), all on `--surface`. Every
+  accent/verdict pair is now ≥ 4.5:1 in **both** themes — ratios computed and
+  recorded in the `tokens.css` header + the DESIGN_README divergence table.
+- **Zero-breakage.** Snapshots reference `var(--*)`, not resolved values, so
+  the value swap touched no test. Gates after the change: calc **344/344**,
+  API **167/167**, web **853/853**, scrapers **151/151**; typecheck clean both
+  workspaces.
+- **Live E2E (Chrome, real data).** Re-ran both stored listings across all four
+  modes and inspected each rendered report's DOM:
+  - Investor (662 Byngmount, $3.499M) — full report, deal score 87/100,
+    sections 01/04/05/06/07/08 (§02/§03 intentionally absent per Handoff).
+  - Personal (Byngmount) — HomeScore hero gauge suppressed, honest "data
+    pending" copy, `/100` values are Walk/Transit/Sun sub-scores only.
+  - Tenant (1205-33 Helendale, $2,650/mo) — rent positioning + flags, **no
+    investment deal-score gauge** (confirmed); the one gauge ring is SunScout.
+  - Landlord (Helendale) — investment metrics via the live investor renderer
+    (the accepted live behavior; Handoff Proposal 03 is a separate IA call).
+  - **Zero stray terracotta anywhere** in any live DOM (light + dark). The only
+    salmon hit is `mapboxgl-canary`, mapbox-gl's own hidden WebGL-probe element
+    (CSS named color "salmon"), not our styling.
+  - Dark mode verified live: verdict tokens resolve to the new dark variants.
+- **Faux-browser window dots** on the landing proof card (were hardcoded
+  `#E26060/#E2B660/#7CB36B`, non-theme-aware) re-tokenized to neutral ink
+  `color-mix` shades — verdict tokens stay reserved for report data, not chrome.
+
+**Environment note:** Chrome's logical viewport in this harness is pinned at
+~4600px regardless of `resize_window`, so a true 380px browser overflow test
+wasn't reproducible here — the PR8 mobile suite covers 380px deterministically
+and passed. Screenshots also intermittently time out on the WebGL-heavy report
+pages; DOM inspection (reliable) was used for the token/terracotta verification.
+
+---
+
+## 🎨 HARBOUR CLOSEOUT — visual-fidelity pass + 380px overflow fix (2026-07-05, cont.)
+
+Closed out the Harbour re-skin: the visual pass the token session couldn't do,
+the known mobile overflow bug, and the untracked design source.
+
+- **Visual fidelity pass (Chrome, real data, iframe-viewport method).** The
+  harness pins Chrome's layout viewport at ~4608px (devicePixelRatio 0.42) and
+  `resize_window` doesn't move it, so screenshots were taken by mounting each
+  surface in a **same-origin iframe at a real 380/1440px viewport** (media
+  queries evaluate against the iframe width), CSS-transform-scaled to fill the
+  capture, WebGL disabled in-frame so MiniMap renders its SVG fallback. Saved
+  matrix: landing desktop-light (ss_7852a736l), landing mobile-380
+  (ss_161677ggz), investor light (ss_7913l5wfn) + dark (ss_6994vhn01), tenant
+  light (ss_647246eda), personal light (ss_1107aunzj), landlord light
+  (ss_4713dyq2h). Verified against the standalones — **no fidelity gaps found**:
+  - Gauge: large ink Instrument-Serif number, verdict pill inside the ring,
+    "/100" denominator, ring colour = verdict tone (investor/landlord 15/100
+    "Hard pass", red ring). (Last session's "87" was a mis-read Walk/Sun
+    sub-score, not the deal score — the real score is 15, correct for a $3.5M
+    sale underwritten as a rental.)
+  - Section questions: Instrument-Serif italic on the key noun ("Does the deal
+    _pencil?_", "…in the _bank_…", "Will the bank actually _fund_ it?").
+  - Mono for every number (`$2,650/mo`, `$3,499,000`, `$23,534/mo`); card
+    radius 18px (`--radius-lg`); card shadow = `--shadow-card`.
+  - Dark mode: body + cards flip to dark tokens; verdict tokens resolve to the
+    new dark variants; the AIVerdictBlock is a deliberate inverted card
+    (`background:var(--ink); color:var(--bg)` — identical to the standalone
+    rp-chrome.jsx), so it becomes a light hero card with dark text in dark mode
+    (legible, faithful).
+  - Personal HomeScore gauge suppressed → "Pricing & schools data pending"
+    honest card; tenant has a dark hero band + AI verdict + rent positioning,
+    **no deal-score gauge**.
+- **🔴 Fixed the pre-existing 380px landing horizontal overflow** (was
+  scrollWidth 751px). Root causes + fixes (all via existing collapse patterns,
+  no new hardcoded values): nav collapses to wordmark + theme toggle (hide
+  `.nav-links` ≤820px, `.lp-nav-cta` ≤640px); hero / #sunscout / #faq grids
+  get `grid-1col-mobile`; pricing `grid-2col-mobile`→`grid-1col-mobile` (tier
+  cards' min-content overflowed a 2-col split); Footer 5-col →
+  `grid-1col-mobile`; bottom CTA row `flex-wrap`. Verified in a 380px iframe:
+  scrollWidth 369<380, **zero unclipped elements past the edge**, no h-scroll
+  at 360/380/414px. Two landing mobile-collapse regression guards added.
+- **Committed `docs/PropScout Standalones/`** (the design source of truth,
+  previously an untracked dangling reference) — 17MB, no node_modules, nothing
+  > 5MB. `services/agents/` left untracked (unrelated, node_modules inside).
+- **Gates:** calc 344/344 · API 167/167 · web **855/855** (+2 new mobile
+  guards) · scrapers 151/151; typecheck clean both workspaces. 4 Footer
+  snapshots updated one-file-at-a-time (sole diff = the added collapse class).

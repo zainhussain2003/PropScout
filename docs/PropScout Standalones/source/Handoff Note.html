@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PropScout — Harbour re-skin · implementation handoff</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F1EA;--surface:#fff;--ink:#101820;--ink-2:#3A424B;--muted:#6E7681;
+    --line:rgba(16,24,32,.12);--line-strong:rgba(16,24,32,.2);--accent:#1F4E68;
+    --pass:#4F7A48;--caution:#8A6410;--fail:#B14A37;
+  }
+  *{box-sizing:border-box;margin:0;}
+  body{background:var(--bg);color:var(--ink-2);font-family:'Geist',system-ui,sans-serif;font-size:15px;line-height:1.6;}
+  .wrap{max-width:920px;margin:0 auto;padding:56px 32px 120px;}
+  h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:46px;line-height:1.02;letter-spacing:-.02em;color:var(--ink);margin-bottom:10px;}
+  h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:30px;color:var(--ink);margin:52px 0 8px;padding-top:26px;border-top:1px solid var(--line);letter-spacing:-.01em;}
+  h3{font-size:16px;font-weight:600;color:var(--ink);margin:26px 0 6px;}
+  .eyebrow{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
+  p{margin:0 0 12px;}
+  .lead{font-size:17px;color:var(--ink-2);max-width:70ch;}
+  ul{margin:0 0 14px;padding-left:20px;}li{margin-bottom:6px;}
+  code,.mono{font-family:'Geist Mono',monospace;font-size:.86em;background:rgba(16,24,32,.05);padding:1px 6px;border-radius:5px;color:var(--ink);}
+  pre{background:#0C1116;color:#EDEEE9;border-radius:12px;padding:22px 24px;overflow:auto;font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.65;margin:14px 0 4px;}
+  pre .c{color:#7C8590;}pre .v{color:#7FB076;}pre .a{color:#5E93B0;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:14px 0;}
+  .surface{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin:12px 0;}
+  .surface .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+  .surface .name{font-size:17px;font-weight:600;color:var(--ink);}
+  .surface .map{font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--accent);}
+  .surface .files{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;}
+  .order{font-size:13.5px;color:var(--ink-2);margin-top:8px;}
+  .order b{color:var(--ink);font-weight:500;}
+  .tag{display:inline-block;font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid var(--line-strong);color:var(--muted);}
+  .tag.prop{color:var(--caution);border-color:color-mix(in oklab,var(--caution) 40%,transparent);background:color-mix(in oklab,var(--caution) 8%,transparent);}
+  .tag.cap{color:var(--accent);border-color:color-mix(in oklab,var(--accent) 40%,transparent);background:color-mix(in oklab,var(--accent) 8%,transparent);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr;}}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0;}
+  td,th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+  td.mono{font-family:'Geist Mono',monospace;font-size:12px;color:var(--ink);}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-family:'Geist Mono',monospace;letter-spacing:.04em;}
+  @media print{body{background:#fff;}.wrap{padding:0;max-width:none;}h2{break-after:avoid;}.surface,.card,pre{break-inside:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">PropScout · implementation spec</div>
+  <h1>Harbour re-skin — engineer handoff</h1>
+  <p class="lead">Twelve design surfaces re-skinned onto the locked v2 "Harbour" system: two locked references, the four report types, and six flow/utility surfaces. This note maps every surface to its codebase source, lists the intended section order, flags each place the faithful build diverges from current IA, enumerates the product-image (CAPTURE) slots, and records everything inferred from the codebase that should be verified before build.</p>
+
+  <!-- ─────────────────────────────── A ─────────────────────────────── -->
+  <h2>A · Canonical token block</h2>
+  <p>Byte-identical to <code>Landing v2.html</code> and inlined in every surface <code>&lt;head&gt;</code>. Verified present and identical in all delivered files; a grep of each file confirms <b>zero</b> raw color/radius/shadow values outside the <code>:root</code> / <code>[data-theme]</code> blocks. Support classes live in <code>rp-global.css</code> and reference tokens or <code>color-mix()</code> only.</p>
+  <pre><span class="c">/* Light — deep harbour blue on warm off-white */</span>
+:root{
+  --bg:#F4F1EA; --bg-elev:#FBF9F3; --surface:#FFFFFF;
+  --ink:#101820; --ink-2:#3A424B; --muted:#6E7681;
+  --line:rgba(16,24,32,.11); --line-strong:rgba(16,24,32,.19);
+  --accent:<span class="a">#1F4E68</span>; --accent-hover:#17405A; --accent-ink:#FFFFFF; --accent-soft:rgba(31,78,104,.08);
+  --pass:<span class="v">#4F7A48</span>; --caution:#8A6410; --fail:#B14A37;   <span class="c">/* verdict data ONLY */</span>
+  --chip-bg:rgba(16,24,32,.045);
+  --shadow-card:0 1px 0 rgba(16,24,32,.04),0 10px 30px -18px rgba(16,24,32,.22);
+  --shadow-pop:0 28px 56px -28px rgba(16,24,32,.38),0 4px 16px -8px rgba(16,24,32,.14);
+  --r-sm:6px; --r:12px; --r-lg:18px;
+  --maxw:1280px; --gutter:clamp(20px,4vw,56px); --sect:clamp(72px,9vw,140px);
+}
+<span class="c">/* Dark — measured AA contrast, see inline comments in Landing v2 */</span>
+[data-theme="dark"]{
+  --bg:#0C1116; --bg-elev:#121820; --surface:#171F28;
+  --ink:#EDEEE9; --ink-2:#B9BDB9; --muted:#7C8590;
+  --line:rgba(237,238,233,.10); --line-strong:rgba(237,238,233,.19);
+  --accent:<span class="a">#5E93B0</span>; --accent-hover:#74A5BF; --accent-ink:#0C1116; --accent-soft:rgba(94,147,176,.12);
+  --pass:<span class="v">#7FB076</span>; --caution:#D9A83F; --fail:#E27F63;
+  --chip-bg:rgba(237,238,233,.06);
+  --shadow-card:0 1px 0 rgba(255,255,255,.02) inset,0 16px 40px -20px rgba(0,0,0,.6);
+  --shadow-pop:0 28px 64px -20px rgba(0,0,0,.72);
+}</pre>
+  <p style="margin-top:10px;"><b>Rule for report data:</b> <code>--pass / --caution / --fail</code> are reserved for verdict/score UI only — never for chrome. Every gauge number, ring colour, and verdict label derives from a single verdict object so they can never disagree.</p>
+
+  <!-- ─────────────────────────────── B ─────────────────────────────── -->
+  <h2>B · Per-surface map &amp; section order</h2>
+  <p>Where the live renderer and the standalone demo pages diverge, the <b>live renderer wins</b> (per the review rules). Section numbers are as rendered.</p>
+
+  <div class="surface">
+    <div class="h"><span class="name">Landing v2 · Mode Modal</span><span class="tag">locked — untouched</span></div>
+    <div class="files">Landing v2.html · Mode Modal.html — reference only; both honor <code>?theme=dark</code>.</div>
+  </div>
+
+  <h3>Batch A — the four reports</h3>
+  <div class="surface">
+    <div class="h"><span class="name">Investor Report</span><span class="map">ReportPage.tsx → InvestorReportContent (mode="investor", pro)</span></div>
+    <div class="files">Investor Report.html · investor-report-v2.jsx · rp-investor-sections.jsx · rp-blocks.jsx · rp-core.jsx · rp-chrome.jsx · rp-data.jsx</div>
+    <div class="order"><b>Order:</b> ReportNav → PropertyHero → AIVerdictBlock → §01 Investment metrics → §03 Rental comps (low-confidence inset) → §04 Cash to close (LTT) → §05 OSFI (live income slider) → §06 Risk flags → §07 Equity build → §08 SunScout → share bar → analyse-another. <b>§02 intentionally absent</b> (live renderer skips it).</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Tenant Report</span><span class="map">ReportPage.tsx → TenantReportContent (mode="tenant")</span></div>
+    <div class="files">Tenant Report.html · tenant-report-v2.jsx · rp-core / rp-chrome / rp-data</div>
+    <div class="order"><b>Order:</b> ReportNav → dark hero band → AIVerdictBlock → §01 Rent positioning (RentalCompsBar) → §02 Listing flags → §03 Schools nearby → §04 SunScout → share bar. <b>No investment deal-score gauge</b> — tenant is rent-positioning + flags only (confirmed).</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Personal Buyer Report</span><span class="map">PersonalBuyerPage.tsx (real-analysis path)</span></div>
+    <div class="files">Personal Buyer Report.html · personal-report-v2.jsx · rp-personal-sections.jsx · rp-personal-sections-2.jsx</div>
+    <div class="order"><b>Order:</b> hero (HomeScore gauge <b>suppressed</b> — "pricing &amp; schools data pending") → provenance line → verdict hero → §01 True monthly cost → §02 FMV (estimated) → §03 Comparable sales (sample) → §04 Schools (data pending) → §05 Neighbourhood → §06 SunScout → §07 Risks → §09 Before-you-bid checklist → conversion. §08 not rendered by the live page.</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Landlord Report</span><span class="map">LandlordPage.tsx (designed landlord surface)</span></div>
+    <div class="files">Landlord Report.html · landlord-report-v2.jsx · rp-landlord-sections.jsx · rp-investor-sections.jsx · rp-blocks.jsx</div>
+    <div class="order"><b>Order:</b> LandlordPropertyHero → LandlordVerdictHero → §01 Rent positioning (slider) → §02 Investment metrics → §03 Financing scenarios → §04 Rental comps → §05 Cash to close → §06 OSFI → §07 Risk flags → §08 Equity build → §09 Neighbourhood → §10 SunScout → §11 STR placeholder → §12 Landlord checklist.</div>
+  </div>
+
+  <h3>Batch B — flows</h3>
+  <div class="surface">
+    <div class="h"><span class="name">Pre-report flows</span><span class="map">analyzing.tsx (+ manual-entry fallback)</span></div>
+    <div class="files">Pre Report Flows.html · pre-report-v2.jsx · rp-stub.jsx</div>
+    <div class="order"><b>Two scenarios (Tweak):</b> (1) full-screen scraping progress — MiniNav, URL strip, headline, progress bar, 8-step list, live-preview card, comps card, reassurance strip; (2) manual-entry fallback — property-basics / money / photos+description form cards + sticky field-status summary. Amber fields = scraper misses.</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Paywall states</span><span class="map">components/paywall/* — ProBadge, TruncatedVerdict, LockedButton, LockedSection, UpgradeModal, HardLimitGate</span></div>
+    <div class="files">Paywall States.html · paywall-states-v2.jsx · paywall-components-v2.jsx · rp-core / rp-data</div>
+    <div class="order"><b>Composes over the real Batch A structures</b> (does not modify them): §01 truncated verdict (¶1 visible, ¶2 blurred) over the real ink verdict card; §02 locked Export-PDF / Save buttons in a real report-actions bar; §03 LockedSection over the real SunScout light score + real DealScore gauge (8/100); §04 hard monthly-limit gate; §05 five feature-specific upgrade modals. Pro badge is harbour blue (<code>--accent</code>).</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Account</span><span class="map">AccountPage.tsx (four tabs)</span></div>
+    <div class="files">Account.html · account-v2.jsx · rp-core / rp-stub</div>
+    <div class="order"><b>Tabs:</b> Saved analyses (filter chips + search + ReportCard grid + free-tier upgrade nudge) · Profile (identity + default investor assumptions + danger zone) · Plan &amp; billing (tier banner + usage bars + invoices when Pro) · Notifications (watch-list + product toggles). Tier is a Tweak (free / pro) driving all four tabs.</div>
+  </div>
+
+  <h3>Batch C — the rest</h3>
+  <div class="surface">
+    <div class="h"><span class="name">Error &amp; gate states</span><span class="map">NotFoundPage.tsx · analyzing.tsx error · states/NoCompsInlineState + ScraperPartial</span></div>
+    <div class="files">Error States.html · error-states-v2.jsx · rp-stub.jsx</div>
+    <div class="order"><b>Honest-by-default:</b> province gate → waitlist (not an error) · US block · expired listing → manual entry · scraper fail → manual entry · network timeout · 404 · expired share link · guest email capture · inline low-comp-confidence inset · inline scraper-partial. One primary action each; halo'd icon + eyebrow + serif headline + plain-English reason.</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Auth &amp; billing stubs</span><span class="map">MagicLinkSent/Confirmed · PasswordResetRequest/Confirm · EmailVerified · StripeWelcome/Cancelled</span></div>
+    <div class="files">Auth &amp; Billing Stubs.html · auth-stubs-v2.jsx · rp-stub.jsx</div>
+    <div class="order"><b>Seven states</b> sharing one StubState shell (icon-halo / serif headline / one primary action): magic-link sent, magic-link signed-in, reset-request, set-new-password, email-verified, Stripe welcome-to-Pro, Stripe cancelled.</div>
+  </div>
+  <div class="surface">
+    <div class="h"><span class="name">Legal — Privacy &amp; Terms</span><span class="map">legal/LegalShell.tsx + legal/legalContent.ts</span></div>
+    <div class="files">Legal Pages.html · legal-v2.jsx · rp-stub.jsx</div>
+    <div class="order"><b>TOC sidebar + scroll-spy</b> retained. Privacy (9 sections, PIPEDA) and Terms (11 sections) switch via a page pill; body copy is verbatim from <code>legalContent.ts</code>; sticky TOC highlights the active section on scroll. Print-to-PDF wired to the nav button.</div>
+  </div>
+
+  <!-- ─────────────────────────────── C ─────────────────────────────── -->
+  <h2>C · Proposals (built faithful; your call)</h2>
+  <p>Each was built the faithful way; these are places the current IA is arguably wrong.</p>
+  <div class="card">
+    <p><span class="tag prop">Proposal 01</span> &nbsp;<b>Investor §02 gap.</b> The live renderer numbers 01, 03…08 — §02 (Financing sliders) exists only on the standalone demo page, yet the hero still reads "Live recalc · sliders below." Either wire <code>FinancingSliders</code> in as §02 or renumber. Faithful build preserves the gap.</p>
+    <p><span class="tag prop">Proposal 02</span> &nbsp;<b>Duplicate <code>n</code> in InvestmentMetricsSection.</b> The shared component hardcodes <code>n="01"</code>; <code>LandlordPage.tsx</code> reuses it as its §02 → the live landlord demo prints "§ 01" twice, and STR + checklist both print "§ 11". Fixed on the design surface by adding an <code>n</code> prop (default "01"); propose the same upstream.</p>
+    <p><span class="tag prop">Proposal 03</span> &nbsp;<b>Landlord renderer.</b> <code>ReportPage.tsx</code> routes landlord mode through the investor renderer, which degrades on a for-rent listing (no sale price → "metrics unavailable"). The design follows <code>LandlordPage.tsx</code> (the designed §01–§12 surface) instead — the largest interpretation in the set.</p>
+    <p><span class="tag prop">Proposal 04</span> &nbsp;<b>Tenant report scope.</b> Live TenantReportContent is a 4-section summary; the tenant demo page has extra negotiation/cost/leverage sections. Faithful build keeps the 4-section live version; target-offer figures ($2,450–2,500, $1,800–2,400 saved) live in the AI verdict copy.</p>
+  </div>
+
+  <!-- ─────────────────────────────── D ─────────────────────────────── -->
+  <h2>D · CAPTURE slots (product images to drop in)</h2>
+  <p>Every product-image placeholder is marked with a <code>CAPTURE:</code> comment at its slot. Each needs a real screenshot; sizes are approximate render boxes.</p>
+  <table>
+    <thead><tr><th>Surface</th><th>Slot</th><th>Screenshot needed</th></tr></thead>
+    <tbody>
+      <tr><td>Investor / Personal / Landlord report</td><td class="mono">PropertyHero grid</td><td>Exterior hero + 3 thumbnails (living / kitchen / floorplan; landlord: skyline + living / 2nd bedroom / bedroom; personal: exterior + living / kitchen / balcony) — 2fr+1fr, ~360px tall.</td></tr>
+      <tr><td>Pre-report · scraping</td><td class="mono">live-preview photo</td><td>Casa III skyline unit exterior (Charles St E) — ~180px tall card top.</td></tr>
+      <tr><td>Pre-report · manual entry</td><td class="mono">drop-zone</td><td>User-supplied listing photos (drag/drop fill) — ~160px dashed zone.</td></tr>
+      <tr><td>Paywall · §03</td><td class="mono">3D obstruction</td><td>Mapbox 3D building tiles + shadow ray-trace render for the unit — fills the locked card, blurred beneath the upgrade overlay.</td></tr>
+      <tr><td>Account · Saved</td><td class="mono">ReportCard thumb</td><td>Listing hero per saved analysis — ~130px card top (8 cards in the fixture).</td></tr>
+      <tr><td>Landing v2 · Mode Modal</td><td class="mono">(locked)</td><td>Pre-existing CAPTURE slots in the locked files — unchanged.</td></tr>
+    </tbody>
+  </table>
+  <p class="tag cap" style="margin-top:6px;">All CAPTURE slots render as striped placeholders with a mono label until filled.</p>
+
+  <!-- ─────────────────────────────── E ─────────────────────────────── -->
+  <h2>E · Inferred from the codebase — please verify</h2>
+  <div class="card">
+    <ul>
+      <li><b>Data consistency enforced:</b> Buttermill = <span class="mono">$729,900 · $761/mo fee · $3,326/yr tax · cap 2.48% · CF −$1,833 · DSCR 0.45 · OSFI 6.79% fails @ $125K · 8/100 hard pass</span>. Charles St E = <span class="mono">Unit 2314 · 28 Charles Street East · $2,650/mo · building median $2,480 · 31 days</span>. The codebase Account fixture and the paywall mock originally showed <b>9</b>/100 and older Charles data (Unit 3705 · $2,150; Unit 3208 · 88 Harbour) — all corrected to the locked values. Confirm 8 vs 9 is the intended canonical.</li>
+      <li><b>Buttermill NOI</b> ($18,113) is back-derived to match the canonical 2.48% / −$1,833; the live app's expense card and the deal-score breakdown don't fully reconcile in the codebase either. Verify the expense model before it's a source of truth.</li>
+      <li><b>Landlord ownership figures</b> (purchased $585K/2019, value est. $645K, balance $404K @ 3.49%, taxes $2,890, fee $598) and the building live-listings are <b>landlord-entered placeholders</b> — purchase history isn't in scraped data. Replace with real entry UI values.</li>
+      <li><b>Account saved-analyses list</b> keeps the codebase's own 8-row demo fixture (Hamilton, Spadina, Oakville, Wellesley, etc.) beyond the two canonical properties — they demonstrate the filter/variety, not new invented listings. Swap for real user data at build.</li>
+      <li><b>Personal §03</b> shows the Burlington <b>sample</b> comps with a "Sample comparables" label, exactly as the live page does on a real address (comps source is Phase 2).</li>
+      <li><b>SunScout</b> shows live pvlib output on the report + landlord surfaces (geocode confirmed); 3D building-obstruction is the Pro/Phase-2 lock. STR = Phase-2 placeholder; legality check is live.</li>
+      <li><b>Honest states are the defaults</b>: low-confidence comps inset, suppressed personal gauge, schools "data pending", neighbourhood em-dashes where StatsCan/Teranet/permits have no source yet. No capability claim beyond comps / mortgage math / OSFI / LTT / flags / schools / Walk Score / SunScout / PDF.</li>
+      <li><b>Per-surface universals verified:</b> dark via <code>data-theme</code> (+ <code>?theme=</code> / <code>#theme=</code> for the harness and offline export), 380px with zero horizontal scroll, <code>:focus-visible</code>, <code>prefers-reduced-motion</code>, mono for every number, no emoji, line-icon SVG only.</li>
+    </ul>
+  </div>
+
+  <div class="foot">PropScout · Harbour re-skin · 12 surfaces · review harness: PropScout Review Harness.html</div>
+</div>
+</body>
+</html>

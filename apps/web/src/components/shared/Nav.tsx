@@ -64,10 +64,17 @@ function LandingNav({ dark, onToggleDark, onSignIn }: LandingNavProps): JSX.Elem
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
           </button>
-          <button className="btn btn-ghost" onClick={onSignIn} style={{ padding: '10px 14px' }}>
+          {/* Sign-in + Start-free collapse on mobile (lp-nav-cta) — the hero
+             input sits just below, so a duplicate nav CTA earns nothing and
+             would overflow the 380px viewport. Matches Landing v2. */}
+          <button
+            className="btn btn-ghost lp-nav-cta"
+            onClick={onSignIn}
+            style={{ padding: '10px 14px' }}
+          >
             Sign in
           </button>
-          <button className="btn btn-primary" onClick={onSignIn}>
+          <button className="btn btn-primary lp-nav-cta" onClick={onSignIn}>
             Start free <Icon name="arrow" size={14} />
           </button>
         </div>

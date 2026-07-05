@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PropScout — Mode Modal · Harbour</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PROPSCOUT DESIGN TOKENS · v2 "Harbour"
+   Port this block to tokens.css
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Surfaces — cool limestone, not warm cream */
+  --bg:          #EFEFEA;
+  --bg-elev:     #F7F7F3;
+  --surface:     #FFFFFF;
+
+  /* Ink */
+  --ink:         #101820;
+  --ink-2:       #3A424B;
+  --muted:       #6E7681;
+
+  /* Lines */
+  --line:        rgba(16, 24, 32, 0.11);
+  --line-strong: rgba(16, 24, 32, 0.19);
+
+  /* Brand accent — deep harbour blue */
+  --accent:      #1F4E68;
+  --accent-hover:#17405A;
+  --accent-ink:  #FFFFFF;
+  --accent-soft: rgba(31, 78, 104, 0.08);
+
+  /* Verdict states — reserved for report data ONLY
+     Light caution darkened for AA: 5.37:1 on white, 4.65:1 on --bg */
+  --pass:        #4F7A48;
+  --caution:     #8A6410;
+  --fail:        #B14A37;
+
+  /* Chips */
+  --chip-bg:     rgba(16, 24, 32, 0.045);
+
+  /* Shadows */
+  --shadow-card: 0 1px 0 rgba(16,24,32,.04), 0 10px 30px -18px rgba(16,24,32,.22);
+  --shadow-pop:  0 28px 56px -28px rgba(16,24,32,.38), 0 4px 16px -8px rgba(16,24,32,.14);
+
+  /* Radii */
+  --r-sm: 6px;
+  --r:    12px;
+  --r-lg: 18px;
+
+  /* Layout */
+  --maxw: 1280px;
+  --gutter: clamp(20px, 4vw, 56px);
+  --sect: clamp(72px, 9vw, 140px);
+}
+
+[data-theme="dark"] {
+  --bg:          #0C1116;
+  --bg-elev:     #121820;
+  --surface:     #171F28;
+  --ink:         #EDEEE9;
+  --ink-2:       #B9BDB9;
+  --muted:       #7C8590;
+  --line:        rgba(237, 238, 233, 0.10);
+  --line-strong: rgba(237, 238, 233, 0.19);
+  --accent:      #5E93B0;
+  --accent-hover:#74A5BF;
+  --accent-ink:  #0C1116;
+  --accent-soft: rgba(94, 147, 176, 0.12);
+  /* Verdict states, dark variants — measured against --surface #171F28 / --bg-elev #121820:
+     pass 6.63:1 / 7.11:1 · caution 7.62:1 / 8.17:1 · fail 5.90:1 / 6.33:1 */
+  --pass:        #7FB076;
+  --caution:     #D9A83F;
+  --fail:        #E27F63;
+  --chip-bg:     rgba(237, 238, 233, 0.06);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.02) inset, 0 16px 40px -20px rgba(0,0,0,.6);
+  --shadow-pop:  0 28px 64px -20px rgba(0,0,0,.72);
+}
+
+/* ── Reset & base ─────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  min-height: 100vh;
+  transition: background-color .3s ease, color .3s ease;
+}
+.serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+.mono  { font-family: 'Geist Mono', ui-monospace, monospace; }
+.num   { font-family: 'Geist Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ── Kicker (landing signature) ───────────────────────────── */
+.kicker {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.kicker::before { content: ""; width: 26px; height: 2px; background: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════
+   DEMO BACKDROP — dimmed suggestion of the landing behind the modal
+   (design-review scaffolding; the real app renders this over the live page)
+   ═══════════════════════════════════════════════════════════ */
+.ctx {
+  position: fixed; inset: 0;
+  padding: clamp(24px, 5vw, 64px) var(--gutter);
+  filter: blur(2px);
+  opacity: .45;
+  pointer-events: none;
+  user-select: none;
+}
+.ctx .brand { font-family: 'Instrument Serif', serif; font-size: 22px; }
+.ctx .brand .sc { font-style: italic; }
+.ctx h1 {
+  font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
+  font-size: clamp(34px, 4.6vw, 64px); line-height: 1.02; letter-spacing: -0.028em;
+  max-width: 640px; margin: 40px 0 26px;
+}
+.ctx .bar {
+  max-width: 560px; height: 58px; border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-card);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DEMO CONTROLS — variant + theme switch (design-review only)
+   ═══════════════════════════════════════════════════════════ */
+.demo-controls {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 500;
+  display: flex; gap: 8px; align-items: center;
+}
+/* On mobile the modal is a bottom sheet — park the demo controls at the top instead */
+@media (max-width: 520px) {
+  .demo-controls { bottom: auto; top: 16px; }
+}
+.seg {
+  display: flex; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  overflow: hidden; background: var(--surface);
+}
+.seg button {
+  border: none; background: transparent;
+  font-family: 'Geist Mono', monospace; font-size: 10.5px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 9px 13px; color: var(--muted);
+  transition: background-color .14s ease, color .14s ease;
+}
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
+.theme-btn {
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  width: 34px; height: 34px; display: grid; place-items: center; color: var(--ink-2);
+  transition: border-color .14s ease, color .14s ease;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════════════════════ */
+.scrim {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(12, 17, 22, 0.52);
+  backdrop-filter: blur(9px) saturate(140%);
+  -webkit-backdrop-filter: blur(9px) saturate(140%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: scrim-in .22s ease forwards;
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: 100%; max-width: 760px;
+  max-height: calc(100vh - 48px);
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+  animation: card-in .24s ease forwards;
+}
+@keyframes card-in { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.modal-close {
+  position: absolute; top: 13px; right: 13px; z-index: 2;
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  display: grid; place-items: center; font-size: 16px; line-height: 1;
+  transition: color .14s ease, border-color .14s ease;
+}
+.modal-close:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.modal-close:disabled { opacity: .35; cursor: not-allowed; }
+
+.modal-scroll {
+  overflow-y: auto;
+  padding: clamp(20px, 2.6vw, 32px);
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.modal-scroll::-webkit-scrollbar { width: 8px; }
+.modal-scroll::-webkit-scrollbar-track { background: transparent; margin: 12px 0; }
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong); border-radius: 99px;
+  border: 2px solid var(--surface); background-clip: content-box;
+}
+
+/* ── Listing preview — echoes the landing proof card ──────── */
+.preview {
+  border: 1px solid var(--line); border-radius: var(--r);
+  overflow: hidden;
+}
+.preview-head {
+  padding: 11px 16px;
+  background: var(--ink); color: var(--bg);
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+[data-theme="dark"] .preview-head { background: var(--bg-elev); color: var(--ink); }
+.preview-head .found {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; opacity: .75;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 99px; background: var(--pass); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.preview-head .price {
+  font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 10px; border-radius: 99px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+}
+[data-theme="dark"] .preview-head .price { background: var(--chip-bg); border-color: var(--line-strong); }
+.preview-body {
+  padding: 12px 16px;
+  background: var(--surface);
+  display: flex; align-items: center; gap: 14px;
+}
+/* CAPTURE: primary listing photo from the scraper output for this URL */
+.preview-photo {
+  width: 76px; height: 54px; border-radius: var(--r-sm); flex-shrink: 0;
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--ink) 8%, transparent), var(--accent-soft)),
+    repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklab, var(--ink) 4%, transparent) 6px 7px);
+  border: 1px solid var(--line);
+}
+.preview-addr {
+  font-family: 'Instrument Serif', serif; font-size: 18px; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preview-specs {
+  margin-top: 3px;
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+  font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Question ─────────────────────────────────────────────── */
+.question { margin: 22px 0 18px; }
+.question h2 {
+  font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
+  font-size: clamp(23px, 2.4vw, 31px);
+  line-height: 1.1; letter-spacing: -0.025em;
+  margin-top: 12px;
+}
+.question h2 em { color: var(--accent); }
+
+/* ── Choice cards ─────────────────────────────────────────── */
+.choices { display: flex; gap: 12px; align-items: stretch; }
+@media (max-width: 640px) { .choices { flex-direction: column; } }
+
+.choice {
+  flex: 1 1 0; text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 20px;
+  color: inherit; font: inherit;
+  position: relative;
+  display: flex; flex-direction: column;
+  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease, background-color .2s ease, opacity .22s ease;
+}
+.choice:hover:not(.dimmed), .choice.selected {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+.choice.selected { background: var(--accent-soft); }
+.choice.dimmed { opacity: .45; transform: none; }
+
+.choice .disc {
+  width: 38px; height: 38px; border-radius: var(--r-sm);
+  background: var(--accent-soft); color: var(--accent);
+  display: grid; place-items: center;
+  margin-bottom: 14px;
+  transition: background-color .16s ease, color .16s ease;
+}
+.choice:hover:not(.dimmed) .disc, .choice.selected .disc { background: var(--accent); color: var(--accent-ink); }
+
+.choice .who {
+  font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
+  transition: color .16s ease;
+}
+.choice:hover:not(.dimmed) .who, .choice.selected .who { color: var(--accent); }
+
+.choice h3 {
+  font-family: 'Instrument Serif', serif; font-weight: 400;
+  font-size: 21px; line-height: 1.12; letter-spacing: -0.015em;
+  margin-bottom: 6px;
+}
+.choice .sub { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin-bottom: 14px; }
+
+.choice ul { list-style: none; padding: 0; display: grid; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
+.choice li { display: flex; gap: 9px; align-items: baseline; }
+.choice li::before { content: "—"; color: var(--accent); flex-shrink: 0; }
+
+.choice .go {
+  margin-top: auto; padding-top: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.choice .go .lbl {
+  font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  transition: color .16s ease;
+}
+.choice:hover:not(.dimmed) .go .lbl, .choice.selected .go .lbl { color: var(--accent); }
+.choice .go .arr {
+  width: 28px; height: 28px; border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong); color: var(--ink-2);
+  display: grid; place-items: center;
+  transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.choice:hover:not(.dimmed) .arr, .choice.selected .arr {
+  background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
+  transform: translateX(2px);
+}
+
+.free-pill {
+  position: absolute; top: 16px; right: 16px;
+  font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  background: var(--accent); color: var(--accent-ink);
+  padding: 4px 10px; border-radius: 99px;
+}
+
+/* ── Loading bar ──────────────────────────────────────────── */
+.loading { margin-top: 20px; display: none; }
+.loading.on { display: block; }
+.loading .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.loading .lab {
+  font-family: 'Geist Mono', monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.loading .track { height: 3px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.loading .fill { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; transition: width .18s ease; }
+
+/* ── Why we ask ───────────────────────────────────────────── */
+.why { margin-top: 16px; display: flex; flex-direction: column; align-items: center; }
+.why-btn {
+  background: none; border: none; font-size: 13px; color: var(--muted);
+  padding: 6px 12px; transition: color .14s ease;
+}
+.why-btn:hover { color: var(--accent); }
+.why-body {
+  display: none;
+  font-size: 13px; color: var(--ink-2); text-align: center;
+  max-width: 520px; margin-top: 4px; line-height: 1.6;
+}
+.why.open .why-body { display: block; }
+
+/* ── Mobile: bottom-sheet (mirrors the app's ≤480px BottomSheet) ── */
+@media (max-width: 520px) {
+  .scrim { align-items: flex-end; padding: 0; }
+  .modal {
+    max-width: none; max-height: 92vh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-bottom: none;
+    animation: sheet-in .26s ease forwards;
+  }
+  @keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal::before {
+    content: ""; display: block;
+    width: 38px; height: 4px; border-radius: 99px;
+    background: var(--line-strong);
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+  .preview-addr { font-size: 16px; }
+  .question h2 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Dimmed landing suggestion behind the modal (demo scaffolding) ═══ -->
+<div class="ctx" aria-hidden="true">
+  <div class="brand">Prop<span class="sc">Scout</span></div>
+  <h1>Know what a Canadian listing is worth before you sign anything.</h1>
+  <div class="bar"></div>
+</div>
+
+<!-- ═══ Demo controls (design review only — not product UI) ═══ -->
+<div class="demo-controls">
+  <div class="seg" role="group" aria-label="Listing variant">
+    <button id="segRent" class="on">For rent</button>
+    <button id="segSale">For sale</button>
+  </div>
+  <button class="theme-btn" id="themeToggle" aria-label="Toggle dark mode">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 13A9 9 0 0 1 11 3a8 8 0 1 0 10 10z"/></svg>
+  </button>
+</div>
+
+<!-- ═══ THE MODAL ═══ -->
+<div class="scrim" id="scrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Choose your report type">
+    <button class="modal-close" id="closeBtn" aria-label="Close">×</button>
+
+    <div class="modal-scroll">
+      <!-- Listing preview — proof-card treatment: ink head + body strip -->
+      <div class="preview">
+        <div class="preview-head">
+          <span class="found"><span class="live-dot"></span><span id="pvFound">Listing found · for rent</span></span>
+          <span class="price" id="pvPrice">$2,650/mo</span>
+        </div>
+        <div class="preview-body">
+          <div class="preview-photo"></div>
+          <div style="min-width:0;">
+            <div class="preview-addr" id="pvAddr">Unit 2314 · 28 Charles Street East</div>
+            <div class="preview-specs" id="pvSpecs"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question -->
+      <div class="question">
+        <span class="kicker">One quick question</span>
+        <h2 id="qText"></h2>
+      </div>
+
+      <!-- Choice cards -->
+      <div class="choices" id="choices"></div>
+
+      <!-- Loading bar -->
+      <div class="loading" id="loading">
+        <div class="row">
+          <span class="lab" id="loadLab">Opening your report · 0%</span>
+          <span class="lab">~12s</span>
+        </div>
+        <div class="track"><div class="fill" id="loadFill"></div></div>
+      </div>
+
+      <!-- Why we ask -->
+      <div class="why" id="why">
+        <button class="why-btn" id="whyBtn">+ Why are we asking this?</button>
+        <p class="why-body">
+          The numbers that matter for a tenant are different from the numbers a landlord cares
+          about — even on the same listing. We tailor the whole report to your angle so you're
+          not reading sections that don't apply. You can switch later from inside the report.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data — canonical demo properties (consistent across all Harbour surfaces) ──
+var LISTINGS = {
+  rent: {
+    found: 'Listing found · for rent',
+    price: '$2,650/mo',
+    addr: 'Unit 2314 · 28 Charles Street East',
+    specs: ['Toronto · M4Y', '2 bed · 2 bath', '780 sqft', '31 days on market'],
+    q: 'Are you a <em>tenant</em> looking at this, or a landlord pricing it?',
+    options: [
+      {
+        key: 'tenant', who: 'For the tenant', free: true,
+        title: "I'm evaluating this as a tenant",
+        sub: "I want to know if it's priced fairly and how to negotiate.",
+        icon: 'key',
+        hints: ['Rent positioning vs building & FSA', 'Listing accuracy · fake-bedroom flags', 'Negotiation target & leverage']
+      },
+      {
+        key: 'landlord', who: 'For the landlord',
+        title: "I'm pricing my own unit",
+        sub: 'I want to know if my asking rent pencils against the market.',
+        icon: 'flag',
+        hints: ['Yield vs market median', 'Building supply pressure', '12-month trend & vacancy']
+      }
+    ]
+  },
+  sale: {
+    found: 'Listing found · for sale',
+    price: '$729,900',
+    addr: 'Unit 5702 · 5 Buttermill Avenue',
+    specs: ['Vaughan · L4K', '3 bed · 2 bath', '950 sqft', 'Condo fee $761/mo'],
+    q: 'Are you buying this as an <em>investment</em>, or to live in?',
+    options: [
+      {
+        key: 'investor', who: 'For the investor',
+        title: "I'm buying it as an investment",
+        sub: 'I want to rent it out (or model whether I should).',
+        icon: 'chart',
+        hints: ['Cap rate, cash flow, DSCR', 'OSFI stress test · Ontario LTT', 'Scout deal score · 0–100']
+      },
+      {
+        key: 'personal', who: 'For the home buyer',
+        title: "I'm buying it to live in",
+        sub: 'I want to know the real monthly cost and the right offer.',
+        icon: 'house',
+        hints: ['True monthly cost of ownership', 'Fair-market band from recent sales', 'School catchments · walkability']
+      }
+    ]
+  }
+};
+
+// Line-icon SVGs (stroke 1.6, no emoji)
+var ICONS = {
+  key:   '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 13l9-9M16 8l3 3"/></svg>',
+  flag:  '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4M4 4h12l-2 4 2 4H4"/></svg>',
+  chart: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg>',
+  house: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  arrow: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'
+};
+
+var state = { kind: 'rent', selected: null, loading: false, timer: null };
+
+function render() {
+  var d = LISTINGS[state.kind];
+  document.getElementById('pvFound').textContent = d.found;
+  document.getElementById('pvPrice').textContent = d.price;
+  document.getElementById('pvAddr').textContent = d.addr;
+  document.getElementById('pvSpecs').innerHTML = d.specs.map(function(s){ return '<span>' + s + '</span>'; }).join('<span>·</span>');
+  document.getElementById('qText').innerHTML = d.q;
+
+  var wrap = document.getElementById('choices');
+  wrap.innerHTML = '';
+  d.options.forEach(function (opt) {
+    var b = document.createElement('button');
+    b.className = 'choice';
+    b.setAttribute('data-key', opt.key);
+    b.innerHTML =
+      (opt.free ? '<span class="free-pill">Free · no sign-in</span>' : '') +
+      '<span class="disc">' + ICONS[opt.icon] + '</span>' +
+      '<span class="who">' + opt.who + '</span>' +
+      '<h3>' + opt.title + '</h3>' +
+      '<p class="sub">' + opt.sub + '</p>' +
+      '<ul>' + opt.hints.map(function (h) { return '<li>' + h + '</li>'; }).join('') + '</ul>' +
+      '<span class="go"><span class="lbl">Open this report</span><span class="arr">' + ICONS.arrow + '</span></span>';
+    b.addEventListener('click', function () { select(opt.key); });
+    wrap.appendChild(b);
+  });
+
+  document.getElementById('loading').classList.remove('on');
+  state.selected = null;
+  state.loading = false;
+  if (state.timer) { clearInterval(state.timer); state.timer = null; }
+}
+
+function select(key) {
+  if (state.loading) return;
+  state.selected = key;
+  state.loading = true;
+
+  document.querySelectorAll('.choice').forEach(function (c) {
+    var mine = c.getAttribute('data-key') === key;
+    c.classList.toggle('selected', mine);
+    c.classList.toggle('dimmed', !mine);
+  });
+
+  var loadEl = document.getElementById('loading');
+  var lab = document.getElementById('loadLab');
+  var fill = document.getElementById('loadFill');
+  loadEl.classList.add('on');
+
+  var p = 0;
+  state.timer = setInterval(function () {
+    p = Math.min(p + 12, 100);
+    lab.textContent = 'Opening your report · ' + p + '%';
+    fill.style.width = p + '%';
+    if (p >= 100) {
+      clearInterval(state.timer); state.timer = null;
+      // Demo: reset after completing. Real app calls onSelect(key) → routes to the report.
+      setTimeout(render, 700);
+    }
+  }, 180);
+}
+
+// Variant segment
+document.getElementById('segRent').addEventListener('click', function () { setKind('rent'); });
+document.getElementById('segSale').addEventListener('click', function () { setKind('sale'); });
+function setKind(k) {
+  state.kind = k;
+  document.getElementById('segRent').classList.toggle('on', k === 'rent');
+  document.getElementById('segSale').classList.toggle('on', k === 'sale');
+  render();
+}
+
+// Theme toggle — same key family as the landing
+(function () {
+  var KEY = 'propscout-v2-theme';
+  var param = new URLSearchParams(location.search).get('theme');
+  var saved = param || localStorage.getItem(KEY);
+  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (dark) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem(KEY, 'light'); }
+    else { document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem(KEY, 'dark'); }
+  });
+})();
+
+// Why we ask
+document.getElementById('whyBtn').addEventListener('click', function () {
+  var w = document.getElementById('why');
+  w.classList.toggle('open');
+  this.textContent = w.classList.contains('open') ? '— Hide why we ask' : '+ Why are we asking this?';
+});
+
+// Close affordances — demo: flash the scrim (real app calls onClose)
+function demoClose() {
+  if (state.loading) return;
+  var m = document.querySelector('.modal');
+  m.style.transform = 'scale(.985)';
+  setTimeout(function () { m.style.transform = ''; }, 140);
+}
+document.getElementById('closeBtn').addEventListener('click', demoClose);
+document.getElementById('scrim').addEventListener('click', function (e) { if (e.target === this) demoClose(); });
+window.addEventListener('keydown', function (e) { if (e.key === 'Escape') demoClose(); });
+
+render();
+</script>
+</body>
+</html>

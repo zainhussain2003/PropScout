@@ -59,8 +59,10 @@ export function Footer(): JSX.Element {
       }}
     >
       <div className="container col gap-32">
-        {/* Grid: brand column + 4 link columns */}
+        {/* Grid: brand column + 4 link columns (single column on mobile —
+           the brand chip row won't fit a 2-col split at 380px) */}
         <div
+          className="grid-1col-mobile"
           style={{
             display: 'grid',
             gridTemplateColumns: '1.4fr repeat(4, 1fr)',
