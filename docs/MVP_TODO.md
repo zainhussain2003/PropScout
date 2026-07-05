@@ -118,13 +118,14 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 
 - [x] Copy `tokens.css` into `apps/web/src/styles/` and import in global stylesheet
+- [x] **Harbour re-skin (2026-07-05)** — port locked `Landing v2.html` tokens (limestone `#EFEFEA` bg, harbour `#1F4E68` accent, `--accent-hover`, `6/12/18` radii, dark verdict variants); fixes the dark `--pass/--caution/--fail` contrast bug; verified live across all 4 report modes, zero stray terracotta, all suites at floors. `tokens.css` now supersedes the warm-cream prototypes.
 - [x] Add Google Fonts preconnect + link in `apps/web/index.html` (Instrument Serif + Geist + Geist Mono)
 - [x] React + TypeScript project setup (Vite)
 - [x] `<Wordmark height>` — "Prop*Scout*" wordmark with ScoutMark glyph
 - [x] `<ScoutMark size color>` — standalone glyph (used as watermark on dark cards)
 - [x] `<Icon name size stroke>` — full line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot)
 - [x] `<Chip>` — inline pill tag (with and without accent dot variant)
-- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → terracotta 0.15s
+- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → harbour accent 0.15s
 - [x] `<Card>` — surface + line + shadow + radius-lg
 - [x] `<SectionHead n topic question verdict tone>` — every report section header (shared across all 4 reports)
 - [x] `<VerdictPill tone label>` — pass / caution / fail pill, class-only colour (no inline styles)

@@ -101,41 +101,55 @@ mono eyebrow — 10–11px        · letter-spacing 0.14–0.18em · uppercase
 ### Colors (full token list in `tokens.css`)
 
 ```css
-/* Light mode */
---bg: #f4f2ed; /* neutral limestone — page background */
---bg-elev: #faf8f3; /* lifted limestone — input fields, soft cards */
+/* Light mode — "Harbour" system (2026-07-05); values are byte-for-byte
+   from docs/PropScout Standalones/source/surfaces/Landing v2.html */
+--bg: #efefea; /* cool limestone — page background */
+--bg-elev: #f7f7f3; /* lifted limestone — input fields, soft cards */
 --surface: #ffffff; /* hard surface — cards */
---ink: #0e1320; /* near-black with cool tint — text + buttons */
---ink-2: #3b3a35; /* body copy */
---muted: #76716a; /* labels, hints */
---line: rgba(14, 19, 32, 0.1);
---line-strong: rgba(14, 19, 32, 0.16);
+--ink: #101820; /* near-black with cool tint — text + buttons */
+--ink-2: #3a424b; /* body copy */
+--muted: #6e7681; /* labels, hints */
+--line: rgba(16, 24, 32, 0.11);
+--line-strong: rgba(16, 24, 32, 0.19);
 
---accent: #1f4e68; /* deep harbour blue — brand + Pro / CTA */
+--accent: #1f4e68; /* deep harbour blue — brand + Pro / CTA (8.94:1 on white) */
+--accent-hover: #17405a; /* darker harbour — hover state */
 --accent-ink: #ffffff;
 --accent-soft: rgba(31, 78, 104, 0.08); /* tinted fills — chips, hover washes */
 
-/* Data-state colors — used for verdicts, status pills, deal-score gauge */
+/* Data-state colors — verdicts, status pills, deal-score gauge ONLY (never chrome) */
 --pass: #4f7a48; /* sage — good deal, pass */
---caution: #b98724; /* amber — caution, soft warning */
+--caution: #8a6410; /* amber (AA-darkened) — caution, soft warning */
 --fail: #b14a37; /* clay — hard pass, fail */
 ```
 
-> **PR10 divergence (2026-07-02) — `tokens.css` is ahead of the prototype HTML files.**
-> The 13 prototypes in `designs/` still ship the original palette; the values below
-> changed in `apps/web/src/styles/tokens.css` only. When comparing a component to its
-> prototype, expect these deltas and nothing else:
+> **Harbour re-skin (2026-07-05) — `tokens.css` now supersedes every warm-cream
+> prototype in `designs/` and `docs/PropScout Standalones/`.** The 13 legacy HTML
+> prototypes still ship the original terracotta/cream palette; the canonical values
+> live in `apps/web/src/styles/tokens.css`, ported byte-for-byte from the locked
+> `Landing v2.html`. When comparing a component to an old prototype, expect these
+> deltas and nothing else:
 >
-> | Token               | Prototype (old)      | Production (new)       | Rationale                                                                                                              |
-> | ------------------- | -------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-> | `--accent`          | `#D97757` terracotta | `#1F4E68` harbour blue | Terracotta collided with `--fail` clay (#B14A37) at a glance and read "AI-template warm". Blue: 8.94:1 on white (AAA). |
-> | `--bg`              | `#F1ECE2` warm cream | `#F4F2ED` limestone    | Cooler neutral ground so verdict colors and the blue accent carry the temperature.                                     |
-> | `--bg-elev`         | `#FBF7EE`            | `#FAF8F3`              | Follows `--bg`.                                                                                                        |
-> | `--accent-soft`     | — (did not exist)    | `rgba(31,78,104,0.08)` | Tinted fill for chips/washes/image placeholders without hardcoding an alpha hex.                                       |
-> | dark `--accent`     | — (inherited light)  | `#6FA3C4`              | Light terracotta was reused in dark mode unexamined; lightened blue measures 6.39:1 on the dark surface (AA).          |
-> | dark `--accent-ink` | — (inherited)        | `#0A0D14`              | White on `#6FA3C4` is 2.72:1 (fails AA); the dark bg ink measures 7.14:1.                                              |
+> | Token               | Warm prototype (old)  | Harbour production (new) | Rationale                                                                                                                                  |
+> | ------------------- | --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+> | `--accent`          | `#D97757` terracotta  | `#1F4E68` harbour blue   | Terracotta collided with `--fail` clay (#B14A37) at a glance and read "AI-template warm". Blue: 8.94:1 on white (AAA).                     |
+> | `--accent-hover`    | — (did not exist)     | `#17405A` / dk `#74A5BF` | Explicit darker-harbour hover; ink CTAs hover to it. 10.95:1 on white.                                                                     |
+> | `--bg`              | `#F1ECE2` warm cream  | `#EFEFEA` cool limestone | Cooler neutral ground (past the PR10 interim `#F4F2ED`) so verdict colors and the blue accent carry the temperature.                       |
+> | `--bg-elev`         | `#FBF7EE`             | `#F7F7F3`                | Follows `--bg`.                                                                                                                            |
+> | `--ink` / `--ink-2` | `#0E1320` / `#3B3A35` | `#101820` / `#3A424B`    | Harbour ink is a touch cooler; body ink loses the warm-brown cast.                                                                         |
+> | `--caution`         | `#B98724`             | `#8A6410`                | Darkened for AA: 5.37:1 on white, 4.65:1 on `--bg` (the brighter amber failed on limestone).                                               |
+> | `--accent-soft`     | — (did not exist)     | `rgba(31,78,104,0.08)`   | Tinted fill for chips/washes/image placeholders without hardcoding an alpha hex.                                                           |
+> | dark `--accent`     | — (inherited light)   | `#5E93B0`                | Light terracotta was reused in dark mode unexamined; harbour-tint measures 4.97:1 on `--surface`, 5.67:1 on `--bg`.                        |
+> | dark `--accent-ink` | — (inherited)         | `#0C1116`                | White on `#5E93B0` fails AA; the dark bg ink measures 5.67:1.                                                                              |
+> | dark `--pass`       | — (**undefined**)     | `#7FB076`                | **Contrast bug fix:** the dark block never redefined the verdict tokens, so the light sage bled onto dark surfaces. 6.63:1 on `--surface`. |
+> | dark `--caution`    | — (**undefined**)     | `#D9A83F`                | Same fix — light amber under-contrasted on dark. 7.62:1 on `--surface`.                                                                    |
+> | dark `--fail`       | — (**undefined**)     | `#E27F63`                | Same fix — light clay under-contrasted on dark. 5.90:1 on `--surface`.                                                                     |
 >
-> All six pairings are pinned by `apps/web/src/styles/btnContrast.test.ts`.
+> Radii were also ported to `6 / 12 / 18px` (`--radius-sm/--radius/--radius-lg`,
+> with `--r-*` aliases) and `--sect` added (aliases `--pad-y`). The accent/CTA
+> pairings are pinned by `apps/web/src/styles/btnContrast.test.ts`; every
+> accent/verdict pair is ≥ 4.5:1 in both themes (ratios recorded in the
+> `tokens.css` header).
 
 Dark mode tokens are defined on `[data-theme="dark"]`. See `tokens.css`.
 

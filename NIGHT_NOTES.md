@@ -817,3 +817,51 @@ those sections in both files.
    independently — I had to edit both. Worth picking one canonical copy (or making
    one a pointer to the other). A full web-component-tree audit of the structure is
    also still pending. Quick decision needed before I invest in either.
+
+---
+
+## 🎨 HARBOUR RE-SKIN — token port + live-verdict dark contrast fix (2026-07-05)
+
+Ported the locked "Harbour" token system into production and verified the whole
+app re-skins from tokens alone.
+
+- **`tokens.css` ported byte-for-byte from `Landing v2.html`** (the locked
+  standalone), onto the repo's own token _names_. bg cream `#F4F2ED` → cool
+  limestone `#EFEFEA`; added `--accent-hover` (`#17405A` light / `#74A5BF`
+  dark); radii → `6/12/18`; added `--sect` (aliases `--pad-y`) and `--r-*`
+  aliases. Accent stays harbour `#1F4E68` / dark `#5E93B0`; caution darkened
+  to `#8A6410` for AA on limestone.
+- **🔴 Live dark-mode contrast bug fixed.** The `[data-theme="dark"]` block
+  never redefined `--pass / --caution / --fail`, so the _light_ verdict colors
+  bled onto dark surfaces (sage/amber/clay under-contrasted on `#171F28`).
+  Added the measured dark variants: `--pass #7FB076` (6.63:1), `--caution
+#D9A83F` (7.62:1), `--fail #E27F63` (5.90:1), all on `--surface`. Every
+  accent/verdict pair is now ≥ 4.5:1 in **both** themes — ratios computed and
+  recorded in the `tokens.css` header + the DESIGN_README divergence table.
+- **Zero-breakage.** Snapshots reference `var(--*)`, not resolved values, so
+  the value swap touched no test. Gates after the change: calc **344/344**,
+  API **167/167**, web **853/853**, scrapers **151/151**; typecheck clean both
+  workspaces.
+- **Live E2E (Chrome, real data).** Re-ran both stored listings across all four
+  modes and inspected each rendered report's DOM:
+  - Investor (662 Byngmount, $3.499M) — full report, deal score 87/100,
+    sections 01/04/05/06/07/08 (§02/§03 intentionally absent per Handoff).
+  - Personal (Byngmount) — HomeScore hero gauge suppressed, honest "data
+    pending" copy, `/100` values are Walk/Transit/Sun sub-scores only.
+  - Tenant (1205-33 Helendale, $2,650/mo) — rent positioning + flags, **no
+    investment deal-score gauge** (confirmed); the one gauge ring is SunScout.
+  - Landlord (Helendale) — investment metrics via the live investor renderer
+    (the accepted live behavior; Handoff Proposal 03 is a separate IA call).
+  - **Zero stray terracotta anywhere** in any live DOM (light + dark). The only
+    salmon hit is `mapboxgl-canary`, mapbox-gl's own hidden WebGL-probe element
+    (CSS named color "salmon"), not our styling.
+  - Dark mode verified live: verdict tokens resolve to the new dark variants.
+- **Faux-browser window dots** on the landing proof card (were hardcoded
+  `#E26060/#E2B660/#7CB36B`, non-theme-aware) re-tokenized to neutral ink
+  `color-mix` shades — verdict tokens stay reserved for report data, not chrome.
+
+**Environment note:** Chrome's logical viewport in this harness is pinned at
+~4600px regardless of `resize_window`, so a true 380px browser overflow test
+wasn't reproducible here — the PR8 mobile suite covers 380px deterministically
+and passed. Screenshots also intermittently time out on the WebGL-heavy report
+pages; DOM inspection (reliable) was used for the token/terracotta verification.
