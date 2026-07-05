@@ -89,6 +89,29 @@ describe('LandingPage', () => {
     expect(screen.getByText(/hamilton duplex/i)).toBeInTheDocument()
   })
 
+  // ── Mobile collapse (380px no-overflow guard) ─────────────────────
+  // jsdom does no layout, so these assert the CSS-collapse hooks are
+  // present rather than measuring width. The @media(max-width:480px)
+  // rules in global.css do the actual collapse; these guard the classes
+  // that fixed the pre-existing 380px horizontal-overflow bug on the
+  // hero, #sunscout, #faq, pricing, and footer grids + the nav CTAs.
+  it('marks the multi-column landing grids for single-column mobile collapse', () => {
+    const { container } = renderLanding()
+    // Every fixed multi-column grid on the page must carry a mobile
+    // collapse class so it does not overflow the 380px viewport.
+    const collapsible = container.querySelectorAll('.grid-1col-mobile, .grid-2col-mobile')
+    expect(collapsible.length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('marks the landing nav CTAs so they collapse below 640px', () => {
+    renderLanding()
+    // Sign in + Start free carry lp-nav-cta (hidden ≤640px); the centre
+    // links carry nav-links (hidden ≤820px). Together they leave only the
+    // wordmark + theme toggle on mobile, matching Landing v2.
+    expect(document.querySelectorAll('.lp-nav-cta').length).toBeGreaterThanOrEqual(2)
+    expect(document.querySelector('.nav-links')).not.toBeNull()
+  })
+
   // ── URL validation ────────────────────────────────────────────────
 
   it('shows error state when a non-listing URL is submitted', async () => {

@@ -989,7 +989,10 @@ function ReportShowcase(): JSX.Element {
         </div>
 
         {/* Two-column report grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 22 }}>
+        <div
+          className="grid-1col-mobile"
+          style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 22 }}
+        >
           {/* Left column */}
           <div className="col" style={{ gap: 22 }}>
             <ShowcaseAIVerdictBlock
@@ -1899,6 +1902,7 @@ function SunScoutSection(): JSX.Element {
   return (
     <section id="sunscout" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div
+        className="grid-1col-mobile"
         style={{
           background: 'var(--bg-elev)',
           border: '1px solid var(--line)',
@@ -2143,7 +2147,7 @@ function PricingSection(): JSX.Element {
         </div>
 
         <div
-          className="grid-2col-mobile"
+          className="grid-1col-mobile"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
@@ -2316,6 +2320,7 @@ function FAQSection(): JSX.Element {
   return (
     <section id="faq" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1.4fr',
@@ -2420,7 +2425,7 @@ function CTASection(): JSX.Element {
             Three free analyses every month. No credit card, no demo call, no team to talk to.
             You&apos;ll know if the deal is dead in sixty seconds.
           </p>
-          <div className="row gap-12">
+          <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
             <a
               href="#hero"
               className="btn btn-accent"
