@@ -882,10 +882,34 @@ function ReportShowcase(): JSX.Element {
           background: 'var(--bg-elev)',
         }}
       >
+        {/* Faux-browser window controls — decorative chrome, so neutral ink
+           shades (not verdict tokens, which are reserved for report data) and
+           theme-aware via color-mix. */}
         <div className="row gap-8">
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#E26060' }} />
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#E2B660' }} />
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#7CB36B' }} />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--ink) 26%, transparent)',
+            }}
+          />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--ink) 18%, transparent)',
+            }}
+          />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--ink) 12%, transparent)',
+            }}
+          />
         </div>
         <div
           className="row gap-8"
@@ -1251,6 +1275,8 @@ function HeroStaticMap(): JSX.Element | null {
     type: 'FeatureCollection',
     features: comps.map((c) => ({
       type: 'Feature',
+      // Mapbox Static Images API overlay — needs a literal hex (no CSS vars);
+      // #1F4E68 mirrors the harbour --accent token.
       properties: { fill: '#1F4E68', 'fill-opacity': 1, stroke: '#ffffff', 'stroke-width': 1 },
       geometry: { type: 'Polygon', coordinates: [diamond(c)] },
     })),
