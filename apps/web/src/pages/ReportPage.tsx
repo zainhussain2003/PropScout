@@ -35,6 +35,7 @@ import { DealScore as DealScoreWidget } from '../components/analysis/DealScore'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { InvestmentMetricsSection } from '../components/investor/InvestmentMetricsSection'
+import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
@@ -891,6 +892,10 @@ function InvestorReportContent({
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
       <EquitySection metrics={metrics} />
       <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" token={analysis.token} />
+      {/* STR analysis — a Phase-2 informational placeholder (municipal STR-rule
+          guidance by postal code), not fabricated property data. Present in the
+          demo investor/landlord reports; now mounted live too. */}
+      <STRPlaceholderSection listing={listingData} />
     </main>
   )
 }
