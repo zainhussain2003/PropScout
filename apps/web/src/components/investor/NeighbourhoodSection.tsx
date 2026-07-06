@@ -47,12 +47,14 @@ export function NeighbourhoodSection({
     ['Price per sqft trend', n.ppsqftTrend !== 'N/A' ? n.ppsqftTrend : '—', 'last 12 months'],
   ]
 
-  const verdictTone = n.appreciation5y >= 0.2 ? 'pass' : 'caution'
-  const verdictLabel =
-    n.appreciation5y > 0
-      ? n.appreciation5y >= 0.2
-        ? 'Strong appreciation'
-        : 'Modest growth'
+  // No appreciation figure means we have no neighbourhood market data for this
+  // FSA yet — say so honestly rather than implying "modest growth" from a zero.
+  const hasAppreciation = n.appreciation5y > 0
+  const verdictTone = !hasAppreciation ? 'caution' : n.appreciation5y >= 0.2 ? 'pass' : 'caution'
+  const verdictLabel = !hasAppreciation
+    ? 'Market data pending'
+    : n.appreciation5y >= 0.2
+      ? 'Strong appreciation'
       : 'Modest growth'
 
   return (
@@ -137,6 +139,12 @@ export function NeighbourhoodSection({
           </div>
 
           <div className="col" style={{ gap: 0 }}>
+            {n.comps.length === 0 && (
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
+                No comparable-sales source yet — recent sold prices aren&apos;t available for this
+                area.
+              </p>
+            )}
             {n.comps.map((comp, i) => (
               <div
                 key={comp.addr}
@@ -224,7 +232,7 @@ export function NeighbourhoodSection({
           >
             <span>10-year:</span>
             <span className="mono tabular" style={{ color: 'var(--bg)', fontWeight: 500 }}>
-              +{fmtPct(n.appreciation10y, 1)}
+              {n.appreciation10y !== 0 ? `+${fmtPct(n.appreciation10y, 1)}` : '—'}
             </span>
           </div>
 

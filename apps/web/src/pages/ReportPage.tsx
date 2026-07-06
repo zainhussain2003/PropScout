@@ -35,13 +35,14 @@ import { DealScore as DealScoreWidget } from '../components/analysis/DealScore'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { InvestmentMetricsSection } from '../components/investor/InvestmentMetricsSection'
+import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { TenantSchoolsSection } from '../components/tenant/TenantSchoolsSection'
-import { shimToTenantSchools } from '../lib/reportShims'
+import { shimToTenantSchools, shimToNeighbourhood } from '../lib/reportShims'
 import { DEFAULT_FINANCING_INPUTS } from '../constants/demoData'
 import type {
   Analysis,
@@ -891,8 +892,13 @@ function InvestorReportContent({
       <OSFISection financing={financing} listing={listingData} />
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
       <EquitySection metrics={metrics} />
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" token={analysis.token} />
-      {/* STR analysis — a Phase-2 informational placeholder (municipal STR-rule
+      {/* §08 Neighbourhood — stat tiles + comps + appreciation. Every field is
+          data-honest: unknown stats render "—" and empty comps show the "no
+          comparable-sales source yet" state (shimToNeighbourhood returns zeros
+          when the API has no neighbourhood data, never fabricated figures). */}
+      <NeighbourhoodSection listing={listingData} neighbourhood={shimToNeighbourhood(analysis)} />
+      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="09" token={analysis.token} />
+      {/* §10 STR analysis — a Phase-2 informational placeholder (municipal STR-rule
           guidance by postal code), not fabricated property data. Present in the
           demo investor/landlord reports; now mounted live too. */}
       <STRPlaceholderSection listing={listingData} />
