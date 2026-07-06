@@ -46,14 +46,28 @@ or fixture fallback. FIX: (a) set `WALKSCORE_API_KEY` on the @propscout/api Rail
 service; (b) UI shows "unavailable" for null (tenant §07 done; investor/personal
 neighbourhood still to harden — see remaining).
 
-**Remaining (continues next pass):**
+**Investor/Landlord — now wired live (commits d4f2a2d, 418cfd9, 5886db5):**
 
-- Investor/Landlord: add Financing sliders (live recalc), Neighbourhood, STR
-  placeholder, Due-diligence. NOTE `shimToNeighbourhood` returns misleading ZEROS
-  when `analysis.neighbourhood` is null — Neighbourhood must render "—/unavailable"
-  for unknown stats before it's mounted live (data-discipline blocker).
-- Personal: confirm parity end-to-end.
-- Live e2e for all 4 modes against real Realtor.ca URLs.
+- STR placeholder (informational, safe).
+- Data-honest **Neighbourhood** §08: tiles render "—" for unknowns; appreciation "—"
+  (not "+0.0%"); verdict "Market data pending" with no data; empty comps show the
+  "no comparable-sales source yet" state. `shimToNeighbourhood` returns zeros, never
+  fabricated figures.
+- Live **Financing sliders** §02: financing stateful; every metric recomputes via
+  enrichMetrics on drag. Deal SCORE stays backend-sourced (NOT re-derived).
+
+**Personal — confirmed data-clean** (already delegated): PBSalesSection hides comps
+when real (`isSampleData`), FMV is a _labeled_ ±5% estimate (not fake sold data),
+personal neighbourhood zeroes non-walkscore fields, schools EMPTY when no data, real
+flags. No fixture leaks.
+
+**Remaining (small):**
+
+- Investor/Landlord due-diligence checklist (generic advice, local to the demo;
+  lowest value, deferred).
+- Live end-to-end smoke of all 4 modes vs real Realtor.ca URLs (render paths covered
+  by the 855 web tests with realistic data; scrape leg verified live in the 2026-07-06
+  timeout fix). Do a final prod smoke after `WALKSCORE_API_KEY` is set on @propscout/api.
 
 ---
 
