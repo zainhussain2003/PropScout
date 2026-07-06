@@ -1,3 +1,39 @@
+# Work log — 2026-07-06 · tenant report polish (populate placeholders, kill dev copy)
+
+Follow-up to the parity pass: the live tenant report had several sections that
+could be populated from data we already hold but were empty-carding, plus
+dev-facing "Week 5–6 · extraction pipeline" copy. Fixed:
+
+- **§11 Unit & building spec sheet** — now filled from scraped Listing fields
+  (beds/baths/sqft/type/parking/year/fee/city/postal) via `shimToTenantSpecRows`.
+  Never a placeholder — it's pure scraped data. `UnitDetailsSection` takes live rows.
+- **§05 Monthly cost** — scraped rent + sqft-scaled utility estimates + parking
+  (`shimToTenantCostLines`), computed like the demo. Utilities whose inclusion is
+  genuinely unknown are marked 'confirm', not faked. True monthly cost is real.
+- **§06 What's included** — parking known from the scrape; utilities shown as
+  estimate/confirm (`shimToTenantAmenities`). Removed the fixture "$320 replace /
+  $1,830 adjusted" narrative leak — `WhatsIncludedSection` now only shows that
+  framing when a real valuation is supplied (demo), else an honest included/confirm tally.
+- **§04 Negotiation** — real leverage from comps + every fired flag + a generated
+  copy-paste message (`shimToTenantNegotiation`). `NegotiationSection` handles a
+  no-comps target (points to the leverage instead of "$0") and an empty message.
+  Honest empty only when there's genuinely no leverage.
+- **§01 rent positioning + hero** — no more "$0–$0" range when comps are null: §01
+  shows the honest no-comps state, the hero hides the target band.
+- **Dev copy gone** — `SectionPlaceholder` now takes a user-facing `note`
+  ("This listing doesn't include enough detail…") instead of `week=`; every
+  remaining placeholder (§02 clean-scan, §03 needs-viewing, §08 geocode) has
+  user-facing wording. Grep for week/sprint/phase/pipeline in user-visible tenant
+  copy is clean.
+- STR §10 left as the spec-sanctioned MVP placeholder (unchanged).
+
+Verified live against the for-rent listing (610-761 Bay St, Toronto): §04 shows the
+flag as leverage + a drafted message; §05 shows $2,923/mo true cost; §06 the amenity
+grid ("1 of 7 confirmed, 4 to confirm"); §11 the 10-line spec sheet; §01/hero no $0.
+Web 855 green, typecheck clean.
+
+---
+
 # Work log — 2026-07-06 · live report section parity (all 4 modes)
 
 **Problem:** the live `/r/:token` renderer was built as "focused summaries" — the

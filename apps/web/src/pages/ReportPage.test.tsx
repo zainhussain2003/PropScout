@@ -201,7 +201,10 @@ describe('ReportPage — risk-flag overrides', () => {
     listOverrides.mockResolvedValue([])
     renderReport()
 
-    expect(await screen.findByText(/Possible undisclosed basement unit/i)).toBeInTheDocument()
+    // The flag now appears in §02 Listing accuracy AND as §04 negotiation leverage,
+    // so match all occurrences; the Dismiss button (on the §02 RiskRow) is the point.
+    const flags = await screen.findAllByText(/Possible undisclosed basement unit/i)
+    expect(flags.length).toBeGreaterThanOrEqual(1)
     expect(screen.getByRole('button', { name: /dismiss/i })).toBeInTheDocument()
   })
 

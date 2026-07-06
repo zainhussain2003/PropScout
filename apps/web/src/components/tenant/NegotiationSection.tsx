@@ -20,6 +20,11 @@ interface NegotiationSectionProps {
   leverageFactors: TenantLeverageRow[]
   suggestedMessage: string
   messageReasons?: string[]
+  /** Section verdict pill — overridable so the live report can reflect the real
+   *  leverage state (e.g. "Some leverage" / "Limited leverage") instead of always
+   *  "Strong leverage". */
+  verdict?: string
+  tone?: 'pass' | 'caution' | 'fail'
 }
 
 export function NegotiationSection({
@@ -28,7 +33,10 @@ export function NegotiationSection({
   leverageFactors,
   suggestedMessage,
   messageReasons = [],
+  verdict = 'Strong leverage',
+  tone = 'pass',
 }: NegotiationSectionProps): JSX.Element {
+  const hasTarget = targetHigh > 0
   // Use a ref to update aria-label directly — bypasses React's scheduler so
   // the change is visible to getByRole immediately, even when vi.useFakeTimers()
   // is active (Vitest 2.x fakes queueMicrotask which React 18's scheduler uses).
@@ -62,8 +70,8 @@ export function NegotiationSection({
             Should you <em>negotiate</em>?
           </>
         }
-        verdict="Strong leverage"
-        tone="pass"
+        verdict={verdict}
+        tone={tone}
       />
 
       <div
@@ -76,7 +84,8 @@ export function NegotiationSection({
       >
         {/* LEFT — leverage card */}
         <div className="card col" style={{ padding: 28, gap: 20 }}>
-          {/* Target range */}
+          {/* Target range — only when comps give us a real benchmark. Without
+              comps we don't invent a "$0" target; we point to the leverage below. */}
           <div className="col" style={{ gap: 8 }}>
             <span
               className="mono"
@@ -89,28 +98,37 @@ export function NegotiationSection({
             >
               Your target
             </span>
-            <div
-              className="serif tabular"
-              style={{
-                fontSize: 'clamp(32px, 3.5vw, 48px)',
-                lineHeight: 1,
-                letterSpacing: '-0.025em',
-              }}
-              aria-label={`Target rent: $${targetLow.toLocaleString('en-CA')} to $${targetHigh.toLocaleString('en-CA')} per month`}
-            >
-              ${targetLow.toLocaleString('en-CA')}
-              <span style={{ color: 'var(--muted)' }}> – </span>$
-              {targetHigh.toLocaleString('en-CA')}
-              <span style={{ fontSize: 16, color: 'var(--muted)' }}>/mo</span>
-            </div>
-            <div style={{ fontSize: 14, color: 'var(--ink-2)' }}>
-              That's{' '}
-              <span className="tabular" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-                ${annualSavingsLow.toLocaleString('en-CA')}–
-                {annualSavingsHigh.toLocaleString('en-CA')}
-              </span>{' '}
-              saved over a 12-month lease.
-            </div>
+            {hasTarget ? (
+              <>
+                <div
+                  className="serif tabular"
+                  style={{
+                    fontSize: 'clamp(32px, 3.5vw, 48px)',
+                    lineHeight: 1,
+                    letterSpacing: '-0.025em',
+                  }}
+                  aria-label={`Target rent: $${targetLow.toLocaleString('en-CA')} to $${targetHigh.toLocaleString('en-CA')} per month`}
+                >
+                  ${targetLow.toLocaleString('en-CA')}
+                  <span style={{ color: 'var(--muted)' }}> – </span>$
+                  {targetHigh.toLocaleString('en-CA')}
+                  <span style={{ fontSize: 16, color: 'var(--muted)' }}>/mo</span>
+                </div>
+                <div style={{ fontSize: 14, color: 'var(--ink-2)' }}>
+                  That's{' '}
+                  <span className="tabular" style={{ color: 'var(--accent)', fontWeight: 500 }}>
+                    ${annualSavingsLow.toLocaleString('en-CA')}–
+                    {annualSavingsHigh.toLocaleString('en-CA')}
+                  </span>{' '}
+                  saved over a 12-month lease.
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                No comparable-rent benchmark for this postal code yet, so we can&apos;t set a dollar
+                target — use the leverage below to open the conversation.
+              </div>
+            )}
           </div>
 
           <div style={{ height: 1, background: 'var(--line)' }} />
@@ -173,31 +191,34 @@ export function NegotiationSection({
             >
               Suggested message
             </span>
-            <button
-              ref={copyBtnRef}
-              className="btn btn-ghost"
-              onClick={handleCopy}
-              style={{ padding: '6px 12px', fontSize: 11 }}
-              aria-label="Copy message to clipboard"
-            >
-              <Icon name="paste" size={12} />
-              {' Copy'}
-            </button>
+            {suggestedMessage && (
+              <button
+                ref={copyBtnRef}
+                className="btn btn-ghost"
+                onClick={handleCopy}
+                style={{ padding: '6px 12px', fontSize: 11 }}
+                aria-label="Copy message to clipboard"
+              >
+                <Icon name="paste" size={12} />
+                {' Copy'}
+              </button>
+            )}
           </div>
 
-          {/* Message text */}
+          {/* Message text — or an honest note when we don't have enough to draft one. */}
           <div
             className="serif"
             style={{
               fontSize: 17,
               lineHeight: 1.55,
-              color: 'var(--ink)',
+              color: suggestedMessage ? 'var(--ink)' : 'var(--muted)',
               fontStyle: 'italic',
               borderLeft: '2px solid var(--accent)',
               paddingLeft: 16,
             }}
           >
-            {suggestedMessage}
+            {suggestedMessage ||
+              "Not enough listing detail to draft a negotiation script yet — confirm the unit's specifics with the landlord first."}
           </div>
 
           {/* Why this works */}

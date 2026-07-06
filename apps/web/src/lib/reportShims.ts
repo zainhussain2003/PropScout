@@ -18,6 +18,9 @@ import type {
   TenantSchools,
   TenantSchool,
   TenantFlag,
+  TenantCostLine,
+  TenantAmenity,
+  TenantLeverageRow,
   SchoolBoard,
   SchoolQuality,
 } from '../types/analysis'
@@ -284,6 +287,213 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     chips: buildTenantChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
   }
+}
+
+/** Sqft-scaled utility estimates (shared with the personal report's cost model). */
+function tenantUtilityEstimates(listing: Listing): {
+  hydro: number
+  gas: number
+  water: number
+  internet: number
+} {
+  const sqftBasis =
+    listing.sqft && listing.sqft > 0 ? listing.sqft : PROPERTY_COST_ESTIMATES.SQFT_FALLBACK
+  return {
+    hydro: Math.round(sqftBasis * PROPERTY_COST_ESTIMATES.HYDRO_PER_SQFT),
+    gas: Math.round(sqftBasis * PROPERTY_COST_ESTIMATES.GAS_PER_SQFT),
+    water: PROPERTY_COST_ESTIMATES.WATER_MONTHLY,
+    internet: PROPERTY_COST_ESTIMATES.INTERNET_MONTHLY,
+  }
+}
+
+/**
+ * §11 Unit & building spec sheet — pure scraped Listing fields. This is never a
+ * placeholder: everything here comes straight off the listing. Fields the scrape
+ * doesn't carry (floor, ceiling height) are simply omitted, not faked.
+ */
+export function shimToTenantSpecRows(listing: Listing): {
+  unitRows: Array<[string, string]>
+  buildingRows: Array<[string, string]>
+} {
+  const unitRows: Array<[string, string]> = [
+    ['Bedrooms', String(listing.beds)],
+    ['Bathrooms', String(listing.baths)],
+    ['Interior size', listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : 'Not listed'],
+    ['Property type', formatPropertyType(listing.propertyType)],
+    [
+      'Parking',
+      listing.parkingSpots > 0
+        ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''}`
+        : 'Not listed',
+    ],
+  ]
+  const buildingRows: Array<[string, string]> = [
+    ['Year built', listing.yearBuilt ? String(listing.yearBuilt) : 'Not listed'],
+    [
+      'Maintenance fee',
+      listing.condoFeeKnown && listing.condoFeeMonthly != null && listing.condoFeeMonthly > 0
+        ? `$${listing.condoFeeMonthly.toLocaleString()}/mo`
+        : 'Not listed',
+    ],
+    ['City', listing.city],
+    ['Postal code', listing.postalCode],
+    ['Listing type', 'For rent'],
+  ]
+  return { unitRows, buildingRows }
+}
+
+/**
+ * §05 Monthly cost — scraped rent + sqft-scaled utility estimates + parking. The
+ * "target" column is the achievable rent from comps when we have them (so the
+ * savings line is real), otherwise it equals asking (no fabricated savings).
+ * Utility inclusion is genuinely unknown from the scrape, so heat/water are
+ * marked 'maybe' (confirm), while hydro/internet are the usual tenant-paid.
+ */
+export function shimToTenantCostLines(listing: Listing, analysis: Analysis): TenantCostLine[] {
+  const rent = listing.rentMonthly ?? 0
+  const comps = analysis.rentalComps
+  const rentTarget = comps ? Math.round(comps.low * 0.97) : rent
+  const u = tenantUtilityEstimates(listing)
+  return [
+    { k: 'Rent', asking: rent, target: rentTarget, included: false },
+    {
+      k: 'Hydro (est.)',
+      asking: u.hydro,
+      target: u.hydro,
+      included: false,
+      note: 'estimated · usually tenant-paid',
+    },
+    {
+      k: 'Internet (est.)',
+      asking: u.internet,
+      target: u.internet,
+      included: false,
+      note: 'estimated · usually tenant-paid',
+    },
+    {
+      k: 'Heat / gas (est.)',
+      asking: u.gas,
+      target: u.gas,
+      included: 'maybe',
+      note: 'confirm if included in rent',
+    },
+    {
+      k: 'Water',
+      asking: u.water,
+      target: u.water,
+      included: 'maybe',
+      note: 'confirm if included in rent',
+    },
+    listing.parkingSpots > 0
+      ? {
+          k: 'Parking',
+          asking: 0,
+          target: 0,
+          included: true,
+          note: `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''} — confirm if extra`,
+        }
+      : { k: 'Parking', asking: 0, target: 0, included: 'maybe', note: 'not listed — confirm' },
+  ]
+}
+
+/**
+ * §06 What's included — parking is known from the scrape; utility inclusion isn't
+ * carried in the payload, so those are 'unclear' (confirm) rather than faked as
+ * included. Never fabricates an "included" claim we can't back up.
+ */
+export function shimToTenantAmenities(listing: Listing): TenantAmenity[] {
+  const u = tenantUtilityEstimates(listing)
+  return [
+    {
+      label: 'Parking',
+      status: listing.parkingSpots > 0 ? 'incl' : 'unclear',
+      note:
+        listing.parkingSpots > 0
+          ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''}`
+          : 'not listed — confirm',
+    },
+    { label: 'Heat / gas', status: 'unclear', note: 'confirm with landlord' },
+    { label: 'Water', status: 'unclear', note: 'confirm with landlord' },
+    { label: 'Hydro / electricity', status: 'extra', note: `~$${u.hydro}/mo (est.)` },
+    { label: 'Internet', status: 'extra', note: `~$${u.internet}/mo (est.)` },
+    { label: 'Air conditioning', status: 'unclear', note: 'central vs wall unit — confirm' },
+    { label: 'Laundry', status: 'unclear', note: 'in-unit vs shared — confirm' },
+  ]
+}
+
+/**
+ * §04 Negotiation — real leverage built from what we have: how the asking rent
+ * sits against the postal-code comps (when present) and every fired listing flag
+ * (each is a talking point). Target range comes from comps; a copy-pasteable
+ * message is generated only when there's genuine leverage to cite. `hasLeverage`
+ * lets the section fall back to an honest empty when neither comps nor flags exist.
+ */
+export function shimToTenantNegotiation(
+  listing: Listing,
+  analysis: Analysis
+): {
+  targetLow: number
+  targetHigh: number
+  leverageFactors: TenantLeverageRow[]
+  suggestedMessage: string
+  messageReasons: string[]
+  hasLeverage: boolean
+} {
+  const asking = listing.rentMonthly ?? 0
+  const comps = analysis.rentalComps
+  const targetHigh = comps?.mid ?? 0
+  const targetLow = comps ? Math.round(comps.low * 0.97) : 0
+  const flags = analysis.riskFlags ?? []
+
+  const leverageFactors: TenantLeverageRow[] = []
+  if (comps && comps.mid > 0) {
+    const above = asking > comps.mid
+    leverageFactors.push({
+      k: 'Asking vs market',
+      v: above
+        ? `$${asking.toLocaleString()} · above the $${comps.mid.toLocaleString()} median`
+        : `$${asking.toLocaleString()} · at/below market`,
+      tone: above ? 'pass' : 'caution',
+    })
+    leverageFactors.push({
+      k: 'Comparable rentals',
+      v: `$${comps.low.toLocaleString()}–$${comps.high.toLocaleString()} (${comps.compCount} comps)`,
+      tone: 'pass',
+    })
+  }
+  for (const f of flags) {
+    leverageFactors.push({
+      k: f.label,
+      v: 'Flagged in listing',
+      tone: f.severity === 'red' ? 'pass' : 'caution',
+    })
+  }
+
+  const hasLeverage = leverageFactors.length > 0
+  const addr = parseAddress(listing.address).line1
+
+  let suggestedMessage = ''
+  const messageReasons: string[] = []
+  if (hasLeverage) {
+    const parts: string[] = [`Hi — I'm interested in ${addr} and ready to sign quickly.`]
+    if (comps && targetLow > 0) {
+      parts.push(
+        `Comparable units in this area rent around $${comps.low.toLocaleString()}–$${comps.high.toLocaleString()}, so I'd like to propose $${targetLow.toLocaleString()}/mo.`
+      )
+      messageReasons.push('Anchors the number in the local comp range')
+    }
+    if (flags.length > 0) {
+      parts.push(
+        `A couple of things I'd want confirmed first: ${flags.map((f) => f.label.toLowerCase()).join('; ')}.`
+      )
+      messageReasons.push('Raises the flagged items as points to resolve before signing')
+    }
+    parts.push('Happy to provide references and sign this week if we can align.')
+    messageReasons.push('Signals a low-risk, ready tenant to reduce their vacancy risk')
+    suggestedMessage = parts.join(' ')
+  }
+
+  return { targetLow, targetHigh, leverageFactors, suggestedMessage, messageReasons, hasLeverage }
 }
 
 /**

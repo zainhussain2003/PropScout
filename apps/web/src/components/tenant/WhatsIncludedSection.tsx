@@ -126,11 +126,16 @@ function Legend({
 export function WhatsIncludedSection({
   amenities,
   askingRent,
-  estimatedValue = '~$320/mo',
-  adjustedRent = '$1,830/mo',
+  estimatedValue,
+  adjustedRent,
 }: WhatsIncludedSectionProps): JSX.Element {
   const rentLabel = askingRent ? `$${askingRent.toLocaleString('en-CA')}` : 'rent'
   const inclCount = amenities.filter((a) => a.status === 'incl').length
+  const unclearCount = amenities.filter((a) => a.status === 'unclear').length
+  // The "$X replace value → adjusted rent" narrative needs a real dollar estimate.
+  // Live mode has no amenity-valuation source, so we only show that framing when
+  // both figures are supplied (demo); otherwise a plain, honest included/confirm tally.
+  const hasValuation = estimatedValue != null && adjustedRent != null
 
   return (
     <section className="container tr-section" data-section="06">
@@ -142,8 +147,12 @@ export function WhatsIncludedSection({
             What does <em>{rentLabel}</em> actually buy you?
           </>
         }
-        verdict={`+${estimatedValue} included`}
-        tone="pass"
+        verdict={
+          hasValuation
+            ? `+${estimatedValue} included`
+            : `${inclCount} of ${amenities.length} confirmed`
+        }
+        tone={inclCount > 0 ? 'pass' : 'caution'}
       />
 
       <div className="card" style={{ padding: 28 }}>
@@ -158,15 +167,27 @@ export function WhatsIncludedSection({
           }}
         >
           <p style={{ fontSize: 15, color: 'var(--ink-2)', maxWidth: 560 }}>
-            Tenant unions estimate the included amenities + utilities below would cost{' '}
-            <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              {estimatedValue}
-            </span>{' '}
-            to replace independently. Adjusted for that, you're paying closer to{' '}
-            <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              {adjustedRent}
-            </span>{' '}
-            for the unit itself.{' '}
+            {hasValuation ? (
+              <>
+                Tenant unions estimate the included amenities + utilities below would cost{' '}
+                <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                  {estimatedValue}
+                </span>{' '}
+                to replace independently. Adjusted for that, you're paying closer to{' '}
+                <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                  {adjustedRent}
+                </span>{' '}
+                for the unit itself.{' '}
+              </>
+            ) : (
+              <>
+                {inclCount} of {amenities.length} items are confirmed included from the listing;{' '}
+                {unclearCount > 0
+                  ? `${unclearCount} still need confirming with the landlord`
+                  : 'the rest are extra'}
+                . Utility costs shown are estimates.{' '}
+              </>
+            )}
             <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
               {inclCount} of {amenities.length} items confirmed included.
             </span>

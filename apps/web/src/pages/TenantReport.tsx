@@ -71,7 +71,14 @@ import type {
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 import { RiskRow } from '../components/analysis/RiskRow'
-import { shimToTenantListingData, shimToTenantSchools } from '../lib/reportShims'
+import {
+  shimToTenantListingData,
+  shimToTenantSchools,
+  shimToTenantSpecRows,
+  shimToTenantCostLines,
+  shimToTenantAmenities,
+  shimToTenantNegotiation,
+} from '../lib/reportShims'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -345,36 +352,38 @@ function TenantPropertyHero({
               </span>
             </div>
 
-            {/* Target band */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                padding: '12px 14px',
-                borderRadius: 12,
-                background: 'color-mix(in oklab, var(--pass) 8%, transparent)',
-                border: '1px solid color-mix(in oklab, var(--pass) 25%, transparent)',
-              }}
-            >
-              <span
-                className="mono"
+            {/* Target band — only when comps give a real benchmark (no "$0–$0"). */}
+            {listing.targetHigh > 0 && (
+              <div
                 style={{
-                  fontSize: 10,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                  color: 'var(--pass)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  background: 'color-mix(in oklab, var(--pass) 8%, transparent)',
+                  border: '1px solid color-mix(in oklab, var(--pass) 25%, transparent)',
                 }}
               >
-                Your target
-              </span>
-              <span
-                className="serif tabular"
-                style={{ fontSize: 22, lineHeight: 1, color: 'var(--pass)' }}
-              >
-                {fmtCAD(listing.targetLow)}–{fmtCAD(listing.targetHigh)}
-              </span>
-            </div>
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                    color: 'var(--pass)',
+                  }}
+                >
+                  Your target
+                </span>
+                <span
+                  className="serif tabular"
+                  style={{ fontSize: 22, lineHeight: 1, color: 'var(--pass)' }}
+                >
+                  {fmtCAD(listing.targetLow)}–{fmtCAD(listing.targetHigh)}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -788,8 +797,17 @@ const BUILDING_DETAIL_ROWS: Array<[string, string, 'pass' | 'fail' | undefined]>
   ['Average days on market', '17 days', undefined],
 ]
 
-function UnitDetailsSection(): JSX.Element {
+type SpecRow = readonly [string, string, ('pass' | 'fail' | undefined)?]
+
+function UnitDetailsSection({
+  unitRows = UNIT_DETAIL_ROWS,
+  buildingRows = BUILDING_DETAIL_ROWS,
+}: {
+  unitRows?: ReadonlyArray<SpecRow>
+  buildingRows?: ReadonlyArray<SpecRow>
+} = {}): JSX.Element {
   const [open, setOpen] = useState(false)
+  const lineItems = unitRows.length + buildingRows.length
 
   return (
     <section className="container tr-section" data-section="11">
@@ -801,7 +819,7 @@ function UnitDetailsSection(): JSX.Element {
             The full <em>spec sheet</em>.
           </>
         }
-        verdict={open ? 'Showing all' : '24 line items'}
+        verdict={open ? 'Showing all' : `${lineItems} line items`}
         tone="pass"
       />
 
@@ -841,8 +859,8 @@ function UnitDetailsSection(): JSX.Element {
           >
             {(
               [
-                { title: 'The unit', rows: UNIT_DETAIL_ROWS },
-                { title: 'The building', rows: BUILDING_DETAIL_ROWS },
+                { title: 'The unit', rows: unitRows },
+                { title: 'The building', rows: buildingRows },
               ] as const
             ).map((sec, sIdx) => (
               <div
@@ -1151,18 +1169,22 @@ function ConversionBlock(): JSX.Element {
   )
 }
 
-// ── Placeholder card for sections not yet populated by extraction pipeline ────
+// ── Honest empty card for a section the live listing doesn't carry data for ────
+
+const DEFAULT_EMPTY_NOTE =
+  "This listing doesn't include enough detail to assess this yet — confirm with the landlord."
 
 function SectionPlaceholder({
   n,
   topic,
   question,
-  week,
+  note = DEFAULT_EMPTY_NOTE,
 }: {
   n: string
   topic: string
   question: JSX.Element
-  week: string
+  /** User-facing explanation of why the section is empty (no dev/sprint copy). */
+  note?: string
 }): JSX.Element {
   return (
     <section className="container tr-section">
@@ -1170,15 +1192,12 @@ function SectionPlaceholder({
         n={n}
         topic={topic}
         question={question}
-        verdict={`Available ${week}`}
+        verdict="Not enough detail"
         tone="caution"
       />
-      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-        <p
-          className="mono"
-          style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}
-        >
-          {topic} · {week}
+      <div className="card" style={{ padding: 32 }}>
+        <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
+          {note}
         </p>
       </div>
     </section>
@@ -1300,44 +1319,77 @@ export function TenantReport({
         )}
       </section>
 
-      {/* §01 Rent positioning */}
+      {/* §01 Rent positioning — real comps when we have them; otherwise the honest
+          no-comps state, never a fabricated "$0" range. */}
       {isReal ? (
-        <section className="container tr-section" data-section="01">
-          <SectionHead
-            n="01"
-            topic="Rent positioning"
-            question={
-              <>
-                Is the rent <em>fair</em>?
-              </>
-            }
-            verdict={
-              tenantListing
-                ? `Asking $${tenantListing.asking.toLocaleString()}/mo`
-                : 'Fetching comps…'
-            }
-            tone="caution"
-          />
-          <div className="card" style={{ padding: 28 }}>
-            <RentalCompsBar
-              low={tenantListing?.targetLow ?? 0}
-              mid={tenantListing?.targetHigh ?? 0}
-              high={tenantListing?.targetHigh ?? 0}
-              ask={tenantListing?.asking ?? 0}
-            />
-            <p
-              className="mono"
-              style={{
-                fontSize: 11,
-                color: 'var(--muted)',
-                letterSpacing: '0.12em',
-                marginTop: 16,
-              }}
-            >
-              Rental comps · available Week 4–5 · nightly scraper
-            </p>
-          </div>
-        </section>
+        (() => {
+          const comps = realAnalysis!.rentalComps
+          const asking = realListing!.rentMonthly ?? 0
+          if (!comps || comps.compCount === 0) {
+            return (
+              <section className="container tr-section" data-section="01">
+                <SectionHead
+                  n="01"
+                  topic="Rent positioning"
+                  question={
+                    <>
+                      Is the rent <em>fair</em>?
+                    </>
+                  }
+                  verdict={asking > 0 ? `Asking $${asking.toLocaleString()}/mo` : 'No asking rent'}
+                  tone="caution"
+                />
+                <div className="card" style={{ padding: 32 }}>
+                  <p
+                    style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}
+                  >
+                    We don&apos;t have enough comparable rentals in this postal code yet to
+                    benchmark the{' '}
+                    {asking > 0 ? `$${asking.toLocaleString()}/mo asking rent` : 'asking rent'}. Our
+                    rental comps grow nightly — check back soon, or compare against similar nearby
+                    units before you sign.
+                  </p>
+                </div>
+              </section>
+            )
+          }
+          const atOrBelow = asking > 0 && asking <= comps.mid
+          return (
+            <section className="container tr-section" data-section="01">
+              <SectionHead
+                n="01"
+                topic="Rent positioning"
+                question={
+                  <>
+                    Is the rent <em>fair</em>?
+                  </>
+                }
+                verdict={atOrBelow ? 'At or below market' : 'Above market'}
+                tone={atOrBelow ? 'pass' : 'caution'}
+              />
+              <div className="card" style={{ padding: 28 }}>
+                <RentalCompsBar
+                  low={comps.low}
+                  mid={comps.mid}
+                  high={comps.high}
+                  ask={asking || comps.mid}
+                />
+                <p
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--muted)',
+                    letterSpacing: '0.12em',
+                    marginTop: 16,
+                  }}
+                >
+                  Based on {comps.compCount} comparable rental
+                  {comps.compCount !== 1 ? 's' : ''} · {comps.confidence} confidence
+                </p>
+              </div>
+            </section>
+          )
+        })()
       ) : (
         <RentPositioningSection />
       )}
@@ -1384,7 +1436,7 @@ export function TenantReport({
                 Is the listing <em>honest</em>?
               </>
             }
-            week="Week 5–6 · extraction pipeline"
+            note="No red or amber flags surfaced from this listing's description — a clean scan, not a guarantee. Still confirm the specifics in person."
           />
         )
       ) : (
@@ -1403,24 +1455,44 @@ export function TenantReport({
               Does the listing <em>match</em> the unit?
             </>
           }
-          week="Week 5–6 · extraction pipeline"
+          note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, the second bedroom's window, and what's actually included against what's advertised."
         />
       ) : (
         <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />
       )}
 
-      {/* §04 Negotiation — requires extraction pipeline for leverage analysis */}
+      {/* §04 Negotiation — real leverage from comps + fired flags + a generated
+          script. Honest empty only when there's genuinely no leverage to cite. */}
       {isReal ? (
-        <SectionPlaceholder
-          n="04"
-          topic="Negotiation"
-          question={
-            <>
-              Should you <em>negotiate</em>?
-            </>
+        (() => {
+          const neg = shimToTenantNegotiation(realListing!, realAnalysis!)
+          if (!neg.hasLeverage) {
+            return (
+              <SectionPlaceholder
+                n="04"
+                topic="Negotiation"
+                question={
+                  <>
+                    Should you <em>negotiate</em>?
+                  </>
+                }
+                note="No comparable rents or listing flags to build a negotiation case yet — confirm the unit's specifics with the landlord."
+              />
+            )
           }
-          week="Week 5–6 · extraction pipeline"
-        />
+          const strong = neg.targetHigh > 0 || realAnalysis!.riskFlags.length > 1
+          return (
+            <NegotiationSection
+              targetLow={neg.targetLow}
+              targetHigh={neg.targetHigh}
+              leverageFactors={neg.leverageFactors}
+              suggestedMessage={neg.suggestedMessage}
+              messageReasons={neg.messageReasons}
+              verdict={strong ? 'Some leverage' : 'Limited leverage'}
+              tone={strong ? 'pass' : 'caution'}
+            />
+          )
+        })()
       ) : (
         <NegotiationSection
           targetLow={CHARLES_LISTING.targetLow}
@@ -1431,33 +1503,19 @@ export function TenantReport({
         />
       )}
 
-      {/* §05 Monthly cost — requires extraction to know what's included */}
+      {/* §05 Monthly cost — scraped rent + estimated utilities + parking. */}
       {isReal ? (
-        <SectionPlaceholder
-          n="05"
-          topic="Monthly cost"
-          question={
-            <>
-              What will it <em>really</em> cost?
-            </>
-          }
-          week="Week 5–6 · extraction pipeline"
-        />
+        <CostBreakdownSection lines={shimToTenantCostLines(realListing!, realAnalysis!)} />
       ) : (
         <CostBreakdownSection lines={CHARLES_COST_LINES} />
       )}
 
-      {/* §06 What's included — requires extraction pipeline */}
+      {/* §06 What's included — parking known from the scrape; utility inclusion
+          shown as 'confirm' rather than faked. */}
       {isReal ? (
-        <SectionPlaceholder
-          n="06"
-          topic="What's included"
-          question={
-            <>
-              What does the rent <em>cover</em>?
-            </>
-          }
-          week="Week 5–6 · extraction pipeline"
+        <WhatsIncludedSection
+          amenities={shimToTenantAmenities(realListing!)}
+          askingRent={realListing!.rentMonthly ?? 0}
         />
       ) : (
         <WhatsIncludedSection
@@ -1522,7 +1580,7 @@ export function TenantReport({
                 What schools are <em>nearby</em>?
               </>
             }
-            week="Pending EQAO / Fraser dataset load"
+            note="We couldn't match nearby schools for this address — this usually means the listing's location didn't geocode cleanly. Check the local school board's boundary tool directly."
           />
         )
       ) : (
@@ -1567,18 +1625,13 @@ export function TenantReport({
         <CompsMapSection />
       )}
 
-      {/* §11 Unit & building details — requires extraction pipeline for room-level detail */}
+      {/* §11 Unit & building details — pure scraped listing fields; never a
+          placeholder. */}
       {isReal ? (
-        <SectionPlaceholder
-          n="11"
-          topic="Unit & building details"
-          question={
-            <>
-              What exactly are you <em>getting</em>?
-            </>
-          }
-          week="Week 5–6 · extraction pipeline"
-        />
+        (() => {
+          const spec = shimToTenantSpecRows(realListing!)
+          return <UnitDetailsSection unitRows={spec.unitRows} buildingRows={spec.buildingRows} />
+        })()
       ) : (
         <UnitDetailsSection />
       )}
