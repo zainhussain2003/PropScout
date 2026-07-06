@@ -218,7 +218,25 @@ export function AnalyzingPage(): JSX.Element {
     }
   }, [token, modeRaw, navigate])
 
-  const pct = pctForStatus(status)
+  // Milestone target from the poll status (5 → 30 → 70 → 100). On its own this
+  // JUMPS and, worse, sits frozen at 5% for the whole ~25s scrape (status stays
+  // null until the first poll returns). Ease a displayed value toward the target
+  // every 200ms, and while still waiting on the first status, creep up to a soft
+  // cap so the bar always feels alive — never a dead 5%.
+  const targetPct = pctForStatus(status)
+  const [displayPct, setDisplayPct] = useState(5)
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDisplayPct((cur) => {
+        const softTarget = status === null ? Math.max(targetPct, 24) : targetPct
+        if (cur >= softTarget) return cur
+        const step = Math.max(0.4, (softTarget - cur) * 0.06)
+        return Math.min(softTarget, cur + step)
+      })
+    }, 200)
+    return () => clearInterval(id)
+  }, [status, targetPct])
+  const pct = Math.round(displayPct)
   const label = modeRaw !== null ? modeLabelFor(modeRaw) : 'Analyzing'
 
   // ── Error state ─────────────────────────────────────────────────────────────

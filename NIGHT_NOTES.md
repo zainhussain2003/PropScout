@@ -1,3 +1,62 @@
+# Work log — 2026-07-06 · live report section parity (all 4 modes)
+
+**Problem:** the live `/r/:token` renderer was built as "focused summaries" — the
+tenant report showed 4 of 12 sections while demos/landing promised the full
+experience.
+
+**Step-1 audit (present/missing, live vs demo):**
+
+- **Investor** (`InvestorReportContent`): present = Hero, AI verdict, Investment
+  metrics, Rental comps, Cash-to-close, OSFI, Risk flags, Equity, SunScout.
+  Missing = Financing sliders (live recalc), Neighbourhood, STR placeholder,
+  Due-diligence checklist.
+- **Landlord** reuses `InvestorReportContent` → same 4 missing + landlord
+  rent-positioning/checklist.
+- **Tenant** (`TenantReportContent`): present = Rent positioning, Listing flags,
+  Schools, SunScout (4). Missing = Listed-vs-Reality, Negotiation, Monthly cost,
+  What's-included, Location & commute, Comps map, Unit details, Before-you-sign.
+- **Personal** already delegates to `PersonalBuyerPage` → full parity (FMV/sales
+  already use honest `isSampleData` empty states).
+
+**Data-availability reality (drives empty states):** the `Analysis` payload
+carries metrics, dealScore, rentalComps, riskFlags, narrative, walkScore,
+neighbourhood, sunScout, coordinates, schools. It does NOT carry structured
+extraction outputs (amenities, per-room detail, listed-vs-reality claims, per-comp
+map points, distances, negotiation leverage) — so several demo sections genuinely
+have no live source and must show honest empty states, never fixtures.
+
+**Done this pass:**
+
+- **Tenant → full 12-section parity** (commit 644a755): live tenant delegates to
+  the full `TenantReport` (like personal). Fixed the demo page's `isReal` FIXTURE
+  LEAKS so no CHARLES data reaches a real listing — §02 real dismissable flags (not
+  CHARLES_FLAGS), §07 "scores unavailable" when Walk Score is null (not
+  CHARLES_MOBILITY_SCORES), §10 honest empty comps map (not 14 fabricated pins).
+  Flag-override dismissal threaded through so the tested behaviour survives. Added
+  `shimToTenantFlags`. Web 855 green.
+- **Analyzing progress bar** no longer frozen at 5%: milestone pct (5/30/70/100)
+  now eases toward its target every 200ms and creeps to a soft cap while awaiting
+  the first poll status — animates instead of sitting dead during the ~25s scrape.
+
+**Walk Score = 0 in prod — diagnosis:** `walkScoreService.getWalkScore` reads
+`process.env.WALKSCORE_API_KEY` on the **@propscout/api** service and returns
+`null` when the key is unset (logs "WALKSCORE_API_KEY is not set"). Almost
+certainly the key is missing on the Railway API service → walkScore null → 0/0/0
+or fixture fallback. FIX: (a) set `WALKSCORE_API_KEY` on the @propscout/api Railway
+service; (b) UI shows "unavailable" for null (tenant §07 done; investor/personal
+neighbourhood still to harden — see remaining).
+
+**Remaining (continues next pass):**
+
+- Investor/Landlord: add Financing sliders (live recalc), Neighbourhood, STR
+  placeholder, Due-diligence. NOTE `shimToNeighbourhood` returns misleading ZEROS
+  when `analysis.neighbourhood` is null — Neighbourhood must render "—/unavailable"
+  for unknown stats before it's mounted live (data-discipline blocker).
+- Personal: confirm parity end-to-end.
+- Live e2e for all 4 modes against real Realtor.ca URLs.
+
+---
+
 # Work log — 2026-07-05 · rentals_ca zero-yield fixed (GraphQL rewrite)
 
 **Symptom:** the Railway nightly run showed rentals_ca = 0 raw listings while kijiji (92)
