@@ -1,328 +1,396 @@
 """
-Realtor.ca on-demand scraper — spec Section 11.2 (TEMPLATE CODE).
+Realtor.ca listing scraper — spec Section 11.2 (TEMPLATE CODE).
 
-Uses Realtor.ca's internal JSON API (the same endpoints their website uses).
-httpx is used instead of Playwright — lighter weight for on-demand requests.
+Fetches each listing URL through ScraperAPI with premium=true so that the
+page HTML (including the dataLayer.property JS block, the schema.org JSON-LD
+<script>, and the propertyDetailsSection label/value pairs) is present.
 
-Endpoint URLs, headers, and response field names will shift without notice.
-Update field mappings and endpoints whenever the scraper breaks.
+Three data sources are parsed from the returned page:
+  - window.dataLayer property block  (price, beds, baths, sqft, type, MLS)
+  - schema.org JSON-LD <script> tag  (address, description, photos)
+  - propertyDetailsSectionContentLabel/Value pairs  (taxes, fee, year built)
+
+Direct calls to api2.realtor.ca are avoided: Incapsula blocks them and the
+required params (PropertyID, CultureID, MlsNumber) shift between deployments.
+
+This is the on-demand per-listing scraper the Fastify API's POST /scrape calls
+(the API points SCRAPER_URL at this calc-engine service). Its response shape is
+kept byte-for-byte in sync with services/scrapers/realtor_scraper.py — the two
+are pinned to the same flat JSON contract by realtor_scraper_test.py's
+test_scrape_response_shape_matches_api_contract. Update BOTH together.
+
+country_code=ca is NOT sent — geotargeting requires a plan upgrade on the
+current ScraperAPI subscription.
 """
 
+import html as html_lib
+import json
 import logging
+import os
 import re
-from typing import Any
+from dataclasses import dataclass
+from pathlib import Path
 
 import httpx
-
-from constants.provinces import ONTARIO_FSA_PREFIXES
-from models.scraper_schemas import ScrapedListing
-
-logger = logging.getLogger(__name__)
-
-# ── Constants ──────────────────────────────────────────────────────────────────
-
-_API_BASE = "https://api2.realtor.ca/Listing.svc/RecordDetails"
-_API_PARAMS_BASE = {
-    "ApplicationId": "1",
-    "lang": "en",
-    "PropertyID": "",  # filled per request
-}
-
-_REQUEST_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    ),
-    "Referer": "https://www.realtor.ca/",
-    "Accept": "application/json",
-    "Accept-Language": "en-CA,en;q=0.9",
-}
-
-_REQUEST_TIMEOUT_SECONDS = 15
-
-# Toronto / North York / Scarborough postal codes start with M
-_TORONTO_FSA_PREFIX = "M"
-
-# Property type normalisation — Realtor.ca codes → PropScout types
-_PROPERTY_TYPE_MAP: dict[str, str] = {
-    "apartment": "condo",
-    "condo": "condo",
-    "condominium": "condo",
-    "detached": "house",
-    "house": "house",
-    "semi-detached": "semi",
-    "semi": "semi",
-    "townhouse": "townhouse",
-    "row / townhouse": "townhouse",
-    "row/townhouse": "townhouse",
-    "attached/row/townhouse": "townhouse",
-}
-
-_URL_ID_PATTERN = re.compile(r"/real-estate/(\d+)/")
+from bs4 import BeautifulSoup
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+def _load_env_var(name: str) -> str:
+    """Read an env var, falling back to the nearest .env up the tree for local dev.
 
-
-def _extract_property_id(url: str) -> str | None:
+    On Railway the value comes from os.getenv; locally we walk up from this file
+    until a .env is found (this module lives at different depths in the scraper
+    service vs the calc-engine, so the walk is depth-agnostic).
     """
-    Extract the numeric listing ID from a Realtor.ca URL.
+    val = os.getenv(name)
+    if val:
+        return val
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        env_path = parent / ".env"
+        if env_path.exists():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
+                if line.startswith(name + "="):
+                    return line.split("=", 1)[1].strip()
+            break
+    return ""
+
+
+SCRAPER_API_KEY = _load_env_var("SCRAPER_API_KEY")
+_SCRAPER_API_URL = "https://api.scraperapi.com"
+# Attempts per listing — ScraperAPI premium is ~1-in-3 against Realtor.ca
+# (measured live 2026-07-02); failures are not billed, retries are their
+# documented recommendation. 4 attempts ≈ 87% expected success at that rate.
+_SCRAPER_API_ATTEMPTS = 4
+
+
+@dataclass
+class ScrapedListing:
+    """Raw scraped data before validation and normalisation."""
+
+    url: str
+    address: str
+    price: int
+    beds: int
+    baths: float
+    sqft: int | None
+    property_type: str
+    annual_taxes: int | None
+    taxes_known: bool
+    condo_fee_monthly: int | None
+    condo_fee_known: bool
+    year_built: int | None
+    year_built_known: bool
+    listing_type: str  # 'for_sale' | 'for_rent'
+    listing_description: str | None
+    photo_urls: list[str]
+    days_on_market: int | None
+    raw: dict[str, object]
+    # Realtor.ca's propertyType is "Single Family" for BOTH a detached house
+    # and a condo apartment — buildingType ('Apartment' / 'House' / 'Row …')
+    # is the real discriminator (found live 2026-07-02: a Whitehaus condo
+    # mapped to 'detached').
+    building_type: str | None = None
+    # "Total Parking Spaces" from the details section (was never captured —
+    # the API hardcoded 0).
+    parking_spaces: int | None = None
+
+
+def _dl(field: str, block: str) -> str | None:
+    """Extract a field value from a dataLayer property JS block.
+
+    Matches the pattern:  fieldName: 'value',
+    Returns the value string (may be empty), or None if the field is absent.
+    """
+    m = re.search(r"\b" + re.escape(field) + r":\s*'([^']*)'", block)
+    return m.group(1) if m else None
+
+
+@dataclass
+class _DetailFields:
+    """Fields parsed from the propertyDetailsSection label/value pairs."""
+
+    annual_taxes: int | None = None
+    taxes_known: bool = False
+    condo_fee_monthly: int | None = None
+    condo_fee_known: bool = False
+    year_built: int | None = None
+    year_built_known: bool = False
+    parking_spaces: int | None = None
+    beds_above_grade: int | None = None
+
+
+def _parse_rendered_fields(page: str) -> _DetailFields:
+    """
+    Extract detail-section fields from the listing HTML.
+
+    Uses BeautifulSoup to walk propertyDetailsSectionContentLabel →
+    propertyDetailsSectionContentValue sibling pairs. Each field is only
+    set if the label is found and the value is parseable; otherwise the
+    _known flag stays False so the calc engine treats the field as missing.
 
     Args:
-        url: Full Realtor.ca listing URL, e.g.
-             https://www.realtor.ca/real-estate/12345678/some-address
+        page: HTML string returned by ScraperAPI.
 
     Returns:
-        Listing ID as a string, or None if not found.
+        _DetailFields with whichever fields the page exposed.
     """
-    match = _URL_ID_PATTERN.search(url)
-    return match.group(1) if match else None
+    out = _DetailFields()
 
-
-def _detect_province(postal_code: str) -> str:
-    """
-    Detect province from postal code FSA prefix.
-
-    Only Ontario is supported at MVP (K, L, M, N, P).
-
-    Args:
-        postal_code: Canadian postal code, e.g. "L4K 5W4".
-
-    Returns:
-        Province abbreviation — "ON" for Ontario, or the detected non-Ontario
-        code (BC, AB, QC, etc.) using a best-effort lookup.
-    """
-    fsa = postal_code.strip().upper()[0] if postal_code.strip() else ""
-    if fsa in ONTARIO_FSA_PREFIXES:
-        return "ON"
-    # Non-Ontario FSA prefixes — best-effort mapping for gate message
-    _NON_ONTARIO: dict[str, str] = {
-        "V": "BC",
-        "T": "AB",
-        "S": "SK",
-        "R": "MB",
-        "G": "QC",
-        "H": "QC",
-        "J": "QC",
-        "B": "NS",
-        "E": "NB",
-        "C": "PE",
-        "A": "NL",
-        "X": "NT",
-        "Y": "YT",
-    }
-    return _NON_ONTARIO.get(fsa, "UNKNOWN")
-
-
-def _normalise_property_type(raw_type: str) -> str:
-    """
-    Normalise a Realtor.ca property type string to a PropScout type.
-
-    Args:
-        raw_type: Raw property type string from the API response.
-
-    Returns:
-        One of "condo", "house", "townhouse", "semi".
-    """
-    return _PROPERTY_TYPE_MAP.get(raw_type.strip().lower(), "house")
-
-
-def _safe_int(value: Any, default: int = 0) -> int:
-    """Coerce a value to int, returning default on failure."""
     try:
-        return int(float(str(value).replace(",", "").strip()))
-    except (ValueError, TypeError):
-        return default
+        soup = BeautifulSoup(page, "lxml")
+
+        for label_el in soup.find_all(class_="propertyDetailsSectionContentLabel"):
+            label = label_el.get_text(strip=True).lower()
+            val_el = label_el.find_next_sibling(
+                class_="propertyDetailsSectionContentValue"
+            )
+            if not val_el:
+                continue
+            val = val_el.get_text(strip=True)
+
+            if "annual property taxes" in label or "property taxes" in label:
+                # e.g. "$2,696.29(CAD)" or "$3,326.00"
+                m = re.search(r"\$([\d,]+\.?\d*)", val)
+                if m:
+                    out.annual_taxes = int(float(m.group(1).replace(",", "")))
+                    out.taxes_known = True
+
+            elif (
+                "maintenance fees" in label
+                and "include" not in label
+                and "company" not in label
+            ):
+                # e.g. "$511.06 Monthly(CAD)" or "$761.00 Monthly"
+                m = re.search(r"\$([\d,]+\.?\d*)", val)
+                if m:
+                    out.condo_fee_monthly = int(float(m.group(1).replace(",", "")))
+                    out.condo_fee_known = True
+
+            elif "year built" in label or "construction year" in label:
+                # e.g. "2019" or "2015 approx"
+                m = re.search(r"\b(19|20)\d{2}\b", val)
+                if m:
+                    out.year_built = int(m.group())
+                    out.year_built_known = True
+
+            elif "total parking spaces" in label:
+                # e.g. "1" or "8" — the API previously hardcoded 0
+                m = re.search(r"\d+", val)
+                if m:
+                    out.parking_spaces = int(m.group())
+
+            elif label == "above grade":
+                # Bedrooms section: "2 + 1" listings carry dataLayer bedrooms=3;
+                # the den is NOT a legal bedroom (the whole tenant §02 story),
+                # and comps key on beds — use the above-grade count instead.
+                # The label only appears under Bedrooms (Bathrooms uses
+                # Total/Partial), so no section disambiguation is needed.
+                m = re.search(r"\d+", val)
+                if m:
+                    out.beds_above_grade = int(m.group())
+
+    except Exception:
+        logging.exception("_parse_rendered_fields failed")
+
+    return out
 
 
-def _safe_float(value: Any, default: float = 0.0) -> float:
-    """Coerce a value to float, returning default on failure."""
-    try:
-        return float(str(value).replace(",", "").strip())
-    except (ValueError, TypeError):
-        return default
+# CDN photo URL: .../highres/<n>/<mls>_<seq>.jpg — the JSON-LD block only
+# carries the first photo; the page HTML references the full set.
+_PHOTO_RE = re.compile(
+    r"https://cdn\.realtor\.ca/listings/[^\"'\s?]+/highres/[^\"'\s?]+?_(\d+)\.jpg"
+)
+_MAX_PHOTOS = 12
 
 
-def _parse_listing(data: dict[str, Any]) -> ScrapedListing:
-    """
-    Parse the Realtor.ca API response into a ScrapedListing model.
-
-    The API response structure is treated as TEMPLATE CODE — field paths will
-    shift as Realtor.ca updates their internal API.
-
-    Args:
-        data: Parsed JSON response from the Realtor.ca RecordDetails endpoint.
-
-    Returns:
-        ScrapedListing with all _known flags set.
-    """
-    # The top-level response wraps listing data under different keys
-    # depending on whether it is a residential or commercial listing.
-    listing = data.get("Results", [data])[0] if "Results" in data else data
-
-    # ── Address ───────────────────────────────────────────────────────────────
-    prop = listing.get("Property", {})
-    address_obj = prop.get("Address", {})
-    street = address_obj.get("AddressText", "")
-    # AddressText often contains "StreetAddress|City Province  PostalCode"
-    # Strip any pipe-delimited suffix if present
-    address = street.split("|")[0].strip() if "|" in street else street.strip()
-
-    postal_code = address_obj.get("PostalCode", "")
-    # Some addresses embed the postal code in AddressText; extract if missing
-    if not postal_code:
-        pc_match = re.search(r"[A-Z]\d[A-Z]\s?\d[A-Z]\d", street.upper())
-        postal_code = pc_match.group(0).replace(" ", "") if pc_match else ""
-
-    province = _detect_province(postal_code)
-
-    # ── Price ─────────────────────────────────────────────────────────────────
-    raw_price = prop.get("Price", listing.get("ListPrice", "0"))
-    price = _safe_int(str(raw_price).replace("$", "").replace(",", ""))
-
-    # ── Taxes ─────────────────────────────────────────────────────────────────
-    tax_raw = listing.get("Tax", {})
-    if isinstance(tax_raw, dict):
-        annual_tax_str = tax_raw.get("AnnualAmount", "") or tax_raw.get("Amount", "")
-        annual_taxes = _safe_int(str(annual_tax_str).replace("$", "").replace(",", ""))
-        tax_known = annual_taxes > 0
-    else:
-        annual_taxes = 0
-        tax_known = False
-
-    # ── Condo fee ─────────────────────────────────────────────────────────────
-    building = listing.get("Building", {})
-    maint_raw = listing.get("MaintenanceFee", "") or building.get("MaintenanceFee", "")
-    if maint_raw:
-        condo_fee_monthly = _safe_int(str(maint_raw).replace("$", "").replace(",", ""))
-        condo_fee_known = condo_fee_monthly > 0
-    else:
-        condo_fee_monthly = None
-        condo_fee_known = False
-
-    # ── Beds / baths ──────────────────────────────────────────────────────────
-    beds_raw = building.get("BedroomsTotal", building.get("BedroomsAboveGrade", "0"))
-    beds = _safe_int(beds_raw)
-
-    baths_raw = building.get("BathroomTotal", building.get("Bathrooms", "0"))
-    baths = _safe_float(baths_raw)
-
-    # ── Sqft ──────────────────────────────────────────────────────────────────
-    # SizeInterior is the interior square footage in sqft or sqm
-    size_raw = building.get("SizeInterior", "")
-    if size_raw:
-        # e.g. "950 sqft" or "88.26 m2"
-        size_digits = re.sub(r"[^\d.]", "", size_raw.split()[0]) if size_raw else ""
-        if "m2" in size_raw.lower() or "sqm" in size_raw.lower():
-            # Convert sqm to sqft
-            sqft = int(float(size_digits) * 10.764) if size_digits else None
-        else:
-            sqft = _safe_int(size_digits) if size_digits else None
-        sqft_known = sqft is not None and sqft > 0
-    else:
-        sqft = None
-        sqft_known = False
-
-    # ── Year built ────────────────────────────────────────────────────────────
-    year_built_raw = listing.get("YearBuilt", building.get("Age", ""))
-    if year_built_raw:
-        year_digits = re.sub(r"\D", "", str(year_built_raw))
-        year_built = int(year_digits) if len(year_digits) == 4 else None
-        year_built_known = year_built is not None
-    else:
-        year_built = None
-        year_built_known = False
-
-    # ── Property type ─────────────────────────────────────────────────────────
-    type_raw = prop.get("Type", building.get("Type", "house"))
-    property_type = _normalise_property_type(type_raw)
-
-    # ── Is Toronto ────────────────────────────────────────────────────────────
-    is_toronto = postal_code.strip().upper().startswith(_TORONTO_FSA_PREFIX)
-
-    # ── Listing type ──────────────────────────────────────────────────────────
-    # Realtor.ca on-demand endpoint is always for-sale listings
-    listing_type = "for_sale"
-
-    return ScrapedListing(
-        address=address,
-        postal_code=postal_code,
-        price=price,
-        annual_taxes=annual_taxes,
-        tax_known=tax_known,
-        condo_fee_monthly=condo_fee_monthly,
-        condo_fee_known=condo_fee_known,
-        beds=beds,
-        baths=baths,
-        sqft=sqft,
-        sqft_known=sqft_known,
-        year_built=year_built,
-        year_built_known=year_built_known,
-        province=province,
-        property_type=property_type,
-        is_toronto=is_toronto,
-        listing_type=listing_type,
-    )
-
-
-# ── Public API ─────────────────────────────────────────────────────────────────
+def _parse_photo_urls(page: str) -> list[str]:
+    """All distinct highres CDN photo URLs on the page, in gallery order."""
+    seen: dict[str, int] = {}
+    for m in _PHOTO_RE.finditer(page):
+        url = m.group(0)
+        if url not in seen:
+            seen[url] = int(m.group(1))
+    ordered = sorted(seen, key=lambda u: seen[u])
+    return ordered[:_MAX_PHOTOS]
 
 
 async def scrape_listing(url: str) -> ScrapedListing | None:
     """
-    Fetch structured listing data from Realtor.ca for the given URL.
+    Scrape a single Realtor.ca listing URL via ScraperAPI (premium proxy).
 
-    Extracts the property ID from the URL, calls the Realtor.ca internal JSON
-    API, and returns a validated ScrapedListing model.
+    Uses `premium=true` only (no `render=true`). ScraperAPI's render mode
+    fails with HTTP 500 on Realtor.ca listing pages — their JS bot detection
+    catches the headless browser even with a residential proxy. The static
+    HTML returned by `premium=true` already contains the dataLayer.property
+    JS block, the JSON-LD <script>, and the propertyDetailsSection label/value
+    pairs (taxes), so the parser has everything it needs.
+
+    Caveat: condo fee and year built are sometimes JS-injected (only show up
+    with render). Those fields are wrapped in _known flags — the calc engine
+    treats them as missing when absent, which is the right behaviour.
 
     Args:
-        url: Full Realtor.ca listing URL, e.g.
-             https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan
+        url: Full Realtor.ca listing URL.
 
     Returns:
-        ScrapedListing if the listing was found and parsed successfully,
-        or None if the API call failed or the listing was not found.
+        ScrapedListing with raw field data, or None if scraping fails.
     """
-    property_id = _extract_property_id(url)
-    if not property_id:
-        logger.warning("Could not extract property ID from URL: %s", url)
-        return None
-
-    params = {**_API_PARAMS_BASE, "PropertyID": property_id}
-
     try:
-        async with httpx.AsyncClient(timeout=_REQUEST_TIMEOUT_SECONDS) as client:
-            response = await client.get(
-                _API_BASE,
-                params=params,
-                headers=_REQUEST_HEADERS,
+        if not re.search(r"/real-estate/\d+/", url):
+            return None
+
+        if not SCRAPER_API_KEY:
+            logging.error("SCRAPER_API_KEY is not set")
+            return None
+
+        # ScraperAPI premium fetches fail intermittently (~1-in-3 succeeded in
+        # live probing, 2026-07-02) as their proxy pool rotates against
+        # Realtor.ca's bot detection. ScraperAPI's own guidance is to retry
+        # failed requests — failures are not billed. Bounded retry, no backoff
+        # needed (each attempt already takes ~25-30s through the proxy).
+        response = None
+        for attempt in range(1, _SCRAPER_API_ATTEMPTS + 1):
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                response = await client.get(
+                    _SCRAPER_API_URL,
+                    params={
+                        "api_key": SCRAPER_API_KEY,
+                        "url": url,
+                        "premium": "true",
+                    },
+                )
+            if response.status_code == 200:
+                break
+            logging.warning(
+                "ScraperAPI attempt %s/%s returned %s for %s",
+                attempt,
+                _SCRAPER_API_ATTEMPTS,
+                response.status_code,
+                url,
             )
-            response.raise_for_status()
-            data: dict[str, Any] = response.json()
-    except httpx.HTTPStatusError as exc:
-        logger.error(
-            "Realtor.ca API returned HTTP %s for property %s: %s",
-            exc.response.status_code,
-            property_id,
-            exc,
-        )
-        return None
-    except httpx.RequestError as exc:
-        logger.error(
-            "Realtor.ca API request failed for property %s: %s", property_id, exc
-        )
-        return None
-    except (
-        Exception
-    ) as exc:  # noqa: BLE001 — catch-all so one failure never crashes the app
-        logger.error("Unexpected error scraping property %s: %s", property_id, exc)
-        return None
 
-    try:
-        return _parse_listing(data)
-    except Exception as exc:  # noqa: BLE001
-        logger.error(
-            "Failed to parse Realtor.ca response for property %s: %s", property_id, exc
+        if response is None or response.status_code != 200:
+            logging.error(
+                "ScraperAPI failed after %s attempts for %s", _SCRAPER_API_ATTEMPTS, url
+            )
+            return None
+
+        page = response.text
+
+        # ── dataLayer.property block ──────────────────────────────────────────
+        # The page injects a dataLayer.push call with a 'property' JS literal.
+        dl_match = re.search(r"property:\s*\{([^}]+)\}", page, re.DOTALL)
+        if not dl_match:
+            return None
+        dl = dl_match.group(1)
+
+        price_raw = _dl("price", dl) or ""
+        lease_raw = _dl("leasePrice", dl) or ""
+        beds_raw = _dl("bedrooms", dl) or "0"
+        baths_raw = _dl("bathrooms", dl) or "0"
+        prop_type = _dl("propertyType", dl) or ""
+        building_type = _dl("buildingType", dl)
+        sqft_raw = _dl("interiorFloorSpace", dl) or ""
+
+        # For-rent: leasePrice is populated; for-sale: price is populated.
+        lease_val = float(lease_raw.replace(",", "") or 0)
+        price_val_f = float(price_raw.replace(",", "") or 0)
+
+        if lease_val > 0:
+            listing_type = "for_rent"
+            price_val = int(lease_val)
+        elif price_val_f > 0:
+            listing_type = "for_sale"
+            price_val = int(price_val_f)
+        else:
+            return None
+
+        beds = int(beds_raw or 0)
+        baths = float(baths_raw or 0)
+
+        sqft: int | None = None
+        if sqft_raw:
+            num = re.search(r"[\d.]+", sqft_raw)
+            if num:
+                val = float(num.group())
+                # Realtor.ca reports interior floor space in m²; convert to sqft.
+                if "m2" in sqft_raw.lower() or "m²" in sqft_raw:
+                    val *= 10.7639
+                sqft = int(round(val))
+
+        # ── schema.org JSON-LD ────────────────────────────────────────────────
+        address: str | None = None
+        listing_description: str | None = None
+        photo_urls: list[str] = []
+
+        ld_match = re.search(
+            r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>\s*(\{.*?\})\s*</script>',
+            page,
+            re.DOTALL,
         )
+        if ld_match:
+            try:
+                ld = json.loads(ld_match.group(1))
+                address = ld.get("name")
+                raw_desc = ld.get("description", "")
+                if raw_desc:
+                    listing_description = html_lib.unescape(raw_desc)
+                imgs = ld.get("image", [])
+                if isinstance(imgs, str):
+                    imgs = [imgs]
+                photo_urls = [i for i in imgs if "highres" in i.lower()]
+            except (json.JSONDecodeError, AttributeError):
+                pass
+
+        # The JSON-LD image list only carries the first photo — sweep the page
+        # for the full CDN set (18–42 photos on live listings).
+        page_photos = _parse_photo_urls(page)
+        if len(page_photos) > len(photo_urls):
+            photo_urls = page_photos
+
+        if not address or price_val <= 0:
+            return None
+
+        # ── Detail-section fields (taxes, fee, year, parking, beds) ──────────
+        details = _parse_rendered_fields(page)
+
+        # "2 + 1" listings carry dataLayer bedrooms=3; the above-grade count is
+        # the honest bedroom number (a den is not a legal bedroom) and the one
+        # rental comps should key on.
+        if (
+            details.beds_above_grade is not None
+            and 0 < details.beds_above_grade <= beds
+        ):
+            beds = details.beds_above_grade
+
+        return ScrapedListing(
+            url=url,
+            address=address,
+            price=price_val,
+            beds=beds,
+            baths=baths,
+            sqft=sqft,
+            property_type=prop_type,
+            annual_taxes=details.annual_taxes,
+            taxes_known=details.taxes_known,
+            condo_fee_monthly=details.condo_fee_monthly,
+            condo_fee_known=details.condo_fee_known,
+            year_built=details.year_built,
+            year_built_known=details.year_built_known,
+            listing_type=listing_type,
+            listing_description=listing_description,
+            photo_urls=photo_urls,
+            days_on_market=None,
+            raw={
+                "mls": _dl("listingID", dl),
+                "city": _dl("city", dl),
+                "province": _dl("province", dl),
+            },
+            building_type=building_type,
+            parking_spaces=details.parking_spaces,
+        )
+
+    except Exception:
+        logging.exception("scrape_listing failed for URL: %s", url)
         return None

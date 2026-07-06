@@ -172,3 +172,58 @@ async def test_photo_sweep_collects_all_cdn_photos_in_gallery_order() -> None:
         "3.jpg",
         "10.jpg",
     ]
+
+
+# ── contract: flat JSON shape the Fastify API consumes (mirror of the calc-engine
+#    /scrape contract test — the two /scrape servers MUST return the same keys) ──
+
+_API_CONTRACT_KEYS = {
+    "url",
+    "address",
+    "price",
+    "beds",
+    "baths",
+    "sqft",
+    "property_type",
+    "annual_taxes",
+    "taxes_known",
+    "condo_fee_monthly",
+    "condo_fee_known",
+    "year_built",
+    "year_built_known",
+    "listing_type",
+    "listing_description",
+    "photo_urls",
+    "days_on_market",
+    "raw",
+    "building_type",
+    "parking_spaces",
+}
+
+
+def test_scrape_response_shape_matches_api_contract() -> None:
+    import dataclasses
+
+    from realtor_scraper import ScrapedListing
+
+    listing = ScrapedListing(
+        url="u",
+        address="a",
+        price=1,
+        beds=1,
+        baths=1.0,
+        sqft=None,
+        property_type="p",
+        annual_taxes=None,
+        taxes_known=False,
+        condo_fee_monthly=None,
+        condo_fee_known=False,
+        year_built=None,
+        year_built_known=False,
+        listing_type="for_sale",
+        listing_description=None,
+        photo_urls=[],
+        days_on_market=None,
+        raw={},
+    )
+    assert set(dataclasses.asdict(listing).keys()) == _API_CONTRACT_KEYS
