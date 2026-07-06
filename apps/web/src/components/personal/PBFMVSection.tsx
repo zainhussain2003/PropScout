@@ -61,6 +61,35 @@ export function PBFMVSection({
   const thisPPSqft = Math.round(property.price / property.sqft)
   const medianPP = medianPPSqft ?? thisPPSqft
 
+  // LIVE: the FMV band would be a fabricated ±5% of asking (no sold-comp source
+  // exists yet). Show the honest empty state — a self-referential ±5% "range"
+  // isn't a fair-market-value read, and rendering it as one misleads the buyer.
+  if (isEstimated) {
+    return (
+      <section className="container tr-section">
+        <SectionHead
+          n="02"
+          topic="Fair market value"
+          question={
+            <>
+              Is it priced <em>fairly</em>?
+            </>
+          }
+          verdict="No comparable-sales source yet"
+          tone="caution"
+        />
+        <div className="card" style={{ padding: 32 }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
+            No comparable-sales source yet — we can&apos;t position {fmtMoney(property.price)}{' '}
+            against recent sold prices for this area until a licensed sales feed is connected. The
+            asking price is {fmtMoney(property.price)} ({thisPPSqft.toLocaleString()} $/sqft);
+            confirm fair value with a local agent&apos;s CMA.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="container tr-section">
       <SectionHead

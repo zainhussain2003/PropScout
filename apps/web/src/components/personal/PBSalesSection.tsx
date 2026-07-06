@@ -14,14 +14,41 @@ import { fmtMoney } from '../../lib/investorCalc'
 interface PBSalesSectionProps {
   comps: PersonalComp[]
   /**
-   * When true, renders a "Sample comparables · real sales data in Phase 2"
-   * label above the comps table to indicate the data is not derived from
-   * the current listing's location.
+   * True in LIVE mode: there is no comparable-SALES data source yet (PropScout
+   * has no sold-price feed). We must NOT render the `comps` fixtures as if they
+   * were this listing's real neighbours — show the honest empty state instead.
+   * Only the demo route (isSampleData=false) renders the sample table.
    */
   isSampleData?: boolean
 }
 
 export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionProps): JSX.Element {
+  // LIVE: no sold-price source exists — honest empty, never the fixture comps.
+  if (isSampleData) {
+    return (
+      <section className="container tr-section">
+        <SectionHead
+          n="03"
+          topic="Comparable sales"
+          question={
+            <>
+              What's <em>actually</em> selling around here?
+            </>
+          }
+          verdict="No comparable-sales source yet"
+          tone="caution"
+        />
+        <div className="card" style={{ padding: 32 }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
+            No comparable-sales source yet — recent sold prices aren&apos;t available for this area.
+            We show sold comparables once a licensed sales feed is connected; until then, confirm
+            recent sales with a local agent.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
   // Median by sold price (middle value of sorted array)
   const sorted = [...comps].sort((a, b) => a.sold - b.sold)
   const mid = Math.floor(sorted.length / 2)
