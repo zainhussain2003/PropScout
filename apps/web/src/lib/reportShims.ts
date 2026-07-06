@@ -17,6 +17,7 @@ import type {
   NearbySchool,
   TenantSchools,
   TenantSchool,
+  TenantFlag,
   SchoolBoard,
   SchoolQuality,
 } from '../types/analysis'
@@ -35,6 +36,23 @@ import {
 } from '../constants/defaults'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Real risk flags → the TenantFlag shape §02 Listing Accuracy renders. Keeps the
+ * live tenant report on REAL extracted flags instead of the CHARLES fixtures
+ * (which previously leaked into real mode). Risk flags are all warnings, so tone
+ * is red/amber only (never the fixture's confirmed-'good' rows). The evidence
+ * quote becomes both the detail summary and the expandable evidence line.
+ */
+export function shimToTenantFlags(flags: Analysis['riskFlags']): TenantFlag[] {
+  return flags.map((f) => ({
+    id: f.id,
+    tone: f.severity === 'red' ? 'red' : 'amber',
+    label: f.label,
+    detail: f.evidence ?? 'Flagged from the listing description.',
+    evidence: f.evidence ?? undefined,
+  }))
+}
 
 function parseAddress(address: string): { line1: string; line2: string } {
   const idx = address.indexOf(',')

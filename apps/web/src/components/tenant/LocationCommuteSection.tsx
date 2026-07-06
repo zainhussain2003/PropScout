@@ -70,6 +70,11 @@ export function LocationCommuteSection({
           </div>
 
           <div className="col" style={{ gap: 20 }}>
+            {mobilityScores.length === 0 && (
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
+                Walk, Transit, and Bike scores are unavailable for this address.
+              </p>
+            )}
             {mobilityScores.map((s) => (
               <div key={s.label} className="col" style={{ gap: 8 }}>
                 <div

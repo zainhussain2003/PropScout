@@ -63,11 +63,14 @@ import {
 } from '../constants/tenantDemoData'
 import type {
   Analysis,
+  FlagOverrideControls,
   TenantChecklistItem,
   TenantCostLine,
+  TenantFlag,
   TenantListingData,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
+import { RiskRow } from '../components/analysis/RiskRow'
 import { shimToTenantListingData, shimToTenantSchools } from '../lib/reportShims'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -488,10 +491,10 @@ function RentPositioningSection(): JSX.Element {
 
 // ── §02 Listing Accuracy ──────────────────────────────────────────────────────
 
-function ListingAccuracySection(): JSX.Element {
-  const redCount = CHARLES_FLAGS.filter((f) => f.tone === 'red').length
-  const amberCount = CHARLES_FLAGS.filter((f) => f.tone === 'amber').length
-  const goodCount = CHARLES_FLAGS.filter((f) => f.tone === 'good').length
+function ListingAccuracySection({ flags = CHARLES_FLAGS }: { flags?: TenantFlag[] }): JSX.Element {
+  const redCount = flags.filter((f) => f.tone === 'red').length
+  const amberCount = flags.filter((f) => f.tone === 'amber').length
+  const goodCount = flags.filter((f) => f.tone === 'good').length
 
   const verdictParts = []
   if (redCount > 0) verdictParts.push(`${redCount} red`)
@@ -513,7 +516,7 @@ function ListingAccuracySection(): JSX.Element {
       />
 
       <div className="col" style={{ gap: 16 }}>
-        {CHARLES_FLAGS.map((f) => (
+        {flags.map((f) => (
           <FlagDeepRow key={f.id ?? f.label} flag={f} />
         ))}
       </div>
@@ -1195,12 +1198,21 @@ interface TenantReportProps {
   analysis?: Analysis | null
   /** Real listing from the API — required alongside analysis to activate live mode. */
   listing?: Listing | null
+  /** Risk-flag dismissal controls — wired live so §02 flags stay dismissable. */
+  flagOverrides?: FlagOverrideControls
+}
+
+const NO_FLAG_OVERRIDES: FlagOverrideControls = {
+  overrides: new Set(),
+  canOverride: false,
+  onToggle: () => undefined,
 }
 
 export function TenantReport({
   tier = 'pro',
   analysis: realAnalysis,
   listing: realListing,
+  flagOverrides = NO_FLAG_OVERRIDES,
 }: TenantReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
@@ -1333,7 +1345,36 @@ export function TenantReport({
       {/* §02 Listing accuracy — real flags when available, fixture for demo */}
       {isReal ? (
         realAnalysis!.riskFlags.length > 0 ? (
-          <ListingAccuracySection />
+          <section className="container tr-section" data-section="02">
+            <SectionHead
+              n="02"
+              topic="Listing accuracy"
+              question={
+                <>
+                  Is the listing <em>honest</em>?
+                </>
+              }
+              verdict={(() => {
+                const red = realAnalysis!.riskFlags.filter((f) => f.severity === 'red').length
+                const amber = realAnalysis!.riskFlags.filter((f) => f.severity === 'amber').length
+                return red > 0 ? `${red} red · ${amber} amber` : `${amber} amber`
+              })()}
+              tone={realAnalysis!.riskFlags.some((f) => f.severity === 'red') ? 'fail' : 'caution'}
+            />
+            <div className="card col" style={{ padding: 0, overflow: 'hidden' }}>
+              {realAnalysis!.riskFlags.map((f) => (
+                <RiskRow
+                  key={f.id}
+                  tone={f.severity}
+                  label={f.label}
+                  detail={f.evidence ?? ''}
+                  dismissable={flagOverrides.canOverride}
+                  dismissed={flagOverrides.overrides.has(f.id)}
+                  onToggleDismiss={() => flagOverrides.onToggle(f.id)}
+                />
+              ))}
+            </div>
+          </section>
         ) : (
           <SectionPlaceholder
             n="02"
@@ -1436,13 +1477,19 @@ export function TenantReport({
                   tone: (realAnalysis.walkScore.bike ?? 0) >= 50 ? 'pass' : 'caution',
                 },
               ]
-            : CHARLES_MOBILITY_SCORES
+            : // Real mode with no Walk Score (API key missing / lookup failed):
+              // show an honest empty, never the CHARLES fixture scores.
+              isReal
+              ? []
+              : CHARLES_MOBILITY_SCORES
         }
         distances={isReal ? [] : CHARLES_DISTANCES}
         verdict={
           realAnalysis?.walkScore
             ? `Walk ${realAnalysis.walkScore.walk} · Transit ${realAnalysis.walkScore.transit ?? 0}`
-            : 'Excellent transit · limited walk'
+            : isReal
+              ? 'Mobility scores unavailable for this address'
+              : 'Excellent transit · limited walk'
         }
       />
 
@@ -1478,8 +1525,32 @@ export function TenantReport({
         }
       />
 
-      {/* §10 Comps map */}
-      <CompsMapSection />
+      {/* §10 Comps map — the demo maps 14 fixture buildings; live has only the
+          aggregate rent range (no per-comp coordinates), so show an honest empty
+          rather than fabricated building pins. */}
+      {isReal ? (
+        <section className="container tr-section" data-section="10">
+          <SectionHead
+            n="10"
+            topic="Map of comps"
+            question={
+              <>
+                Where do <em>similar units</em> sit?
+              </>
+            }
+            verdict="Not mapped individually"
+            tone="caution"
+          />
+          <div className="card" style={{ padding: 32 }}>
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
+              Individual comparable rentals aren&apos;t mapped for this listing yet. The market rent
+              range in §01 is drawn from the nightly rental comps for this postal code.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <CompsMapSection />
+      )}
 
       {/* §11 Unit & building details — requires extraction pipeline for room-level detail */}
       {isReal ? (

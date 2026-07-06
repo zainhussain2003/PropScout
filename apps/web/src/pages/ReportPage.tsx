@@ -11,6 +11,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
+import { TenantReport } from './TenantReport'
 import {
   enrichMetrics,
   toDealScoreData,
@@ -972,6 +973,22 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   // would never give an owner-occupier (cap-rate/DSCR are the wrong question).
   if (!loading && !notFound && analysis && listing && mode === 'personal') {
     return <PersonalBuyerPage analysis={analysis} listing={listing} />
+  }
+
+  // Tenant gets the full 12-section report (Listed-vs-Reality, Negotiation,
+  // Monthly cost, What's-included, Location & commute, Comps map, Unit details,
+  // Before-you-sign) — the same self-contained page the demo renders, wired to
+  // real data with honest empty states where a live source doesn't exist yet.
+  // (Previously the live tenant path showed only 4 of 12 sections.)
+  if (!loading && !notFound && analysis && listing && mode === 'tenant') {
+    return (
+      <TenantReport
+        tier={tier}
+        analysis={analysis}
+        listing={listing}
+        flagOverrides={flagOverrides}
+      />
+    )
   }
 
   return (
