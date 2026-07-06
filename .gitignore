@@ -49,3 +49,9 @@ Desktop.ini
 
 # Supabase temp files
 supabase/.temp/
+
+# School dataset build artifacts (not committed per goal 2026-07-05)
+school-data-raw/
+school-data/
+scripts/_db_check.mjs
+scripts/_verify_schools.mjs
