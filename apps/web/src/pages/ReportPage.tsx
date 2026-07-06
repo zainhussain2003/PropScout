@@ -35,6 +35,7 @@ import { DealScore as DealScoreWidget } from '../components/analysis/DealScore'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { InvestmentMetricsSection } from '../components/investor/InvestmentMetricsSection'
+import { FinancingSliders } from '../components/investor/FinancingSliders'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { LTTTable } from '../components/investor/LTTTable'
@@ -809,10 +810,20 @@ function InvestorReportContent({
   const { openUpgradeModal } = usePaywall()
   const verdictEyebrow = `Scout AI · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
-  const financing = toFinancingInputs(analysis.metrics, listingData)
 
-  const metrics: ComputedInvestorMetrics | null =
-    analysis.metrics != null ? enrichMetrics(analysis.metrics, listingData, financing) : null
+  // Financing is LIVE: the sliders drive every metric on the page (cash flow,
+  // cap rate, DSCR, cash-to-close, OSFI, equity) via enrichMetrics. The deal
+  // SCORE is NOT recomputed here — it stays the backend value (one source of
+  // truth); sliders explore the numbers, they don't re-grade the deal.
+  const [financing, setFinancing] = useState<FinancingInputs>(() =>
+    toFinancingInputs(analysis.metrics, listingData)
+  )
+
+  const metrics: ComputedInvestorMetrics | null = useMemo(
+    () =>
+      analysis.metrics != null ? enrichMetrics(analysis.metrics, listingData, financing) : null,
+    [analysis.metrics, listingData, financing]
+  )
 
   // ONE SOURCE OF TRUTH: the deal score comes straight from the calc engine
   // (gated, floored, the lot). The frontend does NOT re-derive it — a second
@@ -882,6 +893,22 @@ function InvestorReportContent({
       </div>
 
       <InvestmentMetricsSection metrics={metrics} listing={listingData} />
+      {/* §02 Financing — live sliders; every metric above/below recomputes on
+          drag (deal score stays backend-sourced). */}
+      <section className="container tr-section" data-section="02">
+        <SectionHead
+          n="02"
+          topic="Financing"
+          question={
+            <>
+              Does the deal <em>pencil</em> at your numbers?
+            </>
+          }
+          verdict={`${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`}
+          tone="caution"
+        />
+        <FinancingSliders financing={financing} price={listingData.price} onChange={setFinancing} />
+      </section>
       <RentalCompsSection analysis={analysis} listing={listingData} />
       {/* Purchase-transaction section — meaningless for a for-rent listing
           (no sale price: the LTT table computed $0 while the totals card used
