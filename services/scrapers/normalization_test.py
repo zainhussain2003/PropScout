@@ -199,3 +199,15 @@ class TestNormalizeListing:
         clean = normalize_listing(_raw(rent_raw="550 weekly"))
         assert clean is not None
         assert clean.rent_monthly == 2382
+
+    def test_coords_passed_through_when_source_provides_them(self):
+        # rentals.ca GraphQL carries exact coords — they must survive normalisation
+        # so the pipeline can skip a redundant geocode.
+        clean = normalize_listing(_raw(lat=43.6654, lng=-79.3176))
+        assert clean is not None
+        assert clean.lat == 43.6654 and clean.lng == -79.3176
+
+    def test_coords_default_none_when_source_omits_them(self):
+        clean = normalize_listing(_raw())
+        assert clean is not None
+        assert clean.lat is None and clean.lng is None

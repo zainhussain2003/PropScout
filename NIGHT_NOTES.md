@@ -1,3 +1,51 @@
+# Work log — 2026-07-05 · rentals_ca zero-yield fixed (GraphQL rewrite)
+
+**Symptom:** the Railway nightly run showed rentals_ca = 0 raw listings while kijiji (92)
+and padmapper (364) worked from the same datacenter IP.
+
+**Root cause — NOT an IP block. A site redesign (selector rot's bigger cousin).**
+Diagnosed live: local Playwright loads `rentals.ca/toronto?p=1` with HTTP 200 and a real
+321 KB page, but the old `[class*='listing-card']` selector matches 0 elements. Rentals.ca
+rebuilt search from a server-rendered card list into a **Google-Maps SPA**: the map shows
+price-only pins (`listing-map-marker__label`, no id/address/beds), and the actual listings
+come from an **authenticated GraphQL API** (`POST /graphql`, operation `RentalListingSearch`).
+Confirmation it isn't an IP block: kijiji/padmapper (same Playwright path, same Railway IP)
+succeeded, and the page itself returns 200 from any IP — only the extraction was dead.
+Direct/httpx and replayed `page.request` calls to the API hit Cloudflare "Just a moment"
+(403); the page's OWN in-context fetch (with its client-minted bearer + CF clearance) gets
+200 and 500 listings/query.
+
+**Fix (rewrite, not a selector tweak):** `sources/rentals_ca.py` now
+
+1. loads the city page in Playwright (passes CF, sets clearance),
+2. lifts the SPA's own bearer token off its first `/graphql` request
+   (`browser.open_page_capturing_token`),
+3. replays an **enriched** `RentalListingSearch` query IN the page context
+   (`page.evaluate` fetch) — one query/city, `first=100` (env `SCRAPER_RENTALS_CA_PAGE_SIZE`),
+   20 km radius (`SCRAPER_RENTALS_CA_RADIUS_M`), returning nodes with
+   path/name/rentRange/bedsRange/bathsRange/sizeRange/location/address,
+4. parses each node → RawRentalListing (ranges collapse to their **low end** — the existing
+   building-listing discipline). Anchored on the GraphQL schema, not CSS = far less rot-prone.
+
+**Why no ScraperAPI (the goal's IP-block branch):** it isn't an IP block, so proxying buys
+nothing here and the API needs the client-minted bearer anyway. Documented fallback lever: if
+a future Railway run shows the `/graphql` XHR itself getting CF-challenged from the datacenter
+IP (page loads but every city query returns non-200/blocked), route rentals_ca's GraphQL POST
+through ScraperAPI premium (reuse the realtor_scraper pattern) — the per-source split is
+already in place (kijiji/padmapper stay on the direct card path, untouched).
+
+**Bonus — no geocoding cost regression:** the GraphQL nodes carry exact coords + postal, now
+plumbed through RawRentalListing→CleanRentalListing; `geocode_listings` skips the Mapbox call
+when both are present. So the much higher row volume (vs the old ~75/run) costs ~0 extra
+geocoding.
+
+**Verified live (2 cities, depth-1):** 200 raw → 193 unique, **100% coords / postal / beds**,
+100% would-skip-geocode, realistic rents ($1.6k–$2.7k), real addresses+URLs. Scraper tests
+**176 pass** (floor was 151; +25 new). Yield floor `MIN_RAW_ROWS_PER_SOURCE=5` left UNCHANGED
+(never masked the problem). `data.ontario.ca` note: unrelated.
+
+---
+
 # Work log — 2026-06-21
 
 ## ⚠️ Unsourced / assumed values — track, validate, do not trust as researched

@@ -158,6 +158,63 @@ async def open_page(browser: Browser, url: str) -> PageResult:
     return PageResult(page=page, status=status, blocked=blocked)
 
 
+async def open_page_capturing_token(
+    browser: Browser, url: str, token_path_suffix: str = "/graphql"
+) -> tuple[PageResult, str | None]:
+    """
+    Open a URL like ``open_page``, but also capture the ``Authorization`` bearer
+    the loaded SPA sends on its OWN first request to ``token_path_suffix``.
+
+    Some sources (rentals.ca) no longer render listings into HTML — the data
+    lives behind an authenticated same-origin API the SPA calls with a
+    short-lived bearer token it mints client-side. Rather than reverse-engineer
+    that token, we let the page load and hydrate, watch its outgoing requests,
+    and lift the bearer off the first API call it makes. The caller can then
+    replay an enriched query in-page (``page.evaluate`` fetch), riding the same
+    Cloudflare clearance and token.
+
+    Args:
+        browser: Running Playwright browser.
+        url: URL to navigate to.
+        token_path_suffix: Request URL suffix whose Authorization header to grab.
+
+    Returns:
+        (PageResult, token). ``token`` is None if the SPA made no matching
+        request in time (or the page failed to load). Never raises.
+    """
+    captured: dict[str, str] = {}
+
+    def _grab(request: object) -> None:
+        try:
+            if request.url.endswith(token_path_suffix):
+                auth = request.headers.get("authorization")
+                if auth and "token" not in captured:
+                    captured["token"] = auth
+        except Exception:  # never let a listener break navigation
+            pass
+
+    await asyncio.sleep(REQUEST_DELAY_SECONDS)
+    page = await browser.new_page(user_agent=_USER_AGENT)
+    page.on("request", _grab)
+    try:
+        response = await page.goto(
+            url, timeout=PAGE_LOAD_TIMEOUT_MS, wait_until="domcontentloaded"
+        )
+    except Exception:
+        logger.exception("Navigation failed: %s", url)
+        await page.close()
+        return PageResult(page=None, status=NAV_FAILED_STATUS, blocked=False), None
+
+    status = response.status if response is not None else NAV_FAILED_STATUS
+    blocked = await _detect_block(page, status)
+    # The SPA fires its own API call during hydration — give it that window.
+    try:
+        await page.wait_for_load_state("networkidle", timeout=PAGE_LOAD_TIMEOUT_MS)
+    except Exception:
+        pass  # ad/analytics chatter can keep the network busy — token may still be caught
+    return PageResult(page=page, status=status, blocked=blocked), captured.get("token")
+
+
 async def _detect_block(page: Page, status: int) -> bool:
     """
     Decide whether a served page is an anti-bot block.

@@ -36,6 +36,10 @@ class RawRentalListing:
     sqft_raw: str | None = None
     listed_at: date | None = None
     raw_json: dict[str, object] | None = None
+    # Some sources (rentals.ca GraphQL) hand back exact coordinates — pass them
+    # through so the pipeline can skip a redundant Mapbox geocode for the row.
+    lat: float | None = None
+    lng: float | None = None
 
 
 @dataclass
@@ -243,5 +247,7 @@ def normalize_listing(raw: RawRentalListing) -> CleanRentalListing | None:
         rent_monthly=rent_monthly,
         sqft=parse_sqft(raw.sqft_raw),
         listed_at=raw.listed_at,
+        lat=raw.lat,
+        lng=raw.lng,
         raw_json=raw.raw_json,
     )

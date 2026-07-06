@@ -130,6 +130,17 @@ async def geocode_listings(listings: list[CleanRentalListing]) -> None:
         listings: New listings to geocode. Failures leave lat/lng as None.
     """
     for listing in listings:
+        # Some sources (rentals.ca GraphQL) already carry exact coordinates AND a
+        # postal code — skip the redundant Mapbox call. This keeps geocoding cost
+        # flat even though that source now returns far more rows than the old
+        # card scraper. Rows missing either field still geocode (to recover the
+        # comp-query key).
+        if (
+            listing.lat is not None
+            and listing.lng is not None
+            and listing.postal_code is not None
+        ):
+            continue
         geo = await mapbox_service.geocode_address(listing.address)
         if geo is None:
             continue

@@ -101,6 +101,24 @@ PAGE_LOAD_TIMEOUT_MS = 30_000  # Playwright navigation timeout
 # first unattended runs get throttled.
 MAX_PAGES_PER_CITY = _env_int("SCRAPER_MAX_PAGES_PER_CITY", 2)
 
+# ── rentals.ca GraphQL source ─────────────────────────────────────────────────
+# Rentals.ca redesigned its search from a server-rendered listing-card list to a
+# Google-Maps SPA whose listings load from an authenticated GraphQL API
+# (POST /graphql, operation RentalListingSearch). The old CSS-card scraper broke
+# on that redesign (returned 0 — root cause of the 2026-07 Railway zero-yield, NOT
+# an IP block: kijiji/padmapper worked from the same datacenter IP). rentals_ca now
+# queries that GraphQL API through the page's own browser context (it holds the
+# short-lived bearer token + Cloudflare clearance). See sources/rentals_ca.py.
+#
+# One query per city returns up to RENTALS_CA_PAGE_SIZE listings within
+# RENTALS_CA_RADIUS_M of the city centre — there is no pagination. Both are
+# env-overridable (see _env_int) so production can ratchet the page size up after a
+# clean Railway run WITHOUT a redeploy, the same lever as SCRAPER_MAX_PAGES_PER_CITY.
+# Default 100/city keeps the first re-deploy bounded (~realistic per-city yield)
+# while the query itself can reach the full inventory (Toronto alone is ~8,900).
+RENTALS_CA_PAGE_SIZE = _env_int("SCRAPER_RENTALS_CA_PAGE_SIZE", 100)
+RENTALS_CA_RADIUS_M = _env_int("SCRAPER_RENTALS_CA_RADIUS_M", 20_000)  # 20 km
+
 # ── Per-source yield alarm ──────────────────────────────────────────────────────
 # A source crawling 12 cities × up to 5 pages should return far more than a
 # handful of rows. A near-zero yield means the CSS selectors broke (the site

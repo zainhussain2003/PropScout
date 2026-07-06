@@ -130,3 +130,92 @@ async def test_body_read_failure_is_non_fatal_not_blocked():
 
     assert result.status == 200
     assert result.blocked is False
+
+
+# ── open_page_capturing_token ──────────────────────────────────────────────────
+
+
+class _Req:
+    """Minimal Playwright Request stand-in for the request listener."""
+
+    def __init__(self, url: str, headers: dict[str, str]):
+        self.url = url
+        self.headers = headers
+
+
+def _fake_token_page(
+    status: int = 200, body: str = "<html>ok</html>", fired: list | None = None
+) -> AsyncMock:
+    """A Page that fires ``fired`` requests at its 'request' listeners during
+    wait_for_load_state (simulating the SPA's own API calls on hydration)."""
+    page = AsyncMock()
+    handlers: dict[str, list] = {}
+    page.on = lambda event, handler: handlers.setdefault(event, []).append(handler)
+    response = AsyncMock()
+    response.status = status
+    page.goto = AsyncMock(return_value=response)
+    page.content = AsyncMock(return_value=body)
+    page.close = AsyncMock()
+
+    async def wait_for_load_state(_state: str, timeout: int | None = None) -> None:
+        for req in fired or []:
+            for h in handlers.get("request", []):
+                h(req)
+
+    page.wait_for_load_state = wait_for_load_state
+    return page
+
+
+@pytest.mark.asyncio
+async def test_capturing_token_lifts_bearer_from_graphql_request():
+    page = _fake_token_page(
+        fired=[_Req("https://rentals.ca/graphql", {"authorization": "Bearer abc123"})]
+    )
+    result, token = await browser.open_page_capturing_token(
+        _fake_browser(page), "https://rentals.ca/toronto"
+    )
+    assert result.status == 200 and result.blocked is False
+    assert token == "Bearer abc123"
+
+
+@pytest.mark.asyncio
+async def test_capturing_token_ignores_non_matching_requests():
+    page = _fake_token_page(
+        fired=[_Req("https://rentals.ca/api/other", {"authorization": "Bearer nope"})]
+    )
+    _, token = await browser.open_page_capturing_token(
+        _fake_browser(page), "https://rentals.ca/toronto"
+    )
+    assert token is None
+
+
+@pytest.mark.asyncio
+async def test_capturing_token_none_when_no_auth_header():
+    page = _fake_token_page(fired=[_Req("https://rentals.ca/graphql", {})])
+    _, token = await browser.open_page_capturing_token(
+        _fake_browser(page), "https://rentals.ca/toronto"
+    )
+    assert token is None
+
+
+@pytest.mark.asyncio
+async def test_capturing_token_blocked_landing_flagged():
+    page = _fake_token_page(status=403, body="<html>forbidden</html>")
+    result, token = await browser.open_page_capturing_token(
+        _fake_browser(page), "https://rentals.ca/toronto"
+    )
+    assert result.blocked is True and result.status == 403
+    assert token is None
+
+
+@pytest.mark.asyncio
+async def test_capturing_token_nav_failure_returns_none_page_and_token():
+    page = _fake_token_page()
+    page.goto = AsyncMock(side_effect=RuntimeError("net::ERR_TIMED_OUT"))
+    result, token = await browser.open_page_capturing_token(
+        _fake_browser(page), "https://rentals.ca/toronto"
+    )
+    assert result.page is None
+    assert result.status == NAV_FAILED_STATUS
+    assert token is None
+    page.close.assert_awaited_once()
