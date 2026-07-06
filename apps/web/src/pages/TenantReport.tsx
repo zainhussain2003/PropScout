@@ -1391,8 +1391,23 @@ export function TenantReport({
         <ListingAccuracySection />
       )}
 
-      {/* §03 Listed vs Reality — only show for demo; requires extraction pipeline */}
-      {!isReal && <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />}
+      {/* §03 Listed vs Reality — requires a structured claim-vs-reality extraction
+          that the live payload doesn't carry yet. Show an honest placeholder in
+          real mode (never the CHARLES fixture); the demo keeps the full section. */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="03"
+          topic="Listed vs reality"
+          question={
+            <>
+              Does the listing <em>match</em> the unit?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />
+      )}
 
       {/* §04 Negotiation — requires extraction pipeline for leverage analysis */}
       {isReal ? (
