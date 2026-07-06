@@ -285,3 +285,59 @@ describe('POST / — buildingType + parking mapping', () => {
     expect(body.listing.parkingSpots).toBe(0)
   })
 })
+
+// ── Timeout + body-read handling (prod incident 2026-07-06) ───────────────────
+
+describe('POST /scrape — timeout and body-read degrade to SCRAPER_FAILED', () => {
+  it('a scrape timeout (AbortSignal.timeout) returns 422 SCRAPER_FAILED, not 500/503', async () => {
+    const timeout = Object.assign(new Error('The operation was aborted due to timeout'), {
+      name: 'TimeoutError',
+    })
+    mockFetch.mockRejectedValueOnce(timeout)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(422)
+    const body = JSON.parse(res.body) as Record<string, unknown>
+    expect(body.code).toBe('SCRAPER_FAILED')
+    expect(mockSaveListing).not.toHaveBeenCalled()
+  })
+
+  it('a non-timeout fetch error still returns 503 SCRAPER_UNAVAILABLE', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(503)
+    expect((JSON.parse(res.body) as Record<string, unknown>).code).toBe('SCRAPER_UNAVAILABLE')
+  })
+
+  it('a stalled/unreadable response body returns 422 SCRAPER_FAILED, not a 500', async () => {
+    // 200 headers arrive, then the body read throws (edge cut the stream).
+    const badBody = {
+      ok: true,
+      status: 200,
+      json: jest.fn().mockRejectedValue(new Error('terminated')),
+      text: jest.fn().mockResolvedValue(''),
+    } as unknown as Response
+    mockFetch.mockResolvedValueOnce(badBody)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    expect(res.statusCode).toBe(422)
+    expect((JSON.parse(res.body) as Record<string, unknown>).code).toBe('SCRAPER_FAILED')
+    expect(mockSaveListing).not.toHaveBeenCalled()
+  })
+})

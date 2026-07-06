@@ -33,7 +33,8 @@ import { getVacancyRateByCity } from '../services/cmhcService'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
 import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
-import { RENT_BOUNDS } from '../constants/thresholds'
+import { RENT_BOUNDS, CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
+import { serializeError, isTimeoutError } from '../lib/http'
 import {
   RENT_TO_PRICE_MONTHLY,
   FALLBACK_RENT_BAND,
@@ -366,16 +367,21 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         mode,
       }
 
-      // Step 6 — call calc engine
+      // Step 6 — call calc engine (explicit timeout: survives the public-edge
+      // limit and never hangs undici's default; shares the scrape path's fix).
       let pyResponse: Response
       try {
         pyResponse = await fetch(`${CALC_ENGINE_URL}/analysis/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(calcPayload),
+          signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.ANALYSIS),
         })
       } catch (err) {
-        fastify.log.error({ err }, 'Calc engine unreachable')
+        fastify.log.error(
+          { err: serializeError(err), timedOut: isTimeoutError(err) },
+          'Calc engine unreachable'
+        )
         await updateAnalysisStatus(token, 'failed')
         return reply
           .code(503)

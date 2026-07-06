@@ -13,6 +13,8 @@
 
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
+import { CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
+import { serializeError, isTimeoutError } from '../lib/http'
 import { getAnalysisByToken, updateAnalysisByToken } from '../services/supabaseService'
 import { toSunScout, type PySunScout } from './analysis'
 
@@ -55,9 +57,13 @@ async function sunscoutRoutes(fastify: FastifyInstance): Promise<void> {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lat: coords.lat, lng: coords.lng, azimuth_deg: bearing }),
+            signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.SUNSCOUT),
           })
         } catch (err) {
-          fastify.log.error({ err }, 'Calc engine unreachable for sunscout recalc')
+          fastify.log.error(
+            { err: serializeError(err), timedOut: isTimeoutError(err) },
+            'Calc engine unreachable for sunscout recalc'
+          )
           return reply
             .code(503)
             .send(makeError('CALC_ENGINE_UNAVAILABLE', 'Sun modelling temporarily unavailable.'))

@@ -11,7 +11,8 @@ import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
 import type { Listing, ListingType, PropertyType } from '../types/property'
 import { isOntarioPostalCode } from '../constants/provinces'
-import { RENT_BOUNDS } from '../constants/thresholds'
+import { RENT_BOUNDS, CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
+import { serializeError, isTimeoutError } from '../lib/http'
 import { saveListing, createPendingAnalysis } from '../services/supabaseService'
 
 const SCRAPER_URL = process.env.SCRAPER_URL ?? 'http://localhost:8001'
@@ -100,16 +101,32 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { url } = req.body
 
-      // Step 1 — call the Python scraper
+      // Step 1 — call the Python scraper. The scrape is slow (ScraperAPI ~25s +
+      // retries), so give it a generous explicit timeout — otherwise the request
+      // is abandoned early (the ~20s prod abort) even though the scrape succeeds.
       let scraperRes: Response
       try {
         scraperRes = await fetch(`${SCRAPER_URL}/scrape`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url }),
+          signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.SCRAPE),
         })
       } catch (err) {
-        fastify.log.error({ err }, 'Scraper service unreachable')
+        const timedOut = isTimeoutError(err)
+        fastify.log.error(
+          { err: serializeError(err), timedOut, timeoutMs: CALC_ENGINE_TIMEOUT_MS.SCRAPE },
+          'Scraper fetch failed'
+        )
+        // A genuine scrape timeout means we couldn't read the listing in time —
+        // send the user to manual entry (SCRAPER_FAILED), not a scary 500/503.
+        if (timedOut) {
+          return reply
+            .code(422)
+            .send(
+              makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
+            )
+        }
         return reply
           .code(503)
           .send(
@@ -140,7 +157,20 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           )
       }
 
-      const scraped = (await scraperRes.json()) as ScrapedListingResponse
+      // Reading the body is where a stalled/cut response (edge timeout that sent
+      // headers first) throws — previously OUTSIDE this try, so it surfaced as a
+      // generic 500. Guard it and degrade to manual entry instead.
+      let scraped: ScrapedListingResponse
+      try {
+        scraped = (await scraperRes.json()) as ScrapedListingResponse
+      } catch (err) {
+        fastify.log.error({ err: serializeError(err) }, 'Scraper response body unreadable')
+        return reply
+          .code(422)
+          .send(
+            makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
+          )
+      }
 
       // Step 2 — extract postal code and run province gate
       const pcMatch = scraped.address.match(/([A-Z][0-9][A-Z])\s*([0-9][A-Z][0-9])/i)
@@ -215,7 +245,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
       }
       return reply.send({ token, listing })
     } catch (err) {
-      fastify.log.error({ err }, 'Unexpected error in POST /scrape')
+      fastify.log.error({ err: serializeError(err) }, 'Unexpected error in POST /scrape')
       return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
     }
   })
