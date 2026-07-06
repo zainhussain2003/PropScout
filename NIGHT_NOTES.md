@@ -61,13 +61,39 @@ when real (`isSampleData`), FMV is a _labeled_ ±5% estimate (not fake sold data
 personal neighbourhood zeroes non-walkscore fields, schools EMPTY when no data, real
 flags. No fixture leaks.
 
-**Remaining (small):**
+**Due-diligence §11** now mounted live as a shared component (commit 0752573) —
+generic buyer checklist. All investor/landlord sections present.
 
-- Investor/Landlord due-diligence checklist (generic advice, local to the demo;
-  lowest value, deferred).
-- Live end-to-end smoke of all 4 modes vs real Realtor.ca URLs (render paths covered
-  by the 855 web tests with realistic data; scrape leg verified live in the 2026-07-06
-  timeout fix). Do a final prod smoke after `WALKSCORE_API_KEY` is set on @propscout/api.
+**LIVE END-TO-END — all 4 modes verified** (real backend: my calc-engine 8010 +
+API 3001 → prod Supabase; real Realtor.ca URLs; rendered /r/:token in the browser):
+
+- Scraped a for-sale listing (103 Whitchurch Mews, Mississauga) → investor +
+  personal; and a for-rent listing (610-761 Bay St, Toronto) → tenant + landlord.
+- **Investor**: all 11 sections render — deal score, metrics, LIVE financing sliders
+  ("adjust live"), cash-to-close, OSFI, dismissable risk flags, equity, data-honest
+  Neighbourhood ("0 verified sales · No comparable-sales source yet"), sunscout, STR
+  placeholder, due-diligence.
+- **Tenant**: all 12 sections render (was 4) — real dismissable flag, Walk 98 /
+  Transit 100 / Bike 94 (Bay St), 6 real Toronto schools, sunscout, honest-empty
+  comps map, honest placeholders for extraction-gated sections, checklist.
+- **Personal**: schools/walkscore/sunscout/risks real; FMV + comparable-sales now
+  honest empty.
+- **Landlord**: shares InvestorReportContent → identical render to investor.
+- **Walk Score works in this env** (86/60/60 and 98/100/94) — confirms the prod "0"
+  is specifically `WALKSCORE_API_KEY` missing on the prod @propscout/api service.
+
+**Two data-discipline violations the live render CAUGHT (code-read missed), fixed:**
+
+- Personal §03 Comparable Sales rendered 8 FIXTURE sold listings under a "Sample"
+  banner; §02 FMV rendered a fabricated ±5% band. Both now show the required
+  "no comparable-sales source yet" empty state in live mode (commit 7d79494).
+- Tenant §03 Listed-vs-Reality was DROPPED live; now an honest placeholder (bf2c8e2).
+
+**Minor polish left (non-blocking):** tenant extraction-gated placeholders (§04/05/06/
+§11 + §03) use dev-facing "Week 5–6 · extraction pipeline" copy — could be softened to
+user-facing wording. Tenant §01 shows "$0" comp range + "Above market" when comps are
+null (cosmetic). STR §10 shows illustrative placeholder numbers (spec-sanctioned MVP
+placeholder). **Action:** set `WALKSCORE_API_KEY` on the prod @propscout/api service.
 
 ---
 
