@@ -166,6 +166,7 @@ export function STRPlaceholderSection({ listing }: STRPlaceholderSectionProps): 
 
           {/* Mock numbers behind the blur */}
           <div
+            className="grid-1col-mobile"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',

@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './hooks/useAuth'
+import { useTier } from './hooks/useTier'
 import { PaywallContext } from './components/paywall/PaywallContext'
 import { UpgradeModal } from './components/paywall/UpgradeModal'
 import { HardLimitGate } from './components/paywall/HardLimitGate'
 import { LandingPage } from './pages/LandingPage'
+import { AnalyzingPage } from './pages/AnalyzingPage'
 import { InvestorReport } from './pages/InvestorReport'
 import { TenantReport } from './pages/TenantReport'
 import { PersonalBuyerPage } from './pages/PersonalBuyerPage'
@@ -15,15 +18,15 @@ import { PasswordResetConfirmPage } from './pages/PasswordResetConfirmPage'
 import { EmailVerifiedPage } from './pages/EmailVerifiedPage'
 import { StripeWelcomePage } from './pages/StripeWelcomePage'
 import { StripeCancelledPage } from './pages/StripeCancelledPage'
+import { ReportPage } from './pages/ReportPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
 import { DevToolbar } from './components/dev/DevToolbar'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
 
-/** Simulated tier for local development — swap to "pro" to preview Pro UI. */
-const MOCK_TIER = 'free'
-
-function App(): JSX.Element {
+function AppInner(): JSX.Element {
+  const { tier } = useTier()
   const [upgradeModal, setUpgradeModal] = useState<string | null>(null)
   const [showHardGate, setShowHardGate] = useState(false)
 
@@ -33,14 +36,16 @@ function App(): JSX.Element {
   const closeHardGate = (): void => setShowHardGate(false)
 
   return (
-    <PaywallContext.Provider value={{ tier: MOCK_TIER, openUpgradeModal, openHardGate }}>
+    <PaywallContext.Provider value={{ tier, openUpgradeModal, openHardGate }}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/investor-report" element={<InvestorReport tier={MOCK_TIER} />} />
-          <Route path="/tenant-report" element={<TenantReport tier={MOCK_TIER} />} />
-          <Route path="/personal-report" element={<PersonalBuyerPage tier={MOCK_TIER} />} />
-          <Route path="/landlord-report" element={<LandlordPage tier={MOCK_TIER} />} />
+          <Route path="/analyzing" element={<AnalyzingPage />} />
+          <Route path="/investor-report" element={<InvestorReport tier={tier} />} />
+          <Route path="/tenant-report" element={<TenantReport tier={tier} />} />
+          <Route path="/personal-report" element={<PersonalBuyerPage tier={tier} />} />
+          <Route path="/landlord-report" element={<LandlordPage tier={tier} />} />
+          <Route path="/r/:token" element={<ReportPage tier={tier} />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
           <Route path="/auth/reset" element={<PasswordResetRequestPage />} />
@@ -92,6 +97,16 @@ function App(): JSX.Element {
         ]}
       />
     </PaywallContext.Provider>
+  )
+}
+
+function App(): JSX.Element {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

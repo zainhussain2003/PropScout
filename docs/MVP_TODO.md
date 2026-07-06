@@ -10,6 +10,11 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ## Week 1–2 — Data pipeline (nothing else works without this)
 
+### Database schema
+
+- [x] Initial Supabase migration (`20260610_initial_schema.sql`) — users, subscriptions, listings, rental_listings, schools, analyses, portfolio_properties, waitlist, flag_overrides, sanity_failures + RLS policies + comp-query/dedupe indexes
+- [ ] Migration run against production Supabase project (Week 8–10 deploy step)
+
 ### Realtor.ca scraper
 
 - [ ] Extract listing ID from Realtor.ca URL
@@ -43,21 +48,22 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Rental comps scraper (nightly job)
 
-- [ ] Playwright scraper for Rentals.ca
-- [ ] Playwright scraper for Kijiji (rental category)
-- [ ] Playwright scraper for PadMapper
-- [ ] Normalise: geocode address to lat/lng
-- [ ] Normalise: convert weekly rents to monthly
-- [ ] Normalise: parse beds to integer
-- [ ] Deduplicate: same address + rent + beds within 7 days = one record
-- [ ] Store to `rental_listings` table with timestamp
-- [ ] Schedule as nightly Railway job at 2am ET
+- [x] Playwright scraper for Rentals.ca (`sources/rentals_ca.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Playwright scraper for Kijiji (rental category) (`sources/kijiji.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Playwright scraper for PadMapper (`sources/padmapper.py` — selectors are TEMPLATE, verify on first deploy)
+- [x] Normalise: geocode address to lat/lng (`services/mapbox_service.py` — non-fatal on failure)
+- [x] Normalise: convert weekly rents to monthly (×4.33, daily rates discarded)
+- [x] Normalise: parse beds to integer (Studio/Bachelor → 0, dens never counted)
+- [x] Deduplicate: same address + rent + beds within 7 days = one record (in-batch + against stored rows)
+- [x] Store to `rental_listings` table with timestamp (insert-only — historical rows never deleted)
+- [ ] Schedule as nightly Railway job at 2am ET (`railway.json` cron config written — Railway deploy + first-run confirmation pending)
+- [x] Unit + functionality tests — 50 passing (normalization, dedupe, full pipeline with mocked sources/storage/geocoding)
 
 ### Province detection
 
-- [ ] Parse postal code from scraped address
-- [ ] Ontario FSA check (starts with K, L, M, N, P)
-- [ ] Non-Ontario → return province code, block analysis, trigger waitlist flow
+- [x] Parse postal code from scraped address (`isOntarioPostalCode()` in provinces.ts + frontend `isOntarioPostal()` in AnalyzingPage)
+- [x] Ontario FSA check (starts with K, L, M, N, P) — backend `isOntarioPostalCode()` + frontend early check
+- [x] Non-Ontario → return province code, block analysis, trigger waitlist flow — backend 400 PROVINCE_NOT_SUPPORTED + frontend `province_gate` view + POST /waitlist endpoint
 
 ---
 
@@ -356,11 +362,11 @@ All tasks reference spec Section 19.
 
 - [x] Deterministic regex rules (`regex_rules.py`) — patterns for 7 flag types, Phase 1
 - [x] Logic gate (`logic_gate.py`) — merges regex + AI results, 85%/60% confidence thresholds
-- [ ] Claude Haiku extraction — full implementation (`haiku_extraction.py` is a stub)
-- [ ] JSON parse validation with fallback (all-false on parse error, log failure)
-- [ ] Red flag threshold: 85%+ → red, deducts score
-- [ ] Amber flag threshold: 60–84% → amber, no score deduction
-- [ ] Below 60% → not shown
+- [x] Claude Haiku extraction — `extractListingFlags()` in anthropicService.ts (Fastify layer) + `haiku_extraction.py` in Python layer
+- [x] JSON parse validation with fallback (all-false on parse error, returns null non-fatally)
+- [x] Red flag threshold: 85%+ → red, deducts score (CONFIDENCE.RED_FLAG_MIN in analysis route)
+- [x] Amber flag threshold: 60–84% → amber, no score deduction
+- [x] Below 60% → not shown (filtered out before merge in analysis route)
 - [ ] `flag_overrides` table in Supabase
 - [ ] User override toggle component in React
 - [ ] Override triggers instant deal score recalculation (no page reload)
@@ -373,13 +379,19 @@ All tasks reference spec Section 19.
 ### SunScout
 
 - [x] pvlib installed in Python calc engine
-- [ ] `window_sun_hours_by_month()` function fully implemented (`sun_path.py` is a stub)
-- [ ] `annual_light_score()` function
-- [ ] Window direction input UI (compass direction dropdown per window)
-- [ ] Monthly sun hours grid output (Dec / Mar / Jun / Sep columns)
-- [ ] Sun arc SVG visualization (summer vs winter day)
-- [ ] Score interpretation labels (80–100 excellent, etc.)
-- [ ] SunScout section rendering in all 4 report types
+- [x] `window_sun_hours_by_month()` — NREL SPA via pvlib, 1-hour resolution, sample 15th of each month × days_in_month
+- [x] `annual_light_score()` — weighted benchmark scoring (bedroom_main 40%, living 35%, others 25%)
+- [x] Score interpretation labels (excellent / good / average / below_average / poor)
+- [x] `calculate_sun_hours()` — main entry point returning `SunScoutResult` dataclass
+- [x] 22 unit tests in `sun_path_test.py` (physics assertions, sanity ranges, score calibration)
+- [x] `SunScoutOutput` Pydantic model + `sun_scout` field on `AnalysisOutput` in calc engine
+- [x] Calc engine router calls `calculate_sun_hours()` when lat/lng present (non-fatal)
+- [x] `SunScoutResult` TypeScript interface in both API and web type trees
+- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase
+- [ ] Window direction input UI (compass direction dropdown per window) — Phase 2
+- [ ] Monthly sun hours grid output wired to real data (SeasonalGrid component exists, needs Analysis.sunScout)
+- [ ] Sun arc SVG visualization wired to real data (SunArcViz component exists, needs summer/winter hours)
+- [ ] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data
 
 ---
 
@@ -387,15 +399,15 @@ All tasks reference spec Section 19.
 
 ### Claude Sonnet narratives
 
-- [ ] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
-- [ ] Report A / D investment prompt — Pro tier (3 paragraphs, 150–320 words)
-- [ ] Report B personal prompt — free tier
-- [ ] Report B personal prompt — Pro tier
-- [ ] Report C tenant prompt — free tier
-- [ ] Report C tenant prompt — Pro tier
-- [ ] Output validation: word count, banned phrases, dollar figure requirement
-- [ ] Regenerate once on validation failure, log and show fallback on second failure
-- [ ] Calibrate against gold-standard examples in spec Section 12
+- [x] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
+- [x] Report A / D investment prompt — Pro tier (3 paragraphs, 150–280 words)
+- [x] Report B personal prompt — free tier
+- [x] Report B personal prompt — Pro tier
+- [x] Report C tenant prompt — free tier
+- [x] Report C tenant prompt — Pro tier
+- [x] Output validation: word count, banned phrases, dollar figure requirement
+- [x] Regenerate once on validation failure, log and show fallback on second failure
+- [ ] Calibrate against gold-standard examples in spec Section 12 (manual QA step at launch)
 
 ### PDF export
 
@@ -418,8 +430,8 @@ All tasks reference spec Section 19.
 - [ ] Stripe — subscription checkout flow
 - [ ] Stripe — webhook handling (subscription created, updated, cancelled)
 - [ ] Tier stored on `users` table, updated via webhook
-- [ ] Free tier: 10 analyses/month counter enforced
-- [ ] Free tier: analysis limit gate screen with upgrade prompt
+- [x] Free tier: 10 analyses/month counter enforced (backend 429 FREE_LIMIT_REACHED via JWT auth + getMonthlyAnalysisCount)
+- [x] Free tier: analysis limit gate screen with upgrade prompt (HardLimitGate wired into AnalyzingPage via limit_gate view)
 - [ ] Free tier: PDF button locked with upgrade prompt
 - [ ] Free tier: SunScout building obstruction locked (Phase 2 — show placeholder)
 - [ ] Free tier: portfolio tracker locked
@@ -427,7 +439,7 @@ All tasks reference spec Section 19.
 - [ ] Pro tier: all above unlocked
 - [ ] Shareable link generation (UUID token stored in `analyses.share_token`)
 - [ ] Shareable link viewer (no login, shows full report, 30-day expiry)
-- [ ] Province waitlist — email capture stored to `waitlist` table with province tag
+- [x] Province waitlist — email capture stored to `waitlist` table with province tag (POST /waitlist + addToWaitlist() + ProvinceGate onSubmit wired)
 - [ ] Guest analysis — 1 free analysis without login, email capture at end
 
 ---

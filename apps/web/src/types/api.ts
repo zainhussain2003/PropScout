@@ -33,6 +33,9 @@ export interface PropertyInput {
   yearBuilt?: number | null
   propertyType?: string // default 'condo'
   isToronto?: boolean
+  postalCode?: string
+  sourceUrl?: string
+  listingType?: 'for-sale' | 'for-rent'
 }
 
 export interface FinancingInput {

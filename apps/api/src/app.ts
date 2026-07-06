@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
+import type { FastifyRequest } from 'fastify'
 
 const fastify = Fastify({
   logger: true,
@@ -21,14 +22,42 @@ async function main(): Promise<void> {
     timeWindow: '1 minute',
   })
 
+  // Preserve raw body for Stripe webhook signature verification.
+  // Must be registered before routes so the rawBody field is populated.
+  fastify.addContentTypeParser(
+    'application/json',
+    { parseAs: 'buffer' },
+    function (
+      _req: FastifyRequest,
+      body: Buffer,
+      done: (err: Error | null, result: unknown) => void
+    ) {
+      try {
+        const parsed: unknown = JSON.parse(body.toString())
+        // Attach raw buffer for routes that need it (Stripe webhook)
+        ;(_req as FastifyRequest & { rawBody?: Buffer }).rawBody = body
+        done(null, parsed)
+      } catch (err) {
+        done(err as Error, undefined)
+      }
+    }
+  )
+
   // ── Routes ─────────────────────────────────────────────────────────────────
 
   await fastify.register(import('./routes/rates'), { prefix: '/rates' })
 
   await fastify.register(import('./routes/analysis'), { prefix: '/analysis' })
 
-  // Routes registered as each is built:
-  // await fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })
+  await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
+
+  await fastify.register(import('./routes/billing'), { prefix: '/billing' })
+
+  await fastify.register(import('./routes/webhooks'), { prefix: '/webhooks' })
+
+  await fastify.register(import('./routes/me'), { prefix: '/me' })
+
+  await fastify.register(import('./routes/waitlist'), { prefix: '/waitlist' })
 
   fastify.get('/health', async (_req, _reply) => {
     return { status: 'ok', ts: new Date().toISOString() }

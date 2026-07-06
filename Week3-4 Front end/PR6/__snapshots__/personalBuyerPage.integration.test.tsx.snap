@@ -3505,6 +3505,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   </section>
   <section
     class="container tr-section"
+    data-section="06"
   >
     <div
       class="tr-section-head"
@@ -3533,470 +3534,58 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="serif"
           style="text-wrap: balance;"
         >
-          Which rooms will the 
+          How 
           <em>
-            light
+            well-lit
           </em>
-           reach?
+           is the unit?
         </h2>
       </div>
       <span
-        class="verdict-pill pass"
+        class="verdict-pill caution"
       >
-        Good · 76/100
+        Modeling · Phase 2
       </span>
     </div>
     <div
-      class="grid-1col-mobile"
-      style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px;"
+      class="card col"
+      style="padding: 40px; gap: 20px; align-items: center; text-align: center;"
     >
       <div
-        class="card col"
-        style="padding: 28px; align-items: center; text-align: center; gap: 16px;"
+        style="width: 64px; height: 64px; border-radius: 999px; background: color-mix(in oklab, var(--caution) 14%, transparent); display: flex; align-items: center; justify-content: center;"
       >
-        <div
-          aria-label="Deal score: 76 out of 95"
-          style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
-        >
-          <div
-            style="position: relative; width: 180px; height: 180px;"
-          >
-            <svg
-              aria-hidden="true"
-              height="180"
-              role="img"
-              viewBox="0 0 180 180"
-              width="180"
-            />
-            <div
-              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
-            >
-              <span
-                class="serif tabular"
-                style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--pass);"
-              >
-                76
-              </span>
-              <span
-                class="mono"
-                style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
-              >
-                Light score / 100
-              </span>
-            </div>
-          </div>
-        </div>
-        <div
-          style="font-size: 13px; color: var(--ink-2); max-width: 220px;"
-        >
-          South-facing rear · main bedroom faces east · two-storey with low neighbours
-        </div>
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="28"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.6"
+          viewBox="0 0 24 24"
+          width="28"
+        />
       </div>
       <div
         class="col"
-        style="gap: 16px;"
+        style="gap: 8px; max-width: 560px;"
       >
-        <div
-          class="card col gap-16"
-          style="padding: 28px;"
+        <span
+          class="chip"
         >
-          <div
-            class="row"
-            style="justify-content: space-between;"
-          >
-            <div
-              class="mono"
-              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
-            >
-              Hours of direct sun · monthly
-            </div>
-            <span
-              class="mono"
-              style="font-size: 11px; color: var(--muted);"
-            >
-              NREL SPA · pvlib
-            </span>
-          </div>
-          <div
-            style="display: flex; align-items: flex-end; gap: 8px; height: 110px;"
-          >
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                54
-                h
-              </span>
-              <div
-                style="width: 100%; height: 21.1304347826087px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                J
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                72
-                h
-              </span>
-              <div
-                style="width: 100%; height: 28.17391304347826px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                F
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                102
-                h
-              </span>
-              <div
-                style="width: 100%; height: 39.913043478260875px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                M
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                132
-                h
-              </span>
-              <div
-                style="width: 100%; height: 51.65217391304348px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                A
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                162
-                h
-              </span>
-              <div
-                style="width: 100%; height: 63.391304347826086px; background: var(--accent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                M
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                178
-                h
-              </span>
-              <div
-                style="width: 100%; height: 69.65217391304347px; background: var(--accent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                J
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                184
-                h
-              </span>
-              <div
-                style="width: 100%; height: 72px; background: var(--accent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                J
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                162
-                h
-              </span>
-              <div
-                style="width: 100%; height: 63.391304347826086px; background: var(--accent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                A
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                124
-                h
-              </span>
-              <div
-                style="width: 100%; height: 48.52173913043478px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                S
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                92
-                h
-              </span>
-              <div
-                style="width: 100%; height: 36px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                O
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                60
-                h
-              </span>
-              <div
-                style="width: 100%; height: 23.47826086956522px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                N
-              </span>
-            </div>
-            <div
-              class="col"
-              style="flex: 1 1 0%; align-items: center; gap: 6px;"
-            >
-              <span
-                class="mono tabular"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                48
-                h
-              </span>
-              <div
-                style="width: 100%; height: 18.782608695652172px; background: color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 3px;"
-              />
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted);"
-              >
-                D
-              </span>
-            </div>
-          </div>
-        </div>
-        <div
-          class="card col"
-          style="padding: 24px; gap: 12px;"
+          Coming Phase 2
+        </span>
+        <h4
+          class="serif"
+          style="font-size: 24px;"
         >
-          <div
-            class="mono"
-            style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
-          >
-            Room by room
-          </div>
-          <div
-            class="row gap-16"
-            style="align-items: center;"
-          >
-            <div
-              class="col"
-              style="width: 150px;"
-            >
-              <span
-                style="font-size: 14px; font-weight: 500;"
-              >
-                Living room · S
-              </span>
-            </div>
-            <div
-              style="flex: 1 1 0%; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden;"
-            >
-              <div
-                style="width: 78%; height: 100%; background: var(--accent); border-radius: 999px;"
-              />
-            </div>
-            <span
-              class="mono tabular"
-              style="font-size: 13px; font-weight: 500; width: 90px; text-align: right;"
-            >
-              1,180 h/yr
-            </span>
-          </div>
-          <div
-            class="row gap-16"
-            style="align-items: center;"
-          >
-            <div
-              class="col"
-              style="width: 150px;"
-            >
-              <span
-                style="font-size: 14px; font-weight: 500;"
-              >
-                Main bedroom · E
-              </span>
-            </div>
-            <div
-              style="flex: 1 1 0%; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden;"
-            >
-              <div
-                style="width: 62%; height: 100%; background: var(--accent); border-radius: 999px;"
-              />
-            </div>
-            <span
-              class="mono tabular"
-              style="font-size: 13px; font-weight: 500; width: 90px; text-align: right;"
-            >
-              820 h/yr
-            </span>
-          </div>
-          <div
-            class="row gap-16"
-            style="align-items: center;"
-          >
-            <div
-              class="col"
-              style="width: 150px;"
-            >
-              <span
-                style="font-size: 14px; font-weight: 500;"
-              >
-                Kitchen · N
-              </span>
-            </div>
-            <div
-              style="flex: 1 1 0%; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden;"
-            >
-              <div
-                style="width: 15%; height: 100%; background: var(--accent); border-radius: 999px;"
-              />
-            </div>
-            <span
-              class="mono tabular"
-              style="font-size: 13px; font-weight: 500; width: 90px; text-align: right;"
-            >
-              180 h/yr
-            </span>
-          </div>
-          <div
-            class="row gap-16"
-            style="align-items: center;"
-          >
-            <div
-              class="col"
-              style="width: 150px;"
-            >
-              <span
-                style="font-size: 14px; font-weight: 500;"
-              >
-                Backyard
-              </span>
-            </div>
-            <div
-              style="flex: 1 1 0%; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden;"
-            >
-              <div
-                style="width: 92%; height: 100%; background: var(--accent); border-radius: 999px;"
-              />
-            </div>
-            <span
-              class="mono tabular"
-              style="font-size: 13px; font-weight: 500; width: 90px; text-align: right;"
-            >
-              1,520 h/yr
-            </span>
-          </div>
-        </div>
+          Solar path analysis — shipping Q3 2026.
+        </h4>
+        <p
+          style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
+        >
+          SunScout uses NASA NREL sun-path data to show peak sun hours by season and window orientation. Available once address geocoding is confirmed for this property.
+        </p>
       </div>
     </div>
   </section>

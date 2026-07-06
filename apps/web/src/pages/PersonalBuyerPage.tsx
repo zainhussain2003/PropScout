@@ -23,6 +23,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { SignInModal } from '../components/shared/SignInModal'
 import {
   PB_PROPERTY,
   PB_SCHOOLS,
@@ -42,6 +43,7 @@ import { DealScore } from '../components/analysis/DealScore'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { PBTrueCostSection } from '../components/personal/PBTrueCostSection'
 import { PBFMVSection } from '../components/personal/PBFMVSection'
+import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
@@ -754,161 +756,6 @@ function NeighbourhoodSection(): JSX.Element {
   )
 }
 
-// ── §06 SunScout placeholder ──────────────────────────────────────────────────
-
-function SunScoutSection(): JSX.Element {
-  const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const
-  const hours = [54, 72, 102, 132, 162, 178, 184, 162, 124, 92, 60, 48]
-  const max = Math.max(...hours)
-
-  return (
-    <section className="container tr-section">
-      <SectionHead
-        n="06"
-        topic="SunScout"
-        question={
-          <>
-            Which rooms will the <em>light</em> reach?
-          </>
-        }
-        verdict="Good · 76/100"
-        tone="pass"
-      />
-
-      <div
-        className="grid-1col-mobile"
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16 }}
-      >
-        {/* Light score gauge */}
-        <div
-          className="card col"
-          style={{ padding: 28, alignItems: 'center', textAlign: 'center', gap: 16 }}
-        >
-          <DealScore score={STATIC_LIGHT_SCORE} size="lg" label="Light score / 100" />
-          <div
-            style={{
-              fontSize: 13,
-              color: 'var(--ink-2)',
-              maxWidth: 220,
-            }}
-          >
-            South-facing rear · main bedroom faces east · two-storey with low neighbours
-          </div>
-        </div>
-
-        {/* Monthly hours bar chart + room-by-room */}
-        <div className="col" style={{ gap: 16 }}>
-          <div className="card col gap-16" style={{ padding: 28 }}>
-            <div className="row" style={{ justifyContent: 'space-between' }}>
-              <div
-                className="mono"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted)',
-                }}
-              >
-                Hours of direct sun · monthly
-              </div>
-              <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                NREL SPA · pvlib
-              </span>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: 8,
-                height: 110,
-              }}
-            >
-              {hours.map((h, i) => (
-                <div key={i} className="col" style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                  <span className="mono tabular" style={{ fontSize: 9, color: 'var(--muted)' }}>
-                    {h}h
-                  </span>
-                  <div
-                    style={{
-                      width: '100%',
-                      height: `${(h / max) * 72}px`,
-                      background:
-                        i >= 4 && i <= 7
-                          ? 'var(--accent)'
-                          : 'color-mix(in oklab, var(--accent) 35%, transparent)',
-                      borderRadius: 3,
-                    }}
-                  />
-                  <span className="mono" style={{ fontSize: 9, color: 'var(--muted)' }}>
-                    {months[i]}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card col" style={{ padding: 24, gap: 12 }}>
-            <div
-              className="mono"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--muted)',
-              }}
-            >
-              Room by room
-            </div>
-            {(
-              [
-                { lbl: 'Living room · S', hrs: '1,180 h/yr', bar: 0.78 },
-                { lbl: 'Main bedroom · E', hrs: '820 h/yr', bar: 0.62 },
-                { lbl: 'Kitchen · N', hrs: '180 h/yr', bar: 0.15 },
-                { lbl: 'Backyard', hrs: '1,520 h/yr', bar: 0.92 },
-              ] as const
-            ).map((w) => (
-              <div key={w.lbl} className="row gap-16" style={{ alignItems: 'center' }}>
-                <div className="col" style={{ width: 150 }}>
-                  <span style={{ fontSize: 14, fontWeight: 500 }}>{w.lbl}</span>
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    borderRadius: 999,
-                    background: 'var(--line)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${w.bar * 100}%`,
-                      height: '100%',
-                      background: 'var(--accent)',
-                      borderRadius: 999,
-                    }}
-                  />
-                </div>
-                <span
-                  className="mono tabular"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    width: 90,
-                    textAlign: 'right',
-                  }}
-                >
-                  {w.hrs}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // ── §07 Risks & conditions ────────────────────────────────────────────────────
 
 const RISK_FLAGS = [
@@ -1240,6 +1087,7 @@ interface PersonalBuyerPageProps {
 
 export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProps): JSX.Element {
   const [dark, setDark] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
 
   const financing = {
     downPct: PB_PROPERTY.defaultDownPct,
@@ -1274,9 +1122,7 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
             return next
           })
         }}
-        onSignIn={() => {
-          /* TODO: wire sign-in modal */
-        }}
+        onSignIn={() => setShowSignIn(true)}
       />
 
       <PersonalPropertyHero score={score} monthly={monthly} />
@@ -1293,13 +1139,14 @@ export function PersonalBuyerPage({ tier: _tier = 'pro' }: PersonalBuyerPageProp
       <PBSalesSection comps={PB_COMPS} />
       <SchoolsSection />
       <NeighbourhoodSection />
-      <SunScoutSection />
+      <SunScoutPanel sunScout={null} sectionNumber="06" />
       <RisksSection />
       <ChecklistSection />
       <ConversionSection />
 
       <Footer />
       <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
     </div>
   )
 }

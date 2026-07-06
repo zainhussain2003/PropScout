@@ -392,8 +392,9 @@ export function computeDemoMetrics(
 
 // ── Formatting helpers ─────────────────────────────────────────────────────────
 
-/** Formats a number as a dollar amount, e.g. −$1,234 */
+/** Formats a number as a dollar amount, e.g. −$1,234. Non-finite values render as "—". */
 export function fmtMoney(n: number, opts: { decimals?: number } = {}): string {
+  if (!Number.isFinite(n)) return '—'
   const { decimals = 0 } = opts
   const abs = Math.abs(n)
   const s =
@@ -405,7 +406,8 @@ export function fmtMoney(n: number, opts: { decimals?: number } = {}): string {
   return n < 0 ? `−${s}` : s
 }
 
-/** Formats a decimal as a percentage string, e.g. 0.045 → "4.50%" */
+/** Formats a decimal as a percentage string, e.g. 0.045 → "4.50%". Non-finite values render as "—". */
 export function fmtPct(n: number, decimals = 2): string {
+  if (!Number.isFinite(n)) return '—'
   return (n * 100).toFixed(decimals) + '%'
 }

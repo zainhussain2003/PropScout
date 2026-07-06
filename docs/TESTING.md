@@ -62,6 +62,10 @@ This file tells you exactly what to test after each week of development, how to 
 
 ### Rental comps scraper
 
+**🤖 Test 6a — Automated pipeline suite**
+Run from `services/scrapers/`: `python -m pytest normalization_test.py dedupe_test.py rental_comps_scraper_test.py -v`
+Covers rent parsing (weekly ×4.33, daily discarded, sanity bounds), bed parsing (Studio→0, dens not counted), Ontario postal gate, in-batch + 7-day-window dedupe, geocode failure tolerance, and source-failure isolation. 50 tests — must pass before any scraper change merges. No network required (sources, Supabase, and Mapbox are mocked).
+
 **⚠️ Note:** Full rental comps testing requires the nightly scraper to have run at least once and populated the `rental_listings` table. On day one of building, the database will be empty. Start the scraper running immediately and let it accumulate for several days before testing comp results.
 
 **✋ Test 7 — Nightly scraper runs and stores data**

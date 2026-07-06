@@ -335,7 +335,10 @@ export function EquityChart({
       </div>
 
       {/* Milestone summary strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}
+      >
         {milestones.map((m) => (
           <div
             key={m.year}

@@ -55,3 +55,46 @@ describe('HardLimitGate — monthlyLimit=5, used=2', () => {
     expect(dots).toHaveLength(5)
   })
 })
+
+describe('HardLimitGate — cycleStart and resetDate props', () => {
+  it('shows cycleStart when provided', () => {
+    render(
+      <HardLimitGate
+        onClose={vi.fn()}
+        monthlyLimit={3}
+        used={3}
+        cycleStart="Jun 1"
+        resetDate="Jul 1"
+        resetsIn="29 days"
+      />
+    )
+    expect(screen.getByText(/Started this cycle Jun 1/)).toBeInTheDocument()
+  })
+
+  it('shows resetDate when provided', () => {
+    render(
+      <HardLimitGate
+        onClose={vi.fn()}
+        monthlyLimit={3}
+        used={3}
+        cycleStart="Jun 1"
+        resetDate="Jul 1"
+        resetsIn="29 days"
+      />
+    )
+    expect(screen.getByText(/Resets Jul 1/)).toBeInTheDocument()
+  })
+
+  it('hides cycle start row when cycleStart is not provided', () => {
+    render(<HardLimitGate onClose={vi.fn()} monthlyLimit={3} used={3} resetsIn="32 days" />)
+    expect(screen.queryByText(/Started this cycle/)).not.toBeInTheDocument()
+  })
+
+  it('shows only resetsIn when resetDate is not provided', () => {
+    render(<HardLimitGate onClose={vi.fn()} monthlyLimit={3} used={3} resetsIn="32 days" />)
+    // Should not contain "Resets" prefix without a resetDate
+    expect(screen.queryByText(/^Resets/)).not.toBeInTheDocument()
+    // resetsIn appears in at least one element
+    expect(screen.getAllByText(/32 days/).length).toBeGreaterThanOrEqual(1)
+  })
+})
