@@ -22,6 +22,7 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { useInvestorReport } from '../hooks/useInvestorReport'
 import {
   VAUGHAN_LISTING,
@@ -31,8 +32,10 @@ import {
   HAMILTON_RENTAL,
   HAMILTON_NEIGHBOURHOOD,
 } from '../constants/demoData'
-import type { ListingData, NeighbourhoodData, FinancingInputs } from '../types/analysis'
+import type { Analysis, ListingData, NeighbourhoodData, FinancingInputs } from '../types/analysis'
 import type { RentalInput } from '../types/api'
+import type { Listing } from '../types/property'
+import { shimToListingData, shimToNeighbourhood } from '../lib/reportShims'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -143,7 +146,7 @@ function DueDiligenceSection(): JSX.Element {
         topic="Due diligence"
         question={
           <>
-            What to check before you <em>sign</em>.
+            Get these <em>answered</em> first.
           </>
         }
         verdict={`${doneCount} / ${totalItems} complete`}
@@ -276,7 +279,7 @@ function CashToCloseSection({
         topic="Cash to close"
         question={
           <>
-            What do you need <em>on day one</em>?
+            What you need in the <em>bank</em> on closing day.
           </>
         }
         verdict={fmtMoney(computedTotal)}
@@ -392,7 +395,7 @@ function RentalCompsSection({
         topic="Rental comps"
         question={
           <>
-            What will tenants <em>actually</em> pay?
+            What can it <em>realistically</em> rent for?
           </>
         }
         verdict={verdictLabel}
@@ -471,7 +474,7 @@ function RiskFlagsSection({ listing }: RiskFlagsSectionProps): JSX.Element {
         topic="Risk flags"
         question={
           <>
-            What could go <em>wrong</em>?
+            What could <em>break</em> this thesis?
           </>
         }
         verdict={verdictLabel}
@@ -546,7 +549,7 @@ function FinancingSection({
         topic="Financing scenarios"
         question={
           <>
-            How does leverage change the <em>return</em>?
+            How do the <em>numbers</em> change?
           </>
         }
       />
@@ -712,15 +715,36 @@ function buildNarrativeSub(
 interface InvestorReportProps {
   /** User tier — controls AIVerdictBlock (pro) vs TruncatedVerdict (free). */
   tier?: string
+  /** Real analysis from the API — when provided, demo data is replaced with live data. */
+  analysis?: Analysis | null
+  /** Real listing from the API — required alongside analysis to activate live mode. */
+  listing?: Listing | null
 }
 
-export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Element {
+export function InvestorReport({
+  tier = 'pro',
+  analysis: realAnalysis,
+  listing: realListing,
+}: InvestorReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const pdf = usePdfExport(realAnalysis?.token ?? null)
   const [dark, setDark] = useState<boolean>(false)
-  const { listing, rental, neighbourhood } = getDemoDataset()
+  const demoData = getDemoDataset()
+
+  // Shim: use real data when provided, fall back to demo fixtures
+  const listing: ListingData =
+    realAnalysis && realListing ? shimToListingData(realListing, realAnalysis) : demoData.listing
+  const neighbourhood: NeighbourhoodData = realAnalysis
+    ? shimToNeighbourhood(realAnalysis)
+    : demoData.neighbourhood
 
   const { loading, error, financing, metrics, dealScore, sunScout, updateFinancing } =
-    useInvestorReport(listing, rental)
+    useInvestorReport(
+      listing,
+      demoData.rental,
+      undefined,
+      realAnalysis ?? null // skip internal API call when analysis is preloaded
+    )
 
   const handleToggleDark = useCallback(() => {
     setDark((d) => {
@@ -781,14 +805,21 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
             <div className="container" style={{ marginBottom: 32 }}>
               {tier === 'free' ? (
                 <TruncatedVerdict
-                  firstParagraph={buildNarrativeFirstParaStr(listing, dealScore.label)}
+                  firstParagraph={
+                    realAnalysis?.narrative
+                      ? realAnalysis.narrative.split('. ')[0] + '.'
+                      : buildNarrativeFirstParaStr(listing, dealScore.label)
+                  }
                   onUnlock={() => openUpgradeModal('verdict')}
                 />
               ) : (
                 <AIVerdictBlock
                   eyebrow="Scout AI · investor verdict"
                   headline={buildNarrativeHeadline(listing, dealScore.label)}
-                  sub={buildNarrativeSub(listing, metrics.capRate, metrics.cashFlowMonthly)}
+                  sub={
+                    realAnalysis?.narrative ??
+                    buildNarrativeSub(listing, metrics.capRate, metrics.cashFlowMonthly)
+                  }
                 />
               )}
             </div>
@@ -835,13 +866,17 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
                 topic="OSFI stress test"
                 question={
                   <>
-                    Can you <em>qualify</em> at the stress-test rate?
+                    Will the bank actually <em>fund</em> this?
                   </>
                 }
                 verdict={metrics.osfi.pass ? 'Passes GDS test' : 'Fails GDS test'}
                 tone={metrics.osfi.pass ? 'pass' : 'fail'}
               />
-              <OSFICard osfi={metrics.osfi} financing={financing} />
+              <OSFICard
+                osfi={metrics.osfi}
+                financing={financing}
+                income={financing.assumedIncome}
+              />
             </section>
 
             {/* ── §06 Risk flags ─────────────────────────────────────── */}
@@ -854,7 +889,7 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
                 topic="Equity build"
                 question={
                   <>
-                    How does your wealth grow over <em>20 years</em>?
+                    What <em>builds</em> over time?
                   </>
                 }
               />
@@ -880,7 +915,11 @@ export function InvestorReport({ tier = 'pro' }: InvestorReportProps): JSX.Eleme
       </main>
 
       <Footer />
-      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <StickyActionBar
+        onSave={() => undefined}
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
     </div>
   )
 }

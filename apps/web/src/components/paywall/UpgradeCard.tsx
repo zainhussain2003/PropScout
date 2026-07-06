@@ -66,7 +66,7 @@ export function UpgradeCard({
           style={{
             fontSize: 14,
             lineHeight: 1.5,
-            color: dark ? 'rgba(255,255,255,0.72)' : 'var(--ink-2)',
+            color: dark ? 'color-mix(in oklab, var(--bg) 72%, transparent)' : 'var(--ink-2)',
             maxWidth: 360,
           }}
         >
@@ -88,8 +88,10 @@ export function UpgradeCard({
         <button
           className="btn btn-ghost"
           style={{
-            color: dark ? 'rgba(255,255,255,0.7)' : 'var(--ink-2)',
-            borderColor: dark ? 'rgba(255,255,255,0.2)' : 'var(--line-strong)',
+            color: dark ? 'color-mix(in oklab, var(--bg) 70%, transparent)' : 'var(--ink-2)',
+            borderColor: dark
+              ? 'color-mix(in oklab, var(--bg) 20%, transparent)'
+              : 'var(--line-strong)',
           }}
         >
           See what's included
@@ -102,7 +104,7 @@ export function UpgradeCard({
           fontSize: 10,
           letterSpacing: '0.14em',
           textTransform: 'uppercase',
-          color: dark ? 'rgba(255,255,255,0.45)' : 'var(--muted)',
+          color: dark ? 'color-mix(in oklab, var(--bg) 45%, transparent)' : 'var(--muted)',
           marginTop: dense ? 2 : 4,
         }}
       >

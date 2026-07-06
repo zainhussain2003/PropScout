@@ -1,71 +1,102 @@
-/* PropScout · Design Tokens
+/* PropScout · Design Tokens — "Harbour" system
  *
  * Import this once at the top of your global stylesheet:
  *   @import './tokens.css';
  *
- * Or move the :root and [data-theme="dark"] blocks into your
- * Tailwind / Vanilla Extract / Vanilla CSS-in-JS theme definition.
+ * Values are ported byte-for-byte from the locked Harbour reference
+ * (docs/PropScout Standalones/source/surfaces/Landing v2.html). This file
+ * now supersedes the older warm-cream prototypes in
+ * docs/design_handoff_propscout_mvp/. The repo keeps its own token names
+ * (--radius-sm/--radius/--radius-lg, --pad-y); the design's --r-sm/--r/--r-lg
+ * and --sect map onto them and are also exposed as aliases so components
+ * written against either name resolve.
  *
  * Light mode is the default. Dark mode activates when
  *   document.documentElement.setAttribute('data-theme', 'dark')
  * is set (driven by your user-preference state).
+ *
+ * Contrast (WCAG, measured) — all accent/verdict pairs ≥ 4.5:1 in both themes:
+ *   LIGHT  accent #1F4E68  8.94:1 on white · 7.75:1 on --bg #EFEFEA
+ *          pass   #4F7A48  4.99:1 on white · caution #8A6410 5.37:1 on white,
+ *          4.65:1 on --bg · fail #B14A37 5.38:1 on white
+ *   DARK   accent #5E93B0  4.97:1 on --surface #171F28 · 5.67:1 on --bg #0C1116
+ *          pass   #7FB076  6.63:1 · caution #D9A83F 7.62:1 · fail #E27F63 5.90:1
+ *          (all on --surface #171F28)
  */
 
 :root {
-  /* ── Surfaces ───────────────────────────────────────────── */
-  --bg: #f1ece2; /* page background — warm cream */
-  --bg-elev: #fbf7ee; /* lifted cream — input fields, soft cards */
+  /* ── Surfaces — cool limestone, not warm cream ──────────────── */
+  --bg: #efefea; /* page background — cool limestone (Harbour; was #f4f2ed) */
+  --bg-elev: #f7f7f3; /* lifted limestone — input fields, soft cards */
   --surface: #ffffff; /* hard surface — primary cards */
 
   /* ── Ink ─────────────────────────────────────────────────── */
-  --ink: #0e1320; /* near-black, cool tint — text + primary buttons */
-  --ink-2: #3b3a35; /* body copy */
-  --muted: #76716a; /* labels, hints, secondary text */
+  --ink: #101820; /* near-black, cool tint — text + primary buttons */
+  --ink-2: #3a424b; /* body copy */
+  --muted: #6e7681; /* labels, hints, secondary text */
 
   /* ── Lines & dividers ────────────────────────────────────── */
-  --line: rgba(14, 19, 32, 0.1);
-  --line-strong: rgba(14, 19, 32, 0.16);
+  --line: rgba(16, 24, 32, 0.11);
+  --line-strong: rgba(16, 24, 32, 0.19);
 
-  /* ── Brand accent ────────────────────────────────────────── */
-  --accent: #d97757; /* terracotta — brand + Pro + CTA */
+  /* ── Brand accent — deep harbour blue ────────────────────── */
+  --accent: #1f4e68; /* brand + Pro + CTA · 8.94:1 on white */
+  --accent-hover: #17405a; /* darker harbour — hover state */
   --accent-ink: #ffffff; /* foreground on accent backgrounds */
+  --accent-soft: rgba(31, 78, 104, 0.08); /* tinted fills — chips, hover washes, card headers */
 
-  /* ── Data states ─────────────────────────────────────────── */
+  /* ── Verdict / data states — reserved for report data ONLY ── */
   --pass: #4f7a48; /* sage — good deal, pass, positive */
-  --caution: #b98724; /* amber — caution, soft warning */
+  --caution: #8a6410; /* amber (AA-darkened) — caution, soft warning */
   --fail: #b14a37; /* clay — hard pass, fail, negative */
 
   /* ── Chip / soft background ──────────────────────────────── */
-  --chip-bg: rgba(14, 19, 32, 0.04);
+  --chip-bg: rgba(16, 24, 32, 0.045);
 
   /* ── Shadows ─────────────────────────────────────────────── */
-  --shadow-card: 0 1px 0 rgba(14, 19, 32, 0.04), 0 8px 28px -16px rgba(14, 19, 32, 0.18);
-  --shadow-pop: 0 24px 48px -24px rgba(14, 19, 32, 0.35), 0 4px 16px -8px rgba(14, 19, 32, 0.16);
+  --shadow-card: 0 1px 0 rgba(16, 24, 32, 0.04), 0 10px 30px -18px rgba(16, 24, 32, 0.22);
+  --shadow-pop: 0 28px 56px -28px rgba(16, 24, 32, 0.38), 0 4px 16px -8px rgba(16, 24, 32, 0.14);
 
-  /* ── Radii ───────────────────────────────────────────────── */
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 22px;
+  /* ── Radii (repo names take Harbour --r-sm/--r/--r-lg values) ── */
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  /* Harbour-name aliases so components written against either resolve */
+  --r-sm: var(--radius-sm);
+  --r: var(--radius);
+  --r-lg: var(--radius-lg);
 
   /* ── Layout ──────────────────────────────────────────────── */
   --maxw: 1280px;
   --gutter: clamp(20px, 4vw, 56px);
-  --pad-y: clamp(64px, 9vw, 120px); /* section top/bottom spacing */
+  --sect: clamp(72px, 9vw, 140px); /* section top/bottom spacing (Harbour) */
+  --pad-y: var(--sect); /* repo alias — pre-existing name */
 }
 
-/* ── Dark mode ─────────────────────────────────────────────── */
+/* ── Dark mode — measured AA contrast ──────────────────────── */
 [data-theme='dark'] {
-  --bg: #0a0d14;
-  --bg-elev: #11141c;
-  --surface: #161a24;
-  --ink: #f1ece0;
-  --ink-2: #c6c1b5;
-  --muted: #807b71;
-  --line: rgba(241, 236, 224, 0.1);
-  --line-strong: rgba(241, 236, 224, 0.18);
-  --chip-bg: rgba(241, 236, 224, 0.06);
+  --bg: #0c1116;
+  --bg-elev: #121820;
+  --surface: #171f28;
+  --ink: #edeee9;
+  --ink-2: #b9bdb9;
+  --muted: #7c8590;
+  --line: rgba(237, 238, 233, 0.1);
+  --line-strong: rgba(237, 238, 233, 0.19);
+  --accent: #5e93b0;
+  --accent-hover: #74a5bf;
+  --accent-ink: #0c1116; /* dark bg on lightened blue — white would be 2.72:1 */
+  --accent-soft: rgba(94, 147, 176, 0.12);
+  /* Verdict states, dark variants — previously undefined (light values bled
+   * through and under-contrasted on dark surfaces). Measured against
+   * --surface #171F28 / --bg-elev #121820:
+   *   pass 6.63:1 / 7.11:1 · caution 7.62:1 / 8.17:1 · fail 5.90:1 / 6.33:1 */
+  --pass: #7fb076;
+  --caution: #d9a83f;
+  --fail: #e27f63;
+  --chip-bg: rgba(237, 238, 233, 0.06);
   --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 16px 40px -20px rgba(0, 0, 0, 0.6);
-  --shadow-pop: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 28px 64px -20px rgba(0, 0, 0, 0.72);
 }
 
 /* ── Type scale (apply to your h1/h2/h3 in global styles) ── */

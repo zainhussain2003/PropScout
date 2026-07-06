@@ -8,13 +8,16 @@
  *   showVerdict  — when true, shows a VerdictPill below the score
  *   animate      — when true, stroke animates from empty → target on mount
  *
- * Colour rules (per spec):
- *   ≤ 25  → var(--fail)     clay red
- *   26–60 → var(--caution)  amber
- *   61+   → var(--pass)     sage green
+ * Colour rules — unified on the DEAL_SCORE verdict brackets so the gauge colour
+ * always matches the verdict label/tone (VERDICT_DISPLAY in investorCalc):
+ *   ≥ 65 (good_deal+)        → var(--pass)     sage green
+ *   35–64 (caution/marginal) → var(--caution)  amber
+ *   < 35 (do_not_buy+)       → var(--fail)     clay red
  */
 
 import { useEffect, useState } from 'react'
+import { DEAL_SCORE } from '../../constants/thresholds'
+import { verdictLabelForScore } from '../../lib/investorCalc'
 
 interface DealScoreProps {
   score: number
@@ -22,6 +25,21 @@ interface DealScoreProps {
   label?: string
   showVerdict?: boolean
   animate?: boolean
+  /** Denominator for the arc + aria-label. Default 95 (raw scale); pass 100 for display-normalized. */
+  max?: number
+  /**
+   * Ring colour driven by the verdict tone (one source of truth). When omitted,
+   * colour falls back to the bracket-based default — but for any score that has
+   * a backend verdict, ALWAYS pass tone so the colour can't disagree with the
+   * number (a normalized number against raw brackets would mismatch the label).
+   */
+  tone?: 'pass' | 'caution' | 'fail'
+  /**
+   * Verdict text rendered verbatim when showVerdict is set. Pass the backend
+   * verdict label on live paths; when omitted, the label is derived from the
+   * raw score via the shared verdict brackets (demo gauges only).
+   */
+  verdictLabel?: string
 }
 
 const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
@@ -30,10 +48,16 @@ const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
   lg: 180,
 }
 
+const TONE_COLOR: Record<'pass' | 'caution' | 'fail', string> = {
+  pass: 'var(--pass)',
+  caution: 'var(--caution)',
+  fail: 'var(--fail)',
+}
+
 function getScoreColor(score: number): string {
-  if (score <= 25) return 'var(--fail)'
-  if (score <= 60) return 'var(--caution)'
-  return 'var(--pass)'
+  if (score >= DEAL_SCORE.GOOD) return 'var(--pass)'
+  if (score >= DEAL_SCORE.MARGINAL) return 'var(--caution)'
+  return 'var(--fail)'
 }
 
 export function DealScore({
@@ -42,16 +66,19 @@ export function DealScore({
   label,
   showVerdict = false,
   animate = true,
+  max = 95,
+  tone,
+  verdictLabel,
 }: DealScoreProps): JSX.Element {
   const px = SIZE_MAP[size]
-  const strokeWidth = Math.round(px * 0.085)
+  const strokeWidth = Math.max(5, Math.round(px * 0.075))
   const R = (px - strokeWidth) / 2
   const circumference = 2 * Math.PI * R
   const cx = px / 2
   const cy = px / 2
 
-  const clamped = Math.max(0, Math.min(95, Math.round(score)))
-  const targetOffset = circumference * (1 - clamped / 95)
+  const clamped = Math.max(0, Math.min(max, Math.round(score)))
+  const targetOffset = circumference * (1 - clamped / max)
 
   // Start at full offset (gap = 0 shown) then animate to target
   const [offset, setOffset] = useState(animate ? circumference : targetOffset)
@@ -68,12 +95,14 @@ export function DealScore({
     return () => cancelAnimationFrame(id)
   }, [targetOffset, animate])
 
-  const color = getScoreColor(clamped)
+  // Colour from the backend verdict tone when given — never re-derive it from
+  // the (possibly normalized) number, or it can disagree with the verdict label.
+  const color = tone ? TONE_COLOR[tone] : getScoreColor(clamped)
 
   return (
     <div
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
-      aria-label={`Deal score: ${clamped} out of 95`}
+      aria-label={`Deal score: ${clamped} out of ${max}`}
     >
       <div style={{ position: 'relative', width: px, height: px }}>
         {/* SVG gauge */}
@@ -105,7 +134,7 @@ export function DealScore({
           />
         </svg>
 
-        {/* Numeric score + optional label */}
+        {/* Numeric score + optional label + optional verdict pill (all inside the ring) */}
         <div
           style={{
             position: 'absolute',
@@ -114,16 +143,16 @@ export function DealScore({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 3,
+            padding: strokeWidth + 2,
           }}
         >
           <span
             className="serif tabular"
             style={{
-              fontSize: px * 0.235,
+              fontSize: px >= 80 ? px * 0.42 : px * 0.52,
               lineHeight: 1,
-              letterSpacing: '-0.02em',
-              color,
+              fontWeight: 400,
+              color: 'var(--ink)',
             }}
           >
             {clamped}
@@ -132,44 +161,37 @@ export function DealScore({
             <span
               className="mono"
               style={{
-                fontSize: Math.max(8, px * 0.071),
+                fontSize: 9,
                 color: 'var(--muted)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.12em',
                 textAlign: 'center',
-                paddingInline: 6,
-                lineHeight: 1.2,
+                marginTop: 6,
+                whiteSpace: 'nowrap',
               }}
             >
               {label}
             </span>
           )}
+          {showVerdict && (
+            <span
+              style={{
+                marginTop: 6,
+                fontSize: 11,
+                fontWeight: 500,
+                color,
+                padding: '3px 10px',
+                borderRadius: 999,
+                border: `1px solid ${color}`,
+                background: `color-mix(in oklab, ${color} 8%, transparent)`,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {verdictLabel ?? verdictLabelForScore(clamped)}
+            </span>
+          )}
         </div>
       </div>
-
-      {showVerdict && (
-        <span
-          className="mono"
-          style={{
-            fontSize: 10,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color,
-          }}
-        >
-          {clamped <= 25
-            ? 'Hard pass'
-            : clamped <= 35
-              ? 'Do not buy'
-              : clamped <= 50
-                ? 'Marginal'
-                : clamped <= 65
-                  ? 'Caution'
-                  : clamped <= 80
-                    ? 'Good deal'
-                    : 'Strong deal'}
-        </span>
-      )}
     </div>
   )
 }

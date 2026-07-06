@@ -67,7 +67,7 @@ export function LandlordVerdictHero({
         <div
           className="row gap-8"
           style={{
-            color: 'rgba(255,255,255,0.55)',
+            color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
             marginBottom: 20,
             position: 'relative',
             zIndex: 1,
@@ -98,7 +98,7 @@ export function LandlordVerdictHero({
             style={{
               fontSize: 10,
               letterSpacing: '0.12em',
-              color: 'rgba(255,255,255,0.4)',
+              color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
             claude · sonnet 4.6
@@ -136,7 +136,7 @@ export function LandlordVerdictHero({
             style={{
               fontSize: 'clamp(17px, 1.7vw, 21px)',
               lineHeight: 1.5,
-              color: 'rgba(255,255,255,0.78)',
+              color: 'color-mix(in oklab, var(--bg) 78%, transparent)',
               marginTop: 22,
               maxWidth: 880,
               position: 'relative',
@@ -185,7 +185,7 @@ export function LandlordVerdictHero({
           className="row gap-16"
           style={{
             marginTop: 28,
-            color: 'rgba(255,255,255,0.5)',
+            color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
             fontSize: 12,
             position: 'relative',
             zIndex: 1,

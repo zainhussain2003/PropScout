@@ -5,13 +5,28 @@
  * Falls back to the Phase 2 placeholder when sunScout is null.
  */
 
+import { useEffect, useState, type ReactNode } from 'react'
 import type { SunScoutResult } from '../../types/analysis'
 import { DealScore } from '../analysis/DealScore'
 import { SectionHead } from '../shared/SectionHead'
 import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
+import { recalculateSunScout } from '../../lib/services/sunScoutService'
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+
+// Compass point → facade bearing in degrees. 180 (south) is the pipeline's
+// default assumption — the selector exists to turn that assumption into input.
+const FACADE_OPTIONS: Array<{ label: string; bearing: number }> = [
+  { label: 'North', bearing: 0 },
+  { label: 'North-east', bearing: 45 },
+  { label: 'East', bearing: 90 },
+  { label: 'South-east', bearing: 135 },
+  { label: 'South', bearing: 180 },
+  { label: 'South-west', bearing: 225 },
+  { label: 'West', bearing: 270 },
+  { label: 'North-west', bearing: 315 },
+]
 
 // Summer months (June=5, July=6, August=7) get full accent colour
 const SUMMER_INDICES = new Set([5, 6, 7])
@@ -35,17 +50,19 @@ function verdictTone(v: SunScoutResult['verdict']): 'pass' | 'caution' | 'fail' 
 
 // ── Placeholder (shown when lat/lng unavailable) ──────────────────────────────
 
-function SunScoutPlaceholder({ sectionNumber }: { sectionNumber: string }): JSX.Element {
+function SunScoutPlaceholder({
+  sectionNumber,
+  question,
+}: {
+  sectionNumber: string
+  question: ReactNode
+}): JSX.Element {
   return (
     <section className="container tr-section" data-section={sectionNumber}>
       <SectionHead
         n={sectionNumber}
         topic="SunScout"
-        question={
-          <>
-            How <em>well-lit</em> is the unit?
-          </>
-        }
+        question={question}
         verdict="Modeling · Phase 2"
         tone="caution"
       />
@@ -88,27 +105,62 @@ function SunScoutPlaceholder({ sectionNumber }: { sectionNumber: string }): JSX.
 interface Props {
   sunScout: SunScoutResult | null
   sectionNumber?: string
+  /** Live analysis token — enables the facade-direction recalc input.
+   * Demo pages pass nothing (there is no analysis to recalculate against). */
+  token?: string | null
+  /** Mode-specific section question — each report type words it differently
+   * in the designs (investor "How well-lit…", tenant "How much light…"). */
+  question?: ReactNode
 }
 
-export function SunScoutPanel({ sunScout, sectionNumber = '09' }: Props): JSX.Element {
-  if (!sunScout) {
-    return <SunScoutPlaceholder sectionNumber={sectionNumber} />
+const DEFAULT_QUESTION = (
+  <>
+    How <em>well-lit</em> is the unit?
+  </>
+)
+
+export function SunScoutPanel({
+  sunScout,
+  sectionNumber = '09',
+  token,
+  question = DEFAULT_QUESTION,
+}: Props): JSX.Element {
+  // Local copy so a facade-direction recalc updates the panel in place.
+  const [current, setCurrent] = useState<SunScoutResult | null>(sunScout)
+  const [bearing, setBearing] = useState(180)
+  const [recalculating, setRecalculating] = useState(false)
+
+  useEffect(() => {
+    setCurrent(sunScout)
+  }, [sunScout])
+
+  if (!current) {
+    return <SunScoutPlaceholder sectionNumber={sectionNumber} question={question} />
+  }
+  const sunScoutData = current
+
+  const handleBearingChange = (next: number): void => {
+    setBearing(next)
+    if (!token) return
+    setRecalculating(true)
+    void recalculateSunScout(token, next)
+      .then((result) => {
+        // On failure keep the current data — never blank the section.
+        if (result != null) setCurrent(result)
+      })
+      .finally(() => setRecalculating(false))
   }
 
-  const max = Math.max(...sunScout.monthlyHours, 1)
+  const max = Math.max(...sunScoutData.monthlyHours, 1)
 
   return (
     <section className="container tr-section" data-section={sectionNumber}>
       <SectionHead
         n={sectionNumber}
         topic="SunScout"
-        question={
-          <>
-            How <em>well-lit</em> is the unit?
-          </>
-        }
-        verdict={`${verdictLabel(sunScout.verdict)} · ${sunScout.sunScore.toFixed(0)}/100`}
-        tone={verdictTone(sunScout.verdict)}
+        question={question}
+        verdict={`${verdictLabel(sunScoutData.verdict)} · ${sunScoutData.sunScore.toFixed(0)}/100`}
+        tone={verdictTone(sunScoutData.verdict)}
       />
 
       <div
@@ -123,7 +175,13 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09' }: Props): JSX.El
           className="card col"
           style={{ padding: 28, alignItems: 'center', textAlign: 'center', gap: 16 }}
         >
-          <DealScore score={sunScout.sunScore} size="md" label="" showVerdict={false} />
+          <DealScore
+            score={sunScoutData.sunScore}
+            max={100}
+            size="lg"
+            label=""
+            showVerdict={false}
+          />
           <div
             className="mono"
             style={{
@@ -136,9 +194,59 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09' }: Props): JSX.El
             Light score / 100
           </div>
           <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>
-            {sunScout.summerDailyHours.toFixed(1)}h/day summer ·{' '}
-            {sunScout.winterDailyHours.toFixed(1)}h/day winter
+            {sunScoutData.summerDailyHours.toFixed(1)}h/day summer ·{' '}
+            {sunScoutData.winterDailyHours.toFixed(1)}h/day winter
           </div>
+
+          {token ? (
+            // The sun model needs a facade direction; default is the pipeline's
+            // south assumption. Letting the user set it turns assumption → input.
+            <label
+              className="col"
+              style={{
+                gap: 6,
+                width: '100%',
+                alignItems: 'center',
+                opacity: recalculating ? 0.6 : 1,
+              }}
+            >
+              <span
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                Primary facade faces
+              </span>
+              <select
+                value={String(bearing)}
+                disabled={recalculating}
+                onChange={(e) => handleBearingChange(Number(e.target.value))}
+                style={{
+                  font: "500 13px/1.2 'Geist', sans-serif",
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  border: '1px solid var(--line-strong)',
+                  background: 'var(--surface)',
+                  color: 'var(--ink)',
+                  cursor: 'pointer',
+                }}
+              >
+                {FACADE_OPTIONS.map((o) => (
+                  <option key={o.bearing} value={String(o.bearing)}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <div className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
+              Assumes south-facing primary facade
+            </div>
+          )}
         </div>
 
         {/* Right: 12-month bar chart */}
@@ -161,7 +269,7 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09' }: Props): JSX.El
           </div>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 110 }}>
-            {sunScout.monthlyHours.map((h, i) => (
+            {sunScoutData.monthlyHours.map((h, i) => (
               <div key={i} className="col" style={{ flex: 1, alignItems: 'center', gap: 5 }}>
                 <span
                   className="mono tabular"
@@ -188,7 +296,7 @@ export function SunScoutPanel({ sunScout, sectionNumber = '09' }: Props): JSX.El
           </div>
 
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-            {sunScout.annualPeakSunHours.toFixed(0)} estimated annual peak sun hours (primary
+            {sunScoutData.annualPeakSunHours.toFixed(0)} estimated annual peak sun hours (primary
             window). Bright units rent 8–14% faster than comparable dim units.
           </p>
         </div>

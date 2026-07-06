@@ -7,7 +7,7 @@
  * Hamilton (146 East 19th): good deal, deal score ~85 / strong_buy
  */
 
-import type { ListingData, NeighbourhoodData, DealScore } from '../types/analysis'
+import type { ListingData, NeighbourhoodData, DealScore, SunScoutResult } from '../types/analysis'
 import type { RentalInput } from '../types/api'
 
 // ── Vaughan ────────────────────────────────────────────────────────────────────
@@ -215,6 +215,7 @@ export const HAMILTON_STABLE_METRICS = {
 
 export const VAUGHAN_DEAL_SCORE: DealScore = {
   total: 8,
+  displayTotal: 8,
   verdict: 'hard_pass',
   breakdown: {
     capRate: 0,
@@ -230,6 +231,7 @@ export const VAUGHAN_DEAL_SCORE: DealScore = {
 
 export const HAMILTON_DEAL_SCORE: DealScore = {
   total: 72,
+  displayTotal: 76,
   verdict: 'good_deal',
   breakdown: {
     capRate: 22,
@@ -241,6 +243,29 @@ export const HAMILTON_DEAL_SCORE: DealScore = {
     deduction: 5,
     componentMaxes: { capRate: 25, cashFlow: 25, cashOnCash: 20, dscr: 15, demand: 10 },
   },
+}
+
+// ── SunScout fixtures (§09) ────────────────────────────────────────────────────
+// Values match investor-sections-2.jsx::InvestorSunScoutSection exactly.
+
+export const VAUGHAN_SUNSCOUT: SunScoutResult = {
+  annualPeakSunHours: 1512,
+  summerDailyHours: 6.1,
+  winterDailyHours: 1.8,
+  seasonalGrid: { Dec: 52, Mar: 110, Jun: 184, Sep: 132 },
+  monthlyHours: [62, 78, 110, 138, 168, 184, 188, 168, 132, 96, 64, 52],
+  sunScore: 84,
+  verdict: 'excellent',
+}
+
+export const HAMILTON_SUNSCOUT: SunScoutResult = {
+  annualPeakSunHours: 1054,
+  summerDailyHours: 4.6,
+  winterDailyHours: 1.2,
+  seasonalGrid: { Dec: 36, Mar: 76, Jun: 142, Sep: 96 },
+  monthlyHours: [38, 52, 76, 100, 128, 142, 144, 128, 96, 68, 46, 36],
+  sunScore: 62,
+  verdict: 'good',
 }
 
 /** Default financing per spec — 20% down, 4.79%, 25-yr amort. */

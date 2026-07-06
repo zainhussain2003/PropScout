@@ -11,8 +11,8 @@ from normalization import (
     parse_sqft,
 )
 
-
 # ── parse_rent_monthly ────────────────────────────────────────────────────────
+
 
 class TestParseRentMonthly:
     def test_plain_monthly_amount(self):
@@ -64,6 +64,7 @@ class TestParseRentMonthly:
 
 # ── parse_beds ────────────────────────────────────────────────────────────────
 
+
 class TestParseBeds:
     def test_simple_count(self):
         assert parse_beds("2 Beds") == 2
@@ -77,6 +78,15 @@ class TestParseBeds:
     def test_den_not_counted(self):
         # Dens are never counted as bedrooms (spec Section 19)
         assert parse_beds("2 + den") == 2
+
+    def test_spelled_out_number(self):
+        # Kijiji titles spell beds out — "two bedroom", not "2 bedroom"
+        assert parse_beds("two bedroom") == 2
+        assert parse_beds("Spacious three-bedroom unit") == 3
+
+    def test_digit_wins_over_word_when_both_present(self):
+        # "1 - 3 BED" → first digit (1), not a spelled-out fallback
+        assert parse_beds("1 - 3 BED") == 1
 
     def test_unparseable_returns_none(self):
         assert parse_beds("call for details") is None
@@ -100,6 +110,7 @@ class TestParseBeds:
 
 # ── parse_baths / parse_sqft ──────────────────────────────────────────────────
 
+
 class TestParseBathsAndSqft:
     def test_half_bath(self):
         assert parse_baths("1.5 Baths") == 1.5
@@ -115,6 +126,7 @@ class TestParseBathsAndSqft:
 
 
 # ── postal codes ──────────────────────────────────────────────────────────────
+
 
 class TestPostalCodes:
     def test_extract_with_space(self):
@@ -142,6 +154,7 @@ class TestPostalCodes:
 
 
 # ── normalize_listing ─────────────────────────────────────────────────────────
+
 
 def _raw(**overrides: object) -> RawRentalListing:
     defaults: dict[str, object] = {
@@ -172,7 +185,10 @@ class TestNormalizeListing:
         assert normalize_listing(_raw(rent_raw="contact us")) is None
 
     def test_non_ontario_discarded(self):
-        assert normalize_listing(_raw(address="123 Robson St, Vancouver BC V6B 1A1")) is None
+        assert (
+            normalize_listing(_raw(address="123 Robson St, Vancouver BC V6B 1A1"))
+            is None
+        )
 
     def test_missing_postal_code_kept(self):
         clean = normalize_listing(_raw(address="123 Main Street, Toronto"))
@@ -183,3 +199,15 @@ class TestNormalizeListing:
         clean = normalize_listing(_raw(rent_raw="550 weekly"))
         assert clean is not None
         assert clean.rent_monthly == 2382
+
+    def test_coords_passed_through_when_source_provides_them(self):
+        # rentals.ca GraphQL carries exact coords — they must survive normalisation
+        # so the pipeline can skip a redundant geocode.
+        clean = normalize_listing(_raw(lat=43.6654, lng=-79.3176))
+        assert clean is not None
+        assert clean.lat == 43.6654 and clean.lng == -79.3176
+
+    def test_coords_default_none_when_source_omits_them(self):
+        clean = normalize_listing(_raw())
+        assert clean is not None
+        assert clean.lat is None and clean.lng is None

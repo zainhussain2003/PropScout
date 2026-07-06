@@ -9,7 +9,8 @@
  */
 
 import type { PropertyInput, FinancingInput, RentalInput } from '../../types/api'
-import type { Analysis } from '../../types/analysis'
+import type { Analysis, ReportMode } from '../../types/analysis'
+import type { Listing } from '../../types/property'
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001'
 
@@ -69,68 +70,6 @@ export interface ScrapeResult {
   success: boolean
   listing: ScrapedListing | null
   error: string | null
-}
-
-export async function scrapeUrl(url: string): Promise<ScrapeResult> {
-  let response: Response
-  try {
-    response = await fetch(`${BASE_URL}/scrape`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    })
-  } catch {
-    return { success: false, listing: null, error: 'NETWORK_ERROR' }
-  }
-
-  if (!response.ok) {
-    let error = 'SCRAPE_FAILED'
-    try {
-      const json = (await response.json()) as { error?: string }
-      if (json.error) error = json.error
-    } catch {
-      // use default
-    }
-    return { success: false, listing: null, error }
-  }
-
-  const data = (await response.json()) as {
-    success: boolean
-    listing: Record<string, unknown> | null
-    error: string | null
-  }
-  if (!data.success || data.listing == null) {
-    return { success: false, listing: null, error: data.error ?? 'SCRAPE_FAILED' }
-  }
-
-  const r = data.listing
-  const listing: ScrapedListing = {
-    sourceUrl: String(r.source_url ?? url),
-    listingId: String(r.listing_id ?? ''),
-    address: String(r.address ?? ''),
-    city: String(r.city ?? ''),
-    province: String(r.province ?? 'ON'),
-    postalCode: r.postal_code != null ? String(r.postal_code) : null,
-    price: r.price != null ? Number(r.price) : null,
-    rentMonthly: r.rent_monthly != null ? Number(r.rent_monthly) : null,
-    beds: r.beds != null ? Number(r.beds) : null,
-    baths: r.baths != null ? Number(r.baths) : null,
-    sqft: r.sqft != null ? Number(r.sqft) : null,
-    sqftKnown: Boolean(r.sqft_known),
-    yearBuilt: r.year_built != null ? Number(r.year_built) : null,
-    yearBuiltKnown: Boolean(r.year_built_known),
-    propertyType: String(r.property_type ?? 'condo'),
-    parkingSpots: Number(r.parking_spots ?? 0),
-    parkingKnown: Boolean(r.parking_known),
-    condoFeeMonthly: r.condo_fee_monthly != null ? Number(r.condo_fee_monthly) : null,
-    condoFeeKnown: Boolean(r.condo_fee_known),
-    annualTaxes: r.annual_taxes != null ? Number(r.annual_taxes) : null,
-    annualTaxesKnown: Boolean(r.annual_taxes_known),
-    isToronto: Boolean(r.is_toronto),
-    description: r.description != null ? String(r.description) : null,
-    listingType: (r.listing_type as 'for-sale' | 'for-rent') ?? 'for-sale',
-  }
-  return { success: true, listing, error: null }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -193,6 +132,181 @@ export async function runAnalysis(
   }
 
   return response.json() as Promise<Analysis>
+}
+
+// ── Polling / scrape API ──────────────────────────────────────────────────────
+
+export interface FetchReportResult {
+  status: 'pending' | 'processing' | 'failed' | 'complete'
+  analysis?: Analysis
+  listing?: Listing
+}
+
+/**
+ * POST /scrape — initiates scraping for a URL.
+ * The route always returns 200, including for PROVINCE_NOT_SUPPORTED; the body
+ * is inspected before returning.
+ *
+ * @throws ApiRequestError on province gate, scraper failure, or network error
+ */
+export async function scrapeUrl(
+  url: string
+): Promise<{ token: string; listing: Listing; scraperFailed?: boolean; missingFields?: string[] }> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/scrape`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+  } catch (err) {
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach the analysis service — check your connection and try again.',
+      0
+    )
+  }
+
+  if (response.ok) {
+    const body = (await response.json()) as {
+      error?: string
+      token?: string
+      listing?: Listing
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+
+    if (body.error === 'PROVINCE_NOT_SUPPORTED') {
+      throw new ApiRequestError(
+        'PROVINCE_NOT_SUPPORTED',
+        "This property is outside Ontario — we'll notify you when we expand.",
+        200
+      )
+    }
+
+    const result: {
+      token: string
+      listing: Listing
+      scraperFailed?: boolean
+      missingFields?: string[]
+    } = {
+      token: body.token!,
+      listing: body.listing!,
+    }
+
+    if (body.scraperFailed) {
+      result.scraperFailed = true
+      result.missingFields = body.missingFields
+    }
+
+    return result
+  }
+
+  if (response.status === 422) {
+    throw new ApiRequestError(
+      'SCRAPER_FAILED',
+      'Could not read that listing — enter details manually.',
+      422
+    )
+  }
+
+  if (response.status === 503) {
+    throw new ApiRequestError(
+      'SCRAPER_UNAVAILABLE',
+      'Analysis service temporarily unavailable — try again in a moment.',
+      503
+    )
+  }
+
+  let code = 'SCRAPE_FAILED'
+  let message = 'Scraping failed — please try again.'
+  try {
+    const json = (await response.json()) as { code?: string; message?: string }
+    if (json.code) code = json.code
+    if (json.message) message = json.message
+  } catch {
+    // ignore parse errors — use defaults above
+  }
+  throw new ApiRequestError(code, message, response.status)
+}
+
+/**
+ * POST /analysis — triggers the analysis pipeline for a scraped token.
+ * No trailing slash — different call shape from runAnalysis.
+ * Returns void; use fetchReport to poll for results.
+ *
+ * @throws ApiRequestError on non-200 or network error
+ */
+export async function triggerAnalysis(token: string, mode: ReportMode): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, mode }),
+    })
+  } catch (err) {
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach the analysis service — check your connection and try again.',
+      0
+    )
+  }
+
+  if (!response.ok) {
+    let code = 'TRIGGER_FAILED'
+    let message = 'Could not start analysis — please try again.'
+    try {
+      const json = (await response.json()) as { code?: string; message?: string }
+      if (json.code) code = json.code
+      if (json.message) message = json.message
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiRequestError(code, message, response.status)
+  }
+}
+
+/**
+ * GET /analysis/:token — polls for analysis status and, when complete,
+ * returns the full analysis and listing.
+ *
+ * @throws ApiRequestError on 404 (not found), 410 (expired), or network error
+ */
+export async function fetchReport(token: string): Promise<FetchReportResult> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/analysis/${token}`)
+  } catch (err) {
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach the analysis service — check your connection and try again.',
+      0
+    )
+  }
+
+  if (response.status === 404) {
+    throw new ApiRequestError('NOT_FOUND', 'Analysis not found.', 404)
+  }
+
+  if (response.status === 410) {
+    throw new ApiRequestError('EXPIRED', 'This analysis link has expired.', 410)
+  }
+
+  if (!response.ok) {
+    let code = 'FETCH_FAILED'
+    let message = 'Could not fetch report — please try again.'
+    try {
+      const json = (await response.json()) as { code?: string; message?: string }
+      if (json.code) code = json.code
+      if (json.message) message = json.message
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiRequestError(code, message, response.status)
+  }
+
+  return response.json() as Promise<FetchReportResult>
 }
 
 // ── Province waitlist ─────────────────────────────────────────────────────────

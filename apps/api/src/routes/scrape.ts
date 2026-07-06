@@ -1,135 +1,223 @@
 /**
- * Scrape route — POST /scrape
- *
- * Proxies a Realtor.ca (or supported) listing URL to the Python calc-engine's
- * /scrape/ endpoint. Normalises error responses so the frontend can decide
- * whether to show the province waitlist, the manual-entry fallback, or the
- * scraped listing data.
- *
- * Error codes returned to frontend:
- *   province_not_supported → 400  (show waitlist modal)
- *   scrape_failed          → 422  (show manual entry)
- *   SCRAPE_SERVICE_UNAVAILABLE → 503 (show generic error)
- *
- * Registered in app.ts with prefix "/scrape":
- *   await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
+ * POST /scrape
+ * Accepts a Realtor.ca URL, calls the Python scraper service, runs the
+ * province gate, writes listing + pending analysis to Supabase, and
+ * returns a token. The token is what the frontend uses for all subsequent
+ * calls to POST /analysis and GET /analysis/:token.
  */
 
+import { randomUUID } from 'crypto'
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
+import type { Listing, ListingType, PropertyType } from '../types/property'
+import { isOntarioPostalCode } from '../constants/provinces'
+import { RENT_BOUNDS } from '../constants/thresholds'
+import { saveListing, createPendingAnalysis } from '../services/supabaseService'
 
-const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
+const SCRAPER_URL = process.env.SCRAPER_URL ?? 'http://localhost:8001'
 
-interface ScrapeRequestBody {
+// FSA first letter → province abbreviation (Ontario handled separately via isOntarioPostalCode)
+const FSA_PROVINCE_MAP: Record<string, string> = {
+  A: 'NL',
+  B: 'NS',
+  C: 'PE',
+  E: 'NB',
+  G: 'QC',
+  H: 'QC',
+  J: 'QC',
+  R: 'MB',
+  S: 'SK',
+  T: 'AB',
+  V: 'BC',
+  X: 'NT',
+  Y: 'YT',
+}
+
+// Scraper response shape — dataclasses.asdict() of Python ScrapedListing (snake_case JSON)
+interface ScrapedListingResponse {
   url: string
+  address: string
+  price: number
+  beds: number
+  baths: number
+  sqft: number | null
+  property_type: string
+  annual_taxes: number | null
+  taxes_known: boolean
+  condo_fee_monthly: number | null
+  condo_fee_known: boolean
+  year_built: number | null
+  year_built_known: boolean
+  listing_type: string // 'for_sale' | 'for_rent'
+  listing_description: string | null
+  photo_urls: string[]
+  days_on_market: number | null
+  raw: Record<string, unknown>
+  /** Realtor.ca buildingType ('Apartment' | 'House' | 'Row / Townhouse' …) —
+   * the real dwelling discriminator; propertyType is "Single Family" for
+   * both a condo apartment and a detached house. */
+  building_type?: string | null
+  /** "Total Parking Spaces" from the details section. */
+  parking_spaces?: number | null
 }
 
-/** Shape returned by the Python calc-engine on error */
-interface CalcEngineScrapeError {
-  error: string
-  province?: string
-  [key: string]: unknown
+function mapPropertyType(raw: string, buildingType?: string | null): PropertyType {
+  // Realtor.ca's propertyType is "Single Family" for BOTH a condo apartment
+  // and a detached house — buildingType is the real dwelling discriminator
+  // (a live Whitehaus condo mapped to 'detached' before this, 2026-07-02).
+  const building = (buildingType ?? '').toLowerCase()
+  if (building.includes('apartment') || building.includes('condo')) return 'condo'
+  if (building.includes('town') || building.includes('row')) return 'townhouse'
+  if (building.includes('duplex') || building.includes('triplex') || building.includes('fourplex'))
+    return 'multiplex'
+
+  const lower = raw.toLowerCase()
+  if (lower.includes('town') || lower.includes('row')) return 'townhouse'
+  if (lower.includes('semi')) return 'semi-detached'
+  if (lower.includes('detach')) return 'detached'
+  // Realtor.ca uses "Single Family" for detached houses. Map to 'detached'.
+  if (lower.includes('single family') || lower.includes('house')) return 'detached'
+  if (lower.includes('multiplex') || lower.includes('duplex') || lower.includes('triplex'))
+    return 'multiplex'
+  if (lower.includes('commercial')) return 'commercial'
+  if (lower.includes('condo') || lower.includes('apartment')) return 'condo'
+  // Unknown — default to 'detached' rather than 'condo' since the latter triggers
+  // the synthetic condo_fee_unknown flag (often a false positive). Detached is the
+  // more common Ontario type and doesn't carry a fee assumption.
+  return 'detached'
 }
 
-function isScrapeRequestBody(body: unknown): body is ScrapeRequestBody {
-  return typeof body === 'object' && body !== null && 'url' in body && typeof (body as Record<string, unknown>)['url'] === 'string'
+function extractCity(address: string): string {
+  // Realtor.ca format: "Street, City, Province PostalCode"
+  const parts = address.split(',')
+  if (parts.length >= 3) return parts[parts.length - 2].trim()
+  if (parts.length === 2) return parts[0].trim()
+  return ''
 }
 
 async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post('/', async (req, reply) => {
-    if (!isScrapeRequestBody(req.body)) {
-      return reply
-        .code(400)
-        .send(makeError('INVALID_REQUEST', 'A "url" string is required in the request body.'))
-    }
-
-    const { url } = req.body
-
-    if (url.trim().length === 0) {
-      return reply
-        .code(400)
-        .send(makeError('INVALID_URL', 'URL cannot be empty.'))
-    }
-
-    let calcResponse: Response
+  fastify.post<{ Body: { url: string } }>('/', async (req, reply) => {
     try {
-      calcResponse = await fetch(`${CALC_ENGINE_URL}/scrape/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      })
-    } catch (err) {
-      fastify.log.error({ err }, 'Calc engine unreachable during scrape')
-      return reply
-        .code(503)
-        .send(
-          makeError(
-            'SCRAPE_SERVICE_UNAVAILABLE',
-            'The scraping service is temporarily unavailable — try again in a moment or enter the details manually.',
-            String(err)
-          )
-        )
-    }
+      const { url } = req.body
 
-    // Parse the response body (could be error or success)
-    let responseBody: unknown
-    try {
-      responseBody = await calcResponse.json()
-    } catch {
-      const text = await calcResponse.text().catch(() => '')
-      fastify.log.error({ status: calcResponse.status, body: text }, 'Calc engine scrape returned unparseable response')
-      return reply
-        .code(502)
-        .send(
-          makeError(
-            'SCRAPE_INVALID_RESPONSE',
-            'Received an unexpected response from the scraping service — try again or enter details manually.',
-            text
-          )
-        )
-    }
-
-    // Handle known calc-engine error shapes
-    if (!calcResponse.ok) {
-      const errBody = responseBody as CalcEngineScrapeError
-
-      if (errBody.error === 'province_not_supported') {
-        fastify.log.info({ province: errBody.province }, 'Scrape rejected — province not supported')
-        return reply.code(400).send({
-          error: true,
-          code: 'PROVINCE_NOT_SUPPORTED',
-          message: 'PropScout currently covers Ontario only. Enter your email to be notified when we expand.',
-          province: errBody.province ?? null,
+      // Step 1 — call the Python scraper
+      let scraperRes: Response
+      try {
+        scraperRes = await fetch(`${SCRAPER_URL}/scrape`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
         })
-      }
-
-      if (errBody.error === 'scrape_failed') {
-        fastify.log.warn({ url }, 'Scrape failed — prompting manual entry')
+      } catch (err) {
+        fastify.log.error({ err }, 'Scraper service unreachable')
         return reply
-          .code(422)
+          .code(503)
           .send(
             makeError(
-              'SCRAPE_FAILED',
-              'Could not read that listing — enter the details manually and we will run the analysis.',
+              'SCRAPER_UNAVAILABLE',
+              'Analysis service temporarily unavailable — try again in a moment.'
             )
           )
       }
 
-      // Unknown error from calc engine
-      fastify.log.error({ status: calcResponse.status, body: errBody }, 'Calc engine scrape returned unknown error')
-      return reply
-        .code(500)
-        .send(
-          makeError(
-            'SCRAPE_ERROR',
-            'An error occurred while reading that listing — try again or enter the details manually.',
-            JSON.stringify(errBody)
+      if (scraperRes.status === 422) {
+        return reply
+          .code(422)
+          .send(
+            makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
           )
-        )
-    }
+      }
 
-    // Success — return scraped listing data to frontend
-    return reply.code(200).send(responseBody)
+      if (!scraperRes.ok) {
+        fastify.log.error({ status: scraperRes.status }, 'Scraper returned unexpected error')
+        return reply
+          .code(503)
+          .send(
+            makeError(
+              'SCRAPER_UNAVAILABLE',
+              'Analysis service temporarily unavailable — try again in a moment.'
+            )
+          )
+      }
+
+      const scraped = (await scraperRes.json()) as ScrapedListingResponse
+
+      // Step 2 — extract postal code and run province gate
+      const pcMatch = scraped.address.match(/([A-Z][0-9][A-Z])\s*([0-9][A-Z][0-9])/i)
+      if (!pcMatch) {
+        return reply
+          .code(422)
+          .send(
+            makeError('POSTAL_CODE_NOT_FOUND', 'Could not determine province from this listing.')
+          )
+      }
+
+      const postalCode = (pcMatch[1] + pcMatch[2]).toUpperCase()
+      const fsa = postalCode.charAt(0)
+
+      if (!isOntarioPostalCode(postalCode)) {
+        const province = FSA_PROVINCE_MAP[fsa] ?? 'UNKNOWN'
+        return reply.code(200).send({ error: 'PROVINCE_NOT_SUPPORTED', province })
+      }
+
+      // Step 3 — detect partial scrape failure
+      const listingType: ListingType = scraped.listing_type === 'for_rent' ? 'for-rent' : 'for-sale'
+
+      // A for-rent price outside plausible monthly-rent bounds is a scrape/unit
+      // error ($29 or $290,000/mo), not a real rent — null it and route the user
+      // to manual entry rather than scoring garbage downstream.
+      const rentMonthly =
+        listingType === 'for-rent' &&
+        scraped.price >= RENT_BOUNDS.MIN_MONTHLY &&
+        scraped.price <= RENT_BOUNDS.MAX_MONTHLY
+          ? scraped.price
+          : null
+
+      const missingFields: string[] = []
+      if (scraped.sqft == null) missingFields.push('sqft')
+      if (!scraped.taxes_known) missingFields.push('annual_taxes')
+      if (!scraped.year_built_known) missingFields.push('year_built')
+      if (listingType === 'for-rent' && rentMonthly === null) missingFields.push('rent_monthly')
+      const scraperFailed = missingFields.length > 0
+
+      // Step 4 — map scraper output to Listing type
+      const listing: Omit<Listing, 'id'> = {
+        url: scraped.url,
+        listingType,
+        address: scraped.address,
+        city: extractCity(scraped.address),
+        province: 'ON',
+        postalCode,
+        price: listingType === 'for-sale' ? scraped.price : null,
+        rentMonthly,
+        beds: scraped.beds,
+        baths: scraped.baths,
+        sqft: scraped.sqft,
+        propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
+        yearBuilt: scraped.year_built,
+        parkingSpots: scraped.parking_spaces ?? 0,
+        condoFeeMonthly: scraped.condo_fee_monthly,
+        condoFeeKnown: scraped.condo_fee_known,
+        annualTaxes: scraped.annual_taxes,
+        description: scraped.listing_description,
+        photos: scraped.photo_urls,
+        scrapedAt: new Date().toISOString(),
+      }
+
+      // Step 5 — write to Supabase
+      const listingId = await saveListing(listing, 'realtor_ca')
+      const token = randomUUID()
+      await createPendingAnalysis(listingId, token)
+
+      // Step 6 — return response
+      if (scraperFailed) {
+        return reply.send({ token, listing, scraperFailed: true, missingFields })
+      }
+      return reply.send({ token, listing })
+    } catch (err) {
+      fastify.log.error({ err }, 'Unexpected error in POST /scrape')
+      return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
+    }
   })
 }
 

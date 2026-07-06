@@ -1,92 +1,113 @@
 /**
- * Functionality tests for the Fastify analysis route.
+ * Functionality tests for the Fastify analysis route (orchestrator).
  *
  * Covers:
- *   - camelCase input returns fully camelCase response (round-trip)
- *   - camelCase input converted to snake_case before forwarding to calc engine
- *   - 503 when the calc engine is unreachable (ECONNREFUSED)
- *   - 422 when the calc engine rejects the input
- *   - 500 when the calc engine returns an unexpected server error
- *   - Nested component_maxes mapped to componentMaxes
- *   - has_sanity_warnings flag passed through correctly
- *   - 400 when the request body is not camelCase
- *   - 429 FREE_LIMIT_REACHED when authenticated free user exceeds 10 analyses/month
- *   - Haiku extraction skipped when no listingDescription provided
- *   - Haiku extraction fires and flags are merged when listingDescription provided
- *   - Pro user tier passed to narrative generator
+ *   - Valid token + mode → 200 with { token, analysis } containing metrics and narrative
+ *   - Missing token → 400 MISSING_TOKEN
+ *   - Invalid mode → 400 INVALID_MODE
+ *   - getListingByToken returns null → 404 NOT_FOUND
+ *   - Calc engine network error → 503 CALC_ENGINE_UNAVAILABLE, status marked failed
+ *   - Calc engine non-200 → 500 CALC_ENGINE_ERROR, status marked failed
+ *   - updateAnalysisStatus('processing') called before calc engine fetch
+ *   - saveAnalysis called with correct token after successful pipeline
  *
- * The global `fetch` is mocked in every test — no real network calls are made.
- * supabaseService and anthropicService are mocked to avoid needing API keys.
+ * All service calls are mocked — no real network calls or DB queries are made.
  */
 
-// ── Mocks (must precede imports) ───────────────────────────────────────────────
-
-jest.mock('../services/supabaseService', () => ({
-  fetchRentalComps: jest.fn().mockResolvedValue(null),
-  saveAnalysis: jest.fn().mockResolvedValue('test-token-abc123'),
-  getAnalysisByToken: jest.fn().mockResolvedValue(null),
-  logSanityFailure: jest.fn().mockResolvedValue(undefined),
-  getSupabase: jest.fn().mockReturnValue({
-    auth: {
-      getUser: jest
-        .fn()
-        .mockResolvedValue({ data: { user: null }, error: { message: 'no token' } }),
-    },
-  }),
-  getUserById: jest.fn().mockResolvedValue(null),
-  getMonthlyAnalysisCount: jest.fn().mockResolvedValue(0),
-}))
-
-jest.mock('../services/anthropicService', () => ({
-  generateNarrative: jest.fn().mockResolvedValue(null),
-  extractListingFlags: jest.fn().mockResolvedValue(null),
-}))
-
 import Fastify, { type FastifyInstance } from 'fastify'
-import analysisRoutes, { humaniseFlagId } from './analysis'
+import analysisRoutes from './analysis'
 import type { Analysis } from '../types/analysis'
+import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
-import { getSupabase, getUserById, getMonthlyAnalysisCount } from '../services/supabaseService'
+
+// ── Module mocks ──────────────────────────────────────────────────────────────
+
+jest.mock('../services/supabaseService')
+jest.mock('../services/anthropicService')
+jest.mock('../services/mapboxService')
+jest.mock('../services/walkScoreService')
+
+import {
+  getListingByToken,
+  updateAnalysisStatus,
+  updateAnalysisByToken,
+  fetchRentalComps,
+  getFlagOverrides,
+  getNearbySchools,
+} from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
+import { geocodeAddress } from '../services/mapboxService'
+import { getWalkScore } from '../services/walkScoreService'
+import { getVacancyRateByCity } from '../services/cmhcService'
 
-const mockGetSupabase = getSupabase as jest.Mock
-const mockGetUserById = getUserById as jest.Mock
-const mockGetMonthlyCount = getMonthlyAnalysisCount as jest.Mock
-const mockExtractListingFlags = extractListingFlags as jest.Mock
-const mockGenerateNarrative = generateNarrative as jest.Mock
+const mockGetListingByToken = jest.mocked(getListingByToken)
+const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
+const mockSaveAnalysis = jest.mocked(updateAnalysisByToken)
+const mockFetchRentalComps = jest.mocked(fetchRentalComps)
+const mockExtractListingFlags = jest.mocked(extractListingFlags)
+const mockGenerateNarrative = jest.mocked(generateNarrative)
+const mockGeocodeAddress = jest.mocked(geocodeAddress)
+const mockGetWalkScore = jest.mocked(getWalkScore)
+const mockGetFlagOverrides = jest.mocked(getFlagOverrides)
+const mockGetNearbySchools = jest.mocked(getNearbySchools)
 
-// ── Fixture ───────────────────────────────────────────────────────────────────
+// ── Fixtures ──────────────────────────────────────────────────────────────────
 
-const CALC_ENGINE_RESPONSE = {
+const LISTING_FIXTURE: Listing = {
+  id: 'listing-uuid-123',
+  url: 'https://www.realtor.ca/real-estate/12345/5702-buttermill-ave-vaughan',
+  listingType: 'for-sale',
+  address: '5702 Buttermill Ave, Vaughan, ON L4K 0J2',
+  city: 'Vaughan',
+  province: 'ON',
+  postalCode: 'L4K0J2',
+  price: 729_900,
+  rentMonthly: null,
+  beds: 3,
+  baths: 2,
+  sqft: 1050,
+  propertyType: 'condo',
+  yearBuilt: 2005,
+  parkingSpots: 1,
+  condoFeeMonthly: 761,
+  condoFeeKnown: true,
+  annualTaxes: 3326,
+  description: 'Beautiful condo in Vaughan.',
+  photos: ['https://cdn.realtor.ca/photo1.jpg'],
+  scrapedAt: '2026-06-01T00:00:00.000Z',
+}
+
+const CALC_ENGINE_FIXTURE = {
   metrics: {
-    cash_flow_monthly: -2126.82,
-    cash_flow_annual: -25521.83,
-    cap_rate: 0.01973,
-    cash_on_cash_return: -0.160059,
-    dscr: 0.3607,
+    cash_flow_monthly: -1833,
+    cash_flow_annual: -21_996,
+    cap_rate: 0.025,
+    cash_on_cash_return: -0.125,
+    dscr: 0.45,
     grm: 20.97,
-    noi: 14397.85,
-    mortgage_payment_monthly: 3326.64,
-    down_payment: 145980,
-    mortgage_amount: 583920,
+    noi: 14_397,
+    mortgage_payment_monthly: 3_326,
+    down_payment: 145_980,
+    mortgage_amount: 583_920,
     amortization_years: 25,
     mortgage_rate: 0.0479,
-    break_even_rent: 5138.76,
-    closing_costs_total: 13473,
-    ltt_provincial: 11073,
+    break_even_rent: 4_585,
+    closing_costs_total: 13_473,
+    ltt_provincial: 11_073,
     ltt_municipal: 0,
     has_sanity_warnings: false,
   },
   deal_score: {
-    total: 7,
+    total: 9,
+    display_total: 9,
     verdict: 'hard_pass',
     breakdown: {
       cap_rate: 0,
       cash_flow: 0,
       cash_on_cash: 0,
       dscr: 0,
-      demand: 7,
-      subtotal: 7,
+      demand: 9,
+      subtotal: 9,
       deduction: 0,
       component_maxes: {
         cap_rate: 25,
@@ -99,52 +120,15 @@ const CALC_ENGINE_RESPONSE = {
   },
   risk_flags: [],
   has_sanity_warnings: false,
-} as const
-
-// Minimal valid camelCase request body used across error-path tests
-const MINIMAL_CAMEL_BODY = {
-  propertyData: {
-    address: '5702 Buttermill Ave',
-    price: 729900,
-    annualTaxes: 3326,
-    beds: 3,
-    baths: 2,
-  },
-  financing: {
-    downPaymentPct: 0.2,
-    mortgageRate: 0.0479,
-    amortizationYears: 25,
-  },
-  rental: {
-    low: 2700,
-    mid: 2900,
-    high: 3200,
-    compCount: 0,
-    confidence: 'low' as const,
-    postalCode: 'L4K',
-  },
 }
 
-// ── Fetch mock helpers ────────────────────────────────────────────────────────
-
-function mockCalcEngineOK(body: object): void {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve(body),
-  })
-}
-
-function mockCalcEngineError(status: number, body: object): void {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: false,
+function makeCalcResponse(body: object, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
     status,
-    text: () => Promise.resolve(JSON.stringify(body)),
     json: () => Promise.resolve(body),
-  })
-}
-
-function mockCalcEngineCrash(): void {
-  global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'))
+    text: () => Promise.resolve(JSON.stringify(body)),
+  } as unknown as Response
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────
@@ -157,843 +141,600 @@ async function buildApp(): Promise<FastifyInstance> {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('POST / — analysis route', () => {
-  let fastify: FastifyInstance
+describe('POST / — analysis orchestrator', () => {
+  let app: FastifyInstance
 
   beforeAll(async () => {
-    fastify = await buildApp()
+    app = await buildApp()
   })
 
   beforeEach(() => {
     jest.clearAllMocks()
-    global.fetch = jest.fn()
-    // Default: unauthenticated (no valid token)
-    mockGetSupabase.mockReturnValue({
-      auth: {
-        getUser: jest
-          .fn()
-          .mockResolvedValue({ data: { user: null }, error: { message: 'no token' } }),
-      },
-    })
+
+    // Happy-path defaults
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })
 
   afterAll(async () => {
-    await fastify.close()
+    await app.close()
   })
 
   // ── Test 1 ─────────────────────────────────────────────────────────────────
 
-  it('returns 200 and fully camelCase response for valid camelCase input', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const response = await fastify.inject({
+  it('valid token + mode → 200 with { token, analysis } containing metrics and narrative', async () => {
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: {
-        propertyData: {
-          address: '5702 Buttermill Ave',
-          price: 729900,
-          annualTaxes: 3326,
-          condoFeeMonthly: 761,
-          condoFeeKnown: true,
-          beds: 3,
-          baths: 2,
-        },
-        financing: {
-          downPaymentPct: 0.2,
-          mortgageRate: 0.0479,
-          amortizationYears: 25,
-        },
-        rental: {
-          low: 2700,
-          mid: 2900,
-          high: 3200,
-          compCount: 8,
-          confidence: 'medium' as const,
-          postalCode: 'L4K',
-        },
-      },
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(200)
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { token: string; analysis: Analysis }
+    expect(body.token).toBe('test-token')
+    expect(body.analysis.mode).toBe('investor')
+    expect(body.analysis.narrative).toBe('Test narrative')
+    expect(body.analysis.metrics).toBeDefined()
+    const metrics = body.analysis.metrics as NonNullable<Analysis['metrics']>
+    expect(metrics.cashFlowMonthly).toBe(-1833)
+    expect(metrics.capRate).toBe(0.025)
+    expect(body.analysis.dealScore?.verdict).toBe('hard_pass')
+  })
 
-    const body = response.json() as Analysis
-    const metrics = body.metrics as NonNullable<Analysis['metrics']>
+  // ── Test 1b ────────────────────────────────────────────────────────────────
 
-    // camelCase keys present
-    expect(metrics).toHaveProperty('cashFlowMonthly', -2126.82)
-    expect(metrics).toHaveProperty('cashFlowAnnual', -25521.83)
-    expect(metrics).toHaveProperty('capRate', 0.01973)
-    expect(metrics).toHaveProperty('dscr', 0.3607)
-    expect(metrics).toHaveProperty('mortgagePaymentMonthly', 3326.64)
-    expect(metrics).toHaveProperty('downPayment', 145980)
-    expect(metrics).toHaveProperty('mortgageAmount', 583920)
-    expect(metrics).toHaveProperty('amortizationYears', 25)
-    expect(metrics).toHaveProperty('mortgageRate', 0.0479)
-    expect(metrics).toHaveProperty('breakEvenRent', 5138.76)
-    expect(metrics).toHaveProperty('closingCostsTotal', 13473)
-    expect(metrics).toHaveProperty('lttProvincial', 11073)
-    expect(metrics).toHaveProperty('lttMunicipal', 0)
-    expect(metrics).toHaveProperty('hasSanityWarnings', false)
+  it('forwards the per-city CMHC vacancy rate to the calc engine payload', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
 
-    // dealScore nested key
-    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
-    expect(dealScore.breakdown.componentMaxes.capRate).toBe(25)
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    expect(calcCall).toBeDefined()
 
-    // no snake_case keys survive in metrics
-    const metricKeys = Object.keys(metrics)
-    const snakeCaseKeys = metricKeys.filter((k) => k.includes('_'))
-    expect(snakeCaseKeys).toHaveLength(0)
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      cmhc_vacancy_rate?: number
+    }
+    // LISTING_FIXTURE city is Vaughan — must match the real cmhcService value.
+    expect(sentBody.cmhc_vacancy_rate).toBe(getVacancyRateByCity('Vaughan'))
+  })
+
+  // ── Test 1c ────────────────────────────────────────────────────────────────
+
+  it('forwards the user-dismissed flag IDs to the calc engine payload', async () => {
+    mockGetFlagOverrides.mockResolvedValue(['tenanted', 'basement_unit'])
+
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(mockGetFlagOverrides).toHaveBeenCalledWith('test-token')
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    expect(calcCall).toBeDefined()
+
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      dismissed_flag_ids?: string[]
+    }
+    expect(sentBody.dismissed_flag_ids).toEqual(['tenanted', 'basement_unit'])
   })
 
   // ── Test 2 ─────────────────────────────────────────────────────────────────
 
-  it('converts camelCase input to snake_case before forwarding to calc engine', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    const camelBody = {
-      propertyData: {
-        address: '5702 Buttermill Ave',
-        province: 'ON',
-        price: 729900,
-        annualTaxes: 3326,
-        condoFeeMonthly: 761,
-        condoFeeKnown: true,
-        beds: 3,
-        baths: 2,
-        sqft: 1050,
-        yearBuilt: 2005,
-        propertyType: 'condo',
-        isToronto: false,
-      },
-      financing: {
-        downPaymentPct: 0.2,
-        mortgageRate: 0.0479,
-        amortizationYears: 25,
-        includeManagementFee: false,
-      },
-      rental: {
-        low: 2700,
-        mid: 2900,
-        high: 3200,
-        compCount: 8,
-        confidence: 'medium' as const,
-        postalCode: 'L4K',
-      },
-    }
-
-    await fastify.inject({
+  it('missing token → 400 MISSING_TOKEN', async () => {
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: camelBody,
+      payload: { mode: 'investor' },
     })
 
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-
-    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { method: string; headers: Record<string, string>; body: string },
-    ]
-
-    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
-
-    // Input was converted from camelCase to snake_case
-    expect(forwarded).toHaveProperty('property_data')
-    expect(forwarded).not.toHaveProperty('propertyData')
-
-    const propData = forwarded['property_data'] as Record<string, unknown>
-    expect(propData).toHaveProperty('annual_taxes', 3326)
-    expect(propData).toHaveProperty('condo_fee_monthly', 761)
-    expect(propData).toHaveProperty('condo_fee_known', true)
-    expect(propData).toHaveProperty('year_built', 2005)
-    expect(propData).toHaveProperty('property_type', 'condo')
-    expect(propData).toHaveProperty('is_toronto', false)
-    expect(propData).not.toHaveProperty('annualTaxes')
-    expect(propData).not.toHaveProperty('yearBuilt')
-
-    const fin = forwarded['financing'] as Record<string, unknown>
-    expect(fin).toHaveProperty('down_payment_pct', 0.2)
-    expect(fin).toHaveProperty('mortgage_rate', 0.0479)
-    expect(fin).toHaveProperty('amortization_years', 25)
-    expect(fin).not.toHaveProperty('downPaymentPct')
-
-    const rental = forwarded['rental'] as Record<string, unknown>
-    expect(rental).toHaveProperty('comp_count', 8)
-    expect(rental).toHaveProperty('postal_code', 'L4K')
-    expect(rental).not.toHaveProperty('compCount')
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('MISSING_TOKEN')
   })
 
   // ── Test 3 ─────────────────────────────────────────────────────────────────
 
-  it('returns 503 when calc engine is unreachable', async () => {
-    mockCalcEngineCrash()
-
-    const response = await fastify.inject({
+  it('invalid mode → 400 INVALID_MODE', async () => {
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: MINIMAL_CAMEL_BODY,
+      payload: { token: 'test-token', mode: 'landlord-invalid' },
     })
 
-    expect(response.statusCode).toBe(503)
-
-    const body = response.json() as ApiError
-    expect(body.error).toBe(true)
-    expect(body.code).toBe('CALC_ENGINE_UNAVAILABLE')
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('INVALID_MODE')
   })
 
   // ── Test 4 ─────────────────────────────────────────────────────────────────
 
-  it('returns 422 when calc engine returns 422', async () => {
-    mockCalcEngineError(422, { detail: 'validation error' })
+  it('getListingByToken returns null → 404 NOT_FOUND', async () => {
+    mockGetListingByToken.mockResolvedValue(null)
 
-    const response = await fastify.inject({
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: MINIMAL_CAMEL_BODY,
+      payload: { token: 'missing-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(422)
-
-    const body = response.json() as ApiError
-    expect(body.code).toBe('INVALID_ANALYSIS_INPUT')
+    expect(res.statusCode).toBe(404)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('NOT_FOUND')
   })
 
   // ── Test 5 ─────────────────────────────────────────────────────────────────
 
-  it('returns 500 when calc engine returns 500', async () => {
-    mockCalcEngineError(500, { detail: 'internal error' })
+  it('calc engine network error → 503 CALC_ENGINE_UNAVAILABLE, updateAnalysisStatus called with failed', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'))
 
-    const response = await fastify.inject({
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: MINIMAL_CAMEL_BODY,
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(500)
-
-    const body = response.json() as ApiError
-    expect(body.code).toBe('CALC_ENGINE_ERROR')
+    expect(res.statusCode).toBe(503)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('CALC_ENGINE_UNAVAILABLE')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
   })
 
   // ── Test 6 ─────────────────────────────────────────────────────────────────
 
-  it('maps component_maxes to componentMaxes', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
+  it('calc engine non-200 → 500 CALC_ENGINE_ERROR, updateAnalysisStatus called with failed', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(makeCalcResponse({ detail: 'validation error' }, 422))
 
-    const response = await fastify.inject({
+    const res = await app.inject({
       method: 'POST',
       url: '/',
-      payload: MINIMAL_CAMEL_BODY,
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(200)
-
-    const body = response.json() as Analysis
-    const dealScore = body.dealScore as NonNullable<Analysis['dealScore']>
-
-    expect(dealScore.breakdown.componentMaxes).toEqual({
-      capRate: 25,
-      cashFlow: 25,
-      cashOnCash: 20,
-      dscr: 15,
-      demand: 10,
-    })
+    expect(res.statusCode).toBe(500)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('CALC_ENGINE_ERROR')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
   })
 
   // ── Test 7 ─────────────────────────────────────────────────────────────────
 
-  it('passes has_sanity_warnings through', async () => {
-    const responseWithWarnings = {
-      ...CALC_ENGINE_RESPONSE,
-      metrics: { ...CALC_ENGINE_RESPONSE.metrics, has_sanity_warnings: true },
-      has_sanity_warnings: true,
-    }
+  it('updateAnalysisStatus called with processing before calc engine fetch', async () => {
+    const callSequence: string[] = []
 
-    mockCalcEngineOK(responseWithWarnings)
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: MINIMAL_CAMEL_BODY,
+    mockUpdateAnalysisStatus.mockImplementation(async (_token, status) => {
+      callSequence.push(`status:${status}`)
+    })
+    ;(global.fetch as jest.Mock).mockImplementation(async () => {
+      callSequence.push('fetch')
+      return makeCalcResponse(CALC_ENGINE_FIXTURE)
     })
 
-    expect(response.statusCode).toBe(200)
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
 
-    const body = response.json() as Analysis
-    expect(body.hasSanityWarnings).toBe(true)
+    const processingIdx = callSequence.indexOf('status:processing')
+    const fetchIdx = callSequence.indexOf('fetch')
+    expect(processingIdx).toBeGreaterThanOrEqual(0)
+    expect(fetchIdx).toBeGreaterThan(processingIdx)
   })
 
   // ── Test 8 ─────────────────────────────────────────────────────────────────
 
-  it('returns 400 when the request body is not camelCase', async () => {
-    const response = await fastify.inject({
+  it('saveAnalysis called with correct token and mode after successful pipeline', async () => {
+    await app.inject({
       method: 'POST',
       url: '/',
-      payload: { property_data: {}, financing: {}, rental: {} },
+      payload: { token: 'test-token', mode: 'investor' },
     })
 
-    expect(response.statusCode).toBe(400)
-
-    const body = response.json() as ApiError
-    expect(body.code).toBe('INVALID_REQUEST')
-  })
-
-  // ── Server-side input validation (never trust frontend data) ───────────────
-
-  it('returns 400 (not 500) when rental.postalCode is missing', async () => {
-    const rentalWithoutPostal: Record<string, unknown> = { ...MINIMAL_CAMEL_BODY.rental }
-    delete rentalWithoutPostal['postalCode']
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: { ...MINIMAL_CAMEL_BODY, rental: rentalWithoutPostal },
-    })
-
-    expect(response.statusCode).toBe(400)
-    const body = response.json() as ApiError
-    expect(body.code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when financing is missing entirely', async () => {
-    const withoutFinancing: Record<string, unknown> = { ...MINIMAL_CAMEL_BODY }
-    delete withoutFinancing['financing']
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: withoutFinancing,
-    })
-
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when propertyData.price is not a number', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, price: 'not-a-number' },
-      },
-    })
-
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when propertyData.price is zero', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, price: 0 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when propertyData.price is negative', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, price: -100 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when financing.downPaymentPct is greater than 1', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        financing: { ...MINIMAL_CAMEL_BODY.financing, downPaymentPct: 1.5 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when financing.downPaymentPct is negative', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        financing: { ...MINIMAL_CAMEL_BODY.financing, downPaymentPct: -0.1 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when financing.mortgageRate is >= 1 (100%+)', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        financing: { ...MINIMAL_CAMEL_BODY.financing, mortgageRate: 5 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when rental.low > rental.mid (ordering violated)', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        rental: { ...MINIMAL_CAMEL_BODY.rental, low: 3000, mid: 2000, high: 4000 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  it('returns 400 when rental.mid > rental.high (ordering violated)', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        rental: { ...MINIMAL_CAMEL_BODY.rental, low: 2000, mid: 4000, high: 3000 },
-      },
-    })
-    expect(response.statusCode).toBe(400)
-    expect((response.json() as ApiError).code).toBe('INVALID_REQUEST')
-  })
-
-  // ── Description forwarding — red flags must deduct from the deal score ─────
-
-  it('forwards listingDescription to the calc engine as description', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        listingDescription: 'Basement apartment with separate entrance. Sold as-is.',
-      },
-    })
-
-    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { body: string },
-    ]
-    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
-    expect(forwarded['description']).toBe('Basement apartment with separate entrance. Sold as-is.')
-  })
-
-  it('forwards description: null when no listingDescription is provided', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    await fastify.inject({ method: 'POST', url: '/', payload: MINIMAL_CAMEL_BODY })
-
-    const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { body: string },
-    ]
-    const forwarded = JSON.parse(calledOptions.body) as Record<string, unknown>
-    expect(forwarded['description']).toBeNull()
-  })
-
-  it('maps calc-engine flag_id risk flags to id + human label', async () => {
-    mockCalcEngineOK({
-      ...CALC_ENGINE_RESPONSE,
-      risk_flags: [
-        {
-          flag_id: 'as_is_where_is',
-          severity: 'red',
-          confidence: 95,
-          evidence: 'Sold as-is.',
-          source: 'regex',
-        },
-      ],
-    })
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: MINIMAL_CAMEL_BODY,
-    })
-
-    const body = response.json() as { riskFlags: Array<{ id: string; label: string }> }
-    expect(body.riskFlags).toHaveLength(1)
-    expect(body.riskFlags[0]!.id).toBe('as_is_where_is')
-    expect(body.riskFlags[0]!.label).toBe('Sold as-is')
-  })
-
-  // ── Test 9 — Free tier limit ───────────────────────────────────────────────
-
-  it('returns 429 FREE_LIMIT_REACHED when free user has hit their monthly limit', async () => {
-    mockGetSupabase.mockReturnValue({
-      auth: {
-        getUser: jest.fn().mockResolvedValue({
-          data: { user: { id: 'user-free', email: 'free@example.com' } },
-          error: null,
-        }),
-      },
-    })
-    mockGetUserById.mockResolvedValue({
-      id: 'user-free',
-      email: 'free@example.com',
-      tier: 'free',
-      stripe_customer_id: null,
-      created_at: '',
-    })
-    mockGetMonthlyCount.mockResolvedValue(10)
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      headers: { authorization: 'Bearer valid-free-token' },
-      payload: MINIMAL_CAMEL_BODY,
-    })
-
-    expect(response.statusCode).toBe(429)
-    const body = response.json() as ApiError
-    expect(body.code).toBe('FREE_LIMIT_REACHED')
-    // Calc engine should not have been called
-    expect(global.fetch).not.toHaveBeenCalled()
-  })
-
-  // ── Test 10 — Pro user bypasses limit ─────────────────────────────────────
-
-  it('does not apply limit check for pro users', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-    mockGetSupabase.mockReturnValue({
-      auth: {
-        getUser: jest.fn().mockResolvedValue({
-          data: { user: { id: 'user-pro', email: 'pro@example.com' } },
-          error: null,
-        }),
-      },
-    })
-    mockGetUserById.mockResolvedValue({
-      id: 'user-pro',
-      email: 'pro@example.com',
-      tier: 'pro',
-      stripe_customer_id: 'cus_pro',
-      created_at: '',
-    })
-    // Even if count is high, pro users are not blocked
-    mockGetMonthlyCount.mockResolvedValue(999)
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      headers: { authorization: 'Bearer valid-pro-token' },
-      payload: MINIMAL_CAMEL_BODY,
-    })
-
-    expect(response.statusCode).toBe(200)
-  })
-
-  // ── Test 11 — No extraction when no description ────────────────────────────
-
-  it('skips Haiku extraction when no listingDescription is provided', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: MINIMAL_CAMEL_BODY,
-    })
-
-    expect(mockExtractListingFlags).not.toHaveBeenCalled()
-  })
-
-  // ── Test 12 — Extraction fires and flags are merged ────────────────────────
-
-  it('runs Haiku extraction and merges flags into riskFlags when description is provided', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-    mockExtractListingFlags.mockResolvedValueOnce({
-      flags: [
-        { flagId: 'basement_suite', present: true, confidence: 90, evidence: 'finished basement' },
-        { flagId: 'noise_concern', present: true, confidence: 70, evidence: 'near highway' },
-        { flagId: 'short_term_rental', present: false, confidence: 20, evidence: '' },
-      ],
-      rawResponse: '[...]',
-    })
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        listingDescription: 'Renovated unit with finished basement. Near a major highway.',
-      },
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(mockExtractListingFlags).toHaveBeenCalledWith(
-      'Renovated unit with finished basement. Near a major highway.'
-    )
-
-    const body = response.json() as Analysis
-
-    // basement_suite has 90% confidence → red flag
-    const basementFlag = body.riskFlags.find((f) => f.id === 'basement_suite')
-    expect(basementFlag).toBeDefined()
-    expect(basementFlag?.severity).toBe('red')
-    expect(basementFlag?.label).toBe('Basement suite')
-    expect(basementFlag?.evidence).toBe('finished basement')
-
-    // noise_concern has 70% confidence → amber flag
-    const noiseFlag = body.riskFlags.find((f) => f.id === 'noise_concern')
-    expect(noiseFlag).toBeDefined()
-    expect(noiseFlag?.severity).toBe('amber')
-
-    // short_term_rental is not present → not included
-    const strFlag = body.riskFlags.find((f) => f.id === 'short_term_rental')
-    expect(strFlag).toBeUndefined()
-  })
-
-  // ── Test 13 — Flags below threshold excluded ───────────────────────────────
-
-  it('excludes extracted flags below 60% confidence', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-    mockExtractListingFlags.mockResolvedValueOnce({
-      flags: [{ flagId: 'grow_op_history', present: true, confidence: 45, evidence: 'possible' }],
-      rawResponse: '[...]',
-    })
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        listingDescription: 'Possible history.',
-      },
-    })
-
-    expect(response.statusCode).toBe(200)
-    const body = response.json() as Analysis
-    expect(body.riskFlags.find((f) => f.id === 'grow_op_history')).toBeUndefined()
-  })
-
-  // ── Test 14 — Province gate ────────────────────────────────────────────────
-
-  it('returns 400 PROVINCE_NOT_SUPPORTED for non-Ontario postal codes', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        rental: { ...MINIMAL_CAMEL_BODY.rental, postalCode: 'V5K' }, // BC postal code
-      },
-    })
-
-    expect(response.statusCode).toBe(400)
-    const body = response.json() as ApiError
-    expect(body.code).toBe('PROVINCE_NOT_SUPPORTED')
-    // Calc engine should not have been called
-    expect(global.fetch).not.toHaveBeenCalled()
-  })
-
-  it('returns 400 PROVINCE_NOT_SUPPORTED when province field is non-Ontario', async () => {
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        propertyData: { ...MINIMAL_CAMEL_BODY.propertyData, province: 'BC' },
-        rental: { ...MINIMAL_CAMEL_BODY.rental, postalCode: '' },
-      },
-    })
-
-    expect(response.statusCode).toBe(400)
-    const body = response.json() as ApiError
-    expect(body.code).toBe('PROVINCE_NOT_SUPPORTED')
-  })
-
-  // ── Fix 8 — Extraction completes before narrative so flags reach Sonnet ───
-
-  it('passes extracted flags to generateNarrative after extraction completes', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-    mockExtractListingFlags.mockResolvedValueOnce({
-      flags: [
-        {
-          flagId: 'power_of_sale',
-          present: true,
-          confidence: 95,
-          evidence: 'power of sale listing',
-        },
-      ],
-      rawResponse: '[...]',
-    })
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        listingDescription: 'Power of sale listing.',
-      },
-    })
-
-    expect(mockGenerateNarrative).toHaveBeenCalledWith(
-      expect.objectContaining({
-        riskFlags: expect.arrayContaining([
-          expect.objectContaining({ id: 'power_of_sale', severity: 'red' }),
-        ]),
-      })
-    )
-  })
-
-  it('narrative still runs with calc-engine flags when extraction fails', async () => {
-    mockCalcEngineOK({
-      ...CALC_ENGINE_RESPONSE,
-      risk_flags: [
-        {
-          flag_id: 'as_is_where_is',
-          severity: 'red',
-          confidence: 90,
-          evidence: 'Sold as-is.',
-        },
-      ],
-    })
-    // Extraction throws — should not prevent narrative from running
-    mockExtractListingFlags.mockRejectedValueOnce(new Error('Haiku timeout'))
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        listingDescription: 'Sold as-is, no representations.',
-      },
-    })
-
-    // Narrative called with calc-engine flag even though extraction failed
-    expect(mockGenerateNarrative).toHaveBeenCalledWith(
-      expect.objectContaining({
-        riskFlags: expect.arrayContaining([expect.objectContaining({ id: 'as_is_where_is' })]),
-      })
-    )
-  })
-
-  // ── Test 17 — Pro tier used for narrative ──────────────────────────────────
-
-  it('passes pro tier to generateNarrative when user is pro', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-    mockGetSupabase.mockReturnValue({
-      auth: {
-        getUser: jest.fn().mockResolvedValue({
-          data: { user: { id: 'user-pro', email: 'pro@example.com' } },
-          error: null,
-        }),
-      },
-    })
-    mockGetUserById.mockResolvedValue({
-      id: 'user-pro',
-      email: 'pro@example.com',
-      tier: 'pro',
-      stripe_customer_id: 'cus_pro',
-      created_at: '',
-    })
-    mockGetMonthlyCount.mockResolvedValue(5)
-
-    await fastify.inject({
-      method: 'POST',
-      url: '/',
-      headers: { authorization: 'Bearer valid-pro-token' },
-      payload: MINIMAL_CAMEL_BODY,
-    })
-
-    expect(mockGenerateNarrative).toHaveBeenCalledWith(expect.objectContaining({ tier: 'pro' }))
-  })
-
-  // ── Fix H — unknown flag ID gets humanised label, not raw snake_case ──────
-
-  it('humanises unknown flag IDs from the calc engine instead of rendering raw', async () => {
-    mockCalcEngineOK({
-      ...CALC_ENGINE_RESPONSE,
-      risk_flags: [
-        {
-          flag_id: 'water_damage_history',
-          severity: 'red',
-          confidence: 90,
-          evidence: 'evidence of past flooding',
-          source: 'regex',
-        },
-      ],
-    })
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: MINIMAL_CAMEL_BODY,
-    })
-
-    const body = response.json() as { riskFlags: Array<{ id: string; label: string }> }
-    expect(body.riskFlags).toHaveLength(1)
-    expect(body.riskFlags[0]!.id).toBe('water_damage_history')
-    expect(body.riskFlags[0]!.label).toBe('Water Damage History')
-  })
-
-  it('humanises unknown Haiku-extracted flag IDs instead of rendering raw', async () => {
-    mockCalcEngineOK(CALC_ENGINE_RESPONSE)
-    mockExtractListingFlags.mockResolvedValueOnce({
-      flags: [
-        {
-          flagId: 'mould_disclosure',
-          present: true,
-          confidence: 90,
-          evidence: 'seller discloses mould',
-        },
-      ],
-      rawResponse: '[...]',
-    })
-
-    const response = await fastify.inject({
-      method: 'POST',
-      url: '/',
-      payload: {
-        ...MINIMAL_CAMEL_BODY,
-        listingDescription: 'Seller discloses past mould.',
-      },
-    })
-
-    const body = response.json() as { riskFlags: Array<{ id: string; label: string }> }
-    const flag = body.riskFlags.find((f) => f.id === 'mould_disclosure')
-    expect(flag).toBeDefined()
-    expect(flag?.label).toBe('Mould Disclosure')
+    expect(mockSaveAnalysis).toHaveBeenCalledTimes(1)
+    const [tokenArg, analysisArg] = mockSaveAnalysis.mock.calls[0]
+    expect(tokenArg).toBe('test-token')
+    expect(analysisArg.mode).toBe('investor')
   })
 })
 
-// ── humaniseFlagId — unit tests ───────────────────────────────────────────────
+// -- Rent plausibility bounds (decision 2026-07-01: $500-$10,000/mo) ----------
 
-describe('humaniseFlagId', () => {
-  it('converts a multi-word snake_case ID to Title Case', () => {
-    expect(humaniseFlagId('grow_op_history')).toBe('Grow Op History')
+describe('POST / - rent plausibility bounds', () => {
+  let app: FastifyInstance
+
+  beforeAll(async () => {
+    app = await buildApp()
   })
 
-  it('converts a two-word ID', () => {
-    expect(humaniseFlagId('noise_concern')).toBe('Noise Concern')
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })
 
-  it('handles a single-word ID', () => {
-    expect(humaniseFlagId('flooding')).toBe('Flooding')
+  afterAll(async () => {
+    await app.close()
   })
 
-  it('handles the condo_fee_unknown structural flag', () => {
-    expect(humaniseFlagId('condo_fee_unknown')).toBe('Condo Fee Unknown')
+  it('for-rent listing with no rent and no price -> 422 RENT_OUT_OF_BOUNDS, never reaches the calc engine', async () => {
+    // Fallback rent computes to $0 - previously this proceeded to score garbage.
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-rent',
+      price: null,
+      rentMonthly: null,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'tenant' },
+    })
+
+    expect(res.statusCode).toBe(422)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('RENT_OUT_OF_BOUNDS')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
+    const fetchMock = global.fetch as jest.Mock
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('handles a novel unknown ID from a future extraction rule', () => {
-    expect(humaniseFlagId('radon_disclosure_required')).toBe('Radon Disclosure Required')
+  it('a $3.5M for-sale listing with no comps analyses normally (price proxy exceeds the rent ceiling by design)', async () => {
+    // Live bug 2026-07-02: 662 Byngmount ($3,499,000, no comps) proxies to
+    // ~$17.5k/mo and hard-failed the analysis. The bounds gate only protects
+    // against garbage OBSERVED rents, not our own for-sale price proxy.
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-sale',
+      price: 3_499_000,
+      rentMonthly: null,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const fetchMock = global.fetch as jest.Mock
+    expect(fetchMock).toHaveBeenCalled() // reached the calc engine
+  })
+
+  it('legacy listing row with implausible stored rent ($49/mo) -> 422 RENT_OUT_OF_BOUNDS', async () => {
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-rent',
+      price: null,
+      rentMonthly: 49,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'landlord' },
+    })
+
+    expect(res.statusCode).toBe(422)
+    expect((res.json() as ApiError).code).toBe('RENT_OUT_OF_BOUNDS')
+  })
+
+  it('plausible comps-based rent still analyses normally (bounds do not over-reject)', async () => {
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      listingType: 'for-rent',
+      price: null,
+      rentMonthly: 2400,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'tenant' },
+    })
+
+    expect(res.statusCode).toBe(200)
+  })
+})
+
+// -- Coordinates threading (real MiniMap + SunScout both need lat/lng) --------
+
+describe('POST / - coordinates in the analysis payload', () => {
+  let app: FastifyInstance
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('includes geocoded coordinates so the frontend can render a real map', async () => {
+    mockGeocodeAddress.mockResolvedValue({
+      lat: 43.7942,
+      lng: -79.5268,
+      formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.coordinates).toEqual({ lat: 43.7942, lng: -79.5268 })
+  })
+
+  it('coordinates are null when geocoding fails - analysis still returns', async () => {
+    mockGeocodeAddress.mockResolvedValue(null)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.coordinates).toBeNull()
+  })
+})
+
+// -- SunScout end-to-end: lat/lng to calc engine, sun_scout mapped back -------
+
+describe('POST / - SunScout wiring', () => {
+  let app: FastifyInstance
+
+  const PY_SUN_SCOUT = {
+    annual_peak_sun_hours: 1350,
+    summer_daily_hours: 8.4,
+    winter_daily_hours: 3.1,
+    seasonal_grid: { Dec: 3.1, Mar: 5.5, Jun: 8.4, Sep: 6.2 },
+    monthly_hours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
+    sun_score: 72,
+    verdict: 'good',
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockGeocodeAddress.mockResolvedValue({
+      lat: 43.7942,
+      lng: -79.5268,
+      formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+    })
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(makeCalcResponse({ ...CALC_ENGINE_FIXTURE, sun_scout: PY_SUN_SCOUT }))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('forwards geocoded lat/lng in property_data so the sun-path branch fires', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    expect(calcCall).toBeDefined()
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      property_data: { lat?: number | null; lng?: number | null }
+    }
+    expect(sentBody.property_data.lat).toBe(43.7942)
+    expect(sentBody.property_data.lng).toBe(-79.5268)
+  })
+
+  it('maps the calc engine sun_scout into analysis.sunScout (camelCase)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.sunScout).toEqual({
+      annualPeakSunHours: 1350,
+      summerDailyHours: 8.4,
+      winterDailyHours: 3.1,
+      seasonalGrid: { Dec: 3.1, Mar: 5.5, Jun: 8.4, Sep: 6.2 },
+      monthlyHours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
+      sunScore: 72,
+      verdict: 'good',
+    })
+  })
+
+  it('sunScout stays null when geocoding fails (calc engine gets no lat/lng)', async () => {
+    mockGeocodeAddress.mockResolvedValue(null)
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.sunScout).toBeNull()
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      property_data: { lat?: number | null; lng?: number | null }
+    }
+    expect(sentBody.property_data.lat ?? null).toBeNull()
+    expect(sentBody.property_data.lng ?? null).toBeNull()
+  })
+})
+
+// -- Schools read path: nearest schools attached + persisted -------------------
+
+describe('POST / - schools wiring', () => {
+  let app: FastifyInstance
+
+  const SCHOOLS_FIXTURE = {
+    elementary: [
+      {
+        name: 'Jesse Ketchum Jr & Sr PS',
+        schoolType: 'elementary' as const,
+        board: 'TDSB',
+        distanceKm: 0.6,
+        eqaoScore: 8.2,
+        fraserRankPct: 74,
+        graduationRate: null,
+      },
+    ],
+    middle: [],
+    high: [
+      {
+        name: 'Jarvis Collegiate Institute',
+        schoolType: 'high' as const,
+        board: 'TDSB',
+        distanceKm: 0.8,
+        eqaoScore: 7.4,
+        fraserRankPct: 61,
+        graduationRate: 0.89,
+      },
+    ],
+    catchmentNote:
+      'Nearest schools by straight-line distance - attendance boundaries are not verified.',
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockGeocodeAddress.mockResolvedValue({
+      lat: 43.7942,
+      lng: -79.5268,
+      formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+    })
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('attaches nearest schools to the analysis when the table has rows', async () => {
+    mockGetNearbySchools.mockResolvedValue(SCHOOLS_FIXTURE)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(mockGetNearbySchools).toHaveBeenCalledWith(43.7942, -79.5268)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.schools).toEqual(SCHOOLS_FIXTURE)
+    // Persisted with the analysis so /r/:token reads it back
+    const saved = mockSaveAnalysis.mock.calls[0]![1]
+    expect(saved.schools).toEqual(SCHOOLS_FIXTURE)
+  })
+
+  it('schools stays null when the table is empty (data pending, not an error)', async () => {
+    mockGetNearbySchools.mockResolvedValue(null)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
+  })
+
+  it('schools stays null when geocoding fails (no lookup attempted)', async () => {
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetNearbySchools.mockResolvedValue(SCHOOLS_FIXTURE)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(mockGetNearbySchools).not.toHaveBeenCalled()
+    expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
+  })
+
+  it('a schools lookup failure never fails the analysis (spec s8 isolation)', async () => {
+    mockGetNearbySchools.mockRejectedValue(new Error('db down'))
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'personal' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
   })
 })

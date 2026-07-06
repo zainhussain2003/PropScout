@@ -270,7 +270,16 @@ export function LandlordPropertyHero({
         <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
           {/* DealScore gauge */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
-            <DealScore score={score.total} size="lg" label="Landlord score / 100" animate />
+            <DealScore
+              score={score.displayTotal}
+              max={100}
+              tone={score.tone}
+              size="lg"
+              label="Landlord score / 100"
+              showVerdict
+              verdictLabel={score.label}
+              animate
+            />
           </div>
 
           {/* Verdict label + tagline */}

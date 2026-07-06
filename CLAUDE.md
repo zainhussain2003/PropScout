@@ -159,15 +159,15 @@ Dark mode is handled entirely by the token system. Never write a `prefers-color-
 
 Key tokens to know by heart:
 
-| Token       | Value (light) | Purpose                                               |
-| ----------- | ------------- | ----------------------------------------------------- |
-| `--bg`      | `#F1ECE2`     | Page background — warm cream                          |
-| `--surface` | `#FFFFFF`     | Card background                                       |
-| `--ink`     | `#0E1320`     | Primary text and buttons                              |
-| `--accent`  | `#D97757`     | Terracotta — brand, Pro badge, CTAs, all hover states |
-| `--pass`    | `#4F7A48`     | Sage — good deal, positive flags                      |
-| `--caution` | `#B98724`     | Amber — soft warnings                                 |
-| `--fail`    | `#B14A37`     | Clay — hard pass, red flags                           |
+| Token       | Value (light) | Purpose                                                                                                                    |
+| ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `--bg`      | `#F4F2ED`     | Page background — neutral limestone (PR10; was #F1ECE2 cream)                                                              |
+| `--surface` | `#FFFFFF`     | Card background                                                                                                            |
+| `--ink`     | `#0E1320`     | Primary text and buttons                                                                                                   |
+| `--accent`  | `#1F4E68`     | Harbour blue — brand, Pro badge, CTAs, all hover states (PR10; was #D97757 terracotta — divergence table in DESIGN_README) |
+| `--pass`    | `#4F7A48`     | Sage — good deal, positive flags                                                                                           |
+| `--caution` | `#B98724`     | Amber — soft warnings                                                                                                      |
+| `--fail`    | `#B14A37`     | Clay — hard pass, red flags                                                                                                |
 
 ### Interactions — standard timing
 
@@ -175,7 +175,7 @@ Every interactive element follows the same motion system. Never deviate:
 
 | Interaction                      | Timing                          | Effect                                                    |
 | -------------------------------- | ------------------------------- | --------------------------------------------------------- |
-| Hover (all interactive elements) | `0.15s ease`                    | Border + color → terracotta (`--accent`)                  |
+| Hover (all interactive elements) | `0.15s ease`                    | Border + color → accent (`--accent`, harbour blue)        |
 | Modal open                       | `0.25s`                         | Backdrop fade + card translates up 8px + scales 0.98→1    |
 | Deal score gauge animation       | `1.4s cubic-bezier(.2,.7,.2,1)` | stroke-dashoffset from full → target                      |
 | Financing slider drag            | Instant (synchronous)           | Every metric on page recalculates live — no debounce      |
@@ -1023,7 +1023,7 @@ propscout/
 │
 ├── docs/                              # All project documentation — keep every file up to date
 │   ├── propscout_platform_spec.md     # Single source of truth — features, formulas, architecture
-│   ├── CLAUDE.md                      # This file — coding standards, structure, session rules
+│   ├── CLAUDE.md                      # POINTER ONLY → root CLAUDE.md is canonical (decision 2026-07-01)
 │   ├── TODO.md                        # Full backlog across all phases
 │   ├── MVP_TODO.md                    # MVP scope only — tick off as completed
 │   ├── TESTING.md                     # Test for every feature — update when features are added
@@ -1032,7 +1032,10 @@ propscout/
 │   ├── COMPONENT_MANIFEST.md          # Every design surface → React component + build order
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
 │   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
-│   └── design_handoff_propscout_mvp/  # Design files — living documents, will be updated
+│   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
+│   ├── PR10-design-humanization-prompt.md  # PR10 spec — token revision, copy, imagery, founder note
+│   ├── PR10-UI-Tests.md               # PR10 Chrome UI test checklist (token propagation, imagery, dark/mobile)
+│   └── design_handoff_propscout_mvp/  # Design files — PALETTE STALE since PR10: production tokens.css is ahead (see DESIGN_README divergence table)
 │       ├── tokens.css                 # CSS variables — copy to apps/web/src/styles/tokens.css
 │       └── designs/                   # 13 pixel-final HTML prototypes + JSX source
 │           ├── index.html             # Landing page
@@ -1054,6 +1057,8 @@ propscout/
 │   │
 │   ├── web/                           # React + TypeScript — hosted on Vercel
 │   │   ├── index.html                 # Vite entry — Google Fonts preconnect + link here
+│   │   ├── public/
+│   │   │   └── marketing/             # Landing mode-card report screenshots (mode-*.webp, 1x + @2x — recapture via PR10 notes when reports change)
 │   │   ├── vite.config.ts
 │   │   ├── tsconfig.json              # strict: true, noImplicitAny, strictNullChecks
 │   │   ├── package.json
@@ -1080,6 +1085,8 @@ propscout/
 │   │       │   │   ├── ModeModal.tsx          # For-sale/for-rent routing modal
 │   │       │   │   ├── ProgressDisplay.tsx    # Scraping progress screen
 │   │       │   │   ├── SignInModal.tsx        # Sign-in / sign-up bottom-sheet
+│   │       │   │   ├── BottomSheet.tsx        # Mobile bottom-sheet wrapper (slide-up from bottom)
+│   │       │   │   ├── StickyActionBar.tsx    # Mobile-only sticky bottom bar (Save / Share / PDF)
 │   │       │   │   └── ErrorBoundary.tsx      # Root error boundary — app never blank-screens
 │   │       │   │
 │   │       │   ├── analysis/          # Domain components — used across investor + landlord reports
@@ -1088,7 +1095,7 @@ propscout/
 │   │       │   │   ├── RentalCompsBar.tsx     # Percentile range bar + hover marker
 │   │       │   │   ├── AIVerdictBlock.tsx     # Dark full-bleed AI verdict card
 │   │       │   │   ├── RiskRow.tsx            # Inline risk flag row
-│   │       │   │   ├── MiniMap.tsx            # Mapbox placeholder → real Mapbox GL JS
+│   │       │   │   ├── MiniMap.tsx            # Real Mapbox GL JS map (token + coords) with SVG placeholder fallback
 │   │       │   │   └── PropertyHero.tsx       # Photo grid + chips + address + sticky score card
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
@@ -1116,9 +1123,7 @@ propscout/
 │   │       │   │   └── PBSalesSection.tsx          # Comparable sales table
 │   │       │   │
 │   │       │   ├── sunscout/
-│   │       │   │   ├── SunScoutPanel.tsx
-│   │       │   │   ├── SunArcViz.tsx          # SVG summer vs winter arc
-│   │       │   │   └── SeasonalGrid.tsx       # Dec/Mar/Jun/Sep hours grid
+│   │       │   │   └── SunScoutPanel.tsx + SunScoutPanel.test.tsx  # Live sun section: gauge, monthly bars, facade-direction input (SunArcViz/SeasonalGrid never existed — not in the designs)
 │   │       │   │
 │   │       │   ├── paywall/           # Tier gating — wired into every report
 │   │       │   │   ├── ProBadge.tsx
@@ -1140,13 +1145,18 @@ propscout/
 │   │       │   ├── useAuth.ts         # Auth state and methods
 │   │       │   ├── useTier.ts         # Current user tier + feature access checks
 │   │       │   ├── useRentalComps.ts  # Rental comps data and loading state
+│   │       │   ├── usePdfExport.ts + usePdfExport.test.tsx  # Pro-gated §14 PDF download (LockedButton for free)
 │   │       │   └── useSunScout.ts     # Sun hours calculation state
 │   │       │
 │   │       ├── lib/
 │   │       │   └── services/          # Frontend services — call Fastify API, never Supabase directly
 │   │       │       ├── analysisService.ts   # POST /analysis, GET /analysis/:token
 │   │       │       ├── authService.ts       # Supabase auth only (signup, login, session)
-│   │       │       └── reportService.ts     # PDF generation, share link creation
+│   │       │       ├── billingService.ts    # Stripe checkout/portal sessions via the API
+│   │       │       ├── overrideService.ts   # Risk-flag dismissal persistence
+│   │       │       ├── sunScoutService.ts   # Facade-direction SunScout recalculation
+│   │       │       ├── reportService.ts     # Pro-gated PDF download + share-link helpers
+│   │       │       └── mapboxGlService.ts   # Lazy mapbox-gl loader + mini-map mount (VITE_MAPBOX_TOKEN)
 │   │       │
 │   │       ├── types/                 # All shared TypeScript types — never inline
 │   │       │   ├── analysis.ts        # Analysis, ReportMode, DealScore, RiskFlag
@@ -1158,18 +1168,22 @@ propscout/
 │   │       │   ├── tiers.ts           # Tier names, prices, analysis limits
 │   │       │   └── thresholds.ts      # Deal score brackets, confidence thresholds
 │   │       │
-│   │       └── pages/                 # One file per route
-│   │           ├── index.tsx                  # / — Landing + URL paste home
-│   │           ├── analyzing.tsx              # /analyzing — Scraping progress screen
-│   │           ├── analyzing-manual.tsx       # /analyzing/manual — Manual entry fallback
-│   │           ├── report.[token].tsx         # /r/[token] — Shareable report (all 4 modes)
-│   │           ├── account.tsx                # /account — Saved, profile, plan, notifications
-│   │           ├── welcome-to-pro.tsx         # /welcome-to-pro — Stripe success return
-│   │           ├── checkout-cancelled.tsx     # /checkout/cancelled — Stripe cancel return
-│   │           ├── auth.confirm.tsx           # /auth/confirm — Magic link
-│   │           ├── auth.reset.tsx             # /auth/reset — Password reset request
-│   │           ├── auth.reset.confirm.tsx     # /auth/reset/confirm
-│   │           ├── auth.verified.tsx          # /auth/verified
+│   │       └── pages/                 # One file per route (see App.tsx for the router)
+│   │           ├── LandingPage.tsx            # / — Landing + URL paste home (+ landing.test.tsx)
+│   │           ├── analyzing.tsx              # /analyzing — Scraping progress + manual-entry fallback
+│   │           ├── ReportPage.tsx             # /r/:token — LIVE shareable report, all 4 modes (+ ReportPage.test.tsx)
+│   │           ├── InvestorReport.tsx         # /investor-report — demo route (fixtures)
+│   │           ├── TenantReport.tsx           # /tenant-report — demo route (fixtures)
+│   │           ├── PersonalBuyerPage.tsx      # /personal-report demo + real renderer used by ReportPage for mode=personal
+│   │           ├── LandlordPage.tsx           # /landlord-report — demo route (fixtures)
+│   │           ├── AccountPage.tsx            # /account — saved, profile, plan, notifications
+│   │           ├── StripeWelcomePage.tsx      # /welcome-to-pro — Stripe success return
+│   │           ├── StripeCancelledPage.tsx    # /checkout/cancelled — Stripe cancel return
+│   │           ├── MagicLinkConfirmedPage.tsx # /auth/confirm
+│   │           ├── MagicLinkSentPage.tsx      # (shown from sign-in flow)
+│   │           ├── PasswordResetRequestPage.tsx  # /auth/reset
+│   │           ├── PasswordResetConfirmPage.tsx  # /auth/reset/confirm
+│   │           ├── EmailVerifiedPage.tsx      # /auth/verified
 │   │           ├── PrivacyPage.tsx            # /privacy — PIPEDA privacy policy with TOC
 │   │           ├── TermsPage.tsx              # /terms — Terms of Service with TOC
 │   │           ├── legal/
@@ -1183,8 +1197,16 @@ propscout/
 │       └── src/
 │           ├── app.ts                 # Fastify app setup — plugins, routes registered here
 │           ├── routes/
-│           │   ├── analysis.ts        # POST /analysis — orchestrates full pipeline
-│           │   ├── auth.ts            # Auth helpers
+│           │   ├── analysis.ts        # POST /analysis — orchestrates full pipeline (incl. flag overrides + vacancy)
+│           │   ├── analysisToken.ts   # GET/POST /analysis/:token — fetch + trigger by share token
+│           │   ├── overrides.ts       # GET/POST/DELETE /analysis/:token/overrides — risk-flag dismissals
+│           │   ├── sunscout.ts        # POST /analysis/:token/sunscout — facade-direction SunScout recalc
+│           │   ├── pdf.ts             # GET /analysis/:token/pdf — Pro-gated Puppeteer PDF export
+│           │   ├── scrape.ts          # POST /scrape — scrape a listing URL into a pending analysis
+│           │   ├── rates.ts           # GET /rates/mortgage — live Bank of Canada rate proxy
+│           │   ├── billing.ts         # Stripe checkout + billing portal sessions
+│           │   ├── me.ts              # Current-user profile + tier
+│           │   ├── waitlist.ts        # Non-Ontario province-gate waitlist signups
 │           │   └── webhooks.ts        # Stripe webhook — verifies signature before processing
 │           ├── services/              # One file per external API — never call APIs in routes
 │           │   ├── anthropicService.ts      # Claude Haiku (extraction) + Sonnet (narrative)
@@ -1192,9 +1214,10 @@ propscout/
 │           │   ├── mapboxService.ts         # Geocoding + map tiles
 │           │   ├── googlePlacesService.ts   # School discovery
 │           │   ├── stripeService.ts         # Subscriptions + billing portal
-│           │   ├── cmhcService.ts           # Vacancy rates
+│           │   ├── cmhcService.ts           # Vacancy rates (getVacancyRateByCity)
 │           │   ├── bankOfCanadaService.ts   # Current mortgage rates
-│           │   └── supabaseService.ts       # All DB reads and writes
+│           │   ├── pdfService.ts            # Puppeteer renders /r/:token → branded PDF (spec §14)
+│           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint
 │           ├── types/
@@ -1204,6 +1227,10 @@ propscout/
 │           └── constants/
 │               ├── tiers.ts
 │               ├── thresholds.ts
+│               ├── flagLabels.ts      # Risk-flag id → human-readable label
+│               ├── cmhcVacancy.ts     # CMHC vacancy rates by city (refresh annually)
+│               ├── propertyTaxRates.ts # Ontario municipal property-tax rates (refresh annually)
+│               ├── valuation.ts       # Fallback rent↔price proxies (~6% gross yield) for missing data
 │               └── provinces.ts       # Ontario FSA prefixes, LTT brackets
 │
 ├── services/
@@ -1233,7 +1260,8 @@ propscout/
 │   │   ├── models/
 │   │   │   └── schemas.py             # Pydantic models for all inputs/outputs — no raw dicts
 │   │   ├── constants/
-│   │   │   ├── thresholds.py          # Confidence thresholds, deal score brackets
+│   │   │   ├── thresholds.py          # Confidence thresholds, deal score brackets, INFO_FLAG_IDS
+│   │   │   ├── flag_matrix.py + flag_matrix_test.py  # Per-flag × per-mode severity tiers (docs/FLAG_SEVERITY_MATRIX.md)
 │   │   │   ├── rates.py               # Vacancy allowance, management fee, insurance rate
 │   │   │   └── provinces.py           # Ontario FSA prefixes, LTT brackets by province
 │   │   └── tests/
@@ -1242,27 +1270,42 @@ propscout/
 │   │           ├── golden_cases.json  # 50+ labelled listing descriptions
 │   │           └── test_extraction.py # Accuracy gate — must pass 95%+ before merging
 │   │
-│   └── scrapers/                      # Playwright workers — Railway scheduled jobs
+│   └── scrapers/                      # Python scrapers — per-listing service + nightly Railway job
+│       ├── README.md                  # Deploy + first-run checklist (env vars, run #1 = selector test, yield-check)
 │       ├── requirements.txt           # playwright, supabase, httpx, pytest
 │       ├── railway.json               # Nightly cron config — 0 6 * * * UTC (2am ET)
 │       ├── conftest.py                # Pytest path setup
-│       ├── constants.py               # Rent bounds, dedupe window, target cities, politeness delays
-│       ├── realtor_scraper.py         # STUB — Week 1–2, not yet implemented
+│       ├── constants.py               # Rent bounds, dedupe window, target cities, depth, politeness delays
+│       ├── main.py                    # FastAPI scraper service — POST /scrape (called by the API's scrape route)
+│       ├── realtor_scraper.py         # Per-listing Realtor.ca scraper via ScraperAPI premium (dataLayer + JSON-LD parse)
 │       ├── rental_comps_scraper.py + rental_comps_scraper_test.py  # Nightly pipeline orchestrator
 │       ├── normalization.py + normalization_test.py  # Rent/beds/postal parsing — pure functions
 │       ├── dedupe.py + dedupe_test.py # Same address + rent + beds within 7 days = one record
 │       ├── sources/                   # One module per rental site (selectors are TEMPLATE)
-│       │   ├── browser.py             # Shared Playwright launch + politeness delay
-│       │   ├── rentals_ca.py
-│       │   ├── kijiji.py
-│       │   └── padmapper.py
+│       │   ├── browser.py + browser_test.py  # Shared Playwright launch, politeness delay, PageFetch block detection
+│       │   ├── rentals_ca.py + rentals_ca_test.py
+│       │   ├── kijiji.py + kijiji_test.py    # Gated to Toronto (city slug ignored by Kijiji — enforced by test)
+│       │   └── padmapper.py + padmapper_test.py
 │       └── services/                  # Service layer — external calls never inline
-│           ├── supabase_service.py    # Dedupe-key fetch + insert-only writes
+│           ├── supabase_service.py    # source_url upsert writes (scraped_at refresh, first_seen_at insert-only)
 │           └── mapbox_service.py      # Geocoding, non-fatal on failure
 │
-└── supabase/
-    └── migrations/                    # All schema changes — never edit DB directly in dashboard
-        └── 20260610_initial_schema.sql  # All 10 tables + RLS + comp-query/dedupe indexes
+├── supabase/
+│   └── migrations/                    # All schema changes — never edit DB directly in dashboard
+│       ├── 20260610_initial_schema.sql  # All 10 tables + RLS + comp-query/dedupe indexes
+│       ├── 20260622_align_to_initial_schema.sql
+│       ├── 20260622_add_listing_extras.sql   # rent_monthly, city, walk_score, has_sanity_warnings
+│       ├── 20260623_add_rental_listings_source_url_unique.sql
+│       ├── 20260623_add_score_version.sql
+│       ├── 20260624_add_rental_listings_first_seen_at.sql
+│       └── 20260701_add_schools_name_postal_unique.sql  # NOT applied — required by load-schools.mjs upsert
+│
+└── Week3-4 Front end/                 # External test suites — referenced from vite.config.ts includes
+    ├── PR4/                           # Investor report + shared component tests
+    ├── PR5/                           # Tenant report component tests
+    ├── PR6/                           # Personal buyer + landlord report tests
+    ├── PR7/                           # Paywall, Account, Auth, States tests
+    └── PR8/                           # Mobile responsive pass tests (legal, bottom sheet, sticky bar, routes, regression)
 ```
 
 ### Keeping the structure accurate

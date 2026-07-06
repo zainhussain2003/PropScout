@@ -32,6 +32,42 @@ _COC_MAX = 20
 _DSCR_MAX = 15
 _DEMAND_MAX = 10
 _DEDUCTION_MAX = 15
+_COMPONENT_MAX = 95  # cap + cf + coc + dscr + demand
+
+# Severe-flag gate (spec §10a). A severe dealbreaker (grow-op, flood,
+# illegal-unit, special-assessment) CAPS the max achievable score rather than
+# deducting points — additive deductions can't express "this one fact sinks it
+# no matter how good the rest is". The ceiling drops with each extra severe flag
+# so two catastrophes can't read the same as one. All values are unsourced
+# placeholders (see NIGHT_NOTES).
+_SEVERE_GATE_BASE = 40  # 1 severe flag → "marginal" ceiling
+_SEVERE_GATE_STEP = 10  # each additional severe flag lowers the ceiling
+_SEVERE_GATE_FLOOR = 10  # never gate below this ("hard pass" band)
+_NO_GATE = _COMPONENT_MAX  # no severe flags → no ceiling
+
+_DISPLAY_FLOOR = 5  # a property is always worth something (applied at display only)
+
+
+def severe_ceiling(severe_flag_count: int) -> int:
+    """Max achievable score given N severe gating flags (spec §10a step 4)."""
+    if severe_flag_count <= 0:
+        return _NO_GATE
+    return max(
+        _SEVERE_GATE_FLOOR,
+        _SEVERE_GATE_BASE - (severe_flag_count - 1) * _SEVERE_GATE_STEP,
+    )
+
+
+def to_display_score(raw: int) -> int:
+    """
+    Floor then display-normalise a raw 0–95 score to 0–100 (spec §10a steps 7–8).
+
+    Floor: max(5, raw) — a property is always worth something. Normalise: × 100/95.
+    The verdict LABEL is taken from the RAW score (get_verdict), never this value,
+    so the floor can't lift a property into a better verdict band.
+    """
+    floored = max(_DISPLAY_FLOOR, raw)
+    return round(floored * 100 / _COMPONENT_MAX)
 
 
 def _score_cap_rate(cap_rate: float) -> int:
@@ -174,6 +210,7 @@ def calculate_deal_score(
     rental_days_on_market: int,
     rent_trend: str,
     risk_flag_deductions: float = 0.0,
+    severe_flag_count: int = 0,
 ) -> dict[str, object]:
     """
     Calculate the PropScout Deal Score (0–95).
@@ -207,8 +244,14 @@ def calculate_deal_score(
     demand = _score_market_demand(cmhc_vacancy_rate, rental_days_on_market, rent_trend)
 
     subtotal = cap + cf + coc + dscr_score + demand
+    # Standard tier: additive deduction, capped (spec §10a step 3).
     deduction_applied = min(_DEDUCTION_MAX, int(risk_flag_deductions))
-    total = max(0, subtotal - deduction_applied)
+    additive = subtotal - deduction_applied
+    # Severe tier: gate the CEILING (step 4), then take the lower of the two.
+    # Order matters: cap the standard deductions first, subtract, THEN apply the
+    # gate ceiling — so a strong base can't float a severe-flagged property up.
+    ceiling = severe_ceiling(severe_flag_count)
+    total = max(0, min(additive, ceiling))
 
     return {
         "total": total,

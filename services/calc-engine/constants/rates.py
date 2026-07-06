@@ -72,12 +72,18 @@ def get_maintenance_rate(year_built: int | None) -> float:
 
     Args:
         year_built: Year the property was built, or None if unknown.
-                    None defaults to post_2010 (conservative unknown assumption).
+                    None defaults to 1980_2010 (1.0%) — the middle bracket.
+                    Defaulting to post_2010 (0.5%) when the year is unknown
+                    would understate maintenance cost for any older property
+                    that didn't get its year_built field scraped (common on
+                    Realtor.ca pages where the field is JS-rendered).
 
     Returns:
         Maintenance reserve rate as a decimal.
     """
-    if year_built is None or year_built >= 2010:
+    if year_built is None:
+        return MAINTENANCE_RESERVE_RATES["1980_2010"]
+    if year_built >= 2010:
         return MAINTENANCE_RESERVE_RATES["post_2010"]
     if year_built >= 1980:
         return MAINTENANCE_RESERVE_RATES["1980_2010"]

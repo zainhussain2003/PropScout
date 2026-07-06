@@ -91,15 +91,15 @@ describe('Regression — PR4: InvestorReport', () => {
 
   it('DealScore gauge is present in the DOM', () => {
     renderWithRouter(<InvestorReport />)
-    // DealScore renders aria-label="Deal score: N out of 95"
-    const gauge = screen.getByLabelText(/Deal score: \d+ out of 95/)
+    // DealScore renders aria-label="Deal score: N out of 100"
+    const gauge = screen.getByLabelText(/Deal score: \d+ out of 100/)
     expect(gauge).toBeInTheDocument()
   })
 
   it('Vaughan deal score is a number ≤ 10 (hard pass — deeply negative cash flow)', () => {
     renderWithRouter(<InvestorReport />)
-    // aria-label="Deal score: 8 out of 95" — the number should be ≤ 10
-    const gauge = screen.getByLabelText(/Deal score: \d+ out of 95/)
+    // aria-label="Deal score: 8 out of 100" — the number should be ≤ 10
+    const gauge = screen.getByLabelText(/Deal score: \d+ out of 100/)
     const label = gauge.getAttribute('aria-label') ?? ''
     const match = label.match(/Deal score: (\d+) out of/)
     expect(match).toBeTruthy()

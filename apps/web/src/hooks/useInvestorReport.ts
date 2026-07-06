@@ -23,8 +23,11 @@ import {
   HAMILTON_STABLE_METRICS,
   VAUGHAN_DEAL_SCORE,
   HAMILTON_DEAL_SCORE,
+  VAUGHAN_SUNSCOUT,
+  HAMILTON_SUNSCOUT,
 } from '../constants/demoData'
 import type {
+  Analysis,
   ListingData,
   FinancingInputs,
   ComputedInvestorMetrics,
@@ -94,21 +97,28 @@ function toApiFinancing(f: FinancingInputs): {
 // ── Hook ───────────────────────────────────────────────────────────────────────
 
 /**
- * @param listing  The property listing data (from scraper or demo constants)
- * @param rental   Rental comp estimate (from nightly scraper or demo constants)
+ * @param listing           The property listing data (from scraper or demo constants)
+ * @param rental            Rental comp estimate (from nightly scraper or demo constants)
  * @param initialFinancing  Override defaults — useful when restoring saved state
+ * @param preloadedAnalysis When provided (from ReportPage), skips the internal API call
+ *                          and uses this analysis directly for metric computation.
  */
 export function useInvestorReport(
   listing: ListingData,
   rental: RentalInput,
-  initialFinancing?: Partial<FinancingInputs>
+  initialFinancing?: Partial<FinancingInputs>,
+  preloadedAnalysis?: Analysis | null
 ): UseInvestorReportResult {
   // Demo mode: skip the API entirely and compute locally
   const isDemo = listing.id === 'vaughan' || listing.id === 'hamilton'
+  const hasPreload = preloadedAnalysis != null
 
   // Always call useAnalysis (hook rules — no conditional calls)
-  // In demo mode run() is never invoked, so this stays at initial state
-  const { analysis, loading: apiLoading, error: apiError, run } = useAnalysis()
+  // In demo mode or preload mode, run() is never invoked.
+  const { analysis: hookAnalysis, loading: apiLoading, error: apiError, run } = useAnalysis()
+
+  // When a preloaded analysis is provided, prefer it over the hook's analysis
+  const analysis = hasPreload ? preloadedAnalysis : hookAnalysis
 
   const [financing, setFinancing] = useState<FinancingInputs>({
     ...DEFAULT_FINANCING_INPUTS,
@@ -119,10 +129,10 @@ export function useInvestorReport(
 
   const runWithCurrentState = useCallback(
     (f: FinancingInputs) => {
-      if (isDemo) return
+      if (isDemo || hasPreload) return // skip API in demo mode or when analysis is preloaded
       void run(listingToPropertyInput(listing), toApiFinancing(f), rental)
     },
-    [run, listing, rental, isDemo]
+    [run, listing, rental, isDemo, hasPreload]
   )
 
   useEffect(() => {
@@ -134,12 +144,12 @@ export function useInvestorReport(
   const updateFinancing = useCallback(
     (f: FinancingInputs) => {
       setFinancing(f)
-      if (!isDemo) {
+      if (!isDemo && !hasPreload) {
         runWithCurrentState(f)
       }
-      // Demo mode: state update triggers useMemo recompute automatically
+      // Demo / preload mode: state update triggers useMemo recompute automatically
     },
-    [runWithCurrentState, isDemo]
+    [runWithCurrentState, isDemo, hasPreload]
   )
 
   // ── Demo mode: fully local computation ───────────────────────────────────────
@@ -157,11 +167,20 @@ export function useInvestorReport(
     return toDealScoreData(score)
   }, [isDemo, listing.id])
 
-  // ── Live mode: enrich API metrics ────────────────────────────────────────────
+  // ── Live mode: enrich API or preloaded metrics ───────────────────────────────
+  // Use stored NOI/capRate/grm as stable inputs, then recompute all financing-dependent
+  // fields (payment, cash flow, DSCR, CoC) via computeDemoMetrics so sliders work.
 
   const apiMetrics = useMemo<ComputedInvestorMetrics | null>(() => {
     if (isDemo || !analysis?.metrics) return null
-    return enrichMetrics(analysis.metrics, listing, financing)
+    const stable = {
+      noi: analysis.metrics.noi,
+      capRate: analysis.metrics.capRate,
+      grm: analysis.metrics.grm,
+      closingCostsTotal: analysis.metrics.closingCostsTotal,
+    }
+    const raw = computeDemoMetrics(stable, listing, financing)
+    return enrichMetrics(raw, listing, financing)
   }, [isDemo, analysis?.metrics, listing, financing])
 
   const apiDealScore = useMemo<DealScoreData | null>(() => {
@@ -172,12 +191,16 @@ export function useInvestorReport(
   // ── Unified return ────────────────────────────────────────────────────────────
 
   return {
-    loading: isDemo ? false : apiLoading,
-    error: isDemo ? null : apiError,
+    loading: isDemo || hasPreload ? false : apiLoading,
+    error: isDemo || hasPreload ? null : apiError,
     financing,
     metrics: isDemo ? demoMetrics : apiMetrics,
     dealScore: isDemo ? demoDealScore : apiDealScore,
-    sunScout: isDemo ? null : (analysis?.sunScout ?? null),
+    sunScout: isDemo
+      ? listing.id === 'hamilton'
+        ? HAMILTON_SUNSCOUT
+        : VAUGHAN_SUNSCOUT
+      : (analysis?.sunScout ?? null),
     updateFinancing,
   }
 }

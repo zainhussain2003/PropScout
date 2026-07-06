@@ -23,6 +23,11 @@ interface PBFMVSectionProps {
   avgDOM?: number
   /** Median $/sqft from comps. Default computed from property price / sqft. */
   medianPPSqft?: number
+  /**
+   * When true, FMV values are ±5% estimates rather than comp-derived.
+   * Renders ~ prefix on all three values and an "Estimated range" footnote.
+   */
+  isEstimated?: boolean
 }
 
 function getFMVVerdict(
@@ -41,9 +46,12 @@ function getFMVVerdict(
 export function PBFMVSection({
   property,
   score,
-  compCount = 8,
-  avgDOM = 12,
+  // No fixture defaults: an undefined count on a real report once rendered
+  // "8 verified" comparable sales that don't exist (live 2026-07-02).
+  compCount,
+  avgDOM,
   medianPPSqft,
+  isEstimated = false,
 }: PBFMVSectionProps): JSX.Element {
   const { fmv } = property
   const range = fmv.high - fmv.low
@@ -66,6 +74,20 @@ export function PBFMVSection({
         verdict={verdictLabel}
         tone={verdictTone}
       />
+
+      {isEstimated && (
+        <p
+          className="mono"
+          style={{
+            fontSize: 11,
+            color: 'var(--muted)',
+            letterSpacing: '0.12em',
+            marginBottom: 16,
+          }}
+        >
+          Estimated range · real comps in Phase 2
+        </p>
+      )}
 
       <div className="card" style={{ padding: 28 }}>
         {/* Header row — asking price + % vs P50 */}
@@ -189,6 +211,7 @@ export function PBFMVSection({
                 className="mono tabular"
                 style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}
               >
+                {isEstimated ? '~' : ''}
                 {fmtMoney(t.val)}
               </div>
             </div>
@@ -211,21 +234,25 @@ export function PBFMVSection({
           <span className="row gap-8">
             <span>Comparable sales considered</span>
             <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              {compCount} verified
+              {compCount != null ? `${compCount} verified` : 'no source yet'}
             </span>
           </span>
-          <span className="row gap-8">
-            <span>Average days on market</span>
-            <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              {avgDOM} days
+          {avgDOM != null && (
+            <span className="row gap-8">
+              <span>Average days on market</span>
+              <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                {avgDOM} days
+              </span>
             </span>
-          </span>
-          <span className="row gap-8">
-            <span>Median $/sqft</span>
-            <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-              ${medianPP}
+          )}
+          {medianPPSqft != null && (
+            <span className="row gap-8">
+              <span>Median $/sqft</span>
+              <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                ${medianPP}
+              </span>
             </span>
-          </span>
+          )}
           <span className="row gap-8">
             <span>This listing $/sqft</span>
             <span className="tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>

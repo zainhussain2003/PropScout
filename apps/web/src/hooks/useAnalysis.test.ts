@@ -77,6 +77,8 @@ const ANALYSIS_FIXTURE: Analysis = {
   rentalComps: null,
   riskFlags: [],
   narrative: null,
+  walkScore: null,
+  neighbourhood: null,
   hasSanityWarnings: false,
 }
 

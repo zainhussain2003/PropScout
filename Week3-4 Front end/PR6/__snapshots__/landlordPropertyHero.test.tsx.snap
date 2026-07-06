@@ -351,7 +351,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
         style="align-items: center; gap: 8px;"
       >
         <div
-          aria-label="Deal score: 2 out of 95"
+          aria-label="Deal score: 5 out of 100"
           style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
         >
           <div
@@ -368,38 +368,43 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
                 cx="90"
                 cy="90"
                 fill="none"
-                r="82.5"
+                r="83"
                 stroke="var(--line)"
-                stroke-width="15"
+                stroke-width="14"
               />
               <circle
                 cx="90"
                 cy="90"
                 fill="none"
-                r="82.5"
+                r="83"
                 stroke="var(--fail)"
-                stroke-dasharray="518.3627878423158"
-                stroke-dashoffset="518.3627878423158"
+                stroke-dasharray="521.5043804959057"
+                stroke-dashoffset="521.5043804959057"
                 stroke-linecap="round"
-                stroke-width="15"
+                stroke-width="14"
                 style="transition: stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1);"
                 transform="rotate(-90 90 90)"
               />
             </svg>
             <div
-              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;"
+              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px;"
             >
               <span
                 class="serif tabular"
-                style="font-size: 42.3px; line-height: 1; letter-spacing: -0.02em; color: var(--fail);"
+                style="font-size: 75.6px; line-height: 1; font-weight: 400; color: var(--ink);"
               >
-                2
+                5
               </span>
               <span
                 class="mono"
-                style="font-size: 12.78px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; padding-inline: 6px; line-height: 1.2;"
+                style="font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; text-align: center; margin-top: 6px; white-space: nowrap;"
               >
                 Landlord score / 100
+              </span>
+              <span
+                style="margin-top: 6px; font-size: 11px; font-weight: 500; color: var(--fail); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--fail); background: color-mix(in oklab, var(--fail) 8%, transparent); white-space: nowrap;"
+              >
+                Hard pass
               </span>
             </div>
           </div>

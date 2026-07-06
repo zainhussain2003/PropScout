@@ -35,23 +35,23 @@ _MAX_TOKENS = 600
 # Keep in sync with spec Section 19 and constants/thresholds.py.
 
 _FLAG_IDS: list[str] = [
-    "unverified_bedroom",       # Den / office counted as bedroom
-    "glass_door_bedroom",       # Bedroom separated only by glass/barn door
-    "is_basement_unit",         # Unit is below-grade
-    "parking_unclear",          # Parking status ambiguous
-    "illegal_unit_risk",        # Signs of unpermitted secondary suite
+    "unverified_bedroom",  # Den / office counted as bedroom
+    "glass_door_bedroom",  # Bedroom separated only by glass/barn door
+    "is_basement_unit",  # Unit is below-grade
+    "parking_unclear",  # Parking status ambiguous
+    "illegal_unit_risk",  # Signs of unpermitted secondary suite
     "special_assessment_risk",  # Reserve fund issues or upcoming major works
-    "no_exterior_window",       # Unit or room may have no exterior window
-    "basement_unit",            # Explicit basement suite (broader than is_basement_unit)
-    "pets_allowed",             # Pets explicitly permitted
-    "utilities_included",       # Heat/hydro included in rent
-    "parking_included",         # Parking spot included
-    "furnished",                # Unit is furnished
-    "den_present",              # Den present (not counted as bedroom)
-    "no_smoking",               # No smoking policy
-    "short_term_ok",            # Short-term rental allowed
-    "renovation_needed",        # Description signals TLC / needs work
-    "new_construction",         # Newly built unit
+    "no_exterior_window",  # Unit or room may have no exterior window
+    "basement_unit",  # Explicit basement suite (broader than is_basement_unit)
+    "pets_allowed",  # Pets explicitly permitted
+    "utilities_included",  # Heat/hydro included in rent
+    "parking_included",  # Parking spot included
+    "furnished",  # Unit is furnished
+    "den_present",  # Den present (not counted as bedroom)
+    "no_smoking",  # No smoking policy
+    "short_term_ok",  # Short-term rental allowed
+    "renovation_needed",  # Description signals TLC / needs work
+    "new_construction",  # Newly built unit
 ]
 
 # The prompt is TEMPLATE CODE — iterate on wording based on output quality.
@@ -81,22 +81,33 @@ Return exactly this structure:
   "no_smoking":              {{"value": bool, "confidence": int, "evidence": str}},
   "short_term_ok":           {{"value": bool, "confidence": int, "evidence": str}},
   "renovation_needed":       {{"value": bool, "confidence": int, "evidence": str}},
-  "new_construction":        {{"value": bool, "confidence": int, "evidence": str}}
+  "new_construction":        {{"value": bool, "confidence": int, "evidence": str}},
+  "grow_op_history":         {{"value": bool, "confidence": int, "evidence": str}},
+  "flooding_history":        {{"value": bool, "confidence": int, "evidence": str}}
 }}
 
 Examples of language that should trigger flags:
 - "versatile second room" or "perfect home office" -> unverified_bedroom: true, confidence 75
-- "glass partition" or "barn door" or "sliding door bedroom" -> glass_door_bedroom: true, confidence 85
+- "glass partition" or "barn door bedroom" -> glass_door_bedroom: true, confidence 85
 - "finished lower level" or "basement suite" -> is_basement_unit: true, confidence 90
-- "parking available upon request" or "parking inquire with management" -> parking_unclear: true, confidence 88
+- "parking available upon request / inquire with management" -> parking_unclear: true, confidence 88
 - "separate entrance" on a lower-level unit -> illegal_unit_risk: true, confidence 70
-- "reserve fund study" or "special assessment" or "upcoming repair" -> special_assessment_risk: true, confidence 92
+- "reserve fund study" or "special assessment" -> special_assessment_risk: true, confidence 92
 - "pets welcome" or "pet friendly" -> pets_allowed: true, confidence 95
 - "all utilities included" -> utilities_included: true, confidence 95
 - "sold as-is" or "needs TLC" or "handyman special" -> renovation_needed: true, confidence 90
 - "brand new" or "newly built" or "new construction" -> new_construction: true, confidence 90
 - "no smoking" or "smoke free" -> no_smoking: true, confidence 95
 - "short-term rental permitted" or "Airbnb friendly" -> short_term_ok: true, confidence 88
+
+These two are SEVERE and are described in euphemism — sellers rarely state them plainly.
+Read for oblique language, not just the obvious word, but stay conservative (set false
+when genuinely ambiguous; the confidence score carries your uncertainty):
+- "former grow-op", "previously used for cultivation", "remediation completed / Health
+  Canada clearance", "stigmatized property" -> grow_op_history: true, confidence 70-95
+- "flood zone", "floodplain", "past water damage", "below-grade moisture", "restoration
+  after water", "conservation authority regulated" -> flooding_history: true, confidence 70-95
+- Do NOT flag "sunlight floods the room" (grow_op/flooding both false) or "grow your family".
 
 Listing description:
 {description}"""

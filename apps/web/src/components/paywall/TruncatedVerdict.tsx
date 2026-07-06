@@ -14,9 +14,15 @@ interface TruncatedVerdictProps {
   firstParagraph: string
   /** Called when the user clicks "Unlock full verdict" — typically opens UpgradeModal. */
   onUnlock?: () => void
+  /** Mode-specific eyebrow, e.g. "Scout AI · tenant verdict". */
+  eyebrow?: string
 }
 
-export function TruncatedVerdict({ firstParagraph, onUnlock }: TruncatedVerdictProps): JSX.Element {
+export function TruncatedVerdict({
+  firstParagraph,
+  onUnlock,
+  eyebrow = 'Scout AI · investor verdict',
+}: TruncatedVerdictProps): JSX.Element {
   return (
     <div
       style={{
@@ -29,7 +35,10 @@ export function TruncatedVerdict({ firstParagraph, onUnlock }: TruncatedVerdictP
       }}
     >
       {/* Header row — live dot + label + tier tag */}
-      <div className="row gap-8" style={{ color: 'rgba(255,255,255,0.55)', marginBottom: 20 }}>
+      <div
+        className="row gap-8"
+        style={{ color: 'color-mix(in oklab, var(--bg) 55%, transparent)', marginBottom: 20 }}
+      >
         <span
           className="live-dot"
           style={{
@@ -44,12 +53,16 @@ export function TruncatedVerdict({ firstParagraph, onUnlock }: TruncatedVerdictP
           className="mono"
           style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}
         >
-          Scout AI · investor verdict
+          {eyebrow}
         </span>
         <span style={{ flex: 1 }} />
         <span
           className="mono"
-          style={{ fontSize: 10, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)' }}
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
+          }}
         >
           1 of 3 paragraphs · free tier
         </span>
@@ -75,7 +88,7 @@ export function TruncatedVerdict({ firstParagraph, onUnlock }: TruncatedVerdictP
           style={{
             fontSize: 'clamp(17px, 1.7vw, 21px)',
             lineHeight: 1.5,
-            color: 'rgba(255,255,255,0.55)',
+            color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
             filter: 'blur(3px)',
             userSelect: 'none',
             maxHeight: 110,
@@ -106,8 +119,8 @@ export function TruncatedVerdict({ firstParagraph, onUnlock }: TruncatedVerdictP
           marginTop: 18,
           padding: '14px 18px',
           borderRadius: 14,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.12)',
+          background: 'color-mix(in oklab, var(--bg) 6%, transparent)',
+          border: '1px solid color-mix(in oklab, var(--bg) 12%, transparent)',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 12,
@@ -115,7 +128,7 @@ export function TruncatedVerdict({ firstParagraph, onUnlock }: TruncatedVerdictP
       >
         <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
           <ProBadge />
-          <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
+          <span style={{ fontSize: 14, color: 'color-mix(in oklab, var(--bg) 85%, transparent)' }}>
             Read the full 3-paragraph verdict with specific dollar gaps and a precise next step.
           </span>
         </div>

@@ -291,7 +291,7 @@ export function EquityChart({
                 fontSize: 10,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.55)',
+                color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
                 marginBottom: 8,
               }}
             >
@@ -318,7 +318,9 @@ export function EquityChart({
                   padding: '3px 0',
                 }}
               >
-                <span style={{ color: 'rgba(255,255,255,.7)' }}>{k}</span>
+                <span style={{ color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
+                  {k}
+                </span>
                 <span
                   className="mono tabular"
                   style={{

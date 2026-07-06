@@ -1,6 +1,6 @@
 """Unit tests for dedupe.py — pure functions, no external dependencies."""
 
-from dedupe import dedupe_batch, filter_existing
+from dedupe import dedupe_batch, dedupe_by_source_url, filter_existing
 from normalization import CleanRentalListing
 
 
@@ -9,10 +9,11 @@ def _listing(
     rent: int = 2150,
     beds: int | None = 2,
     source: str = "rentals_ca",
+    url: str = "https://example.com/x",
 ) -> CleanRentalListing:
     return CleanRentalListing(
         source=source,
-        source_url="https://example.com/x",
+        source_url=url,
         address=address,
         postal_code="L4K5W4",
         beds=beds,
@@ -21,6 +22,29 @@ def _listing(
         sqft=None,
         listed_at=None,
     )
+
+
+class TestDedupeBySourceUrl:
+    def test_same_url_collapsed_first_wins(self):
+        # An over-broad selector emitting the same card twice (same URL) collapses.
+        result = dedupe_by_source_url(
+            [
+                _listing(url="https://x/1", source="rentals_ca"),
+                _listing(url="https://x/1", source="kijiji"),
+            ]
+        )
+        assert len(result) == 1
+        assert result[0].source == "rentals_ca"  # first occurrence wins
+
+    def test_distinct_urls_same_content_both_kept(self):
+        # Cross-posts (same content, different URL) are KEPT — collapsed at query time.
+        result = dedupe_by_source_url(
+            [_listing(url="https://x/1"), _listing(url="https://x/2")]
+        )
+        assert len(result) == 2
+
+    def test_empty_batch(self):
+        assert dedupe_by_source_url([]) == []
 
 
 class TestDedupeBatch:

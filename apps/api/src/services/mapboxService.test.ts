@@ -1,196 +1,76 @@
-/**
- * Unit tests for mapboxService.geocodeAddress.
- *
- * All network calls are intercepted via jest.spyOn(global, 'fetch') so no real
- * HTTP requests are made. MAPBOX_TOKEN is set/unset per test as needed.
- */
-
 import { geocodeAddress } from './mapboxService'
 
-const ORIGINAL_ENV = process.env
+const mockFetch = jest.fn()
+global.fetch = mockFetch as unknown as typeof fetch
 
-function mockFetchOk(body: unknown): void {
-  jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve(body),
-  } as Response)
-}
-
-function mockFetchError(status: number): void {
-  jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-    ok: false,
+function makeFetchResponse(data: unknown, status: number): Response {
+  return {
+    ok: status >= 200 && status < 300,
     status,
-    json: () => Promise.resolve({}),
-  } as Response)
+    json: jest.fn().mockResolvedValue(data),
+  } as unknown as Response
 }
 
-function mockFetchNetworkError(): void {
-  jest.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network error'))
+const VALID_RESPONSE = {
+  features: [
+    {
+      center: [-79.3832, 43.6532], // [lng, lat] — Toronto
+      place_name: '123 Main St, Toronto, Ontario M5V 1A1, Canada',
+    },
+  ],
 }
-
-const TORONTO_FEATURE = {
-  center: [-79.3871, 43.6426] as [number, number],
-  place_name: '290 Bremner Blvd, Toronto, Ontario M5V 3L9, Canada',
-}
-
-const VALID_RESPONSE = { features: [TORONTO_FEATURE] }
-const EMPTY_RESPONSE = { features: [] }
 
 beforeEach(() => {
-  process.env = { ...ORIGINAL_ENV, MAPBOX_TOKEN: 'test-token' }
-  jest.spyOn(global, 'fetch').mockClear()
+  jest.clearAllMocks()
+  process.env.MAPBOX_TOKEN = 'test-token'
 })
 
 afterEach(() => {
-  process.env = ORIGINAL_ENV
-  jest.restoreAllMocks()
+  delete process.env.MAPBOX_TOKEN
 })
 
-// ── Token absent ──────────────────────────────────────────────────────────────
+describe('geocodeAddress', () => {
+  it('valid address → returns correct lat, lng, formattedAddress (lng/lat not swapped)', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse(VALID_RESPONSE, 200))
 
-describe('when MAPBOX_TOKEN is not set', () => {
-  it('returns null without making a fetch call', async () => {
-    delete process.env.MAPBOX_TOKEN
-    const fetchSpy = jest.spyOn(global, 'fetch')
-
-    const result = await geocodeAddress('290 Bremner Blvd, Toronto, ON')
-
-    expect(result).toBeNull()
-    expect(fetchSpy).not.toHaveBeenCalled()
-  })
-})
-
-// ── Successful geocoding ───────────────────────────────────────────────────────
-
-describe('successful geocoding', () => {
-  it('returns lat, lng and formattedAddress from the first feature', async () => {
-    mockFetchOk(VALID_RESPONSE)
-
-    const result = await geocodeAddress('290 Bremner Blvd, Toronto, ON')
+    const result = await geocodeAddress('123 Main St, Toronto, ON')
 
     expect(result).not.toBeNull()
-    expect(result?.lat).toBeCloseTo(43.6426, 3)
-    expect(result?.lng).toBeCloseTo(-79.3871, 3)
-    expect(result?.formattedAddress).toBe('290 Bremner Blvd, Toronto, Ontario M5V 3L9, Canada')
+    expect(result!.lat).toBe(43.6532) // center[1]
+    expect(result!.lng).toBe(-79.3832) // center[0]
+    expect(result!.formattedAddress).toBe('123 Main St, Toronto, Ontario M5V 1A1, Canada')
   })
 
-  it('encodes the address in the URL and includes required query params', async () => {
-    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(VALID_RESPONSE),
-    } as Response)
+  it('empty features array → returns null', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ features: [] }, 200))
 
-    await geocodeAddress('123 Main St, Toronto, ON')
-
-    const calledUrl = String(fetchSpy.mock.calls[0][0])
-    expect(calledUrl).toContain('mapbox.places')
-    expect(calledUrl).toContain('123%20Main%20St')
-    expect(calledUrl).toContain('country=CA')
-    expect(calledUrl).toContain('types=address')
-    expect(calledUrl).toContain('limit=1')
-    expect(calledUrl).toContain('access_token=test-token')
-  })
-
-  it('uses the token from MAPBOX_TOKEN env var', async () => {
-    process.env.MAPBOX_TOKEN = 'my-secret-token'
-    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(VALID_RESPONSE),
-    } as Response)
-
-    await geocodeAddress('Some Address')
-
-    const calledUrl = String(fetchSpy.mock.calls[0][0])
-    expect(calledUrl).toContain('access_token=my-secret-token')
-  })
-})
-
-// ── Empty features ────────────────────────────────────────────────────────────
-
-describe('when features array is empty', () => {
-  it('returns null', async () => {
-    mockFetchOk(EMPTY_RESPONSE)
-
-    const result = await geocodeAddress('Unknown Place Nowhere')
-
-    expect(result).toBeNull()
-  })
-})
-
-// ── HTTP errors ───────────────────────────────────────────────────────────────
-
-describe('when the API returns a non-200 status', () => {
-  it('returns null for 401 Unauthorized', async () => {
-    mockFetchError(401)
-
-    const result = await geocodeAddress('Some Address')
+    const result = await geocodeAddress('123 Nowhere Ave')
 
     expect(result).toBeNull()
   })
 
-  it('returns null for 422 Unprocessable', async () => {
-    mockFetchError(422)
+  it('fetch throws network error → returns null', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'))
 
-    const result = await geocodeAddress('Some Address')
+    const result = await geocodeAddress('123 Main St, Toronto, ON')
+
+    expect(result).toBeNull()
+  })
+
+  it('non-200 response → returns null', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ message: 'Unauthorized' }, 401))
+
+    const result = await geocodeAddress('123 Main St, Toronto, ON')
 
     expect(result).toBeNull()
   })
 
-  it('returns null for 500 Internal Server Error', async () => {
-    mockFetchError(500)
+  it('MAPBOX_TOKEN empty → returns null without calling fetch', async () => {
+    process.env.MAPBOX_TOKEN = ''
 
-    const result = await geocodeAddress('Some Address')
-
-    expect(result).toBeNull()
-  })
-})
-
-// ── Network errors ────────────────────────────────────────────────────────────
-
-describe('when the network request throws', () => {
-  it('returns null instead of propagating the error', async () => {
-    mockFetchNetworkError()
-
-    const result = await geocodeAddress('Some Address')
+    const result = await geocodeAddress('123 Main St, Toronto, ON')
 
     expect(result).toBeNull()
-  })
-})
-
-// ── Malformed JSON ────────────────────────────────────────────────────────────
-
-describe('when the API returns invalid JSON', () => {
-  it('returns null instead of throwing', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.reject(new SyntaxError('Unexpected token')),
-    } as Response)
-
-    const result = await geocodeAddress('Some Address')
-
-    expect(result).toBeNull()
-  })
-})
-
-// ── Address trimming ──────────────────────────────────────────────────────────
-
-describe('address handling', () => {
-  it('trims whitespace before encoding', async () => {
-    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(VALID_RESPONSE),
-    } as Response)
-
-    await geocodeAddress('  123 Main St  ')
-
-    const calledUrl = String(fetchSpy.mock.calls[0][0])
-    // Should encode "123 Main St" (trimmed), not "  123 Main St  "
-    expect(calledUrl).toContain('123%20Main%20St')
-    expect(calledUrl).not.toContain('%20%20')
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })

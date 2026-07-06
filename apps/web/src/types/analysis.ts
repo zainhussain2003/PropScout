@@ -43,7 +43,8 @@ export interface DealScoreBreakdown {
 }
 
 export interface DealScore {
-  total: number // 0–100
+  total: number // 0–95 raw gated score (verdict derives from this)
+  displayTotal: number // 0–100 floored + normalised for the gauge
   verdict: DealVerdict
   breakdown: DealScoreBreakdown
 }
@@ -75,14 +76,38 @@ export interface InvestmentMetrics {
   hasSanityWarnings: boolean
 }
 
+export interface WalkScoreResult {
+  walk: number
+  transit: number | null
+  bike: number | null
+  description: string
+}
+
 export type FlagSeverity = 'red' | 'amber'
 
 export interface RiskFlag {
   id: string
   severity: FlagSeverity
+  /** Per-mode severity tier from the flag matrix (docs/FLAG_SEVERITY_MATRIX.md).
+   * Optional: analyses stored before the matrix shipped don't carry it. */
+  tier?: 'severe' | 'red' | 'amber'
   label: string
   evidence: string | null // quote from listing description
   confidence: number // 0–100
+}
+
+/**
+ * Controls for dismissing/restoring risk flags within a report.
+ * Threaded from the page (which owns the useFlagOverrides hook) down to the
+ * RiskRow renderers so flags can be dismissed inline.
+ */
+export interface FlagOverrideControls {
+  /** Set of flag IDs the user has dismissed for this analysis. */
+  overrides: Set<string>
+  /** True when a live analysis token exists — show the Dismiss/Restore button. */
+  canOverride: boolean
+  /** Toggle dismissal for a flag (dismiss if active, restore if already dismissed). */
+  onToggle: (flagId: string) => void
 }
 
 export interface RentalEstimate {
@@ -104,6 +129,29 @@ export interface SunScoutResult {
   verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
 }
 
+/** One school from the schools table, ranked by straight-line distance. */
+export interface NearbySchool {
+  name: string
+  schoolType: 'elementary' | 'middle' | 'high'
+  board: string | null
+  /** Straight-line distance from the subject property, km (1 decimal). */
+  distanceKm: number
+  eqaoScore: number | null // 0–10 (EQAO)
+  fraserRankPct: number | null // 0–100 percentile (Fraser Institute)
+  graduationRate: number | null // 0–1, high schools only
+}
+
+/**
+ * Nearest schools per level (max 3 each). Distance-ranked only — attendance
+ * boundaries are NOT ingested, so nothing here may render as "in catchment".
+ */
+export interface SchoolsResult {
+  elementary: NearbySchool[]
+  middle: NearbySchool[]
+  high: NearbySchool[]
+  catchmentNote: string
+}
+
 export interface Analysis {
   id: string
   token: string // share token for /r/[token]
@@ -114,8 +162,17 @@ export interface Analysis {
   rentalComps: RentalEstimate | null
   riskFlags: RiskFlag[]
   narrative: string | null
+  walkScore: WalkScoreResult | null
+  neighbourhood: NeighbourhoodData | null
   hasSanityWarnings: boolean
   sunScout: SunScoutResult | null
+  /** Geocoded subject-property coordinates — enables the real MiniMap.
+   * Optional: analyses stored before 2026-07-01 don't carry it; null when
+   * geocoding failed. */
+  coordinates?: { lat: number; lng: number } | null
+  /** Nearest schools per level. Optional: analyses stored before 2026-07-02
+   * don't carry it; null until the schools CSV is loaded. */
+  schools?: SchoolsResult | null
 }
 
 // ── Investor report extended types ────────────────────────────────────────────
@@ -184,7 +241,8 @@ export interface ExpenseBreakdown {
  * the human-readable label, tagline, and tone needed by the UI.
  */
 export interface DealScoreData {
-  total: number
+  total: number // 0–95 raw gated score (label/tone derive from this)
+  displayTotal: number // 0–100 floored + normalised — the number the gauge shows
   verdict: DealVerdict
   label: string // e.g. 'Hard pass'
   tagline: string // e.g. 'Fails on multiple fundamentals.'
@@ -233,6 +291,9 @@ export interface ListingData {
   sqft: number
   parking: string
   yearBuilt: number
+  /** False when the listing carried no build year — yearBuilt is then an
+   * internal maintenance-bucket fallback and must not render as a fact. */
+  yearBuiltKnown?: boolean
   rentControl: boolean
   price: number
   annualTaxes: number

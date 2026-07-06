@@ -12,7 +12,7 @@
  *   §06  What's included        — WhatsIncludedSection
  *   §07  Location & commute     — LocationCommuteSection
  *   §08  Schools                — TenantSchoolsSection
- *   §09  SunScout               — Phase 2 placeholder
+ *   §09  SunScout               — SunScoutPanel (fixture on demo, live when analysis present)
  *   §10  Comps map              — MiniMap
  *   §11  Unit & building details — collapsible spec sheet
  *   §12  Before you sign        — confirm checklist
@@ -25,6 +25,7 @@ import { useState } from 'react'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { usePaywall } from '../components/paywall/PaywallContext'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -58,8 +59,16 @@ import {
   CHARLES_MESSAGE_REASONS,
   CHARLES_COST_LINES,
   CHARLES_CHECKLIST,
+  CHARLES_SUNSCOUT,
 } from '../constants/tenantDemoData'
-import type { TenantChecklistItem, TenantCostLine } from '../types/analysis'
+import type {
+  Analysis,
+  TenantChecklistItem,
+  TenantCostLine,
+  TenantListingData,
+} from '../types/analysis'
+import type { Listing } from '../types/property'
+import { shimToTenantListingData, shimToTenantSchools } from '../lib/reportShims'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -72,11 +81,20 @@ function fmtCAD(n: number): string {
 interface TenantPropertyHeroProps {
   dark: boolean
   onBack?: () => void
+  /** Real listing data — when provided replaces the CHARLES_LISTING fixture. */
+  listing?: TenantListingData
+  /** Pro PDF download handler (usePdfExport) — no-op on the demo route. */
+  onPDF?: () => void
 }
 
-function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): JSX.Element {
+function TenantPropertyHero({
+  dark: _dark,
+  onBack,
+  listing: listingProp,
+  onPDF,
+}: TenantPropertyHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
-  const listing = CHARLES_LISTING
+  const listing = listingProp ?? CHARLES_LISTING
   const verdictColor =
     listing.scoreTone === 'pass'
       ? 'var(--pass)'
@@ -157,15 +175,8 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, height: 360 }}>
             {/* Hero photo */}
             <div
-              style={{
-                borderRadius: 18,
-                height: '100%',
-                background: 'var(--line)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
+              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
+              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
             >
               {listing.photoUrls?.[0] ? (
                 <img
@@ -174,17 +185,7 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <span
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--muted)',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  unit · skyline view
-                </span>
+                <span>unit · skyline view</span>
               )}
             </div>
 
@@ -193,13 +194,10 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
               {(['living', 'kitchen', 'bedroom'] as const).map((label, idx) => (
                 <div
                   key={label}
+                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
                   style={{
                     borderRadius: 14,
                     flex: 1,
-                    background: 'var(--line)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     position: 'relative',
                     overflow: 'hidden',
                   }}
@@ -211,17 +209,7 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--muted)',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {label}
-                    </span>
+                    <span>{label}</span>
                   )}
                   {idx === 2 && (
                     <div
@@ -298,7 +286,14 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
         <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
           {/* Tenant score gauge */}
           <div className="col" style={{ gap: 8, alignItems: 'center' }}>
-            <DealScore score={listing.scoreNumber} size="lg" label="Tenant score / 100" animate />
+            <DealScore
+              score={listing.scoreNumber}
+              max={100}
+              size="lg"
+              label="Tenant score / 100"
+              showVerdict
+              animate
+            />
           </div>
 
           {/* Verdict */}
@@ -408,6 +403,7 @@ function TenantPropertyHero({ dark: _dark, onBack }: TenantPropertyHeroProps): J
                 <button
                   className="btn btn-ghost"
                   style={{ flex: 1, justifyContent: 'center', padding: '11px 12px', fontSize: 13 }}
+                  onClick={() => onPDF?.()}
                 >
                   <Icon name="doc" size={13} /> PDF
                 </button>
@@ -448,7 +444,13 @@ function RentPositioningSection(): JSX.Element {
       >
         {/* Comp bar */}
         <div className="card" style={{ padding: 28 }}>
-          <RentalCompsBar low={1800} mid={1950} high={2300} ask={2150} />
+          <RentalCompsBar
+            low={1800}
+            mid={1950}
+            high={2300}
+            ask={2150}
+            context={{ trendPct: -1.4, medianDom: 18, vacancyPct: 1.8 }}
+          />
         </div>
 
         {/* Narrative + metric grid */}
@@ -1146,6 +1148,40 @@ function ConversionBlock(): JSX.Element {
   )
 }
 
+// ── Placeholder card for sections not yet populated by extraction pipeline ────
+
+function SectionPlaceholder({
+  n,
+  topic,
+  question,
+  week,
+}: {
+  n: string
+  topic: string
+  question: JSX.Element
+  week: string
+}): JSX.Element {
+  return (
+    <section className="container tr-section">
+      <SectionHead
+        n={n}
+        topic={topic}
+        question={question}
+        verdict={`Available ${week}`}
+        tone="caution"
+      />
+      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+        <p
+          className="mono"
+          style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}
+        >
+          {topic} · {week}
+        </p>
+      </div>
+    </section>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 /** Plain-text first paragraph for TruncatedVerdict (free tier). */
@@ -1155,12 +1191,32 @@ const TENANT_FIRST_PARA =
 interface TenantReportProps {
   /** User tier — controls AIVerdictBlock (pro) vs TruncatedVerdict (free). */
   tier?: string
+  /** Real analysis from the API — when provided, live data replaces fixtures. */
+  analysis?: Analysis | null
+  /** Real listing from the API — required alongside analysis to activate live mode. */
+  listing?: Listing | null
 }
 
-export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
+export function TenantReport({
+  tier = 'pro',
+  analysis: realAnalysis,
+  listing: realListing,
+}: TenantReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const pdf = usePdfExport(realAnalysis?.token ?? null)
   const [dark, setDark] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
+
+  // Shim: when real data is provided, derive TenantListingData from it
+  const isReal = !!(realAnalysis && realListing)
+
+  const tenantListing: TenantListingData | undefined = isReal
+    ? shimToTenantListingData(realListing!, realAnalysis!)
+    : undefined
+
+  const addressSlug = tenantListing
+    ? tenantListing.addressLine1.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    : '3705-charles-st-e'
 
   function toggleDark(): void {
     const next = !dark
@@ -1173,96 +1229,273 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
       <Nav
         variant="report"
         reportLabel="Tenant report"
-        addressSlug="3705-charles-st-e"
+        addressSlug={addressSlug}
         dark={dark}
         onToggleDark={toggleDark}
         onSignIn={() => setShowSignIn(true)}
       />
 
-      {/* Property hero */}
-      <TenantPropertyHero dark={dark} onBack={() => window.history.back()} />
+      {/* Property hero — passes real listing data when available */}
+      <TenantPropertyHero
+        dark={dark}
+        onBack={() => window.history.back()}
+        listing={tenantListing}
+        onPDF={pdf.exportPdf}
+      />
 
       {/* AI verdict */}
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         {tier === 'free' ? (
           <TruncatedVerdict
-            firstParagraph={TENANT_FIRST_PARA}
+            firstParagraph={
+              realAnalysis?.narrative
+                ? realAnalysis.narrative.split('. ')[0] + '.'
+                : TENANT_FIRST_PARA
+            }
+            eyebrow="Scout AI · tenant verdict"
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
           <AIVerdictBlock
             eyebrow="Scout AI · tenant verdict"
             headline={
-              <>
-                Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
-                marketed as a second bedroom is a den with a sliding glass door — no privacy, no
-                sound barrier, almost certainly no window. You're paying a 2-bedroom premium for a
-                1-bedroom with a study.
-              </>
+              realAnalysis?.narrative ? (
+                realAnalysis.narrative.split('. ')[0] + '.'
+              ) : (
+                <>
+                  Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
+                  marketed as a second bedroom is a den with a sliding glass door — no privacy, no
+                  sound barrier, almost certainly no window. You&apos;re paying a 2-bedroom premium
+                  for a 1-bedroom with a study.
+                </>
+              )
             }
             sub={
-              <>
-                Your negotiation target is{' '}
-                <span className="tabular" style={{ color: 'var(--accent)' }}>
-                  $1,950–2,000
-                </span>
-                /mo. You have real leverage: 14 competing rentals in this building, the unit has
-                been listed for 22 days, and you have a documented misrepresentation to point to.
-                Before you go back, confirm two things in writing — does the den have a window, and
-                is parking included or extra.
-              </>
+              realAnalysis?.narrative ?? (
+                <>
+                  Your negotiation target is{' '}
+                  <span className="tabular" style={{ color: 'var(--accent)' }}>
+                    $1,950–2,000
+                  </span>
+                  /mo. You have real leverage: 14 competing rentals in this building, the unit has
+                  been listed for 22 days, and you have a documented misrepresentation to point to.
+                  Before you go back, confirm two things in writing — does the den have a window,
+                  and is parking included or extra.
+                </>
+              )
             }
           />
         )}
       </section>
 
       {/* §01 Rent positioning */}
-      <RentPositioningSection />
+      {isReal ? (
+        <section className="container tr-section" data-section="01">
+          <SectionHead
+            n="01"
+            topic="Rent positioning"
+            question={
+              <>
+                Is the rent <em>fair</em>?
+              </>
+            }
+            verdict={
+              tenantListing
+                ? `Asking $${tenantListing.asking.toLocaleString()}/mo`
+                : 'Fetching comps…'
+            }
+            tone="caution"
+          />
+          <div className="card" style={{ padding: 28 }}>
+            <RentalCompsBar
+              low={tenantListing?.targetLow ?? 0}
+              mid={tenantListing?.targetHigh ?? 0}
+              high={tenantListing?.targetHigh ?? 0}
+              ask={tenantListing?.asking ?? 0}
+            />
+            <p
+              className="mono"
+              style={{
+                fontSize: 11,
+                color: 'var(--muted)',
+                letterSpacing: '0.12em',
+                marginTop: 16,
+              }}
+            >
+              Rental comps · available Week 4–5 · nightly scraper
+            </p>
+          </div>
+        </section>
+      ) : (
+        <RentPositioningSection />
+      )}
 
-      {/* §02 Listing accuracy */}
-      <ListingAccuracySection />
+      {/* §02 Listing accuracy — real flags when available, fixture for demo */}
+      {isReal ? (
+        realAnalysis!.riskFlags.length > 0 ? (
+          <ListingAccuracySection />
+        ) : (
+          <SectionPlaceholder
+            n="02"
+            topic="Listing accuracy"
+            question={
+              <>
+                Is the listing <em>honest</em>?
+              </>
+            }
+            week="Week 5–6 · extraction pipeline"
+          />
+        )
+      ) : (
+        <ListingAccuracySection />
+      )}
 
-      {/* §03 Listed vs Reality (hidden when zero mismatches) */}
-      <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />
+      {/* §03 Listed vs Reality — only show for demo; requires extraction pipeline */}
+      {!isReal && <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />}
 
-      {/* §04 Negotiation */}
-      <NegotiationSection
-        targetLow={CHARLES_LISTING.targetLow}
-        targetHigh={CHARLES_LISTING.targetHigh}
-        leverageFactors={CHARLES_LEVERAGE_FACTORS}
-        suggestedMessage={CHARLES_SUGGESTED_MESSAGE}
-        messageReasons={CHARLES_MESSAGE_REASONS}
-      />
+      {/* §04 Negotiation — requires extraction pipeline for leverage analysis */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="04"
+          topic="Negotiation"
+          question={
+            <>
+              Should you <em>negotiate</em>?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <NegotiationSection
+          targetLow={CHARLES_LISTING.targetLow}
+          targetHigh={CHARLES_LISTING.targetHigh}
+          leverageFactors={CHARLES_LEVERAGE_FACTORS}
+          suggestedMessage={CHARLES_SUGGESTED_MESSAGE}
+          messageReasons={CHARLES_MESSAGE_REASONS}
+        />
+      )}
 
-      {/* §05 Monthly cost */}
-      <CostBreakdownSection lines={CHARLES_COST_LINES} />
+      {/* §05 Monthly cost — requires extraction to know what's included */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="05"
+          topic="Monthly cost"
+          question={
+            <>
+              What will it <em>really</em> cost?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <CostBreakdownSection lines={CHARLES_COST_LINES} />
+      )}
 
-      {/* §06 What's included */}
-      <WhatsIncludedSection
-        amenities={CHARLES_AMENITIES}
-        askingRent={CHARLES_LISTING.asking}
-        estimatedValue="~$320/mo"
-        adjustedRent="$1,830/mo"
-      />
+      {/* §06 What's included — requires extraction pipeline */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="06"
+          topic="What's included"
+          question={
+            <>
+              What does the rent <em>cover</em>?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <WhatsIncludedSection
+          amenities={CHARLES_AMENITIES}
+          askingRent={CHARLES_LISTING.asking}
+          estimatedValue="~$320/mo"
+          adjustedRent="$1,830/mo"
+        />
+      )}
 
-      {/* §07 Location & commute */}
+      {/* §07 Location & commute — walk scores real, distances Week 4-5 */}
       <LocationCommuteSection
-        mobilityScores={CHARLES_MOBILITY_SCORES}
-        distances={CHARLES_DISTANCES}
-        verdict="Excellent transit · limited walk"
+        mobilityScores={
+          realAnalysis?.walkScore
+            ? [
+                {
+                  label: 'Walk Score',
+                  val: realAnalysis.walkScore.walk,
+                  sub: realAnalysis.walkScore.description,
+                  tone: realAnalysis.walkScore.walk >= 70 ? 'pass' : 'caution',
+                },
+                {
+                  label: 'Transit Score',
+                  val: realAnalysis.walkScore.transit ?? 0,
+                  sub: 'Public transit',
+                  tone: (realAnalysis.walkScore.transit ?? 0) >= 50 ? 'pass' : 'caution',
+                },
+                {
+                  label: 'Bike Score',
+                  val: realAnalysis.walkScore.bike ?? 0,
+                  sub: 'Bikeable',
+                  tone: (realAnalysis.walkScore.bike ?? 0) >= 50 ? 'pass' : 'caution',
+                },
+              ]
+            : CHARLES_MOBILITY_SCORES
+        }
+        distances={isReal ? [] : CHARLES_DISTANCES}
+        verdict={
+          realAnalysis?.walkScore
+            ? `Walk ${realAnalysis.walkScore.walk} · Transit ${realAnalysis.walkScore.transit ?? 0}`
+            : 'Excellent transit · limited walk'
+        }
       />
 
-      {/* §08 Schools */}
-      <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
+      {/* §08 Schools — real rows from the schools table when loaded; honest
+          placeholder until the EQAO/Fraser CSV lands. Demo keeps the fixture. */}
+      {isReal ? (
+        realAnalysis?.schools ? (
+          <TenantSchoolsSection schools={shimToTenantSchools(realAnalysis.schools)} />
+        ) : (
+          <SectionPlaceholder
+            n="08"
+            topic="Schools"
+            question={
+              <>
+                What schools are <em>nearby</em>?
+              </>
+            }
+            week="Pending EQAO / Fraser dataset load"
+          />
+        )
+      ) : (
+        <TenantSchoolsSection schools={CHARLES_SCHOOLS} />
+      )}
 
-      {/* §09 SunScout */}
-      <SunScoutPanel sunScout={null} sectionNumber="09" />
+      {/* §09 SunScout — live data when present, demo fixture on the demo route */}
+      <SunScoutPanel
+        sunScout={realAnalysis ? (realAnalysis.sunScout ?? null) : CHARLES_SUNSCOUT}
+        sectionNumber="09"
+        question={
+          <>
+            How much <em>light</em> will you actually get?
+          </>
+        }
+      />
 
       {/* §10 Comps map */}
       <CompsMapSection />
 
-      {/* §11 Unit & building details */}
-      <UnitDetailsSection />
+      {/* §11 Unit & building details — requires extraction pipeline for room-level detail */}
+      {isReal ? (
+        <SectionPlaceholder
+          n="11"
+          topic="Unit & building details"
+          question={
+            <>
+              What exactly are you <em>getting</em>?
+            </>
+          }
+          week="Week 5–6 · extraction pipeline"
+        />
+      ) : (
+        <UnitDetailsSection />
+      )}
 
       {/* §12 Confirm before signing */}
       <ConfirmChecklist items={CHARLES_CHECKLIST} />
@@ -1273,7 +1506,11 @@ export function TenantReport({ tier = 'pro' }: TenantReportProps): JSX.Element {
       <Footer />
 
       <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
-      <StickyActionBar onSave={() => undefined} onShare={() => undefined} onPDF={() => undefined} />
+      <StickyActionBar
+        onSave={() => undefined}
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
     </div>
   )
 }

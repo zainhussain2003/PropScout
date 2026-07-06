@@ -446,7 +446,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         Cap rate
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--fail);"
       >
         1.47%
@@ -469,7 +469,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         Monthly cash flow
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--fail);"
       >
         −$2,431
@@ -492,7 +492,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         Cash-on-cash
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--fail);"
       >
         -4.20%
@@ -515,7 +515,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         DSCR
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--fail);"
       >
         0.44×
@@ -538,7 +538,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         Monthly payment
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--ink);"
       >
         $3,327
@@ -561,7 +561,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         NOI
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--ink);"
       >
         $10,730
@@ -584,7 +584,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         GRM
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--ink);"
       >
         21.0
@@ -607,7 +607,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         Break-even rent
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--fail);"
       >
         $4,585
@@ -630,7 +630,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         Gross yield
       </div>
       <div
-        class="mono tabular"
+        class="serif tabular"
         style="font-size: 30px; line-height: 1; color: var(--ink);"
       >
         4.77%
@@ -1381,7 +1381,7 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55);"
+        style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: color-mix(in oklab, var(--bg) 55%, transparent);"
       >
         Appreciation
       </div>
@@ -1393,17 +1393,16 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
           class="serif tabular"
           style="line-height: 1; color: var(--accent);"
         >
-          +
-          27.6%
+          +27.6%
         </span>
         <span
-          style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+          style="font-size: 14px; color: color-mix(in oklab, var(--bg) 75%, transparent);"
         >
           5-year median sale price
         </span>
       </div>
       <div
-        style="display: flex; gap: 12px; margin-top: 6px; align-items: center; font-size: 13px; color: rgba(255, 255, 255, 0.7);"
+        style="display: flex; gap: 12px; margin-top: 6px; align-items: center; font-size: 13px; color: color-mix(in oklab, var(--bg) 70%, transparent);"
       >
         <span>
           10-year:
@@ -1417,10 +1416,10 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
         </span>
       </div>
       <div
-        style="height: 1px; background: rgba(255, 255, 255, 0.15); margin: 4px 0px;"
+        style="height: 1px; background: color-mix(in oklab, var(--bg) 15%, transparent); margin: 4px 0px;"
       />
       <p
-        style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.55;"
+        style="font-size: 13px; color: color-mix(in oklab, var(--bg) 70%, transparent); line-height: 1.55;"
       >
         Numbers from Teranet HPI · public MLS · adjusted for inflation. Past appreciation is not a guarantee of future returns.
       </p>
@@ -1564,7 +1563,9 @@ exports[`OSFICard > matches snapshot 1`] = `
   <div
     style="padding: 10px 14px; border-radius: 12px; background: color-mix(in oklab, var(--fail) 8%, transparent); border: 1px solid color-mix(in oklab, var(--fail) 25%, transparent); font-size: 12px; color: var(--ink-2); line-height: 1.5;"
   >
-    Assumed gross household income $125k. Qualifying payment pushes GDS to
+    Gross household income 
+    $125,000
+    . Qualifying payment pushes GDS to
      
     45.2%
      — above the 44% federal threshold. Standard A-lender financing likely unavailable; alt-lender or higher income required.

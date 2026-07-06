@@ -46,7 +46,7 @@ export function Metric({ label, value, sub, status = 'neutral' }: MetricProps): 
       </div>
 
       <div
-        className="mono tabular"
+        className="serif tabular"
         style={{
           fontSize: 30,
           lineHeight: 1,

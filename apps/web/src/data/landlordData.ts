@@ -293,6 +293,7 @@ export function computeLandlordDealScore(
 
   return {
     total,
+    displayTotal: Math.round((Math.max(5, total) * 100) / 95),
     verdict: row.verdict,
     label: row.label,
     tagline: row.tagline,

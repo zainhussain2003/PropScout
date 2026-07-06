@@ -5,7 +5,7 @@
  * Test file path: Week3-4 Front end/PR6/landlordPropertyHero.test.tsx
  *
  * Shared DealScore component verification: DealScore renders an SVG circle gauge
- * with aria-label="Deal score: N out of 95". This verifies it is the same component
+ * with aria-label="Deal score: N out of 100". This verifies it is the same component
  * used by the InvestorPage — no duplicate implementation.
  */
 
@@ -98,11 +98,11 @@ describe('LandlordPropertyHero', () => {
     expect(screen.getByText('/mo')).toBeInTheDocument()
   })
 
-  it('renders the DealScore gauge — the shared component (aria-label "Deal score: N out of 95")', () => {
+  it('renders the DealScore gauge — the shared component (aria-label "Deal score: N out of 100")', () => {
     renderHero()
-    // DealScore renders: aria-label={`Deal score: ${clamped} out of 95`}
+    // DealScore renders: aria-label={`Deal score: ${clamped} out of 100`}
     // This confirms it is the shared DealScore, not a custom implementation
-    const gauge = screen.getByLabelText(/Deal score: \d+ out of 95/)
+    const gauge = screen.getByLabelText(/Deal score: \d+ out of 100/)
     expect(gauge).toBeInTheDocument()
   })
 

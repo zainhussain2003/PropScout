@@ -1,116 +1,318 @@
-"""Unit tests for rentals_ca._parse_card() — Playwright elements mocked."""
+"""Unit tests for the GraphQL-based rentals_ca source.
+
+Rentals.ca redesigned to a map SPA backed by a GraphQL API; the source now parses
+``RentalListingSearch`` nodes instead of CSS cards. These tests cover node
+parsing, the range→low-end collapse, payload shape, the in-page query wrapper, and
+the fetch_listings orchestration (token capture, per-city signal, block handling).
+"""
+
+import json
+
 import pytest
 from unittest.mock import AsyncMock
 
+from normalization import RawRentalListing
 from sources import rentals_ca
-from sources.rentals_ca import (
-    _ADDRESS_SELECTOR,
-    _BATHS_SELECTOR,
-    _BEDS_SELECTOR,
-    _BASE_URL,
-    _LINK_SELECTOR,
-    _RENT_SELECTOR,
-    _SQFT_SELECTOR,
-    SOURCE,
+from sources.browser import NAV_FAILED_STATUS, PageResult
+from sources.rentals_ca import _BASE_URL, SOURCE
+
+# ── pure helpers ───────────────────────────────────────────────────────────────
+
+
+def test_slug_to_area_simple():
+    assert rentals_ca._slug_to_area("toronto") == "toronto, on, ca"
+
+
+def test_slug_to_area_hyphenated():
+    assert rentals_ca._slug_to_area("richmond-hill") == "richmond hill, on, ca"
+
+
+@pytest.mark.parametrize(
+    "rng,expected",
+    [
+        ([1895.0, 4595.0], "1895.0"),  # low end of a building range
+        ([0.0, 3.0], "0.0"),  # studio → 0
+        ([1200], "1200"),  # single value
+        ([None, 2200.0], "2200.0"),  # None filtered out
+        ([], ""),  # empty
+        (None, ""),  # absent
+        ("nonsense", ""),  # non-list
+    ],
 )
+def test_low_range(rng, expected):
+    assert rentals_ca._low(rng) == expected
 
 
-def _el(text: str = "", href: str | None = None) -> AsyncMock:
-    el = AsyncMock()
-    el.inner_text.return_value = text
-    el.get_attribute.return_value = href
-    return el
+# ── _parse_node ────────────────────────────────────────────────────────────────
 
 
-def _card(
-    address: str = "5 Buttermill Ave, Vaughan, ON L4K 5W4",
-    rent: str = "$2,150/mo",
-    beds: str = "2 Beds",
-    baths: str | None = None,
-    sqft: str | None = None,
-    href: str | None = "/listing/12345",
-    missing_address: bool = False,
-    missing_rent: bool = False,
-) -> AsyncMock:
-    selector_map = {
-        _ADDRESS_SELECTOR: None if missing_address else _el(address),
-        _RENT_SELECTOR: None if missing_rent else _el(rent),
-        _BEDS_SELECTOR: _el(beds),
-        _BATHS_SELECTOR: _el(baths) if baths is not None else None,
-        _SQFT_SELECTOR: _el(sqft) if sqft is not None else None,
-        _LINK_SELECTOR: _el("", href=href) if href is not None else None,
+def _node(**over) -> dict:
+    node = {
+        "id": "cmVudGFsbGlzdGluZzox",
+        "path": "toronto/1060-eastern-avenue",
+        "name": "Bridge",
+        "rentRange": [1895.0, 4595.0],
+        "bedsRange": [0.0, 3.0],
+        "bathsRange": [1.0, 2.0],
+        "sizeRange": [377.0, 875.0],
+        "location": [-79.317635, 43.665422],
+        "listingType": "residential:apartment:apartment",
+        "address": {
+            "street": "1060 Eastern Avenue",
+            "streetSuffix": None,
+            "cityName": "Toronto",
+            "regionCode": "ON",
+            "postalCode": "M4L 1L1",
+        },
     }
-    card = AsyncMock()
+    node.update(over)
+    return node
 
-    async def qs(selector: str) -> AsyncMock | None:
-        return selector_map.get(selector)
 
-    card.query_selector.side_effect = qs
-    return card
+def test_parse_node_full():
+    r = rentals_ca._parse_node(_node(), "toronto")
+    assert r is not None
+    assert r.source == SOURCE
+    assert r.source_url == _BASE_URL + "/toronto/1060-eastern-avenue"
+    # postal folded into the address so the shared normaliser can read it
+    assert r.address == "1060 Eastern Avenue, Toronto, ON M4L 1L1"
+    assert r.rent_raw == "1895.0"  # low end
+    assert r.beds_raw == "0.0"  # studio low end
+    assert r.baths_raw == "1.0"
+    assert r.sqft_raw == "377.0"
+    assert r.lat == 43.665422 and r.lng == -79.317635  # [lng, lat] → lat, lng
+
+
+def test_parse_node_includes_street_suffix():
+    addr = {
+        "street": "5 King",
+        "streetSuffix": "St W",
+        "cityName": "Toronto",
+        "regionCode": "ON",
+        "postalCode": "M5H 1A1",
+    }
+    r = rentals_ca._parse_node(_node(address=addr), "toronto")
+    assert r is not None
+    assert r.address.startswith("5 King St W, Toronto")
+
+
+def test_parse_node_falls_back_to_name_when_street_blank():
+    addr = {
+        "street": None,
+        "cityName": "Toronto",
+        "regionCode": "ON",
+        "postalCode": "M4Y 0E5",
+    }
+    r = rentals_ca._parse_node(_node(name="The Britt", address=addr), "toronto")
+    assert r is not None
+    assert r.address.startswith("The Britt, Toronto")
+
+
+def test_parse_node_no_path_uses_base_url():
+    r = rentals_ca._parse_node(_node(path=None), "toronto")
+    assert r is not None
+    assert r.source_url == _BASE_URL
+
+
+def test_parse_node_missing_location_leaves_coords_none():
+    r = rentals_ca._parse_node(_node(location=[]), "toronto")
+    assert r is not None
+    assert r.lat is None and r.lng is None
+
+
+def test_parse_node_locality_fallback_to_slug():
+    addr = {
+        "street": "1 Main St",
+        "cityName": None,
+        "regionCode": "ON",
+        "postalCode": "L6A 1A1",
+    }
+    r = rentals_ca._parse_node(_node(address=addr), "richmond-hill")
+    assert r is not None
+    assert "Richmond Hill" in r.address
+
+
+def test_parse_node_empty_returns_none():
+    assert rentals_ca._parse_node({}, "toronto") is None
+
+
+def test_parse_node_no_address_text_returns_none():
+    # no street, no name, no address dict → nothing to locate on
+    node = _node(name="", path=None, address={})
+    assert rentals_ca._parse_node(node, "") is None
+
+
+# ── _build_payload ─────────────────────────────────────────────────────────────
+
+
+def test_build_payload_shape(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "RENTALS_CA_PAGE_SIZE", 100)
+    monkeypatch.setattr(rentals_ca, "RENTALS_CA_RADIUS_M", 20_000)
+    p = rentals_ca._build_payload("ottawa")
+    assert p["operationName"] == "RentalListingSearch"
+    assert p["variables"]["first"] == 100
+    assert p["variables"]["place"]["namedAreaDistance"] == {
+        "distance": 20_000,
+        "namedArea": "ottawa, on, ca",
+    }
+
+
+# ── _query_city ────────────────────────────────────────────────────────────────
+
+
+def _gql_body(n: int) -> str:
+    edges = [{"node": _node(path=f"toronto/l{i}")} for i in range(n)]
+    return json.dumps(
+        {"data": {"rentalListings": {"meta": {"totalCount": n}, "edges": edges}}}
+    )
 
 
 @pytest.mark.asyncio
-async def test_full_card_returns_listing():
-    result = await rentals_ca._parse_card(_card(baths="1 Bath", sqft="750 sqft"))
-    assert result is not None
-    assert result.source == SOURCE
-    assert result.address == "5 Buttermill Ave, Vaughan, ON L4K 5W4"
-    assert result.rent_raw == "$2,150/mo"
-    assert result.beds_raw == "2 Beds"
-    assert result.baths_raw == "1 Bath"
-    assert result.sqft_raw == "750 sqft"
+async def test_query_city_returns_nodes():
+    page = AsyncMock()
+    page.evaluate.return_value = {"status": 200, "text": _gql_body(3)}
+    nodes, status = await rentals_ca._query_city(page, "Bearer x", "toronto")
+    assert status == 200
+    assert len(nodes) == 3
+    assert nodes[0]["path"] == "toronto/l0"
 
 
 @pytest.mark.asyncio
-async def test_missing_address_element_returns_none():
-    result = await rentals_ca._parse_card(_card(missing_address=True))
-    assert result is None
+async def test_query_city_non_200_returns_empty():
+    page = AsyncMock()
+    page.evaluate.return_value = {"status": 403, "text": "<html>blocked</html>"}
+    nodes, status = await rentals_ca._query_city(page, "Bearer x", "toronto")
+    assert nodes == [] and status == 403
 
 
 @pytest.mark.asyncio
-async def test_missing_rent_element_returns_none():
-    result = await rentals_ca._parse_card(_card(missing_rent=True))
-    assert result is None
+async def test_query_city_bad_json_returns_empty():
+    page = AsyncMock()
+    page.evaluate.return_value = {"status": 200, "text": "not json"}
+    nodes, status = await rentals_ca._query_city(page, "Bearer x", "toronto")
+    assert nodes == [] and status == 200
 
 
 @pytest.mark.asyncio
-async def test_relative_href_prepends_base_url():
-    result = await rentals_ca._parse_card(_card(href="/listing/99"))
-    assert result is not None
-    assert result.source_url == _BASE_URL + "/listing/99"
+async def test_query_city_graphql_errors_still_returns_edges():
+    page = AsyncMock()
+    body = json.dumps(
+        {
+            "errors": [{"message": "deprecated"}],
+            "data": {"rentalListings": {"edges": [{"node": _node()}]}},
+        }
+    )
+    page.evaluate.return_value = {"status": 200, "text": body}
+    nodes, status = await rentals_ca._query_city(page, "Bearer x", "toronto")
+    assert len(nodes) == 1
+
+
+# ── fetch_listings ─────────────────────────────────────────────────────────────
+
+
+def _patch_token(monkeypatch, page, token, status=200, blocked=False):
+    async def fake_open(_browser, _url):
+        return PageResult(page=page, status=status, blocked=blocked), token
+
+    monkeypatch.setattr(rentals_ca, "open_page_capturing_token", fake_open)
+    monkeypatch.setattr(rentals_ca, "REQUEST_DELAY_SECONDS", 0)
 
 
 @pytest.mark.asyncio
-async def test_absolute_href_used_as_is():
-    result = await rentals_ca._parse_card(_card(href="https://rentals.ca/listing/99"))
-    assert result is not None
-    assert result.source_url == "https://rentals.ca/listing/99"
+async def test_fetch_happy_path(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto", "ottawa"))
+    page = AsyncMock()
+    page.evaluate.return_value = {"status": 200, "text": _gql_body(2)}
+    _patch_token(monkeypatch, page, "Bearer tok")
+
+    result = await rentals_ca.fetch_listings(object())
+
+    assert len(result.listings) == 4  # 2 cities × 2 nodes
+    assert {pf.city for pf in result.pages} == {"toronto", "ottawa"}
+    assert all(
+        pf.status == 200 and pf.rows == 2 and not pf.blocked for pf in result.pages
+    )
+    page.close.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_no_link_element_falls_back_to_base_url():
-    result = await rentals_ca._parse_card(_card(href=None))
-    assert result is not None
-    assert result.source_url == _BASE_URL
+async def test_fetch_blocked_landing_records_blocked_per_city(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto", "ottawa"))
+    page = AsyncMock()
+    _patch_token(monkeypatch, page, None, status=403, blocked=True)
+
+    result = await rentals_ca.fetch_listings(object())
+
+    assert result.listings == []
+    assert len(result.pages) == 2
+    assert all(pf.blocked and pf.rows == 0 and pf.status == 403 for pf in result.pages)
 
 
 @pytest.mark.asyncio
-async def test_absent_optional_fields_stored_as_none():
-    result = await rentals_ca._parse_card(_card())
-    assert result is not None
-    assert result.baths_raw is None
-    assert result.sqft_raw is None
+async def test_fetch_no_token_records_zero_per_city(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto",))
+    page = AsyncMock()
+    _patch_token(monkeypatch, page, None, status=200, blocked=False)
+
+    result = await rentals_ca.fetch_listings(object())
+
+    assert result.listings == []
+    assert len(result.pages) == 1
+    assert result.pages[0].rows == 0 and not result.pages[0].blocked
 
 
 @pytest.mark.asyncio
-async def test_inner_text_exception_returns_none():
-    card = AsyncMock()
+async def test_fetch_nav_failure_page_none(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto",))
+    _patch_token(monkeypatch, None, None, status=NAV_FAILED_STATUS, blocked=False)
 
-    async def qs(_selector: str) -> AsyncMock:
-        el = AsyncMock()
-        el.inner_text.side_effect = RuntimeError("browser crashed")
-        return el
+    result = await rentals_ca.fetch_listings(object())
 
-    card.query_selector.side_effect = qs
-    result = await rentals_ca._parse_card(card)
-    assert result is None
+    assert result.listings == []
+    assert result.pages[0].status == NAV_FAILED_STATUS
+
+
+@pytest.mark.asyncio
+async def test_fetch_city_query_exception_is_isolated(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto", "ottawa"))
+    page = AsyncMock()
+
+    calls = {"n": 0}
+
+    async def flaky_evaluate(_js, _args):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("evaluate crashed")
+        return {"status": 200, "text": _gql_body(2)}
+
+    page.evaluate.side_effect = flaky_evaluate
+    _patch_token(monkeypatch, page, "Bearer tok")
+
+    result = await rentals_ca.fetch_listings(object())
+
+    # first city crashed (recorded, 0 rows), second city still scraped
+    assert len(result.listings) == 2
+    assert len(result.pages) == 2
+    assert result.pages[0].rows == 0
+    assert result.pages[1].rows == 2
+
+
+@pytest.mark.asyncio
+async def test_fetch_empty_target_cities_returns_empty(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ())
+    result = await rentals_ca.fetch_listings(object())
+    assert result.listings == [] and result.pages == []
+
+
+@pytest.mark.asyncio
+async def test_fetch_listings_are_raw_rental_listings(monkeypatch):
+    monkeypatch.setattr(rentals_ca, "TARGET_CITIES", ("toronto",))
+    page = AsyncMock()
+    page.evaluate.return_value = {"status": 200, "text": _gql_body(1)}
+    _patch_token(monkeypatch, page, "Bearer tok")
+
+    result = await rentals_ca.fetch_listings(object())
+
+    assert len(result.listings) == 1
+    assert isinstance(result.listings[0], RawRentalListing)
+    assert result.listings[0].lat is not None and result.listings[0].lng is not None

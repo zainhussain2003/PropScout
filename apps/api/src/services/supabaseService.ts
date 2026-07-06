@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Analysis, ReportMode } from '../types/analysis'
+import type { Analysis, ReportMode, SchoolsResult, NearbySchool } from '../types/analysis'
 import type { Listing } from '../types/property'
 
 // Lazy singleton — only created on first DB call so tests can import
@@ -29,9 +29,11 @@ interface ListingRow {
   source: string
   listing_type: string
   address: string
+  city: string | null
   postal_code: string | null
   province: string | null
   price: number | null
+  rent_monthly: number | null
   beds: number | null
   baths: number | null
   sqft: number | null
@@ -42,6 +44,7 @@ interface ListingRow {
   condo_fee_known: boolean
   year_built: number | null
   year_built_known: boolean
+  parking_spots: number | null
   listing_description: string | null
   photo_urls: string[] | null
   days_on_market: number | null
@@ -70,16 +73,22 @@ interface AnalysisRow {
 
 /**
  * Map a Listing object to the listings table row shape.
+ * `source` defaults to 'manual' for non-scraper paths; scrape.ts passes 'realtor_ca'.
  */
-function listingToRow(listing: Listing): Omit<ListingRow, 'id' | 'scraped_at'> {
+function listingToRow(
+  listing: Listing,
+  source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
+): Omit<ListingRow, 'id' | 'scraped_at'> {
   return {
     source_url: listing.url,
-    source: 'manual' as const,
+    source,
     listing_type: listing.listingType === 'for-sale' ? 'for_sale' : 'for_rent',
     address: listing.address,
+    city: listing.city || null,
     postal_code: listing.postalCode ?? null,
     province: listing.province ?? null,
     price: listing.price ?? null,
+    rent_monthly: listing.rentMonthly ?? null,
     beds: listing.beds,
     baths: listing.baths,
     sqft: listing.sqft ?? null,
@@ -90,6 +99,7 @@ function listingToRow(listing: Listing): Omit<ListingRow, 'id' | 'scraped_at'> {
     condo_fee_known: listing.condoFeeKnown,
     year_built: listing.yearBuilt ?? null,
     year_built_known: listing.yearBuilt != null,
+    parking_spots: listing.parkingSpots ?? null,
     listing_description: listing.description ?? null,
     photo_urls: listing.photos.length > 0 ? listing.photos : null,
     days_on_market: null,
@@ -105,17 +115,17 @@ function rowToListing(row: ListingRow): Listing {
     url: row.source_url,
     listingType: row.listing_type === 'for_sale' ? 'for-sale' : 'for-rent',
     address: row.address,
-    city: '',
+    city: row.city ?? '',
     province: (row.province ?? 'ON') as Listing['province'],
     postalCode: row.postal_code ?? '',
     price: row.price,
-    rentMonthly: null,
+    rentMonthly: row.rent_monthly,
     beds: row.beds ?? 0,
     baths: row.baths ?? 0,
     sqft: row.sqft,
-    propertyType: (row.property_type ?? 'condo') as Listing['propertyType'],
+    propertyType: (row.property_type ?? 'detached') as Listing['propertyType'],
     yearBuilt: row.year_built,
-    parkingSpots: 0,
+    parkingSpots: row.parking_spots ?? 0,
     condoFeeMonthly: row.condo_fee_monthly,
     condoFeeKnown: row.condo_fee_known,
     annualTaxes: row.annual_taxes,
@@ -133,6 +143,10 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
   const marketData = row.market_data as {
     dealScore?: Analysis['dealScore']
     sunScout?: Analysis['sunScout']
+    walkScore?: Analysis['walkScore']
+    coordinates?: Analysis['coordinates']
+    schools?: Analysis['schools']
+    hasSanityWarnings?: boolean
   } | null
   const dealScore = marketData?.dealScore ?? null
   const riskFlags = Array.isArray(row.risk_flags) ? (row.risk_flags as Analysis['riskFlags']) : []
@@ -156,8 +170,12 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     rentalComps: rentalEstimate,
     riskFlags,
     narrative: row.ai_narrative,
-    hasSanityWarnings: false,
+    hasSanityWarnings: marketData?.hasSanityWarnings ?? false,
+    walkScore: marketData?.walkScore ?? null,
+    neighbourhood: null,
     sunScout: marketData?.sunScout ?? null,
+    coordinates: marketData?.coordinates ?? null,
+    schools: marketData?.schools ?? null,
   }
 }
 
@@ -241,7 +259,14 @@ export async function saveAnalysis(
       report_mode: modeMap[analysis.mode],
       financing_params: null,
       rental_estimate: analysis.rentalComps ?? null,
-      market_data: { dealScore: analysis.dealScore, sunScout: analysis.sunScout },
+      market_data: {
+        dealScore: analysis.dealScore,
+        sunScout: analysis.sunScout,
+        walkScore: analysis.walkScore,
+        coordinates: analysis.coordinates ?? null,
+        schools: analysis.schools ?? null,
+        hasSanityWarnings: analysis.hasSanityWarnings,
+      },
       calculated_metrics: analysis.metrics ?? null,
       deal_score: analysis.dealScore?.total ?? null,
       risk_flags: analysis.riskFlags,
@@ -558,6 +583,335 @@ export async function addToWaitlist(email: string, province: string): Promise<vo
     .upsert({ email, province }, { onConflict: 'email,province' })
   if (error) {
     console.error('[supabaseService] addToWaitlist error:', error)
+  }
+}
+
+// ── flag_overrides ───────────────────────────────────────────────────────────
+//
+// A row in flag_overrides means "the user has dismissed this risk flag for
+// this analysis." The report UI reads these (GET /analysis/:token/overrides)
+// and restores each dismissed flag's deduction to the deal score live; the
+// stored deal_score stays the raw baseline.
+
+/**
+ * Look up the analysis row id for a share token.
+ * Internal helper for the flag_overrides functions.
+ */
+async function getAnalysisIdByToken(token: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('id')
+    .eq('share_token', token)
+    .maybeSingle()
+
+  if (error != null || data == null) return null
+  return (data as { id: string }).id
+}
+
+/**
+ * Return the set of flag_ids the user has dismissed for this analysis.
+ */
+export async function getFlagOverrides(token: string): Promise<string[]> {
+  const analysisId = await getAnalysisIdByToken(token)
+  if (analysisId == null) return []
+
+  const { data, error } = await db()
+    .from('flag_overrides')
+    .select('flag_id')
+    .eq('analysis_id', analysisId)
+
+  if (error != null || data == null) {
+    console.error('[supabaseService] getFlagOverrides error:', error)
+    return []
+  }
+
+  return (data as Array<{ flag_id: string }>).map((r) => r.flag_id)
+}
+
+/**
+ * Mark a flag as dismissed by the user for this analysis.
+ * Idempotent — re-adding the same override is a no-op.
+ */
+export async function addFlagOverride(token: string, flagId: string): Promise<boolean> {
+  const analysisId = await getAnalysisIdByToken(token)
+  if (analysisId == null) return false
+
+  const { error } = await db().from('flag_overrides').insert({
+    analysis_id: analysisId,
+    flag_id: flagId,
+    user_override: true,
+  })
+
+  // 23505 = unique_violation; treat as success (idempotent)
+  if (error != null && error.code !== '23505') {
+    console.error('[supabaseService] addFlagOverride error:', error)
+    return false
+  }
+
+  return true
+}
+
+/**
+ * Remove a previously-set override (un-dismiss the flag).
+ */
+export async function deleteFlagOverride(token: string, flagId: string): Promise<boolean> {
+  const analysisId = await getAnalysisIdByToken(token)
+  if (analysisId == null) return false
+
+  const { error } = await db()
+    .from('flag_overrides')
+    .delete()
+    .eq('analysis_id', analysisId)
+    .eq('flag_id', flagId)
+
+  if (error != null) {
+    console.error('[supabaseService] deleteFlagOverride error:', error)
+    return false
+  }
+
+  return true
+}
+
+// ── HEAD route-wiring helpers ────────────────────────────────────────────────
+//
+// These functions support the scrape → token → analyze flow added on
+// feat/route-wiring. They live alongside the origin saveAnalysis (which
+// generates a fresh token) and the share_token-based getAnalysisByToken.
+//
+//   POST /scrape    → saveListing + createPendingAnalysis
+//   GET  /analysis/:token → getAnalysisStatus + getAnalysisByToken
+//   POST /analysis  → getListingByToken + (run pipeline) + updateAnalysisStatus
+
+/**
+ * Upsert a listing by source_url and return its id.
+ * Used by POST /scrape to persist the scraped listing before analysis.
+ *
+ * @param source distinguishes Realtor.ca scraper from manual entry — controls
+ *   the `source` column for downstream filtering (analytics, debugging).
+ */
+export async function saveListing(
+  listing: Omit<Listing, 'id'>,
+  source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
+): Promise<string> {
+  const payload = listingToRow(listing as Listing, source)
+  const { data, error } = await db()
+    .from('listings')
+    .upsert(payload, { onConflict: 'source_url' })
+    .select('id')
+    .single()
+
+  if (error != null || data == null) {
+    throw new Error(`saveListing failed: ${error?.message ?? 'no data returned'}`)
+  }
+
+  return (data as { id: string }).id
+}
+
+/**
+ * Insert a pending analysis row with just the listing_id and share_token.
+ * The analyze pipeline fills in the remaining fields later.
+ */
+export async function createPendingAnalysis(listingId: string, token: string): Promise<void> {
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  const { error } = await db().from('analyses').insert({
+    listing_id: listingId,
+    report_mode: 'investment', // default; updated when POST /analysis runs
+    share_token: token,
+    share_expires_at: expiresAt,
+  })
+  if (error != null) {
+    throw new Error(`createPendingAnalysis failed: ${error.message}`)
+  }
+}
+
+/**
+ * Fetch a listing by its share token (via the analyses join).
+ * Returns null if no analyses row exists for that token.
+ */
+export async function getListingByToken(token: string): Promise<Listing | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('listings(*)')
+    .eq('share_token', token)
+    .maybeSingle()
+
+  if (error != null || data == null) {
+    return null
+  }
+
+  const listings = (data as { listings: ListingRow | ListingRow[] | null }).listings
+  const row = Array.isArray(listings) ? (listings[0] ?? null) : listings
+  if (row == null) return null
+  return rowToListing(row)
+}
+
+/**
+ * Current state of an analysis row. Computed from row state:
+ *   - row missing         → null
+ *   - calculated_metrics  → 'complete'
+ *   - otherwise           → 'pending'
+ *
+ * 'processing' / 'failed' are not persisted in origin's schema today;
+ * callers tolerate them resolving to 'pending'.
+ */
+export async function getAnalysisStatus(
+  token: string
+): Promise<'pending' | 'processing' | 'complete' | 'failed' | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('calculated_metrics')
+    .eq('share_token', token)
+    .maybeSingle()
+
+  if (error != null) return null
+  if (data == null) return null
+
+  const metrics = (data as { calculated_metrics: unknown }).calculated_metrics
+  return metrics == null ? 'pending' : 'complete'
+}
+
+/**
+ * No-op in the merged schema — status is computed on read rather than stored.
+ * Kept as an export so HEAD's orchestrator continues to compile.
+ */
+export async function updateAnalysisStatus(
+  _token: string,
+  _status: 'pending' | 'processing' | 'complete' | 'failed'
+): Promise<void> {
+  // Intentionally a no-op — see getAnalysisStatus.
+}
+
+/**
+ * Update an existing analyses row (created by createPendingAnalysis) with the
+ * completed pipeline output. Matches by share_token so the token from
+ * POST /scrape is preserved end-to-end.
+ */
+export async function updateAnalysisByToken(token: string, analysis: Analysis): Promise<void> {
+  const modeMap: Record<ReportMode, string> = {
+    investor: 'investment',
+    personal: 'personal',
+    tenant: 'tenant',
+    landlord: 'landlord',
+  }
+
+  const { error } = await db()
+    .from('analyses')
+    .update({
+      report_mode: modeMap[analysis.mode],
+      rental_estimate: analysis.rentalComps ?? null,
+      market_data: {
+        dealScore: analysis.dealScore,
+        sunScout: analysis.sunScout,
+        walkScore: analysis.walkScore,
+        coordinates: analysis.coordinates ?? null,
+        schools: analysis.schools ?? null,
+        hasSanityWarnings: analysis.hasSanityWarnings,
+      },
+      calculated_metrics: analysis.metrics ?? null,
+      deal_score: analysis.dealScore?.total ?? null,
+      risk_flags: analysis.riskFlags,
+      ai_narrative: analysis.narrative,
+    })
+    .eq('share_token', token)
+
+  if (error != null) {
+    throw new Error(`updateAnalysisByToken failed: ${error.message}`)
+  }
+}
+
+// ── getNearbySchools ──────────────────────────────────────────────────────────
+
+/** Bounding half-box for the school candidate query: ~15 km of latitude and
+ * (at Ontario latitudes) roughly the same in longitude. */
+const SCHOOL_SEARCH_LAT_DELTA = 0.14
+const SCHOOL_SEARCH_LNG_DELTA = 0.19
+const SCHOOLS_PER_LEVEL = 3
+
+/** Straight-line (haversine) distance between two coordinates in km. */
+export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number): number => (d * Math.PI) / 180
+  const R = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(a))
+}
+
+interface SchoolRow {
+  name: string
+  school_type: string
+  board: string | null
+  lat: number | null
+  lng: number | null
+  eqao_score: number | null
+  fraser_rank_pct: number | null
+  graduation_rate: number | null
+}
+
+/** Honesty disclaimer — we do NOT ingest attendance-boundary data, so results
+ * are distance-ranked only and must never be presented as "in catchment". */
+export const SCHOOL_CATCHMENT_NOTE =
+  'Nearest schools by straight-line distance — attendance boundaries are not ' +
+  'verified. Confirm catchment with the school board before deciding.'
+
+/**
+ * Nearest schools (max 3 per level) to the subject property, from the
+ * `schools` table loaded by scripts/load-schools.mjs.
+ *
+ * Query shape: a lat/lng bounding box (~15 km) narrows candidates using the
+ * table scan Supabase can do without PostGIS, then haversine ranks them in
+ * Node and the closest 3 per school_type are returned.
+ *
+ * Returns null when the table has no rows in range (not loaded yet, or a
+ * remote address) or on any error — the report shows "data pending", never
+ * an error (spec §8 error isolation).
+ */
+export async function getNearbySchools(lat: number, lng: number): Promise<SchoolsResult | null> {
+  try {
+    const { data, error } = await db()
+      .from('schools')
+      .select('name, school_type, board, lat, lng, eqao_score, fraser_rank_pct, graduation_rate')
+      .gte('lat', lat - SCHOOL_SEARCH_LAT_DELTA)
+      .lte('lat', lat + SCHOOL_SEARCH_LAT_DELTA)
+      .gte('lng', lng - SCHOOL_SEARCH_LNG_DELTA)
+      .lte('lng', lng + SCHOOL_SEARCH_LNG_DELTA)
+
+    if (error != null) {
+      console.error('[supabaseService] getNearbySchools query failed', error)
+      return null
+    }
+    const rows = (data ?? []) as SchoolRow[]
+    if (rows.length === 0) return null
+
+    const ranked: NearbySchool[] = rows
+      .filter((r) => r.lat != null && r.lng != null)
+      .map((r) => ({
+        name: r.name,
+        schoolType: r.school_type as NearbySchool['schoolType'],
+        board: r.board,
+        distanceKm: Math.round(haversineKm(lat, lng, r.lat!, r.lng!) * 10) / 10,
+        eqaoScore: r.eqao_score,
+        fraserRankPct: r.fraser_rank_pct,
+        graduationRate: r.graduation_rate,
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+
+    if (ranked.length === 0) return null
+
+    const byLevel = (level: NearbySchool['schoolType']): NearbySchool[] =>
+      ranked.filter((r) => r.schoolType === level).slice(0, SCHOOLS_PER_LEVEL)
+
+    return {
+      elementary: byLevel('elementary'),
+      middle: byLevel('middle'),
+      high: byLevel('high'),
+      catchmentNote: SCHOOL_CATCHMENT_NOTE,
+    }
+  } catch (err) {
+    console.error('[supabaseService] getNearbySchools unexpected error', err)
+    return null
   }
 }
 

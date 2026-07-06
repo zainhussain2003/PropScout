@@ -7,6 +7,7 @@
   "deploy": {
     "startCommand": "python rental_comps_scraper.py",
     "cronSchedule": "0 6 * * *",
-    "restartPolicyType": "NEVER"
+    "restartPolicyType": "NEVER",
+    "_cronScheduleNote": "06:00 UTC = 01:00 EST / 02:00 EDT — Railway crons are UTC-only"
   }
 }

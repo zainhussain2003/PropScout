@@ -1,4 +1,5 @@
 # PropScout — Platform Spec & Business Plan
+
 **Version 3 · May 2026 · Authoritative document — supersedes all prior drafts**
 
 ---
@@ -43,14 +44,14 @@ PropScout is a Canadian real estate analysis platform. A user pastes any propert
 
 ## 2. Who it's for
 
-| Customer | What they use PropScout for | Pays? |
-|---|---|---|
-| Individual investors | Analyze deals before buying. Currently use Excel. | Yes — Investor Pro |
-| Investor-focused agents | Generate branded deal reports for clients. | Yes — Professional |
-| Mortgage brokers | Run DSCR and cash flow analysis faster. | Yes — Professional |
-| Personal home buyers | Research a property before making an offer. | Yes — Pro or free tier |
-| Tenants | Verify a rental listing before signing. | Free (acquisition funnel) |
-| Small REITs / syndicates | Portfolio-level analysis and reporting. | Yes — Team |
+| Customer                 | What they use PropScout for                       | Pays?                     |
+| ------------------------ | ------------------------------------------------- | ------------------------- |
+| Individual investors     | Analyze deals before buying. Currently use Excel. | Yes — Investor Pro        |
+| Investor-focused agents  | Generate branded deal reports for clients.        | Yes — Professional        |
+| Mortgage brokers         | Run DSCR and cash flow analysis faster.           | Yes — Professional        |
+| Personal home buyers     | Research a property before making an offer.       | Yes — Pro or free tier    |
+| Tenants                  | Verify a rental listing before signing.           | Free (acquisition funnel) |
+| Small REITs / syndicates | Portfolio-level analysis and reporting.           | Yes — Team                |
 
 ---
 
@@ -78,11 +79,11 @@ User pastes URL
 
 **How listing type is detected:**
 
-| Signal | Classification |
-|---|---|
-| URL contains /for-sale/, /buy/, or listing shows a sale price | For-sale |
-| URL contains /for-rent/, /rental/, or listing shows a monthly rent | For-rent |
-| Ambiguous | Default to for-sale, show toggle to switch |
+| Signal                                                             | Classification                             |
+| ------------------------------------------------------------------ | ------------------------------------------ |
+| URL contains /for-sale/, /buy/, or listing shows a sale price      | For-sale                                   |
+| URL contains /for-rent/, /rental/, or listing shows a monthly rent | For-rent                                   |
+| Ambiguous                                                          | Default to for-sale, show toggle to switch |
 
 For Realtor.ca: listing type is explicit in the URL path and JSON response.
 For Zillow.ca: listing type is in the page metadata and price field format.
@@ -93,42 +94,43 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 
 ### Pricing tiers
 
-| | Free | Investor Pro | Professional | Team / REIT |
-|---|---|---|---|---|
-| Price | $0/mo | $10/mo | $59/mo | $299+/mo |
-| Annual | — | $100/yr | $590/yr | Custom |
+|        | Free                     | Investor Pro                 | Professional       | Team / REIT             |
+| ------ | ------------------------ | ---------------------------- | ------------------ | ----------------------- |
+| Price  | $0/mo                    | $10/mo                       | $59/mo             | $299+/mo                |
+| Annual | —                        | $100/yr                      | $590/yr            | Custom                  |
 | Target | Casual browsers, tenants | Serious individual investors | Agents and brokers | Syndicates, small REITs |
 
 ### Feature matrix
 
-| Feature | Free | Pro | Professional | Team |
-|---|---|---|---|---|
-| Report A — Investment | 3/month, limited | Unlimited, full | Unlimited, full | Unlimited, full |
-| Report B — Personal purchase | 3/month, limited | Unlimited, full | Unlimited, full | Unlimited, full |
-| Report C — Tenant evaluation | Unlimited, no login | Unlimited | Unlimited | Unlimited |
-| Report D — Landlord rental | 3/month, limited | Unlimited, full | Unlimited, full | Unlimited, full |
-| Rental comps (full — range, map, trend, confidence) | Yes | Yes | Yes | Yes |
-| Full investment metrics | All metrics | All metrics | All | All |
-| Financing scenarios | All scenarios + sliders | All scenarios + sliders | All | All |
-| Risk analysis | Full detail | Full detail | Full | Full |
-| Neighbourhood intelligence | Yes | Yes | Yes | Yes |
-| School rankings | Yes | Yes | Yes | Yes |
-| STR vs LTR analysis | No (Phase 2) | Yes | Yes | Yes |
-| SunScout — sun path + light score + seasonal arc | Yes | Yes | Yes | Yes |
-| SunScout — building obstruction (3D Mapbox) | No | Yes | Yes | Yes |
-| AI narrative verdict | 1 short paragraph (4–5 sentences) | Full (3 paragraphs) | Full | Full |
-| PDF export | No | Yes | Yes | Yes |
-| Saved analyses | Last 10 | Unlimited | Unlimited | Unlimited |
-| Portfolio tracker | No | Up to 10 properties | Unlimited | Unlimited |
-| White-label branded reports | No | No | Yes | Yes |
-| Shareable client links | No | No | Yes | Yes |
-| Bulk URL analysis | No | No | Yes | Yes |
-| Multi-user seats | 1 | 1 | 1 | 5–20+ |
-| API access | No | No | No | Yes |
+| Feature                                             | Free                              | Pro                     | Professional    | Team            |
+| --------------------------------------------------- | --------------------------------- | ----------------------- | --------------- | --------------- |
+| Report A — Investment                               | 3/month, limited                  | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report B — Personal purchase                        | 3/month, limited                  | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report C — Tenant evaluation                        | Unlimited, no login               | Unlimited               | Unlimited       | Unlimited       |
+| Report D — Landlord rental                          | 3/month, limited                  | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Rental comps (full — range, map, trend, confidence) | Yes                               | Yes                     | Yes             | Yes             |
+| Full investment metrics                             | All metrics                       | All metrics             | All             | All             |
+| Financing scenarios                                 | All scenarios + sliders           | All scenarios + sliders | All             | All             |
+| Risk analysis                                       | Full detail                       | Full detail             | Full            | Full            |
+| Neighbourhood intelligence                          | Yes                               | Yes                     | Yes             | Yes             |
+| School rankings                                     | Yes                               | Yes                     | Yes             | Yes             |
+| STR vs LTR analysis                                 | No (Phase 2)                      | Yes                     | Yes             | Yes             |
+| SunScout — sun path + light score + seasonal arc    | Yes                               | Yes                     | Yes             | Yes             |
+| SunScout — building obstruction (3D Mapbox)         | No                                | Yes                     | Yes             | Yes             |
+| AI narrative verdict                                | 1 short paragraph (4–5 sentences) | Full (3 paragraphs)     | Full            | Full            |
+| PDF export                                          | No                                | Yes                     | Yes             | Yes             |
+| Saved analyses                                      | Last 10                           | Unlimited               | Unlimited       | Unlimited       |
+| Portfolio tracker                                   | No                                | Up to 10 properties     | Unlimited       | Unlimited       |
+| White-label branded reports                         | No                                | No                      | Yes             | Yes             |
+| Shareable client links                              | No                                | No                      | Yes             | Yes             |
+| Bulk URL analysis                                   | No                                | No                      | Yes             | Yes             |
+| Multi-user seats                                    | 1                                 | 1                       | 1               | 5–20+           |
+| API access                                          | No                                | No                      | No              | Yes             |
 
 ### Paywall trigger points
 
 Free users hit a gate at:
+
 1. Their 11th analysis of the month — hard gate with a countdown shown.
 2. The "Export PDF" button — blurred with "Unlock with Pro."
 3. The SunScout building obstruction section — blurred preview with "See accurate shadow data in dense cities — Investor Pro."
@@ -145,6 +147,7 @@ Gate copy always shows what the user is missing, never just "upgrade to continue
 Clean, centred input bar. Placeholder: "Paste a Realtor.ca or Zillow.ca listing URL."
 
 Validation:
+
 - Realtor.ca pattern: realtor.ca/real-estate/.../[numeric ID]
 - Zillow.ca pattern: zillow.ca/... or zillow.com/homedetails/... (Canadian postal code confirmed after scrape)
 - Invalid URL: "That doesn't look like a supported listing URL. We support Realtor.ca and Zillow.ca right now."
@@ -189,15 +192,15 @@ Full report renders in-page. Gated sections show blurred previews, never hidden 
 
 ### Error states
 
-| Situation | What user sees |
-|---|---|
-| Scraper fails entirely | Manual entry form, pre-filled with whatever was captured |
-| Listing expired or removed | "That listing has been removed. Enter the details manually." |
-| Fewer than 3 rental comps | Analysis runs. Comps section: "Only 2 comparables found — confidence: low." |
-| Non-Ontario property | Province gate + email capture for waitlist |
-| Condo fee not found | Required field prompt before analysis runs |
-| Year built not found | Analysis runs. Risk module flags: "Year built unknown — rent control status unconfirmed." |
-| Zillow URL is a US property | "This appears to be a US property. PropScout covers Canadian properties only." |
+| Situation                   | What user sees                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| Scraper fails entirely      | Manual entry form, pre-filled with whatever was captured                                  |
+| Listing expired or removed  | "That listing has been removed. Enter the details manually."                              |
+| Fewer than 3 rental comps   | Analysis runs. Comps section: "Only 2 comparables found — confidence: low."               |
+| Non-Ontario property        | Province gate + email capture for waitlist                                                |
+| Condo fee not found         | Required field prompt before analysis runs                                                |
+| Year built not found        | Analysis runs. Risk module flags: "Year built unknown — rent control status unconfirmed." |
+| Zillow URL is a US property | "This appears to be a US property. PropScout covers Canadian properties only."            |
 
 ---
 
@@ -212,20 +215,21 @@ Address, asking price, key tags (property type, beds/baths, sqft, parking, condo
 
 **2. Deal scorecard**
 
-| Metric | Pass | Caution | Fail |
-|---|---|---|---|
-| Cap rate | 5%+ | 3–4.99% | Under 3% |
-| Monthly cash flow | +$200 or more | $0 to +$199 | Negative |
-| Cash-on-cash return | 5%+ | 3–4.99% | Under 3% |
-| DSCR | 1.1x or more | 1.0–1.09x | Under 1.0x |
-| OSFI stress test | Qualifies | — | Fails |
-| Overall deal score | 70+ | 50–69 | Under 50 |
+| Metric              | Pass          | Caution     | Fail       |
+| ------------------- | ------------- | ----------- | ---------- |
+| Cap rate            | 5%+           | 3–4.99%     | Under 3%   |
+| Monthly cash flow   | +$200 or more | $0 to +$199 | Negative   |
+| Cash-on-cash return | 5%+           | 3–4.99%     | Under 3%   |
+| DSCR                | 1.1x or more  | 1.0–1.09x   | Under 1.0x |
+| OSFI stress test    | Qualifies     | —           | Fails      |
+| Overall deal score  | 70+           | 50–69       | Under 50   |
 
 **3. Full investment metrics**
 
 Inputs (auto-filled from scraper, user-editable): purchase price, annual taxes, condo fee, estimated monthly rent (from comps), down payment % (default 20%), mortgage rate (auto-fetched weekly from Bank of Canada), amortization (default 25yr), province (auto-detected).
 
 Calculated outputs:
+
 - Gross rental income (annual and monthly)
 - Operating expenses: taxes + insurance (0.35% of value) + maintenance reserve + vacancy allowance (5%) + management fee (8%, toggleable)
 - NOI — Net Operating Income
@@ -253,27 +257,27 @@ Four default scenarios: base case, OSFI stress, 35% down, conservative (rate +2%
 
 Closing costs by province:
 
-| Province | Land Transfer Tax |
-|---|---|
+| Province            | Land Transfer Tax                                                   |
+| ------------------- | ------------------------------------------------------------------- |
 | Ontario non-Toronto | 0.5% on first $55K; 1% on $55K–$250K; 1.5% on $250K–$400K; 2% above |
-| Ontario Toronto | Same brackets doubled — provincial + municipal LTT stack |
-| BC | 1% on first $200K; 2% on $200K–$2M; 3% above $2M |
-| Alberta | No provincial LTT — land title transfer fee only (~$400–600 flat) |
-| Other provinces | Manual entry prompt |
+| Ontario Toronto     | Same brackets doubled — provincial + municipal LTT stack            |
+| BC                  | 1% on first $200K; 2% on $200K–$2M; 3% above $2M                    |
+| Alberta             | No provincial LTT — land title transfer fee only (~$400–600 flat)   |
+| Other provinces     | Manual entry prompt                                                 |
 
 First-time buyer rebates do not apply to investment properties.
 
 **6. Risk analysis** (flags visible free, detail Pro only)
 
-| Flag | Trigger | Severity |
-|---|---|---|
-| Rent control | Year built before Nov 15, 2018 in Ontario | Red |
-| Year built unknown | Year not found — rent control status unclear | Amber |
-| Condo fee impact | Monthly fee over 20% of estimated gross rent | Red |
-| High maintenance risk | Pre-1980 build | Amber |
-| Flood or conservation zone | Municipal open data match | Red |
-| Unverified rental unit | "Basement," "lower level," or "in-law" in description | Amber |
-| Supply pressure | More than 15 competing rentals in building or 50 in postal code + declining rents | Amber |
+| Flag                       | Trigger                                                                           | Severity |
+| -------------------------- | --------------------------------------------------------------------------------- | -------- |
+| Rent control               | Year built before Nov 15, 2018 in Ontario                                         | Red      |
+| Year built unknown         | Year not found — rent control status unclear                                      | Amber    |
+| Condo fee impact           | Monthly fee over 20% of estimated gross rent                                      | Red      |
+| High maintenance risk      | Pre-1980 build                                                                    | Amber    |
+| Flood or conservation zone | Municipal open data match                                                         | Red      |
+| Unverified rental unit     | "Basement," "lower level," or "in-law" in description                             | Amber    |
+| Supply pressure            | More than 15 competing rentals in building or 50 in postal code + declining rents | Amber    |
 
 **7. Neighbourhood intelligence** (Pro only)
 
@@ -282,6 +286,7 @@ Average household income, 5yr population growth trend (Statistics Canada), Walk 
 **8. STR vs LTR analysis** (Pro only — AirDNA in Phase 2)
 
 At MVP: LTR baseline shown from comps. STR section shows "Coming soon — AirDNA integration in progress." STR legality check still runs based on municipality rules:
+
 - Toronto and Vancouver: investment STR prohibited — prominent warning
 - Ottawa: permitted with registration
 - Calgary and Edmonton: generally permitted
@@ -310,6 +315,7 @@ Same as Report A.
 **2. True monthly cost of ownership**
 
 This is the number that surprises most personal buyers — the full carrying cost, not just the mortgage payment:
+
 - Estimated monthly mortgage (current rates, 20% down default, user-adjustable)
 - Monthly property taxes (from listing or MPAC)
 - Monthly condo fee (if applicable)
@@ -326,15 +332,16 @@ Last 10 similar sales within 1km, same property type: address, sale price, sqft,
 
 Nearest schools found via Google Places API, ranked via EQAO and Fraser Institute data.
 
-| School type | Data shown |
-|---|---|
-| Elementary (up to 3 nearest) | Name, walking distance, drive time, EQAO score (out of 10), Fraser Institute provincial percentile |
-| Middle school (up to 3 nearest) | Name, distance, drive time, EQAO score, Fraser Institute rank |
-| High school (up to 3 nearest) | Name, distance, drive time, Fraser Institute rank, graduation rate if available |
+| School type                     | Data shown                                                                                         |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Elementary (up to 3 nearest)    | Name, walking distance, drive time, EQAO score (out of 10), Fraser Institute provincial percentile |
+| Middle school (up to 3 nearest) | Name, distance, drive time, EQAO score, Fraser Institute rank                                      |
+| High school (up to 3 nearest)   | Name, distance, drive time, Fraser Institute rank, graduation rate if available                    |
 
 Schools within the property's catchment area are highlighted. Catchment polygons sourced from TDSB and other major Ontario boards.
 
 Data sources:
+
 - School discovery: Google Places API (type=school near property coordinates)
 - EQAO scores: Ontario public dataset, loaded annually into our database
 - Fraser Institute rankings: scraped annually from fraserinstitute.org (Ontario and BC available at launch)
@@ -369,15 +376,17 @@ Address, floor (if available), monthly rent, unit tags (beds, baths, sqft, balco
 
 ---
 
-**2. Listed vs. reality** *(conditional — only shown when at least one listing accuracy flag fires)*
+**2. Listed vs. reality** _(conditional — only shown when at least one listing accuracy flag fires)_
 
 Side-by-side cards showing exactly how the listing describes the unit versus what the extraction pipeline and user-reported flags indicate is actually there. This section crystallises the misrepresentation case visually and gives the tenant clear language to use when negotiating.
 
 Left card — "How it's listed":
+
 - Pulls directly from the listing title and description (Zillow/Realtor.ca copy)
 - Shows each listed feature exactly as written: bedroom count, bathroom count, included amenities, parking
 
 Right card — "What you actually get":
+
 - Replaces any flagged item with the accurate description
 - Glass door den listed as bedroom → "1 proper bedroom + 1 glass-door den (no privacy)"
 - Parking listed as "contact manager" → "Parking: unconfirmed — must verify"
@@ -391,6 +400,7 @@ Display rule: if zero listing accuracy flags fire, this section is hidden entire
 **3. Listing accuracy check**
 
 Automated flags surfaced from the extraction pipeline (Section 19 of spec):
+
 - "Glass door," "sliding door," "den," or "study" listed as a bedroom → "One room may not be a private bedroom"
 - "Basement" or "lower level" → "Confirm adequate natural light and proper egress"
 - Parking listed as "contact manager" or "inquire" → "Parking status unclear — confirm before signing"
@@ -405,23 +415,23 @@ Each flag shows: what triggered it, what it means for the tenant, and what to co
 
 A complete data sheet of every known property attribute. Two-column layout, scannable.
 
-| Field | Value |
-|---|---|
-| Floor | 37 of 55 |
-| Sqft | Not listed — est. 600–700 sqft |
-| Balcony | 105 sqft |
-| Bedroom 1 | Proper room with solid door |
-| Bedroom 2 / den | Glass sliding door — no privacy |
-| Bathrooms | 2 full baths |
-| Kitchen | Built-in appliances |
-| Ceilings | 9ft |
-| Windows | Floor-to-ceiling in main living area |
-| Laundry | Ensuite |
-| Cooling | Central air |
-| Heating | Electric forced air |
-| Internet | 1 Gbps included |
-| Parking | Not confirmed |
-| Available | Now |
+| Field           | Value                                |
+| --------------- | ------------------------------------ |
+| Floor           | 37 of 55                             |
+| Sqft            | Not listed — est. 600–700 sqft       |
+| Balcony         | 105 sqft                             |
+| Bedroom 1       | Proper room with solid door          |
+| Bedroom 2 / den | Glass sliding door — no privacy      |
+| Bathrooms       | 2 full baths                         |
+| Kitchen         | Built-in appliances                  |
+| Ceilings        | 9ft                                  |
+| Windows         | Floor-to-ceiling in main living area |
+| Laundry         | Ensuite                              |
+| Cooling         | Central air                          |
+| Heating         | Electric forced air                  |
+| Internet        | 1 Gbps included                      |
+| Parking         | Not confirmed                        |
+| Available       | Now                                  |
 
 Fields sourced from the scraper are labelled auto-filled. Fields not found are labelled "Not listed" rather than left blank.
 
@@ -430,6 +440,7 @@ Fields sourced from the scraper are labelled auto-filled. Fields not found are l
 **5. Rent positioning**
 
 Where the asking rent sits vs. the market:
+
 - Building-level comparables (other active rentals in the same building, same or similar bedroom count)
 - Postal-code-level comparables (similar units within 1km, last 90 days)
 - Visual bar chart: asking rent vs. low/mid/high range with the unit's asking price clearly marked
@@ -469,6 +480,7 @@ The total line is the headline number. It shows the real cost of living there �
 **8. Building amenities**
 
 Grid of amenities confirmed from the listing description and building data:
+
 - Each amenity shown as a labelled tile with an icon
 - Included amenities (gym, pool, internet, etc.) shown in full colour
 - Parking shown with a warning state if unconfirmed
@@ -479,6 +491,7 @@ Grid of amenities confirmed from the listing description and building data:
 **9. Location and lifestyle**
 
 Transit and commute data relevant to a renter's daily life:
+
 - Nearest subway or LRT station with walking distance in minutes
 - Estimated commute to downtown core (transit, no transfers if applicable)
 - Nearest university or major employer (relevant for student and professional renters)
@@ -493,6 +506,7 @@ Transit and commute data relevant to a renter's daily life:
 **10. SunScout**
 
 Natural light forecast for the unit. Especially useful for tenants who cannot verify light before signing.
+
 - Annual light score (0–100)
 - Seasonal grid: December / March / June / September — hours of direct sun per window
 - Warning if the den or secondary bedroom has no exterior window
@@ -514,6 +528,7 @@ Gold-standard examples are in spec Section 12.
 **12. Confirm-before-signing checklist**
 
 Action-oriented checklist of the specific things the tenant must verify before signing anything:
+
 - Each item is a concrete action, not a vague suggestion
 - Items are generated dynamically based on which flags fired
 - If parking is unconfirmed → "Confirm in writing whether parking is included or what the monthly cost is"
@@ -553,86 +568,170 @@ Applies to Report A and Report D. Calculated after all modules run. Reproducible
 
 **Cap rate — 25 points maximum**
 
-| Cap rate | Points |
-|---|---|
-| 6.0% or more | 25 |
-| 5.0–5.99% | 20 |
-| 4.0–4.99% | 15 |
-| 3.0–3.99% | 10 |
-| 2.0–2.99% | 5 |
-| Under 2.0% | 0 |
+| Cap rate     | Points |
+| ------------ | ------ |
+| 6.0% or more | 25     |
+| 5.0–5.99%    | 20     |
+| 4.0–4.99%    | 15     |
+| 3.0–3.99%    | 10     |
+| 2.0–2.99%    | 5      |
+| Under 2.0%   | 0      |
 
 **Monthly cash flow — 25 points maximum**
 
-| Cash flow | Points |
-|---|---|
-| +$500/mo or more | 25 |
-| +$200 to +$499 | 20 |
-| $0 to +$199 | 13 |
-| -$1 to -$300 | 6 |
-| -$301 to -$700 | 2 |
-| Under -$700 | 0 |
+| Cash flow        | Points |
+| ---------------- | ------ |
+| +$500/mo or more | 25     |
+| +$200 to +$499   | 20     |
+| $0 to +$199      | 13     |
+| -$1 to -$300     | 6      |
+| -$301 to -$700   | 2      |
+| Under -$700      | 0      |
 
 **Cash-on-cash return — 20 points maximum**
 
 | CoC return | Points |
-|---|---|
-| 8% or more | 20 |
-| 6–7.99% | 16 |
-| 4–5.99% | 12 |
-| 2–3.99% | 8 |
-| 0–1.99% | 4 |
-| Under 0% | 0 |
+| ---------- | ------ |
+| 8% or more | 20     |
+| 6–7.99%    | 16     |
+| 4–5.99%    | 12     |
+| 2–3.99%    | 8      |
+| 0–1.99%    | 4      |
+| Under 0%   | 0      |
 
 **DSCR — 15 points maximum**
 
-| DSCR | Points |
-|---|---|
-| 1.25x or more | 15 |
-| 1.10–1.24x | 12 |
-| 1.00–1.09x | 7 |
-| 0.85–0.99x | 3 |
-| Under 0.85x | 0 |
+| DSCR          | Points |
+| ------------- | ------ |
+| 1.25x or more | 15     |
+| 1.10–1.24x    | 12     |
+| 1.00–1.09x    | 7      |
+| 0.85–0.99x    | 3      |
+| Under 0.85x   | 0      |
 
 **Rental demand — 10 points maximum**
 
-| Signal | Points |
-|---|---|
-| CMHC vacancy under 2% | 4 |
-| CMHC vacancy 2–3% | 3 |
-| CMHC vacancy 3–5% | 1 |
-| CMHC vacancy 5% or more | 0 |
-| Rental DOM under 14 days | 3 |
-| Rental DOM 14–30 days | 2 |
-| Rental DOM over 30 days | 0 |
-| 12-month rent trend rising | 3 |
-| 12-month rent trend flat | 2 |
-| 12-month rent trend declining | 0 |
+| Signal                        | Points |
+| ----------------------------- | ------ |
+| CMHC vacancy under 2%         | 4      |
+| CMHC vacancy 2–3%             | 3      |
+| CMHC vacancy 3–5%             | 1      |
+| CMHC vacancy 5% or more       | 0      |
+| Rental DOM under 14 days      | 3      |
+| Rental DOM 14–30 days         | 2      |
+| Rental DOM over 30 days       | 0      |
+| 12-month rent trend rising    | 3      |
+| 12-month rent trend flat      | 2      |
+| 12-month rent trend declining | 0      |
 
 **Risk flag deductions — applied after subtotal, score floor is 0**
 
-| Flag | Deduction |
-|---|---|
-| Ontario rent control (pre-Nov 2018) | -5 |
-| Condo fee over 25% of gross rent | -4 |
-| Pre-1980 build | -3 |
-| Flood zone or conservation overlay | -4 |
-| Unverified rental unit (basement etc.) | -3 |
-| High supply pressure (20+ competing + declining rents) | -2 |
-| Year built unknown (rent control undetermined) | -1 |
+| Flag                                                   | Deduction |
+| ------------------------------------------------------ | --------- |
+| Ontario rent control (pre-Nov 2018)                    | -5        |
+| Condo fee over 25% of gross rent                       | -4        |
+| Pre-1980 build                                         | -3        |
+| Flood zone or conservation overlay                     | -4        |
+| Unverified rental unit (basement etc.)                 | -3        |
+| High supply pressure (20+ competing + declining rents) | -2        |
+| Year built unknown (rent control undetermined)         | -1        |
 
 Maximum total deduction: -15. Score never goes below 0.
 
 ### Verdict thresholds
 
-| Score | Label |
-|---|---|
-| 80–100 | Strong deal — proceed, fundamentals are solid |
-| 65–79 | Good deal — proceed with standard due diligence |
-| 50–64 | Caution — real issues, model the risks carefully |
-| 35–49 | Marginal — significant headwinds, need a specific thesis |
-| 20–34 | Do not buy as investment — numbers don't work as rental income |
-| 0–19 | Hard pass — fails on multiple fundamental metrics |
+| Score  | Label                                                          |
+| ------ | -------------------------------------------------------------- |
+| 80–100 | Strong deal — proceed, fundamentals are solid                  |
+| 65–79  | Good deal — proceed with standard due diligence                |
+| 50–64  | Caution — real issues, model the risks carefully               |
+| 35–49  | Marginal — significant headwinds, need a specific thesis       |
+| 20–34  | Do not buy as investment — numbers don't work as rental income |
+| 0–19   | Hard pass — fails on multiple fundamental metrics              |
+
+---
+
+### 10a. Mode-aware severity & gating (v2)
+
+> Status: **SHIPPED 2026-07-02.** The per-flag × per-mode severity matrix is
+> implemented in `services/calc-engine/constants/flag_matrix.py`, applied inside
+> `extraction/logic_gate.py::merge_flags(…, mode)`. The approved ruleset lives in
+> `docs/FLAG_SEVERITY_MATRIX.md` (v1, approved 2026-07-01) — any change to a SEVERE
+> cell needs product sign-off. Magnitudes (deduction points, gate ceilings, floor)
+> remain **unsourced placeholders** tracked in `NIGHT_NOTES.md`.
+
+**Per-mode score models — there is no single scale.** Verified in code:
+
+| Mode                        | Score model                     | Scale | Score-impact of flags              |
+| --------------------------- | ------------------------------- | ----- | ---------------------------------- |
+| Investor (A) / Landlord (D) | Investment (this §10 formula)   | 0–95  | deductions + severe gating (below) |
+| Personal buyer (B)          | HomeScore (§7)                  | 0–100 | its own severe gate (§10b)         |
+| Tenant (C)                  | none (rent positioning + flags) | —     | display-only                       |
+
+**Two axes, kept separate.** Flag **display-severity (colour)** applies in **all four
+modes** — flags render in every report (per that mode's matrix column; `hidden` cells
+drop the flag, `info` cells route it to amenities, not risks). Flag **score-impact**
+applies only where a score exists: the investment formula (A/D) and HomeScore (B).
+Tenant flags are display-only.
+
+**Severe flags GATE; they do not deduct.** A small set of dealbreakers
+(`grow_op_history`, `flooding_history`, `illegal_unit_risk`, `special_assessment_risk`)
+**cap the maximum achievable score** rather than subtracting points — additive deductions
+can't express "this one fact sinks it no matter how good the rest is" (a grow-op on a
+95-fundamentals property must not read "strong buy"). Standard red flags keep the additive
+model. Order of operations for the investment score (A/D):
+
+```
+1. Confidence gate: ≥85 red-eligible, 60–84 amber-only, <60 discarded.
+2. Matrix tier: look up (flag_id, mode) in docs/FLAG_SEVERITY_MATRIX.md →
+   severe / red / amber / info / hidden. Confidence CAPS the tier (a 60–84%
+   flag renders at most amber even in a severe cell). info/hidden cells drop
+   the flag for that mode. UNLISTED ids default to amber in every mode —
+   shown, never deducting — until reviewed into the matrix.
+3. Standard tier (additive):  standard_deduction = min(15, Σ red-tier −5s)
+   additive_score = component_subtotal(max 95) − standard_deduction
+4. Severe tier (gating):  severe_ceiling = no-severe → 95; else max(10, 40 − (n−1)×10)
+       1 severe → 40 ("marginal") · 2 → 30 · 3 → 20 · 4+ → 10
+5. raw   = max(0, min(additive_score, severe_ceiling))
+6. label = verdictFromScore(raw)          ← label from the TRUE score
+7. floor = max(5, raw)                     ← "a property is always worth something"
+8. display = round(floor × 100 / 95)       ← display-normalize to /100, brackets unchanged
+```
+
+> **Consequence of the v1 matrix worth knowing:** the investor/landlord columns
+> contain no plain-red cells — every non-severe flag is amber for those modes, so
+> the −5 standard deduction currently only fires for **personal** red cells
+> (`tenanted`, `needs_work`, computed by the same engine and consumed by
+> HomeScore's riskPts). The deduction machinery stays for future red cells.
+
+The cap applies to the standard-deduction subtotal (per tier); the severe gate is a
+**ceiling on the whole score**; the floor is applied last (after the label) so it can
+never lift a property into a better verdict band — it only stops a genuine 0–4 from
+displaying as 0. Internal scale stays 0–95; the verdict brackets above are unchanged.
+
+### 10b. HomeScore severe gate (Report B) + gauge suppression
+
+HomeScore (§7) has its **own** bands (≥80 "Make an offer" / ≥65 "Worth pursuing" / ≥50
+"Negotiate first" / ≥35 "Look further" / <35 "Probably not"). The severe gate is derived
+against **these** bands, not the investment ladder, and is **harsher** — a severe flag is
+worse for an owner-occupier (who lives in it) than an investor (who can remediate-and-rent):
+
+```
+1 severe → ceiling 34 ("Probably not" / fail)
+2 severe → ceiling 20 · 3+ → ceiling 10 · floor max(5, score)
+```
+
+**Gauge suppression (current state).** HomeScore's inputs are mostly placeholder in
+production — pricing is pinned to "asking = fair" (no comparable-sales source; Teranet is
+out of MVP), schools are unloaded, light is unwired (`sunScout` is null). So the numeric
+HomeScore gauge is **suppressed**: the personal report shows only trusted sub-readouts
+(walk, the risk/flag signal) plus honest "data pending" for pricing/schools/light. The
+severe gate's safety value therefore reaches the user through the **visible risk section**
+(severe flags surfaced prominently), not the hidden number.
+
+**Re-enable trigger (concrete, checkable):** the gauge turns on only when **FMV _or_
+schools has a real source wired and tested** — not "when data lands". Until then the
+ceiling ladder lives in code but is not displayed.
 
 ---
 
@@ -640,21 +739,21 @@ Maximum total deduction: -15. Score never goes below 0.
 
 ### 11.1 Tech stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React + TypeScript |
-| Backend API | Fastify (Node.js) |
-| Database | Supabase (Postgres + Auth + Storage) |
-| Scraping workers | Playwright, scheduled jobs on Railway |
-| Calc engine | Python FastAPI microservice on Railway |
-| AI narrative | Claude API (claude-sonnet-4-6) |
-| Maps | Mapbox GL JS |
-| Sun path math | NREL SPA via pvlib (runs locally, no API call) |
-| School lookup | Google Places API + EQAO/Fraser local database |
-| Payments | Stripe |
-| PDF generation | Puppeteer (headless Chrome renders report HTML to PDF) |
-| Frontend hosting | Vercel |
-| Backend services | Railway |
+| Layer            | Technology                                             |
+| ---------------- | ------------------------------------------------------ |
+| Frontend         | React + TypeScript                                     |
+| Backend API      | Fastify (Node.js)                                      |
+| Database         | Supabase (Postgres + Auth + Storage)                   |
+| Scraping workers | Playwright, scheduled jobs on Railway                  |
+| Calc engine      | Python FastAPI microservice on Railway                 |
+| AI narrative     | Claude API (claude-sonnet-4-6)                         |
+| Maps             | Mapbox GL JS                                           |
+| Sun path math    | NREL SPA via pvlib (runs locally, no API call)         |
+| School lookup    | Google Places API + EQAO/Fraser local database         |
+| Payments         | Stripe                                                 |
+| PDF generation   | Puppeteer (headless Chrome renders report HTML to PDF) |
+| Frontend hosting | Vercel                                                 |
+| Backend services | Railway                                                |
 
 ### 11.2 Scraper architecture
 
@@ -698,6 +797,7 @@ Rate limit: 1 request per 5 seconds. Rotate residential proxies if blocked.
 **Fallback — manual entry form**
 
 If either scraper fails or required fields are missing:
+
 - Show a pre-filled form with every field that was successfully extracted
 - Missing required fields highlighted in amber ("Not found — enter manually")
 - Scraper-sourced fields labelled "auto-filled" in UI; manual fields labelled "user-entered"
@@ -710,6 +810,7 @@ Schedule: Nightly at 2am ET
 Process: scrape all active rentals across Ontario by FSA, normalise (geocode address, convert weekly rents to monthly, parse beds to integer), deduplicate (same address + rent + beds within 7 days = one record), store with timestamp. Never delete historical records — accumulation is the moat.
 
 **Comp selection at query time:**
+
 1. Same FSA (first 3 postal code characters) OR within 1km radius, whichever returns more results — max 3km
 2. Same bedroom count ±0, expand to ±1 if fewer than 5 results
 3. Listed within 90 days, expand to 180 days if fewer than 5
@@ -954,20 +1055,22 @@ Do not mention PropScout.
 
 ### Narrative length by tier
 
-| Tier | Free | Investor Pro | Professional | Team |
-|---|---|---|---|---|
-| Report A / D (investment) | 1 short paragraph, 4–5 sentences | Full 3 paragraphs | Full | Full |
-| Report B (personal) | 1 short paragraph, 4–5 sentences | Full 3 paragraphs | Full | Full |
-| Report C (tenant) | 1 short paragraph, 4–5 sentences | Full 2 paragraphs | Full | Full |
+| Tier                      | Free                             | Investor Pro      | Professional | Team |
+| ------------------------- | -------------------------------- | ----------------- | ------------ | ---- |
+| Report A / D (investment) | 1 short paragraph, 4–5 sentences | Full 3 paragraphs | Full         | Full |
+| Report B (personal)       | 1 short paragraph, 4–5 sentences | Full 3 paragraphs | Full         | Full |
+| Report C (tenant)         | 1 short paragraph, 4–5 sentences | Full 2 paragraphs | Full         | Full |
 
 The difference between free and Pro is not "useless vs useful" — free users get a real verdict. The upgrade gives full reasoning, specific numbers, and the precise next action to take.
 
 ### Gold-standard examples
 
 **Report A — investment, free tier (Unit 5702, $729,900):**
+
 > This property does not work as a rental investment at the current price. Your total monthly outgoing — mortgage, taxes, insurance, and the $761 condo fee — comes to roughly $4,733 a month. The market will pay around $2,900 in rent. That is a $1,833 monthly shortfall from day one, before a single vacancy or repair. The numbers only make sense if you are betting entirely on price appreciation over a long hold.
 
 **Report A — investment, Pro tier (same property):**
+
 > The $761-per-month condo fee is what ends this deal before it starts. At $9,132 a year, it consumes 26% of the gross rent this unit can realistically earn — before the mortgage, taxes, or insurance are touched. No amount of negotiating on price fully fixes that; the fee is a permanent drag on every calculation.
 >
 > Run the numbers at current rates and you are looking at $4,733 going out every month against roughly $2,900 coming in. That is $1,833 in the red every single month — $21,996 a year — and the break-even rent of $4,585 is nearly 60% above what the market will actually pay. The DSCR sits at 0.45x, which means most investment mortgage products will not even be available to you here.
@@ -975,9 +1078,11 @@ The difference between free and Pro is not "useless vs useful" — free users ge
 > The only scenario where this makes sense is as a personal residence, not a rental. If you are buying it to live in and are comfortable with the carrying costs, the location and unit quality are genuinely strong. As a pure investment, pass and keep looking — the VMC corridor has better opportunities at lower condo fee exposure.
 
 **Report C — tenant, free tier (Unit 3705, $2,150/mo asking):**
+
 > The unit is priced above what comparable rentals in this building are actually going for, and one of the two rooms being marketed as a bedroom has a sliding glass door — no solid wall, no sound insulation, and likely no exterior window. You are being asked to pay near-2-bedroom pricing for what functions as a one-bedroom with a den. Before signing anything, confirm whether parking is included and get clarity on the glass door situation.
 
 **Report C — tenant, Pro tier (same unit):**
+
 > Do not sign at $2,150. The building range sits at $1,900–2,100 across all unit types, and the true 2-bedroom median is $2,300 — but this is not a true 2-bedroom. That room has no privacy, no sound barrier, and almost certainly no exterior window. You are being asked to pay a 2-bedroom premium for a 1-bedroom with a study, and the math does not support it.
 >
 > Your negotiation target is $1,950–2,000 a month. You have real leverage: there are 24 competing rentals in this building right now, the landlord has listed it as available immediately, and you have a documented misrepresentation to point to. Before you go back, confirm two things in writing — does the den have a window, and is parking included or extra. If parking is separate, add $100–150 to the true monthly cost and adjust your offer accordingly.
@@ -985,6 +1090,7 @@ The difference between free and Pro is not "useless vs useful" — free users ge
 ### Output validation
 
 Before storing or displaying any narrative:
+
 - Free tier: minimum 60 words, maximum 120 words
 - Pro tier: minimum 150 words, maximum 320 words
 - Must not contain: "as an AI," "I cannot," "PropScout," bullet points, or numbered lists
@@ -998,30 +1104,30 @@ Before storing or displaying any narrative:
 
 ### Day-one APIs (MVP)
 
-| Source | Purpose | Cost |
-|---|---|---|
-| Realtor.ca internal JSON API | For-sale listing data | Free (use at respectful rates) |
-| Zillow.ca Playwright scraper | Secondary listing source | Free |
-| Rentals.ca / Kijiji / PadMapper scrapers | Nightly rental comps database | Free |
-| Walk Score API | Walk Score + Transit Score | ~$50–200/mo |
-| Mapbox GL JS | Rental comps map, SunScout arc visualization | Free up to 50K map loads/mo, then usage-based |
-| Google Places API | Nearby school discovery by coordinates | ~$0.017/request, budget ~$30–80/mo |
-| EQAO open data | Ontario school performance scores | Free — annual public dataset |
-| Fraser Institute school data | School rankings for Ontario and BC | Free — scraped annually |
-| Bank of Canada | Current mortgage rate feed | Free public API |
-| CMHC | Vacancy rates by city | Free public data |
-| Statistics Canada | Demographics and income by postal code | Free public data |
-| NREL SPA via pvlib | SunScout sun path math | Free — runs locally |
-| Claude API | AI narrative generation | ~$20–50/mo at MVP volume |
-| Stripe | Subscription payments | 2.9% + $0.30 per transaction |
+| Source                                   | Purpose                                      | Cost                                          |
+| ---------------------------------------- | -------------------------------------------- | --------------------------------------------- |
+| Realtor.ca internal JSON API             | For-sale listing data                        | Free (use at respectful rates)                |
+| Zillow.ca Playwright scraper             | Secondary listing source                     | Free                                          |
+| Rentals.ca / Kijiji / PadMapper scrapers | Nightly rental comps database                | Free                                          |
+| Walk Score API                           | Walk Score + Transit Score                   | ~$50–200/mo                                   |
+| Mapbox GL JS                             | Rental comps map, SunScout arc visualization | Free up to 50K map loads/mo, then usage-based |
+| Google Places API                        | Nearby school discovery by coordinates       | ~$0.017/request, budget ~$30–80/mo            |
+| EQAO open data                           | Ontario school performance scores            | Free — annual public dataset                  |
+| Fraser Institute school data             | School rankings for Ontario and BC           | Free — scraped annually                       |
+| Bank of Canada                           | Current mortgage rate feed                   | Free public API                               |
+| CMHC                                     | Vacancy rates by city                        | Free public data                              |
+| Statistics Canada                        | Demographics and income by postal code       | Free public data                              |
+| NREL SPA via pvlib                       | SunScout sun path math                       | Free — runs locally                           |
+| Claude API                               | AI narrative generation                      | ~$20–50/mo at MVP volume                      |
+| Stripe                                   | Subscription payments                        | 2.9% + $0.30 per transaction                  |
 
 ### Phase 2 APIs
 
-| Source | Purpose | Cost |
-|---|---|---|
-| AirDNA | STR revenue data for STR vs LTR module | $300–1,000/mo |
-| Teranet | Historical sale prices (neighbourhood appreciation) | $5K–20K/yr license |
-| Municipal open data | Flood zones, zoning, permits (Toronto, Ottawa etc.) | Free |
+| Source              | Purpose                                             | Cost               |
+| ------------------- | --------------------------------------------------- | ------------------ |
+| AirDNA              | STR revenue data for STR vs LTR module              | $300–1,000/mo      |
+| Teranet             | Historical sale prices (neighbourhood appreciation) | $5K–20K/yr license |
+| Municipal open data | Flood zones, zoning, permits (Toronto, Ottawa etc.) | Free               |
 
 ### Scraping legal notes
 
@@ -1039,40 +1145,41 @@ Generated via Puppeteer — headless Chrome renders the web report HTML and capt
 
 **Report A — Investment purchase (8 pages)**
 
-| Page | Content |
-|---|---|
-| 1 | Property overview: photo, address, price, tags, deal score |
-| 2 | Investment metrics: full table |
-| 3 | Rental comps: map, rent range, vacancy rate, confidence band |
-| 4 | Financing: mortgage scenarios, OSFI result, closing costs, break-even rent |
-| 5 | Risk flags: each with severity and investor implication |
-| 6 | Neighbourhood data: demographics, walkability, development, price appreciation |
-| 7 | AI narrative: full-page, large type, standalone verdict |
-| 8 | SunScout: light score, seasonal grid, window breakdown |
+| Page | Content                                                                        |
+| ---- | ------------------------------------------------------------------------------ |
+| 1    | Property overview: photo, address, price, tags, deal score                     |
+| 2    | Investment metrics: full table                                                 |
+| 3    | Rental comps: map, rent range, vacancy rate, confidence band                   |
+| 4    | Financing: mortgage scenarios, OSFI result, closing costs, break-even rent     |
+| 5    | Risk flags: each with severity and investor implication                        |
+| 6    | Neighbourhood data: demographics, walkability, development, price appreciation |
+| 7    | AI narrative: full-page, large type, standalone verdict                        |
+| 8    | SunScout: light score, seasonal grid, window breakdown                         |
 
 **Report B — Personal purchase (6 pages)**
 
-| Page | Content |
-|---|---|
-| 1 | Property overview |
-| 2 | Monthly ownership cost breakdown |
-| 3 | Comparable sales and fair market value |
-| 4 | School rankings — elementary, middle, high |
-| 5 | Neighbourhood intelligence and SunScout |
-| 6 | AI narrative |
+| Page | Content                                    |
+| ---- | ------------------------------------------ |
+| 1    | Property overview                          |
+| 2    | Monthly ownership cost breakdown           |
+| 3    | Comparable sales and fair market value     |
+| 4    | School rankings — elementary, middle, high |
+| 5    | Neighbourhood intelligence and SunScout    |
+| 6    | AI narrative                               |
 
 **Report C — Tenant evaluation (6 pages)**
 
-| Page | Content |
-|---|---|
-| 1 | Property header + listed vs. reality cards (conditional) + listing accuracy flags |
-| 2 | Full unit breakdown + building amenities grid |
-| 3 | Rent positioning + negotiation assessment |
-| 4 | Monthly cost breakdown + location and lifestyle |
-| 5 | SunScout + confirm-before-signing checklist |
-| 6 | AI narrative verdict + conversion prompt |
+| Page | Content                                                                           |
+| ---- | --------------------------------------------------------------------------------- |
+| 1    | Property header + listed vs. reality cards (conditional) + listing accuracy flags |
+| 2    | Full unit breakdown + building amenities grid                                     |
+| 3    | Rent positioning + negotiation assessment                                         |
+| 4    | Monthly cost breakdown + location and lifestyle                                   |
+| 5    | SunScout + confirm-before-signing checklist                                       |
+| 6    | AI narrative verdict + conversion prompt                                          |
 
 **Branding:**
+
 - Free and Pro: PropScout logo, propscout.ca footer
 - Professional tier: user's logo replaces PropScout branding, user's brokerage name and contact in footer
 - All reports: "Not financial or legal advice" disclaimer, date/time stamp, report share token as QR code
@@ -1083,21 +1190,21 @@ Generated via Puppeteer — headless Chrome renders the web report HTML and capt
 
 ### Pricing
 
-| Tier | Monthly | Annual |
-|---|---|---|
-| Free | $0 | — |
-| Investor Pro | $10 | $100/yr (2 months free) |
-| Professional | $59 | $590/yr (2 months free) |
-| Team / REIT | $299+ base | Custom annual contract |
+| Tier         | Monthly    | Annual                  |
+| ------------ | ---------- | ----------------------- |
+| Free         | $0         | —                       |
+| Investor Pro | $10        | $100/yr (2 months free) |
+| Professional | $59        | $590/yr (2 months free) |
+| Team / REIT  | $299+ base | Custom annual contract  |
 
 ### 18-month MRR target
 
-| Tier | Subscribers | MRR |
-|---|---|---|
-| Investor Pro | 500 | $5,000 |
-| Professional | 80 | $4,720 |
-| Team / REIT | 15 | $4,485 |
-| Total | 595 | $14,205/mo (~$170K ARR) |
+| Tier         | Subscribers | MRR                     |
+| ------------ | ----------- | ----------------------- |
+| Investor Pro | 500         | $5,000                  |
+| Professional | 80          | $4,720                  |
+| Team / REIT  | 15          | $4,485                  |
+| Total        | 595         | $14,205/mo (~$170K ARR) |
 
 ### Additional revenue (Phase 3+)
 
@@ -1109,14 +1216,14 @@ Implementation fees: Team/REIT onboarding. $2K–$5K one-time setup.
 
 ### Unit economics targets
 
-| Metric | Target |
-|---|---|
-| CAC organic | Under $25 |
-| CAC paid | Under $80 |
-| LTV Investor Pro (18mo avg retention) | $700 |
-| LTV:CAC organic | 8:1 or better |
-| Monthly churn Pro | Under 4% |
-| Free to paid conversion | 8% or more |
+| Metric                                | Target        |
+| ------------------------------------- | ------------- |
+| CAC organic                           | Under $25     |
+| CAC paid                              | Under $80     |
+| LTV Investor Pro (18mo avg retention) | $700          |
+| LTV:CAC organic                       | 8:1 or better |
+| Monthly churn Pro                     | Under 4%      |
+| Free to paid conversion               | 8% or more    |
 
 ---
 
@@ -1129,29 +1236,34 @@ A working product that can be shared with real users. Every item below is requir
 ### Build order (solo developer)
 
 **Weeks 1–2: Data pipeline**
+
 - Realtor.ca internal JSON API scraper — extracts clean property data by listing ID parsed from URL
 - Zillow.ca Playwright scraper — secondary source
 - Listing type detection (for-sale vs for-rent from URL and page data)
 - Rental comps nightly scraper — start accumulating from day one; even 2 weeks of data is better than nothing
 
 **Weeks 2–3: Calc engine**
+
 - All Report A investment metrics in Python FastAPI: NOI, cap rate, cash flow, CoC, DSCR, GRM, break-even, OSFI, Ontario LTT
 - Unit test every formula against manual calculations on 5 real properties
 - Verify the 5702 Buttermill Ave case produces ~9/100 deal score under the formula
 
 **Weeks 3–4: Frontend skeleton**
+
 - React: URL input bar, validation, listing type detection
 - Mode selection modal (investment/personal, tenant/landlord)
 - Progress display during scraping
 - Basic report layout for all four modes
 
 **Weeks 4–5: School and neighbourhood data**
+
 - Load EQAO dataset into database
 - Scrape Fraser Institute rankings for Ontario schools
 - Google Places API integration for school discovery by coordinates
 - Neighbourhood intelligence module (Walk Score, Statistics Canada, CMHC)
 
 **Weeks 5–6: SunScout module**
+
 - pvlib integration for sun path math
 - User inputs window compass direction
 - Monthly sun hours calculation
@@ -1159,17 +1271,20 @@ A working product that can be shared with real users. Every item below is requir
 - SVG arc visualization (summer vs winter day)
 
 **Weeks 6–7: AI and PDF**
+
 - Claude API integration — all four narrative prompts with output validation
 - Puppeteer PDF generation — all four report types
 - PropScout branding in PDF footer
 
 **Weeks 7–8: Auth, payments, access control**
+
 - Supabase auth (email + Google)
 - Stripe subscription tiers
 - Free tier limits enforced (3 analyses/month, blurred locked sections)
 - Shareable link generation (UUID token)
 
 **Weeks 8–10: Testing and polish**
+
 - End-to-end test with 20 real Ontario properties — variety of types (condo, detached, semi, duplex)
 - Fix accuracy issues in rental comp estimates
 - Mobile responsiveness: scorecard and AI narrative must be readable on phone
@@ -1259,13 +1374,13 @@ def annual_light_score(windows: dict) -> int:
 
 ### Score interpretation
 
-| Score | Meaning |
-|---|---|
-| 80–100 | Excellent — notably bright, strong tenant and buyer appeal |
-| 60–79 | Good — above average |
-| 40–59 | Average |
-| 20–39 | Below average — worth noting in listing communications |
-| 0–19 | Poor — affects tenant retention and rental demand over time |
+| Score  | Meaning                                                     |
+| ------ | ----------------------------------------------------------- |
+| 80–100 | Excellent — notably bright, strong tenant and buyer appeal  |
+| 60–79  | Good — above average                                        |
+| 40–59  | Average                                                     |
+| 20–39  | Below average — worth noting in listing communications      |
+| 0–19   | Poor — affects tenant retention and rental demand over time |
 
 ### Phase 2 — building obstruction
 
@@ -1277,16 +1392,17 @@ When Mapbox 3D building tiles are added: for each hour where sun path math says 
 
 ### Domain status (checked May 2026)
 
-| Domain | Status |
-|---|---|
-| propscout.com | Taken — US real estate coaching platform (Vero Beach, FL) |
-| propscout.ca | Appears available — no DNS record, no Canadian business using it |
-| propscout.io | Taken |
-| propscout.co | Taken |
+| Domain        | Status                                                           |
+| ------------- | ---------------------------------------------------------------- |
+| propscout.com | Taken — US real estate coaching platform (Vero Beach, FL)        |
+| propscout.ca  | Appears available — no DNS record, no Canadian business using it |
+| propscout.io  | Taken                                                            |
+| propscout.co  | Taken                                                            |
 
 ### Recommendation
 
 Register **propscout.ca** immediately (~$15/yr at Namecheap or GoDaddy). The .ca extension is actually ideal:
+
 - Signals Canadian focus to users — appropriate for an Ontario-first product
 - Creates clear separation from the US PropScout company
 - Resonates better with Canadian buyers, investors, and agents
@@ -1312,6 +1428,52 @@ The US PropScout (propscout.ai) is a different product, different market, no leg
 Realtors are incentivised to obscure negatives. A glass-door den becomes "a versatile second bedroom." A basement unit becomes "a finished lower level retreat." A missing parking space becomes "parking available — inquire with management." If PropScout feeds raw listing descriptions directly into the deal score or AI narrative, it will eventually misread creative marketing language as factual property data — and users will lose trust in the score.
 
 The solution is to treat the listing description as untrusted input that must pass through a structured extraction pipeline before any number is calculated or any flag is set. The deal score is always derived from validated structured data, never from an AI reading marketing copy directly.
+
+> **Severe-flag extraction — recall limitation (read before trusting the §10a/§10b gate).**
+> The severe gate keys on `grow_op_history`, `flooding_history`, `illegal_unit_risk`,
+> `special_assessment_risk`. All four now have extractors, but recall is uneven and that
+> matters because under-detection here is an _invisible_ failure:
+>
+> - **Regex catches EXPLICIT mentions only** ("former grow-op", "flood zone", "water
+>   damage") and correctly rejects benign copy ("sunlight floods the room"). Verified by the
+>   recall matrix in `extraction/regex_rules_test.py`.
+> - **Euphemisms are NOT caught by regex** ("sold as-is, no representations", "previous use",
+>   "remediation completed", "restoration after moisture") — they overlap estate /
+>   power-of-sale / benign situations, so matching them would create false positives.
+> - **Haiku is expected to cover the euphemism gap** (grow-op/flooding added to the prompt),
+>   but its recall on oblique phrasing is **unverified** until the golden dataset includes
+>   labelled euphemistic grow-op/flood cases. Until then, treat severe-flag detection as
+>   "explicit yes, euphemistic unproven" — do not claim complete grow-op/flood detection.
+>
+> **Three tiers, not two (precision vs recall for a safety signal).** Staying silent on
+> euphemisms is wrong for an owner-occupier — a false positive costs one wasted question, a
+> false negative means a family buys a remediated grow-op blind. So ambiguous phrasing
+> ("no representations", "remediation completed", "stigmatized", "buyer due diligence") fires
+> a **soft caution** flag `verify_history` (amber, confidence 65, no score deduction) — a
+> "verify, don't assume" prompt, visually distinct from a confirmed red flag, NOT an
+> accusation. The hard grow-op/flood flags stay explicit-only.
+>
+> **UI honesty constraint:** because detection is partial, no report may imply a clearance.
+> The personal report's zero-flag state says "Listing text only — verify directly" and "not a
+> clean bill of health", never "no risks / clear". Copy must not claim data sources not
+> ingested (e.g. municipal flood overlays are NOT checked — don't say they are).
+>
+> **All four severe-gate inputs now have a deterministic regex floor.** Verified before
+> building the §10a investor gate: `illegal_unit_risk` and `special_assessment_risk` were
+> **Haiku-only** (no regex) — so on the investment path, with Haiku down/keyless, two of the
+> gate's four inputs would never fire and the gate would silently run on nothing. Added
+> regex floors for the explicit cases of both (`non-conforming`, `unpermitted`, `illegal
+unit`, `retrofit required`; `special assessment`, `reserve fund shortfall`, `upcoming
+levy`), guarded against benign copy ("healthy reserve fund", "legal duplex"). All four are
+> asserted to fire via regex in `regex_rules_test.py` so a gate input can't silently revert
+> to a phantom. Haiku still covers the euphemistic cases on top.
+>
+> Their deterministic recall is **EXPLICIT-only** — same honesty as grow-op/flood. The gate
+> catches _stated_ special-assessments / illegal units reliably; _hinted_ ones only when
+> Haiku is up. Don't treat "now has a regex" as "fully covered". **Principle for any
+> safety-gating flag: it needs a deterministic floor — an LLM-only extractor degrades
+> silently when the LLM is unavailable (no key, outage), producing a clean-looking score
+> that quietly missed the risk. Regex for the load-bearing explicit cases, LLM for the tail.**
 
 ### Pipeline architecture
 
@@ -1431,7 +1593,7 @@ Listing description:
 """
 ```
 
-```python
+````python
 import anthropic
 import json
 
@@ -1463,7 +1625,7 @@ def ai_extraction(description: str) -> dict:
                 for flag in ["unverified_bedroom", "glass_door_bedroom", "is_basement_unit",
                              "parking_unclear", "illegal_unit_risk", "special_assessment_risk",
                              "no_exterior_window"]}
-```
+````
 
 ### Step 3 — Logic gate (merges results, applies confidence thresholds)
 
@@ -1528,21 +1690,52 @@ def resolve_flags(regex_flags: dict, ai_flags: dict) -> dict:
 
 **Confidence threshold rules:**
 
-| Source | Confidence | Severity shown | Deducts deal score |
-|---|---|---|---|
-| Regex match | 100 (always) | Red flag | Yes |
-| AI result | 85–100 | Red flag | Yes |
-| AI result | 60–84 | Amber soft warning | No |
-| AI result | 0–59 | Not shown | No |
+| Source      | Confidence   | Severity shown     | Deducts deal score |
+| ----------- | ------------ | ------------------ | ------------------ |
+| Regex match | 100 (always) | Red flag           | Yes                |
+| AI result   | 85–100       | Red flag           | Yes                |
+| AI result   | 60–84        | Amber soft warning | No                 |
+| AI result   | 0–59         | Not shown          | No                 |
+
+**As shipped (2026-07-02) — the confidence gate feeds the flag severity matrix.**
+The template above shows base confidence-severity only. The shipped
+`extraction/logic_gate.py::merge_flags(regex_flags, haiku_flags, mode)` applies
+two gates in order:
+
+1. **Confidence** (as above): ≥85 red-eligible · 60–84 amber-only · <60 discarded.
+   Regex flags carry their hand-assigned confidences (not a flat 100), and Haiku
+   entries only count when `value is True`.
+2. **Per-mode matrix tier** (`constants/flag_matrix.py`, ruleset in
+   `docs/FLAG_SEVERITY_MATRIX.md`): `severe` (gates the §10a ceiling) · `red`
+   (−5, capped −15) · `amber` (display only) · `info` (excluded — amenity, not
+   risk) · `hidden` (dropped for that mode). Confidence caps the tier: a 60–84%
+   flag renders at most amber even in a severe/red cell. Unlisted flag ids
+   default to amber in every mode — shown, never deducting.
+
+Each returned flag carries both `severity` (red/amber display tone) and `tier`
+(severe/red/amber score impact), and the tier is threaded through the API to
+the frontend (`RiskFlag.tier`) so HomeScore's severe gate reads the calc
+engine's decision instead of re-deriving it.
 
 ### Step 4 — User override toggles (UI)
 
 Every flag displayed in the report has a toggle next to it. If the user knows the AI got it wrong, they flip the toggle and the deal score recalculates instantly. No page reload. No re-running the AI.
 
 UI behaviour:
-- Red flag with toggle off → flag disappears from the risk section, deal score deduction removed, score updates live
-- Amber warning with toggle off → warning disappears
-- Toggle state is saved to the analysis record in Supabase so it persists if the user returns to the report
+
+- Red flag dismissed → the row is greyed out and struck through (with a **Restore** button so the action is reversible), its deal score deduction is removed, and the score updates live — no page reload, no AI re-run
+- Amber warning dismissed → same greyed/struck treatment (no score change, since amber never deducts)
+- Toggle state is saved to the `flag_overrides` table in Supabase so it persists if the user returns to the report (applied on first render)
+
+**As shipped (the template code below is the original reference design):**
+The live report renderer is `apps/web/src/pages/ReportPage.tsx`, which renders the
+shared `RiskRow` component (`dismissable` / `dismissed` / `onToggleDismiss` props)
+and owns the `useFlagOverrides(token)` hook. Live recalc is done by the pure
+function `adjustDealScoreForOverrides` in `apps/web/src/lib/investorCalc.ts`: it
+restores the dismissed flags' deductions, re-applies the −15 cap to the remaining
+deductions, and recomputes the verdict via `verdictFromScore` (which mirrors the
+calc engine's `get_verdict` brackets exactly). The stored `deal_score` stays the
+raw baseline; the display layer applies the override adjustment.
 
 ```typescript
 // React — flag component with override toggle
@@ -1685,16 +1878,15 @@ def test_extraction_accuracy(case):
 
 ### Summary — what this architecture guarantees
 
-| Guarantee | How it's enforced |
-|---|---|
-| Deal score is never based on AI guessing | Calc engine only receives validated structured flags, never raw text |
-| Obvious flags never missed | Regex runs first and cannot be overridden by AI |
-| Uncertain flags don't punish the score | Confidence below 85% → amber warning only, zero score deduction |
-| Users stay in control | Override toggle on every flag, instant score recalc |
-| Accuracy is measurable and provable | Golden dataset + automated regression tests before every release |
+| Guarantee                                 | How it's enforced                                                            |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| Deal score is never based on AI guessing  | Calc engine only receives validated structured flags, never raw text         |
+| Obvious flags never missed                | Regex runs first and cannot be overridden by AI                              |
+| Uncertain flags don't punish the score    | Confidence below 85% → amber warning only, zero score deduction              |
+| Users stay in control                     | Override toggle on every flag, instant score recalc                          |
+| Accuracy is measurable and provable       | Golden dataset + automated regression tests before every release             |
 | Failures are caught before users see them | JSON parse failures log and default to safe (all false) rather than crashing |
-
 
 ---
 
-*PropScout · Platform Spec v3 · May 2026 · This document supersedes all prior drafts. All development decisions reference this version.*
+_PropScout · Platform Spec v3 · May 2026 · This document supersedes all prior drafts. All development decisions reference this version._

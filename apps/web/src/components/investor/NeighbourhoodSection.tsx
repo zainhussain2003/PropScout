@@ -27,16 +27,33 @@ export function NeighbourhoodSection({
   const n = neighbourhood
 
   const statTiles: Array<[string, string, string]> = [
-    ['Median income (FSA)', fmtMoney(n.avgIncome), 'StatsCan 2021'],
-    ['5-year pop. growth', fmtPct(n.popGrowth5y, 1), 'StatsCan'],
-    ['Walk Score', String(n.walkScore), n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable'],
-    ['Transit Score', String(n.transitScore), n.transitScore >= 80 ? 'Excellent' : 'Some transit'],
-    ['Active building permits', String(n.buildingPermits), 'in 1km radius'],
-    ['Price per sqft trend', n.ppsqftTrend, 'last 12 months'],
+    ['Median income (FSA)', n.avgIncome > 0 ? fmtMoney(n.avgIncome) : '—', 'StatsCan 2021'],
+    ['5-year pop. growth', n.popGrowth5y !== 0 ? fmtPct(n.popGrowth5y, 1) : '—', 'StatsCan'],
+    [
+      'Walk Score',
+      n.walkScore > 0 ? String(n.walkScore) : '—',
+      n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable',
+    ],
+    [
+      'Transit Score',
+      n.transitScore > 0 ? String(n.transitScore) : '—',
+      n.transitScore >= 80 ? 'Excellent' : 'Some transit',
+    ],
+    [
+      'Active building permits',
+      n.buildingPermits > 0 ? String(n.buildingPermits) : '—',
+      'in 1km radius',
+    ],
+    ['Price per sqft trend', n.ppsqftTrend !== 'N/A' ? n.ppsqftTrend : '—', 'last 12 months'],
   ]
 
   const verdictTone = n.appreciation5y >= 0.2 ? 'pass' : 'caution'
-  const verdictLabel = n.appreciation5y >= 0.2 ? 'Strong appreciation' : 'Modest growth'
+  const verdictLabel =
+    n.appreciation5y > 0
+      ? n.appreciation5y >= 0.2
+        ? 'Strong appreciation'
+        : 'Modest growth'
+      : 'Modest growth'
 
   return (
     <section className="container tr-section" data-section="08">
@@ -171,7 +188,7 @@ export function NeighbourhoodSection({
               fontSize: 10,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.55)',
+              color: 'color-mix(in oklab, var(--bg) 55%, transparent)',
             }}
           >
             Appreciation
@@ -186,9 +203,11 @@ export function NeighbourhoodSection({
                 color: 'var(--accent)',
               }}
             >
-              +{fmtPct(n.appreciation5y, 1)}
+              {n.appreciation5y !== 0 ? `+${fmtPct(n.appreciation5y, 1)}` : '—'}
             </span>
-            <span style={{ fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
+            <span
+              style={{ fontSize: 14, color: 'color-mix(in oklab, var(--bg) 75%, transparent)' }}
+            >
               5-year median sale price
             </span>
           </div>
@@ -200,7 +219,7 @@ export function NeighbourhoodSection({
               marginTop: 6,
               alignItems: 'center',
               fontSize: 13,
-              color: 'rgba(255,255,255,.7)',
+              color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
             }}
           >
             <span>10-year:</span>
@@ -212,7 +231,7 @@ export function NeighbourhoodSection({
           <div
             style={{
               height: 1,
-              background: 'rgba(255,255,255,.15)',
+              background: 'color-mix(in oklab, var(--bg) 15%, transparent)',
               margin: '4px 0',
             }}
           />
@@ -220,7 +239,7 @@ export function NeighbourhoodSection({
           <p
             style={{
               fontSize: 13,
-              color: 'rgba(255,255,255,.7)',
+              color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
               lineHeight: 1.55,
             }}
           >

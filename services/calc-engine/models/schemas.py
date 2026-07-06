@@ -99,7 +99,8 @@ class DealScoreBreakdownOutput(BaseModel):
 class DealScoreOutput(BaseModel):
     """Deal score result with component breakdown."""
 
-    total: int  # 0–95
+    total: int  # 0–95 — the raw gated score (verdict is derived from THIS)
+    display_total: int  # 0–100 — floored + normalised for the gauge (spec §10a)
     verdict: str
     breakdown: DealScoreBreakdownOutput
 
@@ -116,6 +117,25 @@ class SunScoutOutput(BaseModel):
     ]  # 12 values, index 0 = Jan, index 11 = Dec (bedroom_main window)
     sun_score: float
     verdict: str
+
+
+class SunScoutRequest(BaseModel):
+    """Standalone SunScout recalculation request (facade-direction input UI)."""
+
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+    azimuth_deg: float = Field(
+        180.0,
+        ge=0,
+        le=360,
+        description="Primary facade bearing in degrees; 180 = south (the pipeline default)",
+    )
+
+
+class SunScoutResponse(BaseModel):
+    """Standalone SunScout recalculation response."""
+
+    sun_scout: SunScoutOutput | None
 
 
 class AnalysisOutput(BaseModel):

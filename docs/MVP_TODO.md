@@ -1,6 +1,6 @@
 # PropScout — MVP Task List
 
-Last updated: May 2026 — ticked items confirmed complete as of PR 10 (fix/visual-qa-pr1-pr3)
+Last updated: 2026-07-01 — Realtor.ca scraper section reconciled to shipped code (was stale; the per-listing pipeline works end-to-end against live Realtor.ca URLs via ScraperAPI)
 Reference spec: `propscout_platform_spec.md`
 Full backlog: `TODO.md`
 
@@ -17,17 +17,21 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Realtor.ca scraper
 
-- [ ] Extract listing ID from Realtor.ca URL
-- [ ] Call Realtor.ca internal JSON API with correct headers (spec Section 11.2)
-- [ ] Parse: address, price, beds, baths, sqft, property type
-- [ ] Parse: annual taxes (taxes_known = true/false)
-- [ ] Parse: condo fee (condo_fee_known = true/false)
-- [ ] Parse: year built (year_built_known = true/false)
-- [ ] Parse: listing type (for_sale vs for_rent)
-- [ ] Parse: days on market, photo URLs, listing description
-- [ ] Store to `listings` table in Supabase
-- [ ] Handle scraper failure → return partial data for manual entry fallback
-- [ ] Rate limiting: 1 request per 4 seconds, rotate 3 proxy IPs
+> Implemented in `services/scrapers/realtor_scraper.py` — approach changed from the spec's
+> internal JSON API (Incapsula blocks direct api2.realtor.ca calls) to fetching the listing
+> page via **ScraperAPI `premium=true`** and parsing dataLayer + JSON-LD + details labels.
+
+- [x] Validate/extract listing ID from Realtor.ca URL (`/real-estate/<id>/` pattern gate)
+- [x] ~~Call Realtor.ca internal JSON API with correct headers~~ — superseded: ScraperAPI premium page fetch (render=true 500s on Realtor.ca; premium HTML already contains all parsed blocks)
+- [x] Parse: address, price, beds, baths, sqft (m²→sqft), property type
+- [x] Parse: annual taxes (taxes_known = true/false)
+- [x] Parse: condo fee (condo_fee_known = true/false — sometimes JS-injected, stays unknown then)
+- [x] Parse: year built (year_built_known = true/false)
+- [x] Parse: listing type (for_sale vs for_rent — leasePrice vs price in dataLayer)
+- [ ] Parse: days on market (still `None` — not present in premium HTML) — photo URLs ✅ + listing description ✅ are done
+- [x] Store to `listings` table in Supabase (via API `POST /scrape` → `saveListing`)
+- [x] Handle scraper failure → partial data + `missingFields` for manual entry fallback (incl. implausible for-rent rent → `rent_monthly`)
+- [x] ~~Rate limiting: 1 req/4s, rotate 3 proxy IPs~~ — superseded: ScraperAPI manages proxies; scrapes are per-listing on demand, not bulk
 
 ### Zillow.ca scraper
 
@@ -114,13 +118,14 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 Reference: `COMPONENT_MANIFEST.md §1` + `DESIGN_README.md`
 
 - [x] Copy `tokens.css` into `apps/web/src/styles/` and import in global stylesheet
+- [x] **Harbour re-skin (2026-07-05)** — port locked `Landing v2.html` tokens (limestone `#EFEFEA` bg, harbour `#1F4E68` accent, `--accent-hover`, `6/12/18` radii, dark verdict variants); fixes the dark `--pass/--caution/--fail` contrast bug; verified live across all 4 report modes, zero stray terracotta, all suites at floors. `tokens.css` now supersedes the warm-cream prototypes.
 - [x] Add Google Fonts preconnect + link in `apps/web/index.html` (Instrument Serif + Geist + Geist Mono)
 - [x] React + TypeScript project setup (Vite)
 - [x] `<Wordmark height>` — "Prop*Scout*" wordmark with ScoutMark glyph
 - [x] `<ScoutMark size color>` — standalone glyph (used as watermark on dark cards)
 - [x] `<Icon name size stroke>` — full line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot)
 - [x] `<Chip>` — inline pill tag (with and without accent dot variant)
-- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → terracotta 0.15s
+- [x] `<Button variant="primary|ghost|accent">` — all three variants, hover → harbour accent 0.15s
 - [x] `<Card>` — surface + line + shadow + radius-lg
 - [x] `<SectionHead n topic question verdict tone>` — every report section header (shared across all 4 reports)
 - [x] `<VerdictPill tone label>` — pass / caution / fail pill, class-only colour (no inline styles)
@@ -159,6 +164,8 @@ Reference: `index.html` + `Mode Modal.html` + `mode-modal.jsx`
 - [x] All VerdictPill tones present on landing (pass, caution, fail) — class-only colour
 - [x] Price values in Pricing section use Geist Mono (not Instrument Serif)
 - [x] How it works section — `auto-fit` responsive grid (no horizontal overflow at any width)
+- [x] **Landing 380px horizontal-overflow fix (2026-07-05)** — nav collapses to wordmark + toggle (`.nav-links`≤820px, `.lp-nav-cta`≤640px); hero/#sunscout/#faq/pricing/footer grids collapse to single column on mobile; bottom CTA row wraps. Verified in a 380px iframe: scrollWidth 369<380, zero unclipped overflow at 360/380/414px. Regression guards in `landing.test.tsx`.
+- [x] **Harbour visual-fidelity pass (2026-07-05)** — all 4 reports + landing screenshot-verified against the `docs/PropScout Standalones/` at 1440 + 380, light + dark (investor); gauge composition, serif-italic section questions, mono numbers, 18px radii, `--shadow-card`, dark verdict variants, HomeScore suppression, tenant no-gauge, inverted AI card all confirmed faithful. No gaps found.
 - [ ] All hover and click interactions match the design exactly (visual QA 18/19 — 1 criterion corrected)
 - [ ] Modal open animation: backdrop 0.25s fade + card translates up 8px + scales 0.98→1
 
@@ -335,12 +342,51 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Score card moves above content on mobile (gauge shrinks to ~84px)
 
 > Accessibility: footer .chip contrast fixed (WCAG AA).
-> btn-primary contrast (terracotta bg, 3.12:1) is a known
-> sitewide issue — fix in a dedicated a11y PR before launch.
+> btn-primary contrast — ✅ RESOLVED: ink-at-rest fix (a1ca335),
+> re-verified against the PR10 harbour-blue accent (15.94:1 rest;
+> all accent pairings ≥ 6.39:1, pinned in btnContrast.test.ts).
+> A full-site AA audit for other elements stays on the backlog.
+
+### PR 9 — Route wiring (end-to-end integration)
+
+- [x] `.env.example` updated — WALKSCORE_API_KEY, MAPBOX_TOKEN, SCRAPER_URL confirmed present alongside existing vars
+- [x] Supabase migration — `analyses` table with id, token, listing_id, user_id, mode, status, analysis, created_at, expires_at
+- [x] `saveAnalysis`, `updateAnalysisStatus`, `getAnalysisByToken` implemented in supabaseService.ts
+- [x] Realtor.ca scraper — `services/scrapers/realtor_scraper.py` with ScrapedListing dataclass, rate limiting, unit tests
+- [x] `POST /scrape` Fastify route — calls scraper, province gate (Ontario FSA check), writes to Supabase, returns token
+- [x] Mapbox geocoding service — `apps/api/src/services/mapboxService.ts`, returns lat/lng or null
+- [x] Walk Score service — `apps/api/src/services/walkScoreService.ts`, returns WalkScoreResult or null
+- [x] `extractListingFlags` — Claude Haiku step in anthropicService.ts, description in → structured flags out
+- [x] Claude narrative — `generateNarrative` in anthropicService.ts, free (1 para) and pro (2–3 para) tiers
+- [x] `POST /analysis` expanded to full orchestrator — 9-step pipeline, writes complete analysis on finish
+- [x] `GET /analysis/:token` — returns pending/processing status or full analysis, 404/410 on miss/expiry
+- [x] `analysisService.ts` — scrapeUrl, triggerAnalysis, fetchReport implemented with real API calls
+- [x] `LandingPage.tsx` — real scrapeUrl call replaces runDemo(), province gate and scraper-fail paths wired
+- [x] `ModeModal` → navigates to `/analyzing?token=[token]&mode=[mode]` on mode selection
+- [x] `/analyzing` page — triggerAnalysis on mount, polls fetchReport every 2s, navigates to /r/[token] on complete
+- [x] `/r/[token]` report page — fetches real analysis, routes to correct report component, replaces fixture data
+- [ ] Integration test — mock scraper → real calc engine → mock Claude + Walk Score → assert token roundtrip
+- [x] All existing analysis route tests and useAnalysis hook tests pass
+- [ ] Golden dataset regression passes 95%+
+
+### PR 10 — Design humanization (landing + tokens)
+
+Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tests.md`
+
+- [x] Token revision — `--accent` #D97757→#1F4E68, `--bg`/`--bg-elev` limestone, `--accent-soft` added, dark-mode accent #6FA3C4 (values only, no renames; all pairings AA-pinned in btnContrast.test.ts)
+- [x] Italic-accent-words removed from landing marketing headlines (wordmark + report section questions kept)
+- [x] Landing copy rewritten verbatim per spec (hero, mode cards, feature grid, SunScout, how-it-works, pricing, FAQ); unwired "2,400 listings" stat removed
+- [x] Real imagery — 4 mode-card report screenshots (WebP 1x/2x in `public/marketing/`) + hero Mapbox Static Images comps map (blue diamonds, token-gated fallback)
+- [x] `.scout-slider` accent-color rule (sliders previously rendered browser-default red)
+- [x] Founder-note shell between feature grid and SunScout — renders nothing until real copy lands
+- [ ] 🔒 Founder-note body copy — Zain's own words (never invented)
+- [x] Asymmetric layout moment — tenant card dominant, three paid modes in a row beneath
+- [x] Docs: DESIGN_README token divergence table, PR10-UI-Tests.md, AUDIT_TRACKER known issues
+- [ ] Prototype HTML files still on terracotta palette — resync `designs/` + `design_handoff/tokens.css` when designs are next touched
 
 ---
 
-## Week 4–5 — School and neighbourhood data
+## Week 4–5 — School, neighbourhood, and sun data
 
 - [ ] Load EQAO dataset into Supabase `schools` table (download from eqao.on.ca)
 - [ ] Scrape Fraser Institute school rankings (fraserinstitute.org/school-performance)
@@ -353,6 +399,11 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [ ] Statistics Canada — demographics by postal code (household income, population growth)
 - [ ] CMHC vacancy rate by city (public API, refresh quarterly) — service stub exists (`cmhc_service.py`)
 - [ ] Neighbourhood intelligence module assembled from above sources
+
+### SunScout (moved from Week 5–6 — location intelligence block, fits here alongside Walk Score)
+
+> This block was a stale duplicate — the maintained SunScout checklist lives in the
+> Week 5–6 section below. As of 2026-07-01 SunScout is wired end-to-end.
 
 ---
 
@@ -387,11 +438,12 @@ All tasks reference spec Section 19.
 - [x] `SunScoutOutput` Pydantic model + `sun_scout` field on `AnalysisOutput` in calc engine
 - [x] Calc engine router calls `calculate_sun_hours()` when lat/lng present (non-fatal)
 - [x] `SunScoutResult` TypeScript interface in both API and web type trees
-- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase
-- [ ] Window direction input UI (compass direction dropdown per window) — Phase 2
-- [ ] Monthly sun hours grid output wired to real data (SeasonalGrid component exists, needs Analysis.sunScout)
-- [ ] Sun arc SVG visualization wired to real data (SunArcViz component exists, needs summer/winter hours)
-- [ ] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data
+- [x] Fastify analysis route: geocodes address → passes lat/lng to calc engine → transforms `sun_scout` to camelCase _(actually true as of 2026-07-01 — previously ticked while `sunScout` was hardcoded null and no lat/lng was sent; the geocode now runs before the calc call)_
+- [x] Window direction input UI — facade compass dropdown in `SunScoutPanel` (live analyses only) → `POST /analysis/:token/sunscout` → calc engine `/analysis/sunscout` (recalc without extraction/narrative re-run); result persisted so reloads keep the orientation
+- [x] Monthly sun hours wired to real data — SunScoutPanel's 12-month bar chart renders `analysis.sunScout.monthlyHours` _(the design has no separate Dec/Mar/Jun/Sep grid; a "SeasonalGrid component" never existed — `seasonalGrid` data stays available on the payload)_
+- [x] ~~Sun arc SVG visualization~~ — dropped: not in any design prototype and no SunArcViz component ever existed; summer/winter daily hours render as text in the panel
+- [x] SunScoutPanel wired into all 4 report pages with live `analysis.sunScout` data (`ReportPage` investor/tenant contents + routed PersonalBuyerPage + LandlordPage)
+- [x] `STATIC_LIGHT_SCORE` replaced — PersonalBuyerPage HomeScore light component now uses real `sunScout.sunScore` (0 honest floor when sun data unavailable)
 
 ---
 

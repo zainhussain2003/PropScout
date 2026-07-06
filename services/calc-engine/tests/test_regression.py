@@ -470,3 +470,35 @@ def test_hamilton_deal_score() -> None:
         f"Unexpected verdict: {result['verdict']} (expected good_deal). "
         f"Score: {result['total']}"
     )
+
+
+# ── Flag severity matrix regression (docs/FLAG_SEVERITY_MATRIX.md) ─────────────
+# Approved cells pinned as known-correct values. If one of these fails, the
+# matrix was edited — SEVERE cells need product sign-off before any change.
+
+from constants.flag_matrix import get_flag_tier  # noqa: E402
+
+
+def test_matrix_regression_approved_cells():
+    """Spot-pin one cell per distinctive matrix row (v1, approved 2026-07-01)."""
+    expected = [
+        ("grow_op_history", "investor", "severe"),
+        ("grow_op_history", "tenant", "red"),
+        ("special_assessment_risk", "tenant", "amber"),
+        ("tenanted", "personal", "red"),
+        ("tenanted", "investor", "amber"),
+        ("tenanted", "tenant", "hidden"),
+        ("needs_work", "personal", "red"),
+        ("basement_unit", "personal", "info"),
+        ("unverified_bedroom", "tenant", "red"),
+        ("no_pets", "tenant", "amber"),
+        ("no_pets", "landlord", "info"),
+        ("high_dom", "investor", "info"),
+        ("verify_history", "personal", "amber"),
+        ("condo_fee_unknown", "tenant", "hidden"),
+        # unlisted → safe-middle default
+        ("never_reviewed_flag", "investor", "amber"),
+    ]
+    for flag_id, mode, tier in expected:
+        actual = get_flag_tier(flag_id, mode)
+        assert actual == tier, f"{flag_id}[{mode}]: expected {tier}, got {actual}"

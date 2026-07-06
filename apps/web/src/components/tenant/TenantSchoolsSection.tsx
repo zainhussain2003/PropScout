@@ -20,6 +20,8 @@ import { SectionHead } from '../shared/SectionHead'
 
 interface TenantSchoolsSectionProps {
   schools: TenantSchools
+  /** Section number in the host report (default '08' — the tenant demo). */
+  sectionNumber?: string
 }
 
 // ── Board glyph configuration ─────────────────────────────────────────────────
@@ -178,17 +180,23 @@ function TenantSchoolColumn({
 
 // ── Section ───────────────────────────────────────────────────────────────────
 
-export function TenantSchoolsSection({ schools }: TenantSchoolsSectionProps): JSX.Element {
+export function TenantSchoolsSection({
+  schools,
+  sectionNumber = '08',
+}: TenantSchoolsSectionProps): JSX.Element {
   const allSchools = [...schools.elementary, ...schools.middle, ...schools.high]
   const totalCards = allSchools.length
   const inCatchCount = allSchools.filter((s) => s.inCatchment).length
 
-  const verdictLabel = `${inCatchCount} catchment · ${totalCards} total`
+  // Real data never claims catchment (boundaries not ingested) — show the
+  // honest count-only verdict instead of "0 catchment".
+  const verdictLabel =
+    inCatchCount > 0 ? `${inCatchCount} catchment · ${totalCards} total` : `${totalCards} nearby`
 
   return (
-    <section className="container tr-section" data-section="08">
+    <section className="container tr-section" data-section={sectionNumber}>
       <SectionHead
-        n="08"
+        n={sectionNumber}
         topic="Schools nearby"
         question={
           <>

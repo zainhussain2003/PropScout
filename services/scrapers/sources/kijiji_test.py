@@ -1,11 +1,18 @@
-"""Unit tests for kijiji._parse_card() — Playwright elements mocked."""
+"""Unit tests for kijiji._parse_card() — Playwright elements mocked.
+
+Beds are parsed from the full card text (title + description preview), bound to a
+bed/bedroom/br suffix so IDs and street numbers can't slip through; address =
+title + location.
+"""
+
 import pytest
 from unittest.mock import AsyncMock
 
+from normalization import RawRentalListing
 from sources import kijiji
+from sources.browser import PageResult
 from sources.kijiji import (
     _BASE_URL,
-    _BEDS_SELECTOR,
     _LINK_SELECTOR,
     _LOCATION_SELECTOR,
     _RENT_SELECTOR,
@@ -25,7 +32,7 @@ def _card(
     title: str = "2BR Apartment",
     rent: str = "$2,150/mo",
     location: str = "Vaughan, ON L4K 5W4",
-    beds: str = "2 Beds",
+    card_text: str | None = None,
     href: str | None = "/v-apartments-condos/12345",
     missing_rent: bool = False,
     missing_title: bool = False,
@@ -35,7 +42,6 @@ def _card(
         _TITLE_SELECTOR: None if missing_title else _el(title),
         _RENT_SELECTOR: None if missing_rent else _el(rent),
         _LOCATION_SELECTOR: None if missing_location else _el(location),
-        _BEDS_SELECTOR: _el(beds),
         _LINK_SELECTOR: _el("", href=href) if href is not None else None,
     }
     card = AsyncMock()
@@ -44,28 +50,119 @@ def _card(
         return selector_map.get(selector)
 
     card.query_selector.side_effect = qs
+    # Beds parse from the full card text; default it to the title when unset.
+    card.inner_text.return_value = card_text if card_text is not None else title
     return card
 
 
 @pytest.mark.asyncio
-async def test_full_card_builds_address_from_title_and_location():
+async def test_full_card_builds_address_and_beds_from_title():
     result = await kijiji._parse_card(_card())
     assert result is not None
     assert result.source == SOURCE
     assert result.address == "2BR Apartment, Vaughan, ON L4K 5W4"
     assert result.rent_raw == "$2,150/mo"
+    assert result.beds_raw == "2BR"  # parsed from the title
+
+
+@pytest.mark.asyncio
+async def test_spelled_out_beds_in_title():
+    result = await kijiji._parse_card(_card(title="Renovated two bedroom apartment"))
+    assert result is not None
+    assert result.beds_raw == "two bedroom"
+
+
+@pytest.mark.asyncio
+async def test_bachelor_title_is_studio():
+    result = await kijiji._parse_card(
+        _card(title="Parkdale Bachelor Apartment for Rent")
+    )
+    assert result is not None
+    assert result.beds_raw == "studio"
+
+
+@pytest.mark.asyncio
+async def test_no_beds_stated_anywhere_is_blank():
+    result = await kijiji._parse_card(
+        _card(
+            title="Bright downtown apartment for rent",
+            card_text="Bright downtown apartment",
+        )
+    )
+    assert result is not None
+    assert result.beds_raw == ""
+
+
+@pytest.mark.asyncio
+async def test_beds_recovered_from_description_when_title_omits():
+    # Title states no bed count; the description preview does.
+    result = await kijiji._parse_card(
+        _card(
+            title="Renovated unit - ID 544, Indian Road",
+            card_text="$2,200 Renovated unit - ID 544 Akelius two bedroom apartment near High Park",
+        )
+    )
+    assert result is not None
+    assert result.beds_raw == "two bedroom"
+
+
+@pytest.mark.asyncio
+async def test_guard_ignores_id_and_street_numbers():
+    # "ID 544" and "90 Jameson" must NOT become bed counts — only the bed-bound match wins.
+    result = await kijiji._parse_card(
+        _card(
+            title="Apartment for rent",
+            card_text="ID 544 at 90 Jameson Avenue, a 1 bedroom unit, unit 7",
+        )
+    )
+    assert result is not None
+    assert result.beds_raw == "1 bedroom"
+
+
+@pytest.mark.asyncio
+async def test_bdr_abbreviation_parses():
+    # "1 bdr den" — the bdr abbreviation must read as 1, still bound to a digit.
+    result = await kijiji._parse_card(
+        _card(title="Move-in ready", card_text="$2,469 1 bdr den for CAF IR posting")
+    )
+    assert result is not None
+    assert result.beds_raw == "1 bdr"
+
+
+@pytest.mark.asyncio
+async def test_bare_bdr_without_number_does_not_match():
+    # The guard still holds: "bdr" with no bound number is not a bed count.
+    result = await kijiji._parse_card(
+        _card(title="Cozy unit", card_text="Spacious bdr-style layout, great light")
+    )
+    assert result is not None
+    assert result.beds_raw == ""
+
+
+@pytest.mark.asyncio
+async def test_real_bedroom_not_overridden_by_later_studio_mention():
+    # A later "fitness studio" amenity must not zero out a stated 2 bedroom.
+    result = await kijiji._parse_card(
+        _card(
+            title="Spacious 2 bedroom",
+            card_text="Spacious 2 bedroom apartment with access to a fitness studio",
+        )
+    )
+    assert result is not None
+    assert result.beds_raw == "2 bedroom"
 
 
 @pytest.mark.asyncio
 async def test_missing_rent_returns_none():
-    result = await kijiji._parse_card(_card(missing_rent=True))
-    assert result is None
+    assert await kijiji._parse_card(_card(missing_rent=True)) is None
 
 
 @pytest.mark.asyncio
 async def test_both_title_and_location_missing_returns_none():
-    result = await kijiji._parse_card(_card(missing_title=True, missing_location=True))
-    assert result is None
+    assert (
+        await kijiji._parse_card(_card(missing_title=True, missing_location=True))
+        is None
+    )
 
 
 @pytest.mark.asyncio
@@ -94,3 +191,112 @@ async def test_no_link_element_falls_back_to_base_url():
     result = await kijiji._parse_card(_card(href=None))
     assert result is not None
     assert result.source_url == _BASE_URL
+
+
+@pytest.mark.asyncio
+async def test_kijiji_is_gated_to_toronto_only(monkeypatch):
+    # Kijiji's location-ID slug bug means non-Toronto cities return Toronto data,
+    # so it MUST run Toronto only — never fan out and store Toronto under other
+    # city labels (which would corrupt per-city comps). Enforced, not just labeled.
+    from sources.kijiji import KIJIJI_CITIES
+
+    assert KIJIJI_CITIES == ("toronto",)  # the gate is a single city
+
+    called_urls: list[str] = []
+
+    async def fake_open_page(_browser: object, url: str) -> PageResult:
+        called_urls.append(url)
+        page = AsyncMock()
+        page.query_selector_all.return_value = []  # no cards → break after page 1
+        return PageResult(page=page, status=200, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+    await kijiji.fetch_listings(object())
+
+    assert called_urls, "kijiji should have scraped Toronto"
+    assert all("toronto" in u for u in called_urls)  # ONLY Toronto, never other cities
+    for other in ("mississauga", "ottawa", "hamilton", "vaughan"):
+        assert not any(other in u for u in called_urls)
+
+
+# ── fetch_listings per-page signal (status / row count / blocked) ──────────────
+
+
+def _listing(url: str = "https://kijiji.ca/x") -> RawRentalListing:
+    """A minimal RawRentalListing so a mocked _parse_card returns something real."""
+    return RawRentalListing(
+        source=SOURCE,
+        source_url=url,
+        address="2BR, Toronto, ON M5V 1J1",
+        rent_raw="$2,150/mo",
+        beds_raw="2BR",
+    )
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_per_page_rows_status_blocked(monkeypatch):
+    # A clean 200 page with 3 cards must record rows=3, status=200, blocked=False.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    page = AsyncMock()
+    page.query_selector_all.return_value = [object(), object(), object()]
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=page, status=200, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+    monkeypatch.setattr(
+        kijiji, "_parse_card", AsyncMock(return_value=_listing()), raising=True
+    )
+
+    result = await kijiji.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert (pf.source, pf.city, pf.page) == (SOURCE, "toronto", 1)
+    assert pf.status == 200
+    assert pf.rows == 3  # the per-page row count is captured
+    assert pf.blocked is False
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_blocked_page_distinct_from_empty(monkeypatch):
+    # A blocked page (403) is recorded as blocked=True — NOT the same as a real
+    # empty page. This is the ambiguity the change exists to end.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    page = AsyncMock()
+    page.query_selector_all.return_value = []  # block pages carry no listing cards
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=page, status=403, blocked=True)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+
+    result = await kijiji.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert pf.blocked is True
+    assert pf.status == 403
+    assert pf.rows == 0
+    assert result.listings == []
+
+
+@pytest.mark.asyncio
+async def test_fetch_records_navigation_failure(monkeypatch):
+    # A navigation failure (page None, status 0) is recorded — distinguishable
+    # from both a block and an end-of-results page.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+
+    async def fake_open_page(_browser: object, _url: str) -> PageResult:
+        return PageResult(page=None, status=0, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+
+    result = await kijiji.fetch_listings(object())
+
+    assert len(result.pages) == 1
+    pf = result.pages[0]
+    assert pf.status == 0
+    assert pf.rows == 0
+    assert pf.blocked is False
+    assert result.listings == []

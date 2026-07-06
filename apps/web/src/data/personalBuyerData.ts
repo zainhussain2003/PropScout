@@ -14,7 +14,9 @@ import type {
   PersonalMonthlyCost,
   HomeScore,
 } from '../types/personal'
+import type { RiskFlag } from '../types/analysis'
 import { computeMonthlyPayment } from '../lib/investorCalc'
+import { HOME_SCORE, SEVERE_FLAG_IDS } from '../constants/thresholds'
 
 // ── Property ──────────────────────────────────────────────────────────────────
 
@@ -320,12 +322,19 @@ export function computeMonthlyCost(
  * Computes the Personal Buyer home score (0–100).
  * Components: pricing (25), schools (20), light (15), walk+transit (15),
  *             lot value-add (15), risks (10).
+ *
+ * Risk flags (optional, for live analyses): standard red flags deduct
+ * HOME_SCORE.RED_FLAG_DEDUCTION each from riskPts (floor 0); severe
+ * dealbreakers (SEVERE_FLAG_IDS) don't deduct — they GATE the total via
+ * HOME_SCORE.SEVERE_CEILINGS (34/20/10 by count, floor 5). Ambers do nothing.
+ * Order: sum components → apply severe ceiling → apply floor.
  */
 export function computeHomeScore(
   property: PersonalProperty,
   schools: PersonalSchools,
   neigh: PersonalNeighbourhood,
-  lightScore: number
+  lightScore: number,
+  flags?: readonly Pick<RiskFlag, 'id' | 'severity' | 'tier'>[]
 ): HomeScore {
   // 1. Pricing vs FMV
   const askVsMid = (property.price - property.fmv.mid) / property.fmv.mid
@@ -336,17 +345,28 @@ export function computeHomeScore(
   else if (askVsMid <= 0.03) pricing = 14
   else if (askVsMid <= 0.06) pricing = 8
 
-  // 2. Schools — average EQAO of in-catchment schools
-  const inCatch = [...schools.elementary, ...schools.middle, ...schools.high].filter(
-    (s) => s.inCatchment
-  )
-  const avgEqao = inCatch.length ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length : 7.5
+  // 2. Schools — average EQAO of in-catchment schools. Real data carries no
+  // catchment (boundaries not ingested), so fall back to the mean EQAO of the
+  // NEAREST schools when they have real scores; the flat 7.5 assumption only
+  // remains for schools with no EQAO at all. When no school data is available
+  // (EMPTY_SCHOOLS for real listings pre-CSV), arrays are empty → schoolPts 0.
+  const allSchools = [...schools.elementary, ...schools.middle, ...schools.high]
+  const inCatch = allSchools.filter((s) => s.inCatchment)
+  const scored = allSchools.filter((s) => s.eqao > 0)
   let schoolPts = 0
-  if (avgEqao >= 9.0) schoolPts = 20
-  else if (avgEqao >= 8.5) schoolPts = 17
-  else if (avgEqao >= 8.0) schoolPts = 14
-  else if (avgEqao >= 7.0) schoolPts = 10
-  else schoolPts = 5
+  let avgEqao = 0
+  if (allSchools.length > 0) {
+    avgEqao = inCatch.length
+      ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length
+      : scored.length
+        ? scored.reduce((s, x) => s + x.eqao, 0) / scored.length
+        : 7.5
+    if (avgEqao >= 9.0) schoolPts = 20
+    else if (avgEqao >= 8.5) schoolPts = 17
+    else if (avgEqao >= 8.0) schoolPts = 14
+    else if (avgEqao >= 7.0) schoolPts = 10
+    else schoolPts = 5
+  }
 
   // 3. Light score
   let lightPts = 0
@@ -367,10 +387,27 @@ export function computeHomeScore(
   // 5. Lot / value-add (baseline)
   const lotPts = 8
 
-  // 6. Risks (no major flags baseline)
-  const riskPts = 10
+  // 6. Risks — standard reds deduct; severe dealbreakers gate the total below.
+  // Prefer the calc engine's per-mode tier (flag matrix); analyses stored
+  // before the matrix shipped fall back to the SEVERE_FLAG_IDS mirror.
+  const reds = (flags ?? []).filter((f) => f.severity === 'red')
+  const severeCount = reds.filter((f) =>
+    f.tier != null ? f.tier === 'severe' : SEVERE_FLAG_IDS.has(f.id)
+  ).length
+  const standardRedCount = reds.length - severeCount
+  const riskPts = Math.max(
+    0,
+    HOME_SCORE.RISK_MAX - standardRedCount * HOME_SCORE.RED_FLAG_DEDUCTION
+  )
 
-  const total = Math.min(100, pricing + schoolPts + lightPts + walkPts + lotPts + riskPts)
+  let total = Math.min(100, pricing + schoolPts + lightPts + walkPts + lotPts + riskPts)
+  if (severeCount > 0) {
+    const ceiling =
+      HOME_SCORE.SEVERE_CEILINGS[Math.min(severeCount, HOME_SCORE.SEVERE_CEILINGS.length) - 1] ??
+      HOME_SCORE.FLOOR
+    total = Math.min(total, ceiling)
+  }
+  total = Math.max(HOME_SCORE.FLOOR, total)
 
   const verdict =
     total >= 80

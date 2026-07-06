@@ -5,7 +5,7 @@ Route handlers call services and calculations. No business logic here.
 
 import logging
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from models.schemas import (
     PropertyInput,
@@ -17,6 +17,8 @@ from models.schemas import (
     DealScoreBreakdownOutput,
     ComponentMaxes,
     SunScoutOutput,
+    SunScoutRequest,
+    SunScoutResponse,
 )
 from sunscout.sun_path import calculate_sun_hours
 from constants.rates import get_maintenance_rate
@@ -31,11 +33,12 @@ from calculations.investment import (
     calculate_cash_on_cash,
     calculate_break_even_rent,
 )
-from calculations.deal_score import calculate_deal_score
+from calculations.deal_score import calculate_deal_score, to_display_score
 from calculations.sanity import sanity_check_metrics
 from extraction.regex_rules import extract_regex_flags
 from extraction.haiku_extraction import extract_flags_with_haiku
 from extraction.logic_gate import merge_flags, MergedFlag
+from constants.flag_matrix import get_flag_tier
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +49,17 @@ _DEFAULT_CMHC_VACANCY_RATE: float = 0.02
 _DEFAULT_RENTAL_DOM: int = 21
 _DEFAULT_RENT_TREND: str = "flat"
 
-# Points deducted from the deal score per confirmed red flag
+# Points deducted from the deal score per confirmed STANDARD red flag
 _DEDUCTION_PER_RED_FLAG: int = 5
+
+# Severe/red/amber tiers now come from the per-mode flag severity matrix
+# (constants/flag_matrix.py, docs/FLAG_SEVERITY_MATRIX.md) applied inside
+# merge_flags. Every matrix severe cell has a deterministic regex floor
+# (verified in extraction/regex_rules_test.py) so the §10a gate never runs on
+# nothing when Haiku is unavailable. Modes that show the investment score
+# (investor/landlord) apply the gate; personal uses HomeScore (gated in the
+# frontend with its own 34/20/10 ceilings), tenant has no deal score.
+_GATED_MODES: frozenset[str] = frozenset({"investor", "landlord"})
 
 
 class AnalysisRequest(BaseModel):
@@ -58,6 +70,72 @@ class AnalysisRequest(BaseModel):
     rental: RentalEstimate
     description: str | None = (
         None  # raw listing description; run through extraction pipeline
+    )
+    # Real per-city CMHC vacancy rate (decimal, e.g. 0.018). Supplied by the
+    # Fastify API from cmhcService; falls back to the default when omitted so
+    # the demand score reflects the actual market, not a flat assumption.
+    cmhc_vacancy_rate: float | None = None
+    # Flag IDs the user has dismissed for this analysis (from flag_overrides).
+    # Dismissed red flags are still returned in risk_flags (so the UI can show
+    # them greyed out) but no longer deduct from the deal score on re-run.
+    dismissed_flag_ids: list[str] = Field(default_factory=list)
+    # Report mode — only investor/landlord apply the investment severe-gate
+    # (personal uses HomeScore, tenant has no deal score). Spec §10a.
+    mode: str = "investor"
+
+
+def _build_sun_scout(
+    lat: float, lng: float, azimuth_deg: float = 180.0, context: str = ""
+) -> SunScoutOutput | None:
+    """
+    Run the pvlib sun-path calculation and shape it for the API.
+
+    Args:
+        lat: Property latitude (decimal degrees).
+        lng: Property longitude (decimal degrees).
+        azimuth_deg: Primary facade bearing (0=N, 90=E, 180=S, 270=W).
+        context: Address or label for error logs.
+
+    Returns:
+        SunScoutOutput, or None on any calculation failure (non-fatal —
+        the rest of the report must still load).
+    """
+    try:
+        ss = calculate_sun_hours(lat, lng, azimuth_deg)
+        bedroom_main = ss.window_hours.get("bedroom_main", {})
+        monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
+        return SunScoutOutput(
+            annual_peak_sun_hours=ss.annual_peak_sun_hours,
+            summer_daily_hours=ss.summer_daily_hours,
+            winter_daily_hours=ss.winter_daily_hours,
+            seasonal_grid=ss.seasonal_grid,
+            monthly_hours=monthly_hours,
+            sun_score=ss.sun_score,
+            verdict=ss.verdict,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("SunScout failed for %s: %s", context or f"({lat},{lng})", exc)
+        return None
+
+
+@router.post("/sunscout", response_model=SunScoutResponse)
+async def recalculate_sun_scout(body: SunScoutRequest) -> SunScoutResponse:
+    """
+    Recalculate SunScout for a facade bearing chosen by the user.
+
+    The main pipeline assumes a south-facing primary facade (180°); this
+    endpoint lets the UI turn that assumption into an input without
+    re-running the whole analysis (no extraction, no narrative).
+
+    Args:
+        body: lat/lng plus the facade bearing in degrees (0=N … 270=W).
+
+    Returns:
+        SunScoutResponse with sun_scout, or sun_scout=null when the
+        calculation fails.
+    """
+    return SunScoutResponse(
+        sun_scout=_build_sun_scout(body.lat, body.lng, body.azimuth_deg)
     )
 
 
@@ -135,9 +213,12 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
 
     dscr = calculate_dscr(noi=noi, annual_debt_service=annual_debt_service)
 
-    grm = calculate_grm(
-        purchase_price=float(prop.price),
-        annual_gross_rent=gross_annual_rent,
+    grm = (
+        calculate_grm(
+            purchase_price=float(prop.price), annual_gross_rent=gross_annual_rent
+        )
+        if gross_annual_rent > 0
+        else 0.0
     )
 
     total_cash_invested = down_payment + closing["total"]
@@ -162,51 +243,77 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     # Only validated red flags (85%+ confidence) deduct from the deal score.
     merged_flags: list = []
     risk_flag_deductions: float = 0.0
+    severe_flag_count: int = 0
+
+    dismissed_flags = set(body.dismissed_flag_ids)
 
     if body.description:
         try:
             regex_flags = extract_regex_flags(body.description)
             haiku_flags = await extract_flags_with_haiku(body.description)
-            merged_flags = merge_flags(regex_flags, haiku_flags)
+            merged_flags = merge_flags(regex_flags, haiku_flags, mode=body.mode)
 
-            red_flag_count = sum(1 for f in merged_flags if f.severity == "red")
-            risk_flag_deductions = float(red_flag_count * _DEDUCTION_PER_RED_FLAG)
+            # Active = not dismissed. The per-mode tier decides the impact:
+            # 'severe' GATES the ceiling; 'red' deducts −5 each (capped in
+            # calculate_deal_score); 'amber' displays only.
+            active = [f for f in merged_flags if f.flag_id not in dismissed_flags]
+            severe_flag_count = sum(1 for f in active if f.tier == "severe")
+            standard_red_count = sum(1 for f in active if f.tier == "red")
+            risk_flag_deductions = float(standard_red_count * _DEDUCTION_PER_RED_FLAG)
         except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
             logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
             merged_flags = []
             risk_flag_deductions = 0.0
+            severe_flag_count = 0
 
     # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
     # The calculation uses $0 when condo_fee_monthly is not provided, which may
     # silently understate carrying costs by hundreds per month for condos.
-    # Surface an amber warning so the user can correct it in the financing sliders.
-    if prop.property_type == "condo" and not prop.condo_fee_known:
+    # Surface an amber warning so the user can correct it in the financing
+    # sliders. Matrix: hidden for tenants (they don't pay the fee).
+    if (
+        prop.property_type == "condo"
+        and not prop.condo_fee_known
+        and get_flag_tier("condo_fee_unknown", body.mode) != "hidden"
+    ):
         condo_fee_flag = MergedFlag(
             flag_id="condo_fee_unknown",
             severity="amber",
             confidence=100,
             evidence="Condo fee not provided — costs calculated assuming $0/month",
             source="structural",
+            tier="amber",
         )
         if not any(f.flag_id == "condo_fee_unknown" for f in merged_flags):
             merged_flags.append(condo_fee_flag)
 
     # ── 4. Deal score ─────────────────────────────────────────────────────────
+    # Use the real per-city vacancy rate when the API supplies it; the DOM and
+    # rent-trend inputs stay on defaults until a data source exists for them.
+    vacancy_rate = (
+        body.cmhc_vacancy_rate
+        if body.cmhc_vacancy_rate is not None
+        else _DEFAULT_CMHC_VACANCY_RATE
+    )
+    # The severe gate only applies to modes that show this investment score.
+    gate_count = severe_flag_count if body.mode in _GATED_MODES else 0
     score_result = calculate_deal_score(
         cap_rate=cap_rate,
         cash_flow_monthly=cash_flow_monthly,
         cash_on_cash=cash_on_cash,
         dscr=dscr,
-        cmhc_vacancy_rate=_DEFAULT_CMHC_VACANCY_RATE,
+        cmhc_vacancy_rate=vacancy_rate,
         rental_days_on_market=_DEFAULT_RENTAL_DOM,
         rent_trend=_DEFAULT_RENT_TREND,
         risk_flag_deductions=risk_flag_deductions,
+        severe_flag_count=gate_count,
     )
 
     br = score_result["breakdown"]
     cm = br["component_maxes"]
     deal_score = DealScoreOutput(
         total=score_result["total"],
+        display_total=to_display_score(int(score_result["total"])),
         verdict=score_result["verdict"],
         breakdown=DealScoreBreakdownOutput(
             cap_rate=br["cap_rate"],
@@ -233,6 +340,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         purchase_price=float(prop.price),
         dscr=dscr,
         break_even_rent=break_even_rent,
+        deal_score=deal_score.total,
+        cash_flow_monthly=cash_flow_monthly,
     )
     has_sanity_warnings = len(sanity_warnings) > 0
 
@@ -243,21 +352,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     # ── 6. SunScout (non-fatal — skipped when lat/lng unavailable) ───────────
     sun_scout_result: SunScoutOutput | None = None
     if prop.lat is not None and prop.lng is not None:
-        try:
-            ss = calculate_sun_hours(prop.lat, prop.lng)
-            bedroom_main = ss.window_hours.get("bedroom_main", {})
-            monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
-            sun_scout_result = SunScoutOutput(
-                annual_peak_sun_hours=ss.annual_peak_sun_hours,
-                summer_daily_hours=ss.summer_daily_hours,
-                winter_daily_hours=ss.winter_daily_hours,
-                seasonal_grid=ss.seasonal_grid,
-                monthly_hours=monthly_hours,
-                sun_score=ss.sun_score,
-                verdict=ss.verdict,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.error("SunScout failed for %s: %s", prop.address, exc)
+        sun_scout_result = _build_sun_scout(prop.lat, prop.lng, context=prop.address)
 
     # ── 7. Assemble and return output ─────────────────────────────────────────
     metrics = InvestmentMetricsOutput(
@@ -288,6 +383,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             "confidence": f.confidence,
             "evidence": f.evidence,
             "source": f.source,
+            "tier": f.tier,
         }
         for f in merged_flags
     ]

@@ -14,6 +14,7 @@ Calibration properties used:
 
 import sys
 import os
+from unittest.mock import patch, AsyncMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -21,6 +22,11 @@ from fastapi.testclient import TestClient  # noqa: E402
 from main import app  # noqa: E402
 
 client = TestClient(app)
+
+# Patch target for the Haiku extractor as imported into the router module.
+# Tests that send a description patch this so only the deterministic regex
+# flags fire — no network call, no key dependency.
+_HAIKU_PATCH = "routers.analysis.extract_flags_with_haiku"
 
 # ── Shared payloads ────────────────────────────────────────────────────────────
 
@@ -450,6 +456,100 @@ def test_detached_unknown_fee_does_not_emit_flag() -> None:
     )
 
 
+def test_cmhc_vacancy_rate_flows_into_demand_score() -> None:
+    """
+    The per-city CMHC vacancy rate supplied by the Fastify API must drive the
+    demand component of the deal score, not a flat in-module default.
+
+    Vacancy contribution (deal_score._score_market_demand):
+      < 2%  → 4 pts,  < 3% → 3 pts,  < 5% → 1 pt,  >= 5% → 0 pts.
+    A tight 1% market and a soft 6% market must therefore score 4 demand
+    points apart, all else equal.
+    """
+    tight = {**_VAUGHAN_PAYLOAD, "cmhc_vacancy_rate": 0.01}
+    soft = {**_VAUGHAN_PAYLOAD, "cmhc_vacancy_rate": 0.06}
+
+    tight_resp = client.post("/analysis/", json=tight)
+    soft_resp = client.post("/analysis/", json=soft)
+
+    assert tight_resp.status_code == 200, tight_resp.text
+    assert soft_resp.status_code == 200, soft_resp.text
+
+    tight_demand = tight_resp.json()["deal_score"]["breakdown"]["demand"]
+    soft_demand = soft_resp.json()["deal_score"]["breakdown"]["demand"]
+
+    assert tight_demand - soft_demand == 4, (
+        f"Expected 4-pt demand gap between 1% and 6% vacancy, "
+        f"got tight={tight_demand}, soft={soft_demand}"
+    )
+
+
+def test_cmhc_vacancy_rate_defaults_when_omitted() -> None:
+    """
+    Omitting cmhc_vacancy_rate falls back to the 2% in-module default, which
+    lands in the < 3% bracket (3 demand points from vacancy). Confirms the
+    optional field is backward-compatible with callers that don't send it.
+    """
+    response = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
+    assert response.status_code == 200, response.text
+
+    # Vaughan: DOM default 21 (2 pts) + flat trend (2 pts) + 2% vacancy (3 pts) = 7.
+    demand = response.json()["deal_score"]["breakdown"]["demand"]
+    assert demand == 7, f"Expected demand 7 with default 2% vacancy, got {demand}"
+
+
+def test_dismissed_red_flag_removes_its_score_deduction() -> None:
+    """
+    A red flag the user has dismissed (passed in dismissed_flag_ids) must stop
+    deducting from the deal score on re-run, while still being returned in
+    risk_flags so the UI can show it greyed out.
+
+    'currently rented' deterministically triggers the regex 'tenanted' flag at
+    confidence 92 (>= 85 -> red-eligible). Per the flag severity matrix,
+    tenanted is only a RED tier for the PERSONAL mode (N12 own-use risk) —
+    for an investor it is amber and never deducts.
+    """
+    base = {
+        **_HAMILTON_PAYLOAD,
+        "mode": "personal",
+        "description": "Bright duplex, currently rented to great tenants.",
+    }
+    dismissed = {**base, "dismissed_flag_ids": ["tenanted"]}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        base_resp = client.post("/analysis/", json=base)
+        dismissed_resp = client.post("/analysis/", json=dismissed)
+
+    assert base_resp.status_code == 200, base_resp.text
+    assert dismissed_resp.status_code == 200, dismissed_resp.text
+
+    base_data = base_resp.json()
+    dismissed_data = dismissed_resp.json()
+
+    # The red flag fires in both responses (still shown), ...
+    assert any(f["flag_id"] == "tenanted" for f in base_data["risk_flags"])
+    assert any(f["flag_id"] == "tenanted" for f in dismissed_data["risk_flags"])
+
+    # ... but its -5 deduction is gone once dismissed, lifting the score by 5.
+    assert base_data["deal_score"]["breakdown"]["deduction"] == 5
+    assert dismissed_data["deal_score"]["breakdown"]["deduction"] == 0
+    assert dismissed_data["deal_score"]["total"] == base_data["deal_score"]["total"] + 5
+
+
+def test_dismissing_unknown_flag_id_is_a_noop() -> None:
+    """Dismissing a flag_id that isn't present must not change the score."""
+    base = {**_HAMILTON_PAYLOAD, "description": "Bright duplex, currently rented."}
+    other = {**base, "dismissed_flag_ids": ["some_other_flag"]}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        base_total = client.post("/analysis/", json=base).json()["deal_score"]["total"]
+        other_total = client.post("/analysis/", json=other).json()["deal_score"][
+            "total"
+        ]
+
+    assert base_total == other_total
+
+
 def test_analysis_response_has_all_required_fields() -> None:
     """
     The /analysis/ response must include every field defined in AnalysisOutput,
@@ -519,3 +619,142 @@ def test_analysis_response_has_all_required_fields() -> None:
     assert (
         not missing_maxes
     ), f"component_maxes keys missing from response: {missing_maxes}"
+
+
+# -- POST /analysis/sunscout - facade-direction recalculation ------------------
+
+
+def test_sunscout_endpoint_recalculates_for_facade_bearing() -> None:
+    """A south-facing facade in Toronto must out-score a north-facing one -
+    the endpoint exists so the UI can turn the assumed-south default into a
+    user-supplied input."""
+    south = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 180},
+    )
+    north = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 0},
+    )
+    assert south.status_code == 200
+    assert north.status_code == 200
+    s = south.json()["sun_scout"]
+    n = north.json()["sun_scout"]
+    assert s is not None and n is not None
+    assert s["sun_score"] > n["sun_score"]
+    assert len(s["monthly_hours"]) == 12
+
+
+def test_sunscout_endpoint_defaults_to_south_facade() -> None:
+    """Omitting azimuth_deg uses the same south (180) assumption as the main
+    analysis pipeline."""
+    default = client.post("/analysis/sunscout", json={"lat": 43.65, "lng": -79.38})
+    explicit = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 180},
+    )
+    assert default.status_code == 200
+    assert default.json() == explicit.json()
+
+
+def test_sunscout_endpoint_rejects_invalid_bearing() -> None:
+    """Bearings outside 0-360 are a caller bug, not a calculation input."""
+    res = client.post(
+        "/analysis/sunscout",
+        json={"lat": 43.65, "lng": -79.38, "azimuth_deg": 400},
+    )
+    assert res.status_code == 422
+
+
+# ── Flag severity matrix — per-mode severities (docs/FLAG_SEVERITY_MATRIX.md) ──
+
+
+def _flags_for_mode(description: str, mode: str) -> dict[str, dict]:
+    """Run the same listing through one mode; return {flag_id: flag dict}."""
+    payload = {**_HAMILTON_PAYLOAD, "mode": mode, "description": description}
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        resp = client.post("/analysis/", json=payload)
+    assert resp.status_code == 200, resp.text
+    return {f["flag_id"]: f for f in resp.json()["risk_flags"]}
+
+
+def test_matrix_same_listing_gets_mode_specific_severities() -> None:
+    """One tenanted + needs-work listing through all four modes: the flag set
+    and tones must follow the matrix, not a single global severity."""
+    desc = "Sold as-is, handyman special. Currently rented to great tenants."
+
+    investor = _flags_for_mode(desc, "investor")
+    assert investor["tenanted"]["severity"] == "amber"
+    assert investor["needs_work"]["severity"] == "amber"
+
+    personal = _flags_for_mode(desc, "personal")
+    assert personal["tenanted"]["severity"] == "red"  # N12 own-use risk
+    assert personal["needs_work"]["severity"] == "red"
+
+    tenant = _flags_for_mode(desc, "tenant")
+    assert "tenanted" not in tenant  # hidden — the reader IS the tenant
+    assert "needs_work" not in tenant
+
+    landlord = _flags_for_mode(desc, "landlord")
+    assert landlord["tenanted"]["severity"] == "amber"
+
+
+def test_matrix_amber_tiers_do_not_deduct_from_the_investor_score() -> None:
+    """Under the approved matrix, tenanted/needs_work are amber for an
+    investor — the score must match the no-description baseline exactly."""
+    desc = "Sold as-is, handyman special. Currently rented to great tenants."
+    flagged = {**_HAMILTON_PAYLOAD, "mode": "investor", "description": desc}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        flagged_resp = client.post("/analysis/", json=flagged)
+        base_resp = client.post("/analysis/", json=_HAMILTON_PAYLOAD)
+
+    flagged_data = flagged_resp.json()
+    assert flagged_data["deal_score"]["breakdown"]["deduction"] == 0
+    assert (
+        flagged_data["deal_score"]["total"] == base_resp.json()["deal_score"]["total"]
+    )
+
+
+def test_matrix_severe_gate_still_fires_for_investor() -> None:
+    """The §10a severe gate is unchanged: a grow-op caps the investor score
+    at the 1-severe ceiling (40)."""
+    desc = "Former grow op, fully remediated with city sign-off."
+    payload = {**_HAMILTON_PAYLOAD, "mode": "investor", "description": desc}
+
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        resp = client.post("/analysis/", json=payload)
+
+    data = resp.json()
+    assert any(
+        f["flag_id"] == "grow_op_history" and f["tier"] == "severe"
+        for f in data["risk_flags"]
+    )
+    assert data["deal_score"]["total"] <= 40
+
+
+def test_matrix_condo_fee_unknown_is_hidden_from_tenants() -> None:
+    """The structural condo-fee flag doesn't apply to tenants — they don't
+    pay the fee."""
+    condo = {
+        **_VAUGHAN_PAYLOAD,
+        "property_data": {
+            **_VAUGHAN_PAYLOAD["property_data"],
+            "condo_fee_known": False,
+            "condo_fee_monthly": 0,
+        },
+    }
+    investor = {**condo, "mode": "investor"}
+    tenant = {**condo, "mode": "tenant"}
+
+    inv_flags = {
+        f["flag_id"]
+        for f in client.post("/analysis/", json=investor).json()["risk_flags"]
+    }
+    ten_flags = {
+        f["flag_id"]
+        for f in client.post("/analysis/", json=tenant).json()["risk_flags"]
+    }
+
+    assert "condo_fee_unknown" in inv_flags
+    assert "condo_fee_unknown" not in ten_flags

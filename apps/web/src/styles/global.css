@@ -231,12 +231,17 @@ img {
   transform: translateY(1px);
 }
 
+/* Per the Harbour design system: ink at rest, harbour-blue accent on hover.
+ * Accent-at-rest was an earlier build deviation and failed WCAG AA (white on
+ * the old terracotta ≈ 3.1:1); ink/bg at rest is ≈ 15.9:1 and white on the
+ * harbour accent hover is 8.94:1. Locked by btnContrast.test.ts. */
 .btn-primary {
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--ink);
+  color: var(--bg);
 }
 .btn-primary:hover {
-  filter: brightness(0.9);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 .btn-ghost {
@@ -283,8 +288,8 @@ img {
 /* Chips inside the dark footer need inverted colours for contrast */
 footer .chip {
   color: var(--bg);
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: color-mix(in oklab, var(--bg) 10%, transparent);
+  border-color: color-mix(in oklab, var(--bg) 15%, transparent);
 }
 
 /* ── Cards ───────────────────────────────────────────────────── */
@@ -671,7 +676,7 @@ footer a:hover {
 }
 
 .acc-nav-item.active .acc-nav-count {
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in oklab, var(--bg) 18%, transparent);
   color: var(--bg);
 }
 
@@ -823,4 +828,67 @@ body::-webkit-scrollbar-thumb {
   .hero-score-first > *:last-child {
     order: -1;
   }
+}
+
+/* ── Landing nav — mobile collapse (matches Landing v2) ───────── */
+/* Below 820px the centre nav-links row is dropped; below 640px the
+   Sign-in + Start-free CTAs collapse too, leaving wordmark + theme
+   toggle only. This is what fixes the pre-PR10 380px nav overflow
+   (the 3-button action cluster reached x=751 at a 380px viewport). */
+@media (max-width: 820px) {
+  .nav-links {
+    display: none !important;
+  }
+}
+@media (max-width: 640px) {
+  .lp-nav-cta {
+    display: none !important;
+  }
+}
+
+/* ── Print stylesheet (spec §14 — PDF export pagination) ─────── */
+/* The PDF is Puppeteer's print capture of the live report, so these
+   rules ARE the PDF layout. Keep pagination aligned with the §14
+   page tables: whole cards never split, section heads stay with
+   their content, interactive chrome disappears. */
+
+@media print {
+  /* Interactive chrome has no meaning on paper */
+  header,
+  [data-testid='dev-toolbar'],
+  .btn,
+  button {
+    display: none !important;
+  }
+
+  /* Sticky elements print at their natural position */
+  [style*='position: sticky'],
+  [style*='position:sticky'] {
+    position: static !important;
+  }
+
+  /* §14 pagination: sections start clean, cards never split */
+  .tr-section {
+    break-inside: auto;
+    padding-top: 24px;
+  }
+  .card {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  /* Backgrounds print via printBackground; drop heavy shadows */
+  * {
+    box-shadow: none !important;
+  }
+}
+
+/* ── Sliders ─────────────────────────────────────────────────── */
+/* PR10 discipline fix: .scout-slider (financing + landlord rent sliders)
+   had NO rule — a native UA range control that never picked up the accent
+   token (rendered browser-red in captures). Token-driven like the OSFI
+   income slider's inline accentColor. */
+.scout-slider {
+  accent-color: var(--accent);
+  cursor: pointer;
 }

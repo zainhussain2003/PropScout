@@ -6,12 +6,23 @@
  * investment report. Tenant and personal buyer modes render focused summaries.
  */
 
-import { useEffect, useState, useCallback, type ReactNode } from 'react'
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
-import { enrichMetrics, toDealScoreData, computeLTT, fmtMoney } from '../lib/investorCalc'
+import { useFlagOverrides } from '../hooks/useFlagOverrides'
+import { PersonalBuyerPage } from './PersonalBuyerPage'
+import {
+  enrichMetrics,
+  toDealScoreData,
+  computeLTT,
+  computeOSFI,
+  fmtMoney,
+} from '../lib/investorCalc'
+import { DEFAULT_HOUSEHOLD_INCOME, INCOME_SLIDER } from '../constants/osfi'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
+import { LockedButton } from '../components/paywall/LockedButton'
+import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -27,6 +38,8 @@ import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
+import { TenantSchoolsSection } from '../components/tenant/TenantSchoolsSection'
+import { shimToTenantSchools } from '../lib/reportShims'
 import { DEFAULT_FINANCING_INPUTS } from '../constants/demoData'
 import type {
   Analysis,
@@ -35,6 +48,7 @@ import type {
   DealScoreData,
   ComputedInvestorMetrics,
   FinancingInputs,
+  FlagOverrideControls,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 
@@ -68,6 +82,9 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
   const price = listing.price ?? 0
   const annualTaxes = listing.annualTaxes ?? 0
   const condoFeeMonthly = listing.condoFeeMonthly ?? 0
+  // Internal fallback only (maintenance-rate display buckets); the hero hides
+  // the "Built" fact when the listing didn't carry a year (a fabricated
+  // "Built 2016" rendered live 2026-07-02).
   const yearBuilt = listing.yearBuilt ?? new Date().getFullYear() - 10
   const isToronto =
     listing.city.toLowerCase().includes('toronto') ||
@@ -89,16 +106,21 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     province: listing.province,
     isToronto,
     propertyType: listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1),
-    beds: `${listing.beds} bed`,
-    baths: `${listing.baths} bath`,
+    // PropertyHero renders "{beds} bed · {baths} bath" / "{parking} parking" —
+    // these carry the bare numbers (was "2 bed bed · 2 bath bath", live 2026-07-02)
+    beds: String(listing.beds),
+    baths: String(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking: listing.parkingSpots > 0 ? `${listing.parkingSpots} spot` : 'None',
+    parking: String(listing.parkingSpots),
     yearBuilt,
     rentControl: yearBuilt <= 2018,
     price,
     annualTaxes,
     condoFeeMonthly,
-    rentEstimate: analysis.rentalComps?.mid ?? 0,
+    // Comps mid when available; otherwise the listing's own asking rent —
+    // the hero once rendered "Asking rent $0/mo" on a $2,650 rental because
+    // comps were null (live 2026-07-02).
+    rentEstimate: analysis.rentalComps?.mid ?? listing.rentMonthly ?? 0,
     rentLow: analysis.rentalComps?.low ?? 0,
     rentHigh: analysis.rentalComps?.high ?? 0,
     compCount: analysis.rentalComps?.compCount ?? 0,
@@ -107,6 +129,7 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     riskFlags,
     chips: buildChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
+    yearBuiltKnown: listing.yearBuilt != null,
   }
 }
 
@@ -217,7 +240,7 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
         topic="Rental comps"
         question={
           <>
-            What does the <em>market</em> pay?
+            What can it <em>realistically</em> rent for?
           </>
         }
         verdict={`${compCount} comparable rentals`}
@@ -269,12 +292,27 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
 
 // ── Risk flags section ────────────────────────────────────────────────────────
 
-function RiskFlagsSection({ listing }: { listing: ListingData }): JSX.Element {
+function RiskFlagsSection({
+  listing,
+  flagOverrides,
+}: {
+  listing: ListingData
+  flagOverrides: FlagOverrideControls
+}): JSX.Element {
   const redFlags = listing.riskFlags.filter((f) => f.tone === 'red')
   const amberFlags = listing.riskFlags.filter((f) => f.tone === 'amber')
-  const totalDeductions = listing.riskFlags.reduce((s, f) => s + f.deduct, 0)
+  // No "−X pts" line here: with the severe gate, score impact is gate + standard
+  // tier, not a single deduction — and re-deriving it on the frontend is exactly
+  // the second computation that drifts from the calc engine. The score itself is
+  // shown (from the backend) in the hero gauge.
 
-  const verdictTone = redFlags.length > 1 ? 'fail' : redFlags.length === 1 ? 'caution' : 'pass'
+  // Ambers are soft warnings — the chip must read caution, not pass-green
+  const verdictTone =
+    redFlags.length > 1
+      ? 'fail'
+      : redFlags.length === 1 || amberFlags.length > 0
+        ? 'caution'
+        : 'pass'
   const verdictLabel =
     redFlags.length > 0
       ? `${redFlags.length} red · ${amberFlags.length} amber`
@@ -289,7 +327,7 @@ function RiskFlagsSection({ listing }: { listing: ListingData }): JSX.Element {
         topic="Risk flags"
         question={
           <>
-            What could go <em>wrong</em>?
+            What could <em>break</em> this thesis?
           </>
         }
         verdict={verdictLabel}
@@ -297,24 +335,6 @@ function RiskFlagsSection({ listing }: { listing: ListingData }): JSX.Element {
       />
 
       <div className="card col" style={{ padding: 0, overflow: 'hidden' }}>
-        {totalDeductions > 0 && (
-          <div
-            style={{
-              padding: '12px 24px',
-              background: 'color-mix(in oklab, var(--fail) 8%, transparent)',
-              borderBottom: '1px solid var(--line)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 13,
-            }}
-          >
-            <span style={{ color: 'var(--ink-2)' }}>Total deal score deductions</span>
-            <span className="mono tabular" style={{ color: 'var(--fail)', fontWeight: 600 }}>
-              −{totalDeductions} pts
-            </span>
-          </div>
-        )}
-
         {listing.riskFlags.length === 0 ? (
           <div
             style={{
@@ -330,7 +350,15 @@ function RiskFlagsSection({ listing }: { listing: ListingData }): JSX.Element {
           </div>
         ) : (
           listing.riskFlags.map((f) => (
-            <RiskRow key={f.id} tone={f.tone} label={f.label} detail={f.detail} />
+            <RiskRow
+              key={f.id}
+              tone={f.tone}
+              label={f.label}
+              detail={f.detail}
+              dismissable={flagOverrides.canOverride}
+              dismissed={flagOverrides.overrides.has(f.id)}
+              onToggleDismiss={() => flagOverrides.onToggle(f.id)}
+            />
           ))
         )}
       </div>
@@ -360,7 +388,7 @@ function CashToCloseSection({
         topic="Cash to close"
         question={
           <>
-            What do you need <em>upfront</em>?
+            What you need in the <em>bank</em> on closing day.
           </>
         }
         verdict={fmtMoney(total)}
@@ -424,12 +452,39 @@ function CashToCloseSection({
 // ── OSFI section ──────────────────────────────────────────────────────────────
 
 function OSFISection({
-  metrics,
   financing,
+  listing,
 }: {
-  metrics: ComputedInvestorMetrics
   financing: FinancingInputs
+  listing: ListingData
 }): JSX.Element {
+  // Income is a live input — the OSFI GDS / qualifying figures recompute on every
+  // change, so a buyer can see whether the property pencils at their real income
+  // instead of the placeholder default.
+  const [income, setIncome] = useState<number>(financing.assumedIncome || DEFAULT_HOUSEHOLD_INCOME)
+
+  const osfi = useMemo(
+    () =>
+      computeOSFI(
+        listing.price,
+        financing.downPaymentPct,
+        financing.mortgageRate,
+        financing.amortizationYears,
+        listing.annualTaxes,
+        listing.condoFeeMonthly,
+        income
+      ),
+    [
+      listing.price,
+      listing.annualTaxes,
+      listing.condoFeeMonthly,
+      financing.downPaymentPct,
+      financing.mortgageRate,
+      financing.amortizationYears,
+      income,
+    ]
+  )
+
   return (
     <section className="container tr-section" data-section="05">
       <SectionHead
@@ -437,13 +492,52 @@ function OSFISection({
         topic="OSFI stress test"
         question={
           <>
-            Can you <em>qualify</em>?
+            Will the bank actually <em>fund</em> this?
           </>
         }
-        verdict={metrics.osfi.pass ? 'Passes at $125K income' : 'Fails at $125K income'}
-        tone={metrics.osfi.pass ? 'pass' : 'fail'}
+        verdict={
+          osfi.pass ? `Passes at ${fmtMoney(income)} income` : `Fails at ${fmtMoney(income)} income`
+        }
+        tone={osfi.pass ? 'pass' : 'fail'}
       />
-      <OSFICard osfi={metrics.osfi} financing={financing} />
+
+      <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+        <label
+          htmlFor="osfi-income"
+          className="mono"
+          style={{
+            display: 'block',
+            fontSize: 11,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            marginBottom: 12,
+          }}
+        >
+          Your gross household income
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <input
+            id="osfi-income"
+            type="range"
+            min={INCOME_SLIDER.min}
+            max={INCOME_SLIDER.max}
+            step={INCOME_SLIDER.step}
+            value={income}
+            onChange={(e) => setIncome(Number(e.target.value))}
+            aria-label="Gross household income"
+            style={{ flex: 1, accentColor: 'var(--accent)', cursor: 'pointer' }}
+          />
+          <span
+            className="mono tabular"
+            style={{ fontSize: 18, fontWeight: 600, minWidth: 110, textAlign: 'right' }}
+          >
+            {fmtMoney(income)}
+          </span>
+        </div>
+      </div>
+
+      <OSFICard osfi={osfi} financing={financing} income={income} />
     </section>
   )
 }
@@ -461,7 +555,7 @@ function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.E
         topic="Equity build"
         question={
           <>
-            How does the wealth <em>grow</em>?
+            What <em>builds</em> over time?
           </>
         }
         verdict={`${fmtMoney(year20Equity)} at year 20`}
@@ -534,9 +628,11 @@ function buildSub(narrative: string | null, capRate: number, cashFlowMonthly: nu
 function TenantReportContent({
   listing,
   analysis,
+  flagOverrides,
 }: {
   listing: Listing
   analysis: Analysis
+  flagOverrides: FlagOverrideControls
 }): JSX.Element {
   const [addressLine1, addressLine2] = splitAddress(listing.address, listing.city, listing.province)
   const asking = listing.rentMonthly ?? 0
@@ -555,23 +651,32 @@ function TenantReportContent({
                 style={{
                   fontSize: 10,
                   letterSpacing: '0.16em',
-                  color: 'rgba(255,255,255,0.5)',
+                  color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
                   textTransform: 'uppercase',
                 }}
               >
                 Tenant report
               </div>
-              <h1 className="serif" style={{ fontSize: 28, color: '#fff', lineHeight: 1.2 }}>
+              <h1 className="serif" style={{ fontSize: 28, color: 'var(--bg)', lineHeight: 1.2 }}>
                 {addressLine1}
               </h1>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>{addressLine2}</p>
+              <p style={{ fontSize: 14, color: 'color-mix(in oklab, var(--bg) 60%, transparent)' }}>
+                {addressLine2}
+              </p>
             </div>
             {asking > 0 && (
               <div className="col" style={{ alignItems: 'flex-end', gap: 4 }}>
-                <div className="mono" style={{ fontSize: 26, fontWeight: 700, color: '#fff' }}>
+                <div className="mono" style={{ fontSize: 26, fontWeight: 700, color: 'var(--bg)' }}>
                   {fmtMoney(asking)}/mo
                 </div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Asking rent</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: 'color-mix(in oklab, var(--bg) 50%, transparent)',
+                  }}
+                >
+                  Asking rent
+                </div>
               </div>
             )}
           </div>
@@ -584,8 +689,8 @@ function TenantReportContent({
                   fontSize: 11,
                   padding: '4px 10px',
                   borderRadius: 999,
-                  background: 'rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.7)',
+                  background: 'color-mix(in oklab, var(--bg) 10%, transparent)',
+                  color: 'color-mix(in oklab, var(--bg) 70%, transparent)',
                 }}
               >
                 {c}
@@ -644,7 +749,7 @@ function TenantReportContent({
             topic="Listing flags"
             question={
               <>
-                What should you <em>verify</em>?
+                Is the listing <em>honest</em>?
               </>
             }
             verdict={
@@ -656,13 +761,29 @@ function TenantReportContent({
           />
           <div className="card col" style={{ padding: 0, overflow: 'hidden' }}>
             {analysis.riskFlags.map((f) => (
-              <RiskRow key={f.id} tone={f.severity} label={f.label} detail={f.evidence ?? ''} />
+              <RiskRow
+                key={f.id}
+                tone={f.severity}
+                label={f.label}
+                detail={f.evidence ?? ''}
+                dismissable={flagOverrides.canOverride}
+                dismissed={flagOverrides.overrides.has(f.id)}
+                onToggleDismiss={() => flagOverrides.onToggle(f.id)}
+              />
             ))}
           </div>
         </section>
       )}
 
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="03" />
+      {analysis.schools && (
+        <TenantSchoolsSection schools={shimToTenantSchools(analysis.schools)} sectionNumber="03" />
+      )}
+
+      <SunScoutPanel
+        sunScout={analysis.sunScout}
+        sectionNumber={analysis.schools ? '04' : '03'}
+        token={analysis.token}
+      />
     </main>
   )
 }
@@ -673,18 +794,28 @@ function InvestorReportContent({
   listing,
   analysis,
   tier,
+  flagOverrides,
+  mode = 'investor',
 }: {
   listing: Listing
   analysis: Analysis
   tier: string
+  flagOverrides: FlagOverrideControls
+  mode?: 'investor' | 'landlord'
 }): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const verdictEyebrow = `Scout AI · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
   const financing = toFinancingInputs(analysis.metrics, listingData)
 
   const metrics: ComputedInvestorMetrics | null =
     analysis.metrics != null ? enrichMetrics(analysis.metrics, listingData, financing) : null
 
+  // ONE SOURCE OF TRUTH: the deal score comes straight from the calc engine
+  // (gated, floored, the lot). The frontend does NOT re-derive it — a second
+  // computation would drift from the gate (a dismissed flag once inflated a
+  // grow-op property from its gated 40 up to ~90 by ignoring the ceiling).
+  // Dismissing a flag persists the override; the gated score updates on re-run.
   const dealScore: DealScoreData | null =
     analysis.dealScore != null ? toDealScoreData(analysis.dealScore) : null
 
@@ -699,7 +830,13 @@ function InvestorReportContent({
           </h2>
           <p style={{ color: 'var(--ink-2)', fontSize: 14 }}>{listingData.addressLine2}</p>
           {dealScore && (
-            <DealScoreWidget score={dealScore.total} label={dealScore.label} showVerdict />
+            <DealScoreWidget
+              score={dealScore.total}
+              label="Deal score"
+              showVerdict
+              verdictLabel={dealScore.label}
+              tone={dealScore.tone}
+            />
           )}
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>
             Detailed metrics are not available for this report.
@@ -718,6 +855,7 @@ function InvestorReportContent({
         capRate={metrics.capRate}
         dscr={metrics.dscr}
         onBack={handleBack}
+        mapCenter={analysis.coordinates ?? null}
       />
 
       <div className="container" style={{ marginBottom: 32 }}>
@@ -728,11 +866,12 @@ function InvestorReportContent({
                 ? (analysis.narrative.split('.')[0] ?? '') + '.'
                 : `At ${fmtMoney(listingData.price)}, this property shows ${dealScore.label.toLowerCase()} fundamentals.`
             }
+            eyebrow={verdictEyebrow}
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
           <AIVerdictBlock
-            eyebrow="Scout AI · investor verdict"
+            eyebrow={verdictEyebrow}
             headline={buildHeadline(analysis.narrative, dealScore.label, listingData.price)}
             sub={buildSub(analysis.narrative, metrics.capRate, metrics.cashFlowMonthly)}
           />
@@ -741,11 +880,16 @@ function InvestorReportContent({
 
       <InvestmentMetricsSection metrics={metrics} listing={listingData} />
       <RentalCompsSection analysis={analysis} listing={listingData} />
-      <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
-      <OSFISection metrics={metrics} financing={financing} />
-      <RiskFlagsSection listing={listingData} />
+      {/* Purchase-transaction section — meaningless for a for-rent listing
+          (no sale price: the LTT table computed $0 while the totals card used
+          the estimated value, live 2026-07-02). */}
+      {listingData.price > 0 && (
+        <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
+      )}
+      <OSFISection financing={financing} listing={listingData} />
+      <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
       <EquitySection metrics={metrics} />
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" />
+      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="08" token={analysis.token} />
     </main>
   )
 }
@@ -779,6 +923,20 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
     })
   }, [token])
 
+  const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
+  const onToggleFlag = useCallback(
+    (flagId: string) => {
+      if (overrides.has(flagId)) void undismiss(flagId)
+      else void dismiss(flagId)
+    },
+    [overrides, dismiss, undismiss]
+  )
+  const flagOverrides: FlagOverrideControls = {
+    overrides,
+    canOverride: token != null,
+    onToggle: onToggleFlag,
+  }
+
   const handleToggleDark = useCallback(() => {
     setDark((d) => {
       const next = !d
@@ -786,6 +944,9 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       return next
     })
   }, [])
+
+  // Pro-gated PDF export (spec §14) — shared by the share bar + mobile action bar
+  const pdf = usePdfExport(token)
 
   const mode = analysis?.mode ?? 'investor'
   const reportLabel =
@@ -804,6 +965,14 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         ?.replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '') ?? 'property')
     : 'property'
+
+  // Personal buyers get the HomeScore report (not the investment score). It's a
+  // self-contained page with its own Nav/Footer, and it suppresses the numeric
+  // gauge while showing the cost/location/risk readouts the investment report
+  // would never give an owner-occupier (cap-rate/DSCR are the wrong question).
+  if (!loading && !notFound && analysis && listing && mode === 'personal') {
+    return <PersonalBuyerPage analysis={analysis} listing={listing} />
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -826,11 +995,23 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
 
       {!loading && !notFound && analysis && listing && (
         <>
-          {(mode === 'investor' || mode === 'landlord' || mode === 'personal') && (
-            <InvestorReportContent listing={listing} analysis={analysis} tier={tier} />
+          {(mode === 'investor' || mode === 'landlord') && (
+            <InvestorReportContent
+              listing={listing}
+              analysis={analysis}
+              tier={tier}
+              flagOverrides={flagOverrides}
+              mode={mode}
+            />
           )}
 
-          {mode === 'tenant' && <TenantReportContent listing={listing} analysis={analysis} />}
+          {mode === 'tenant' && (
+            <TenantReportContent
+              listing={listing}
+              analysis={analysis}
+              flagOverrides={flagOverrides}
+            />
+          )}
 
           <div className="container" style={{ paddingTop: 32, paddingBottom: 16 }}>
             <div
@@ -846,13 +1027,28 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
               <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
                 Share this report · expires in 30 days
               </div>
-              <button
-                className="btn btn-ghost"
-                style={{ fontSize: 13 }}
-                onClick={() => void navigator.clipboard.writeText(window.location.href)}
-              >
-                <Icon name="share" size={14} /> Copy link
-              </button>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-ghost"
+                  style={{ fontSize: 13 }}
+                  onClick={() => void navigator.clipboard.writeText(window.location.href)}
+                >
+                  <Icon name="share" size={14} /> Copy link
+                </button>
+                {pdf.isLocked ? (
+                  <LockedButton label="Download PDF" icon="doc" onClick={pdf.exportPdf} />
+                ) : (
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 13, opacity: pdf.exporting ? 0.6 : 1 }}
+                    disabled={pdf.exporting}
+                    onClick={pdf.exportPdf}
+                  >
+                    <Icon name="doc" size={14} />{' '}
+                    {pdf.exporting ? 'Preparing PDF…' : 'Download PDF'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -875,7 +1071,10 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         </>
       )}
 
-      <StickyActionBar />
+      <StickyActionBar
+        onShare={() => void navigator.clipboard.writeText(window.location.href)}
+        onPDF={pdf.exportPdf}
+      />
       <Footer />
     </div>
   )

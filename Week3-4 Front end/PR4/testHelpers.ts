@@ -121,6 +121,7 @@ export const mockVaughanAnalysis: Analysis = {
   },
   dealScore: {
     total: 8,
+    displayTotal: 8,
     verdict: 'hard_pass',
     breakdown: VAUGHAN_BREAKDOWN,
   },
@@ -184,6 +185,7 @@ export const mockHamiltonAnalysis: Analysis = {
   },
   dealScore: {
     total: 72,
+    displayTotal: 76,
     verdict: 'good_deal',
     breakdown: HAMILTON_BREAKDOWN,
   },

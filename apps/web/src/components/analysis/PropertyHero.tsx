@@ -28,6 +28,8 @@ interface PropertyHeroProps {
   dscr: number
   /** Called when the user clicks "Analyze another listing" */
   onBack?: () => void
+  /** Subject coordinates — renders the real Mapbox map when provided. */
+  mapCenter?: { lat: number; lng: number } | null
 }
 
 export function PropertyHero({
@@ -37,6 +39,7 @@ export function PropertyHero({
   capRate,
   dscr,
   onBack,
+  mapCenter,
 }: PropertyHeroProps): JSX.Element {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
 
@@ -141,15 +144,8 @@ export function PropertyHero({
           >
             {/* Main photo */}
             <div
-              style={{
-                borderRadius: 18,
-                height: '100%',
-                background: 'var(--line)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
+              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
+              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
             >
               {listing.photoUrls?.[0] ? (
                 <img
@@ -158,17 +154,7 @@ export function PropertyHero({
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <span
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--muted)',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  exterior · {listing.propertyType.toLowerCase()}
-                </span>
+                <span>exterior · {listing.propertyType.toLowerCase()}</span>
               )}
             </div>
 
@@ -177,13 +163,10 @@ export function PropertyHero({
               {(['living', 'kitchen', 'floorplan'] as const).map((label, idx) => (
                 <div
                   key={label}
+                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
                   style={{
                     borderRadius: 14,
                     flex: 1,
-                    background: 'var(--line)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     position: 'relative',
                     overflow: 'hidden',
                   }}
@@ -195,17 +178,7 @@ export function PropertyHero({
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--muted)',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {label}
-                    </span>
+                    <span>{label}</span>
                   )}
                   {idx === 2 && (
                     <div
@@ -274,10 +247,12 @@ export function PropertyHero({
                 <Icon name="key" size={14} />
                 {listing.parking} parking
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Icon name="chart" size={14} />
-                Built {listing.yearBuilt}
-              </span>
+              {listing.yearBuiltKnown !== false && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="chart" size={14} />
+                  Built {listing.yearBuilt}
+                </span>
+              )}
             </div>
           </div>
 
@@ -286,6 +261,7 @@ export function PropertyHero({
             height={180}
             address={`${listing.addressLine1}, ${listing.addressLine2}`}
             pins={[]}
+            center={mapCenter}
           />
         </div>
 
@@ -297,9 +273,13 @@ export function PropertyHero({
           {/* Gauge — capped at 84px on mobile */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
             <DealScore
-              score={score.total}
+              score={score.displayTotal}
+              max={100}
+              tone={score.tone}
               size={isMobile ? 'sm' : 'lg'}
-              label="Deal score / 95"
+              label="Deal score / 100"
+              showVerdict={!isMobile}
+              verdictLabel={score.label}
               animate
             />
           </div>
@@ -423,10 +403,19 @@ export function PropertyHero({
                   color: 'var(--muted)',
                 }}
               >
-                Asking
+                {listing.price > 0 ? 'Asking' : 'Asking rent'}
               </span>
               <span className="serif tabular" style={{ fontSize: 32, lineHeight: 1 }}>
-                {fmtMoney(listing.price)}
+                {/* For-rent listings carry no sale price — showing "$0" as the
+                    asking figure is a data lie (live 2026-07-02). */}
+                {listing.price > 0 ? (
+                  fmtMoney(listing.price)
+                ) : (
+                  <>
+                    {fmtMoney(listing.rentEstimate)}
+                    <span style={{ fontSize: 16, color: 'var(--muted)' }}>/mo</span>
+                  </>
+                )}
               </span>
             </div>
             {[

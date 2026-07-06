@@ -1,5 +1,6 @@
+/* eslint-disable no-console */
 import Anthropic from '@anthropic-ai/sdk'
-import type { Analysis, RiskFlag } from '../types/analysis'
+import type { ReportMode } from '../types/analysis'
 
 // Two models are used:
 //   claude-haiku-4-5-20251001 — listing description extraction (fast, cheap)
@@ -7,367 +8,240 @@ import type { Analysis, RiskFlag } from '../types/analysis'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-export type NarrativeTier = 'free' | 'pro'
-
 export interface NarrativeInput {
-  // Report routing
-  mode: 'investor' | 'personal' | 'tenant' | 'landlord'
-
-  // Property basics
+  mode: ReportMode
+  tier: 'free' | 'pro'
   address: string
-  province: string
-  price: number
-  propertyType: string
-  beds: number
-  baths: number
-  sqft: number | null
 
-  // Rental market (all modes)
-  rentLow: number
-  rentMid: number
-  rentHigh: number
-  compCount: number
-  compConfidence: 'low' | 'medium' | 'high'
-  /** Listing's actual asking rent (for-rent listings). Falls back to rentMid when null. */
-  askingRent: number | null
+  // Investment + Landlord (Report A / D)
+  price?: number | null
+  capRate?: number
+  cashFlowMonthly?: number
+  cashFlowAnnual?: number
+  cashOnCash?: number
+  dscr?: number
+  dealScore?: number
+  dealVerdict?: string
+  rentMid?: number
+  compCount?: number
+  rentConfidence?: string
+  breakEvenRent?: number
+  condoFeeMonthly?: number | null
+  condoFeeKnown?: boolean
+  rentControlStatus?: string
+  osfiResult?: string
+  vacancyRate?: number
+  rentTrend?: string
+  riskFlagSummary?: string
 
-  // Investment metrics (investor / landlord modes)
-  capRate: number
-  cashFlowMonthly: number
-  cashFlowAnnual: number
-  cashOnCashReturn: number
-  dscr: number
-  breakEvenRent: number
-  condoFeeMonthly: number | null
+  // Personal buyer (Report B)
+  monthlyOwnershipCost?: number
+  fmvLow?: number
+  fmvHigh?: number
+  pbCompCount?: number
+  walkScore?: number | null
+  transitScore?: number | null
 
-  // Deal assessment
-  dealScore: number
-  dealVerdict: NonNullable<Analysis['dealScore']>['verdict']
-
-  // Risk flags
-  riskFlags: RiskFlag[]
-
-  // Tier determines narrative length
-  tier: NarrativeTier
+  // Tenant (Report C)
+  askingRent?: number
+  rentLow?: number
+  rentHigh?: number
+  leverageLevel?: string
+  leverageReason?: string
+  lightScore?: number | null
 }
 
-const SYSTEM_PROMPT =
-  'You are a Canadian real estate analyst. Write direct, data-driven verdicts in plain English. Use Canadian English. Reference specific dollar figures. Never use bullet points or numbered lists in your response.'
+const NARRATIVE_FALLBACK =
+  'Analysis complete. Narrative temporarily unavailable — all metrics and scores above are accurate.'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmtCAD(n: number): string {
+function fmtCurrency(n: number | null | undefined): string {
+  if (n == null) return 'N/A'
   return `$${Math.round(n).toLocaleString('en-CA')}`
 }
 
-function buildFlagsList(flags: RiskFlag[]): string {
-  const red = flags.filter((f) => f.severity === 'red').map((f) => f.label)
-  const amber = flags.filter((f) => f.severity === 'amber').map((f) => f.label)
-  if (red.length === 0 && amber.length === 0) return 'None'
-  const parts: string[] = []
-  if (red.length > 0) parts.push(`Red: ${red.join(', ')}`)
-  if (amber.length > 0) parts.push(`Amber: ${amber.join(', ')}`)
-  return parts.join(' | ')
+function fmtPct(n: number | null | undefined, decimals = 2): string {
+  if (n == null) return 'N/A'
+  return `${(n * 100).toFixed(decimals)}%`
 }
 
-function verdictLabel(v: NonNullable<Analysis['dealScore']>['verdict']): string {
-  return v.replace(/_/g, ' ')
+function fmtNum(n: number | null | undefined, decimals = 2): string {
+  if (n == null) return 'N/A'
+  return n.toFixed(decimals)
 }
 
-// ── Prompt builders ───────────────────────────────────────────────────────────
+function buildInvestmentPrompt(input: NarrativeInput): string {
+  const condoFee =
+    input.condoFeeMonthly == null
+      ? 'N/A'
+      : `${fmtCurrency(input.condoFeeMonthly)}/mo (${input.condoFeeKnown ? 'confirmed' : 'estimated'})`
 
-/** Report A & D — investment purchase / landlord rental */
-function buildInvestorPrompt(input: NarrativeInput): string {
-  const sqftPart = input.sqft != null ? `, ${input.sqft.toLocaleString('en-CA')} sqft` : ''
-  const condoFeePart =
-    input.condoFeeMonthly != null ? `${fmtCAD(input.condoFeeMonthly)}/mo` : 'None'
   const tierInstruction =
     input.tier === 'free'
-      ? '1 short paragraph, 4–5 sentences, 60–120 words'
-      : '3 paragraphs, 150–280 words'
+      ? 'Write 1 paragraph only. 60–120 words.'
+      : 'Write 3 paragraphs as specified. Maximum 280 words.'
 
   return `You are a senior Canadian real estate investment analyst writing a deal verdict.
 
 PROPERTY: ${input.address}
-PRICE: ${fmtCAD(input.price)}
-PROVINCE: ${input.province}
-TYPE: ${input.propertyType}, ${input.beds} bed / ${input.baths} bath${sqftPart}
+PRICE: ${fmtCurrency(input.price)}
 
 METRICS:
-- Cap rate: ${(input.capRate * 100).toFixed(2)}%
-- Monthly cash flow: ${fmtCAD(input.cashFlowMonthly)}/mo (annual: ${fmtCAD(input.cashFlowAnnual)})
-- Cash-on-cash return: ${(input.cashOnCashReturn * 100).toFixed(2)}%
-- DSCR: ${input.dscr.toFixed(2)}x
-- Deal score: ${input.dealScore}/100 — ${verdictLabel(input.dealVerdict)}
-- Estimated rent: ${fmtCAD(input.rentMid)}/mo (${input.compCount} comparables, confidence: ${input.compConfidence})
-- Rent range: ${fmtCAD(input.rentLow)}–${fmtCAD(input.rentHigh)}/mo
-- Break-even rent: ${fmtCAD(input.breakEvenRent)}/mo
-- Condo fee: ${condoFeePart}
+- Cap rate: ${fmtPct(input.capRate)}
+- Monthly cash flow: ${fmtCurrency(input.cashFlowMonthly)}/mo (annual: ${fmtCurrency(input.cashFlowAnnual)})
+- Cash-on-cash return: ${fmtPct(input.cashOnCash)}
+- DSCR: ${fmtNum(input.dscr)}x
+- Deal score: ${input.dealScore ?? 'N/A'}/100 — ${input.dealVerdict ?? 'N/A'}
+- Estimated rent: ${fmtCurrency(input.rentMid)}/mo (${input.compCount ?? 'N/A'} comparables, confidence: ${input.rentConfidence ?? 'N/A'})
+- Break-even rent: ${fmtCurrency(input.breakEvenRent)}/mo
+- Condo fee: ${condoFee}
+- Rent control: ${input.rentControlStatus ?? 'N/A'}
+- OSFI stress test: ${input.osfiResult ?? 'N/A'}
 
-RISK FLAGS: ${buildFlagsList(input.riskFlags)}
+RISK FLAGS: ${input.riskFlagSummary ?? 'None identified'}
+MARKET: Vacancy ${fmtPct(input.vacancyRate)}, rent trend ${input.rentTrend ?? 'N/A'}
 
-Write a ${tierInstruction} investment verdict:
-${
-  input.tier === 'free'
-    ? 'The single most important fact about this deal. Use dollar amounts.'
-    : `1. The single most important fact — the one thing that determines whether to proceed.
+Write a 3-paragraph investment verdict:
+1. The single most important fact — the one thing that determines whether to proceed.
 2. The 2–3 specific numbers that back this up. Use dollar amounts, not just percentages.
-3. One concrete next step or the exact condition under which this deal would work.`
+3. One concrete next step or the exact condition under which this deal would work.
+
+Rules: second person ("you"). Be direct. Maximum 280 words. Plain paragraphs only.
+No bullet points. Do not mention PropScout. Do not say "as an AI."
+Assume the reader has seen all the numbers already — add judgment, not repetition.
+
+${tierInstruction}`
 }
 
-Rules: second person ("you"). Be direct. Plain paragraphs only. No bullet points. Do not mention PropScout. Do not say "as an AI." Assume the reader has seen all the numbers — add judgment, not repetition.`
-}
-
-/** Report B — personal purchase */
 function buildPersonalPrompt(input: NarrativeInput): string {
-  const sqftPart = input.sqft != null ? `, ${input.sqft.toLocaleString('en-CA')} sqft` : ''
+  const walkScore = input.walkScore != null ? String(input.walkScore) : 'N/A'
+  const transitScore = input.transitScore != null ? String(input.transitScore) : 'N/A'
   const tierInstruction =
     input.tier === 'free'
-      ? '1 short paragraph, 4–5 sentences, 60–120 words'
-      : '3 paragraphs, 150–240 words'
+      ? 'Write 1 paragraph only. 60–120 words.'
+      : 'Write 3 paragraphs as specified. Maximum 240 words.'
 
   return `You are a real estate advisor helping someone decide whether to buy a home for personal use.
 
 PROPERTY: ${input.address}
-ASKING PRICE: ${fmtCAD(input.price)}
-TYPE: ${input.propertyType}, ${input.beds} bed / ${input.baths} bath${sqftPart}
-MONTHLY CARRYING COST: ${fmtCAD(input.breakEvenRent)}/mo (mortgage + taxes + insurance + condo fee)
-COMPARABLE SALES RANGE: Based on ${input.compCount} comparable sales (confidence: ${input.compConfidence})
-RISK FLAGS: ${buildFlagsList(input.riskFlags)}
+ASKING PRICE: ${fmtCurrency(input.price)}
+MONTHLY OWNERSHIP COST: ${fmtCurrency(input.monthlyOwnershipCost)}/mo
+FAIR MARKET VALUE: ${fmtCurrency(input.fmvLow)} – ${fmtCurrency(input.fmvHigh)} based on ${input.pbCompCount ?? 'N/A'} comparable sales
+WALK SCORE: ${walkScore} | TRANSIT SCORE: ${transitScore}
 
-Write a ${tierInstruction} personal buyer verdict:
-${
-  input.tier === 'free'
-    ? 'Is this priced fairly and what is the most important thing to know before making an offer? Use dollar amounts.'
-    : `1. Is this priced fairly relative to recent comparable sales?
+Write a 3-paragraph verdict:
+1. Is this priced fairly relative to recent comparable sales?
 2. The most important practical consideration for this buyer.
-3. What they should do before making an offer.`
+3. What they should do before making an offer.
+
+Rules: second person. Warm but direct. Maximum 240 words. Plain paragraphs only.
+Do not mention PropScout.
+
+${tierInstruction}`
 }
 
-Rules: second person. Warm but direct. Plain paragraphs only. No bullet points. Do not mention PropScout. Do not say "as an AI." Assume the reader has seen all the numbers.`
-}
-
-/** Report C — tenant evaluation */
 function buildTenantPrompt(input: NarrativeInput): string {
-  // The listing's real asking rent; market mid is only a stand-in when unknown.
-  const asking = input.askingRent ?? input.rentMid
-
-  const leverage = ((): string => {
-    const aboveTop = asking - input.rentHigh
-    if (aboveTop > 100)
-      return `High — asking rent is ${fmtCAD(aboveTop)} above the top of the market range`
-    if (asking > input.rentHigh) return 'Moderate — asking rent is above market'
-    if (asking <= input.rentLow) return 'Strong — asking rent is at or below market'
-    return 'Low — asking rent is within the typical market range'
-  })()
-
+  const lightScore = input.lightScore != null ? String(input.lightScore) : 'N/A'
   const tierInstruction =
     input.tier === 'free'
-      ? '1 short paragraph, 4–5 sentences, 60–120 words'
-      : '2 paragraphs, 150–180 words'
+      ? 'Write 1 paragraph only. 60–120 words.'
+      : 'Write 2 paragraphs as specified.'
 
   return `You are a tenant advisor reviewing a rental listing.
 
 UNIT: ${input.address}
-ASKING RENT: ${fmtCAD(asking)}/mo
-MARKET RANGE: ${fmtCAD(input.rentLow)}–${fmtCAD(input.rentHigh)}/mo (${input.compCount} comparables, confidence: ${input.compConfidence})
-LEVERAGE: ${leverage}
-FLAGS: ${buildFlagsList(input.riskFlags)}
+ASKING RENT: ${fmtCurrency(input.askingRent)}/mo
+MARKET RANGE: ${fmtCurrency(input.rentLow)} – ${fmtCurrency(input.rentHigh)}/mo
+LEVERAGE: ${input.leverageLevel ?? 'N/A'} — ${input.leverageReason ?? 'N/A'}
+FLAGS: ${input.riskFlagSummary ?? 'None identified'}
+SUNSCOUT: ${lightScore}/100
 
-Write a ${tierInstruction} tenant verdict:
-${
-  input.tier === 'free'
-    ? 'Is this priced fairly? Should they negotiate? What is the one thing they must confirm before signing? Use dollar amounts.'
-    : `1. Is this priced fairly? Should they negotiate, and to what target rent?
-2. The one thing they must confirm before signing.`
-}
+Write a 2-paragraph verdict:
+1. Is this priced fairly? Should they negotiate, and to what target?
+2. The one thing they must confirm before signing.
 
-Rules: second person. Direct. Plain paragraphs only. No bullet points. Do not mention PropScout. Do not say "as an AI." Assume the reader has seen all the numbers.`
-}
+Rules: second person. Direct. Maximum 180 words. Plain paragraphs only.
+Do not mention PropScout.
 
-// ── Output validation ─────────────────────────────────────────────────────────
-
-const BANNED_PHRASES = ['as an AI', 'as an ai', 'I cannot', 'PropScout', 'language model']
-const DOLLAR_RE = /\$[\d,]+/
-
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length
-}
-
-function validateNarrative(
-  text: string,
-  tier: NarrativeTier,
-  mode: NarrativeInput['mode']
-): boolean {
-  const words = countWords(text)
-  const [minWords, maxWords] = ((): [number, number] => {
-    if (tier === 'free') return [60, 120]
-    if (mode === 'tenant') return [150, 180]
-    if (mode === 'personal') return [150, 240]
-    return [150, 320] // investor / landlord
-  })()
-
-  if (words < minWords || words > maxWords) return false
-  if (BANNED_PHRASES.some((p) => text.includes(p))) return false
-  if (!DOLLAR_RE.test(text)) return false
-  return true
-}
-
-// ── Narrative generation ──────────────────────────────────────────────────────
-
-function selectPrompt(input: NarrativeInput): string {
-  switch (input.mode) {
-    case 'personal':
-      return buildPersonalPrompt(input)
-    case 'tenant':
-      return buildTenantPrompt(input)
-    case 'investor':
-    case 'landlord':
-    default:
-      return buildInvestorPrompt(input)
-  }
-}
-
-// ── Corrective retry helpers ──────────────────────────────────────────────────
-
-/**
- * Build a targeted corrective message based on which validation rule the text
- * violated. Used in the retry prompt so Sonnet knows exactly what to fix.
- */
-function buildCorrective(text: string, tier: NarrativeTier, mode: NarrativeInput['mode']): string {
-  // Check in priority order: banned phrases → word count → dollar amount.
-  // Word count is checked before dollar amount because a 2-word response is
-  // better described as "too short" than "missing a dollar figure".
-  if (BANNED_PHRASES.some((p) => text.includes(p))) {
-    return 'Your response included a prohibited phrase. Do not write "as an AI", "I cannot", "PropScout", or "language model". Rewrite the verdict without these phrases.'
-  }
-  const words = countWords(text)
-  const [minWords, maxWords] = ((): [number, number] => {
-    if (tier === 'free') return [60, 120]
-    if (mode === 'tenant') return [150, 180]
-    if (mode === 'personal') return [150, 240]
-    return [150, 320]
-  })()
-  if (words < minWords) {
-    return `Your response was ${words} words but must be at least ${minWords}. Please expand the verdict with more specific analysis.`
-  }
-  if (words > maxWords) {
-    return `Your response was ${words} words but must be no more than ${maxWords}. Please shorten it.`
-  }
-  if (!DOLLAR_RE.test(text)) {
-    return 'Your response did not include a specific dollar amount. Include at least one dollar figure (e.g. $2,400/mo or $729,900). Rewrite the verdict with concrete figures.'
-  }
-  return 'Your previous response did not meet the formatting requirements. Please rewrite the verdict.'
+${tierInstruction}`
 }
 
 /**
  * Generate an AI narrative for a property analysis report.
  *
  * Free tier: 1 paragraph, 60–120 words.
- * Pro and above: 2–3 paragraphs (length varies by mode).
+ * Pro and above: 2–3 paragraphs, 150–320 words.
  *
- * Validates output and retries once with a targeted corrective message and
- * temperature=0.3. Returns null when both attempts fail — the report must
- * never show unvalidated content.
+ * Never call this function directly from a route handler.
+ * Always call through this service file.
  */
-export async function generateNarrative(input: NarrativeInput): Promise<string | null> {
-  const prompt = selectPrompt(input)
-  const maxTokens = input.tier === 'free' ? 200 : 700
-
-  async function attempt(corrective?: string, temperature = 0): Promise<string | null> {
-    const userContent = corrective != null ? `${prompt}\n\n${corrective}` : prompt
-    try {
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: maxTokens,
-        temperature,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userContent }],
-      })
-      const block = response.content[0]
-      if (!block || block.type !== 'text') return null
-      return block.text.trim()
-    } catch {
-      return null
+export async function generateNarrative(input: NarrativeInput): Promise<string> {
+  try {
+    let prompt: string
+    if (input.mode === 'investor' || input.mode === 'landlord') {
+      prompt = buildInvestmentPrompt(input)
+    } else if (input.mode === 'personal') {
+      prompt = buildPersonalPrompt(input)
+    } else {
+      prompt = buildTenantPrompt(input)
     }
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 600,
+      temperature: 0,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const block = response.content[0]
+    if (!block || block.type !== 'text') {
+      console.error(`generateNarrative: non-text content block for mode=${input.mode}`)
+      return NARRATIVE_FALLBACK
+    }
+
+    return block.text
+  } catch (err) {
+    console.error(`generateNarrative: error for mode=${input.mode}, tier=${input.tier}:`, err)
+    return NARRATIVE_FALLBACK
   }
-
-  const first = await attempt()
-  if (first != null && validateNarrative(first, input.tier, input.mode)) return first
-
-  // Always retry at temperature=0.3 so the model can produce different output.
-  // Also append a targeted corrective when the first attempt returned text —
-  // if the API threw (first=null), there is no text to diagnose, so no corrective.
-  const corrective = first != null ? buildCorrective(first, input.tier, input.mode) : undefined
-  const second = await attempt(corrective, 0.3)
-  if (second != null && validateNarrative(second, input.tier, input.mode)) return second
-
-  // Both attempts failed validation — return null so the report shows nothing
-  // rather than shipping bad content. The frontend handles null gracefully.
-  console.warn('[anthropicService] generateNarrative: both attempts failed validation')
-  return null
 }
-
-// ── Flag types returned by Haiku extraction ──────────────────────────────────
-
-export interface FlagExtractionResult {
-  flags: ExtractionFlag[]
-  rawResponse: string
-}
-
-export interface ExtractionFlag {
-  flagId: string
-  present: boolean
-  confidence: number
-  evidence: string
-}
-
-const EXTRACTION_PROMPT_TEMPLATE = `You are a Canadian real estate listing analyst. Extract structured investment risk flags from the listing description below.
-
-For each flag type, output whether it is present, your confidence (0–100), and a brief quoted evidence string from the description. If a flag is not mentioned or cannot be inferred, set present: false and confidence: 0.
-
-Flag types to detect:
-- basement_suite: Evidence of a legal or illegal basement unit (income potential or fire risk)
-- short_term_rental: Evidence of AirBnB / Vrbo use or STR-optimized setup
-- shared_laundry: Laundry is shared with other units or in common area
-- coin_laundry: Pay-per-use laundry (lower quality signal)
-- street_parking_only: No dedicated parking, street parking only
-- first_floor_unit: Unit is on the ground floor (security, privacy concern)
-- condo_fee_includes_utilities: Condo fee covers heat, hydro, or water (affects NOI)
-- tenant_occupied: Unit currently has a tenant (rent control implications)
-- power_of_sale: Listing is a power of sale or foreclosure
-- as_is_where_is: Property sold as-is, seller makes no representations
-- no_representation: Seller has no knowledge of property condition
-- grow_op_history: History of marijuana grow operation or remediation
-- remediation_done: Environmental or mold remediation has been completed
-- flooding_history: Past flooding, water damage, or sump pump failures mentioned
-- noise_concern: Near highway, subway, airport, or industrial area
-
-Return ONLY a JSON array. No explanation, no markdown, no preamble.
-Format:
-[{"flagId":"flag_name","present":true,"confidence":85,"evidence":"exact quote or empty string"},...]
-
-LISTING DESCRIPTION:
-{{DESCRIPTION}}`
 
 /**
  * Extract structured flags from a listing description using Claude Haiku.
+ * Returns a JSON object of flag keys and confidence scores.
  *
- * Returns an array of extraction flags with confidence scores.
- * The logic gate in the analysis pipeline applies the 85%/60% thresholds
- * to decide which flags reach the deal score calculation (spec Section 19).
- *
- * Returns null (non-fatal) if the API call fails.
+ * Never feed raw description text into deal score calculations.
+ * All text must pass through this extraction pipeline first (spec Section 19).
  */
-export async function extractListingFlags(
-  description: string
-): Promise<FlagExtractionResult | null> {
-  if (!description.trim()) return null
+export async function extractListingFlags(description: string): Promise<Record<string, unknown>> {
+  if (!description || !description.trim()) {
+    return {}
+  }
 
-  // Use a function replacement to prevent JS from expanding $& / $1 / etc.
-  // in the listing description as String.replace() special sequences.
-  const desc = description.slice(0, 4000)
-  const prompt = EXTRACTION_PROMPT_TEMPLATE.replace('{{DESCRIPTION}}', () => desc)
+  const prompt = `Analyze this real estate listing description and extract structured flags.
+
+Output ONLY valid JSON — no explanation, no preamble, no markdown fences.
+For each flag, if there is no clear signal in the description, omit it
+entirely. Default to omitting rather than guessing.
+
+Each included flag must have this shape:
+{ "confidence": <0-100>, "evidence": "<short quote from text, or null>" }
+
+Flags to look for:
+- glass_door_bedroom
+- is_basement_unit
+- parking_unclear
+- unverified_bedroom
+- special_assessment_risk
+- tenanted
+- str_history
+- utilities_included
+- utilities_extra
+- needs_work
+- pets_allowed
+- no_pets
+
+Listing description:
+${description}`
 
   try {
     const response = await client.messages.create({
@@ -377,32 +251,38 @@ export async function extractListingFlags(
     })
 
     const block = response.content[0]
-    if (!block || block.type !== 'text') return null
-
-    const raw = block.text.trim()
-
-    let parsed: ExtractionFlag[]
-    try {
-      const jsonMatch = raw.match(/\[[\s\S]*\]/)
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw) as ExtractionFlag[]
-    } catch {
-      return null
+    if (!block || block.type !== 'text') {
+      return {}
     }
 
-    if (!Array.isArray(parsed)) return null
+    let raw = block.text.trim()
+    // Strip accidental markdown fences — the model occasionally adds them despite instructions
+    raw = raw
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim()
 
-    const flags: ExtractionFlag[] = parsed
-      .filter((f) => typeof f === 'object' && f !== null && typeof f.flagId === 'string')
-      .map((f) => ({
-        flagId: String(f.flagId),
-        present: Boolean(f.present),
-        confidence: Math.min(100, Math.max(0, Number(f.confidence) || 0)),
-        evidence: typeof f.evidence === 'string' ? f.evidence : '',
-      }))
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      console.error(
+        `extractListingFlags: JSON parse failed, raw length=${raw.length}, preview="${raw.slice(0, 200)}"`
+      )
+      return {}
+    }
 
-    return { flags, rawResponse: raw }
-  } catch {
-    return null
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {}
+    }
+
+    return parsed as Record<string, unknown>
+  } catch (err) {
+    console.error(
+      `extractListingFlags: API error for description length=${description.length}:`,
+      err
+    )
+    return {}
   }
 }
 
