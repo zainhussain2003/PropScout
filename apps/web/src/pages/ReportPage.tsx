@@ -38,6 +38,7 @@ import { InvestmentMetricsSection } from '../components/investor/InvestmentMetri
 import { FinancingSliders } from '../components/investor/FinancingSliders'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
+import { DueDiligenceSection } from '../components/investor/DueDiligenceSection'
 import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
@@ -929,6 +930,8 @@ function InvestorReportContent({
           guidance by postal code), not fabricated property data. Present in the
           demo investor/landlord reports; now mounted live too. */}
       <STRPlaceholderSection listing={listingData} />
+      {/* §11 Due diligence — generic, property-agnostic buyer checklist. */}
+      <DueDiligenceSection />
     </main>
   )
 }
