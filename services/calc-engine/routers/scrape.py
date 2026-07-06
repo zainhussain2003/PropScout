@@ -1,16 +1,24 @@
 """
 Scrape router — handles POST /scrape requests from the Fastify API.
 
-Accepts a Realtor.ca listing URL and returns structured property data.
-Route handlers only call the scraper service and return responses.
-All scraping logic lives in scrapers/realtor_scraper.py.
+Accepts a Realtor.ca listing URL and returns the flat structured listing data
+(dataclasses.asdict of ScrapedListing) that apps/api/src/routes/scrape.ts maps
+into a Listing. The API does its OWN province gate and partial-scrape detection
+from that flat payload, so this route only distinguishes success (200 + the flat
+listing) from a scrape failure (422). This mirrors services/scrapers/main.py — the
+two /scrape servers are kept to the same contract on purpose.
+
+Route handlers only call the scraper and shape the response; all scraping logic
+lives in scrapers/realtor_scraper.py.
 """
 
+import dataclasses
 import logging
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
-from models.scraper_schemas import ScrapeRequest, ScrapeResponse
+from models.scraper_schemas import ScrapeRequest
 from scrapers.realtor_scraper import scrape_listing
 
 logger = logging.getLogger(__name__)
@@ -18,38 +26,30 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/", response_model=ScrapeResponse)
-async def scrape(body: ScrapeRequest) -> ScrapeResponse:
+# Path "" so the full route (mounted at prefix "/scrape") is exactly POST /scrape,
+# matching the Fastify API's `${SCRAPER_URL}/scrape` call with no trailing slash.
+@router.post("")
+async def scrape(body: ScrapeRequest) -> JSONResponse:
     """
     Scrape a Realtor.ca listing URL and return structured property data.
-
-    Steps:
-      1. Call scrape_listing() to fetch data from Realtor.ca's internal API.
-      2. If scraping fails, return error="scrape_failed".
-      3. If province is not Ontario, return error="province_not_supported"
-         with the detected province code so Fastify can show the waitlist prompt.
-      4. Return the structured listing data.
 
     Args:
         body: ScrapeRequest containing the Realtor.ca listing URL.
 
     Returns:
-        ScrapeResponse with the parsed listing or an error indicator.
+        200 with the flat ScrapedListing dict on success, or 422 with a
+        SCRAPER_FAILED error the API turns into a manual-entry prompt.
     """
-    listing = await scrape_listing(body.url)
+    result = await scrape_listing(body.url)
 
-    if listing is None:
+    if result is None:
         logger.warning("Scrape failed for URL: %s", body.url)
-        return ScrapeResponse(listing=None, error="scrape_failed")
-
-    if listing.province != "ON":
-        logger.info(
-            "Province gate triggered for %s (province=%s)", body.url, listing.province
-        )
-        return ScrapeResponse(
-            listing=None,
-            error="province_not_supported",
-            province=listing.province,
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": "SCRAPER_FAILED",
+                "message": "Could not read that listing",
+            },
         )
 
-    return ScrapeResponse(listing=listing)
+    return JSONResponse(status_code=200, content=dataclasses.asdict(result))

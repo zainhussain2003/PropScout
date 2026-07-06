@@ -32,15 +32,23 @@ from bs4 import BeautifulSoup
 
 
 def _load_env_var(name: str) -> str:
-    """Read an env var, falling back to the project-root .env for local dev."""
+    """Read an env var, falling back to the nearest .env up the tree for local dev.
+
+    On Railway the value comes from os.getenv; locally we walk up from this file
+    until a .env is found (this module lives at different depths in the scraper
+    service vs the calc-engine, so the walk is depth-agnostic).
+    """
     val = os.getenv(name)
     if val:
         return val
-    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            if line.startswith(name + "="):
-                return line.split("=", 1)[1].strip()
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        env_path = parent / ".env"
+        if env_path.exists():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
+                if line.startswith(name + "="):
+                    return line.split("=", 1)[1].strip()
+            break
     return ""
 
 

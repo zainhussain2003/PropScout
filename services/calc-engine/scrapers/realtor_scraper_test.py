@@ -1,449 +1,611 @@
 """
-Unit and functionality tests for the Realtor.ca on-demand scraper.
+Unit tests for the ScraperAPI-based scrapers.realtor_scraper.
 
-External httpx calls are mocked so tests run offline without hitting the API.
+This scraper replaced the old direct-api2.realtor.ca one (Incapsula-blocked, thin
+shape). It fetches listing HTML through ScraperAPI premium and parses three
+sources: the dataLayer.property JS block, the schema.org JSON-LD, and the
+propertyDetailsSection label/value pairs. Its flat output is what the Fastify API
+consumes — the contract is pinned by test_scrape_response_shape_matches_api_contract.
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+import dataclasses
+from unittest.mock import AsyncMock, patch
 
+import pytest
+
+import scrapers.realtor_scraper as realtor_scraper
 from scrapers.realtor_scraper import (
-    _extract_property_id,
-    _detect_province,
-    _normalise_property_type,
-    _parse_listing,
-    _safe_int,
-    _safe_float,
+    ScrapedListing,
+    _DetailFields,
+    _dl,
+    _parse_photo_urls,
+    _parse_rendered_fields,
     scrape_listing,
 )
-from models.scraper_schemas import ScrapedListing
 
+_URL = "https://www.realtor.ca/real-estate/12345678/test-listing"
+
+# Minimal page: dataLayer.property with a lease price (for_rent) + JSON-LD address.
+_PAGE = """
+<script>
+dataLayer.push({
+  property: {
+    price: '',
+    leasePrice: '2,650',
+    bedrooms: '2',
+    bathrooms: '2',
+    propertyType: 'Single Family',
+    interiorFloorSpace: '600'
+  }
+});
+</script>
+<script type="application/ld+json">
+{"@type": "Product", "name": "1205 - 33 HELENDALE AVENUE, Toronto, Ontario M4R0A4",
+ "offers": {"@type": "Offer"}}
+</script>
+"""
+
+_FOR_SALE_PAGE = """
+<script>
+dataLayer.push({
+  property: {
+    price: '1,249,900',
+    leasePrice: '',
+    bedrooms: '4',
+    bathrooms: '4',
+    propertyType: 'Single Family',
+    buildingType: 'House',
+    interiorFloorSpace: '2000 sqft',
+    listingID: 'W123',
+    city: 'Mississauga',
+    province: 'Ontario'
+  }
+});
+</script>
+<script type="application/ld+json">
+{"@type": "Product",
+ "name": "103 WHITCHURCH MEWS, Mississauga (Cooksville), Ontario L5A4B2",
+ "description": "Beautiful &amp; bright home",
+ "image": ["https://cdn.realtor.ca/listings/TS1/reb82/highres/0/w123_1.jpg"],
+ "offers": {"@type": "Offer"}}
+</script>
+<div class="propertyDetailsSectionContentLabel">Annual Property Taxes</div>
+<div class="propertyDetailsSectionContentValue">$8,239.00(CAD)</div>
+"""
+
+
+class _FakeResponse:
+    def __init__(self, status_code: int, text: str = "") -> None:
+        self.status_code = status_code
+        self.text = text
 
-# ── Unit tests — pure helper functions ────────────────────────────────────────
+
+def _client_returning(responses: list) -> tuple:
+    """AsyncClient context-manager mock whose .get pops successive responses."""
+    seq = list(responses)
 
+    async def _get(*_args, **_kwargs):
+        return seq.pop(0) if len(seq) > 1 else seq[0]
 
-class TestExtractPropertyId:
-    """Tests for _extract_property_id()."""
+    client = AsyncMock()
+    client.get = AsyncMock(side_effect=_get)
+    cm = AsyncMock()
+    cm.__aenter__.return_value = client
+    cm.__aexit__.return_value = False
+    return cm, client
 
-    def test_standard_url(self) -> None:
-        url = (
-            "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
-        )
-        assert _extract_property_id(url) == "27154381"
 
-    def test_url_with_trailing_slash(self) -> None:
-        url = "https://www.realtor.ca/real-estate/12345678/some-property/"
-        assert _extract_property_id(url) == "12345678"
+async def _scrape(page: str, url: str = _URL, key: str = "test-key"):
+    cm, client = _client_returning([_FakeResponse(200, page)])
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", key),
+        patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        return await scrape_listing(url)
 
-    def test_short_url(self) -> None:
-        url = "https://www.realtor.ca/real-estate/99999999/property"
-        assert _extract_property_id(url) == "99999999"
 
-    def test_invalid_url_returns_none(self) -> None:
-        assert _extract_property_id("https://www.zillow.ca/listing/foo") is None
+# ── _dl (dataLayer field extraction) ────────────────────────────────────────────
 
-    def test_empty_string_returns_none(self) -> None:
-        assert _extract_property_id("") is None
+_DL_BLOCK = (
+    "price: '1,000', leasePrice: '', bedrooms: '3', propertyType: 'Single Family'"
+)
 
-    def test_url_without_id_returns_none(self) -> None:
-        assert _extract_property_id("https://www.realtor.ca/") is None
 
+@pytest.mark.parametrize(
+    "field,expected",
+    [
+        ("price", "1,000"),
+        ("leasePrice", ""),  # present but empty
+        ("bedrooms", "3"),
+        ("propertyType", "Single Family"),
+        ("bathrooms", None),  # absent → None
+        ("missingField", None),
+    ],
+)
+def test_dl_extracts_field(field, expected):
+    assert _dl(field, _DL_BLOCK) == expected
 
-class TestDetectProvince:
-    """Tests for _detect_province()."""
 
-    def test_ontario_l_prefix(self) -> None:
-        assert _detect_province("L4K5W4") == "ON"
+def test_dl_handles_extra_whitespace():
+    assert _dl("price", "price:   '500'") == "500"
 
-    def test_ontario_m_prefix(self) -> None:
-        assert _detect_province("M5V2T6") == "ON"
 
-    def test_ontario_k_prefix(self) -> None:
-        assert _detect_province("K1A 0A6") == "ON"
+def test_dl_value_with_spaces():
+    assert _dl("city", "city: 'Richmond Hill'") == "Richmond Hill"
 
-    def test_ontario_n_prefix(self) -> None:
-        assert _detect_province("N2G4K1") == "ON"
 
-    def test_ontario_p_prefix(self) -> None:
-        assert _detect_province("P3A1B2") == "ON"
+def test_dl_word_boundary_not_substring():
+    # 'price' must not match inside 'leasePrice'
+    assert _dl("price", "leasePrice: '99'") is None
 
-    def test_bc_v_prefix(self) -> None:
-        assert _detect_province("V6B1A1") == "BC"
 
-    def test_alberta_t_prefix(self) -> None:
-        assert _detect_province("T2P3C3") == "AB"
+def test_dl_empty_block_returns_none():
+    assert _dl("price", "") is None
 
-    def test_quebec_h_prefix(self) -> None:
-        assert _detect_province("H3A1A1") == "QC"
 
-    def test_empty_postal_code(self) -> None:
-        result = _detect_province("")
-        assert result == "UNKNOWN"
+# ── _parse_photo_urls ───────────────────────────────────────────────────────────
 
-    def test_lowercase_postal_code(self) -> None:
-        assert _detect_province("l4k5w4") == "ON"
+_P = "https://cdn.realtor.ca/listings/TS1/reb82/highres/0"
 
 
-class TestNormalisePropertyType:
-    """Tests for _normalise_property_type()."""
+def test_parse_photo_urls_orders_by_sequence():
+    page = f'"{_P}/x_3.jpg" "{_P}/x_1.jpg" "{_P}/x_2.jpg"'
+    assert _parse_photo_urls(page) == [
+        f"{_P}/x_1.jpg",
+        f"{_P}/x_2.jpg",
+        f"{_P}/x_3.jpg",
+    ]
 
-    def test_apartment_maps_to_condo(self) -> None:
-        assert _normalise_property_type("Apartment") == "condo"
 
-    def test_condo_maps_to_condo(self) -> None:
-        assert _normalise_property_type("Condo") == "condo"
+def test_parse_photo_urls_dedupes():
+    page = f'"{_P}/x_1.jpg" "{_P}/x_1.jpg" "{_P}/x_2.jpg"'
+    assert _parse_photo_urls(page) == [f"{_P}/x_1.jpg", f"{_P}/x_2.jpg"]
 
-    def test_detached_maps_to_house(self) -> None:
-        assert _normalise_property_type("Detached") == "house"
 
-    def test_semi_detached_maps_to_semi(self) -> None:
-        assert _normalise_property_type("Semi-Detached") == "semi"
+def test_parse_photo_urls_caps_at_12():
+    page = " ".join(f'"{_P}/x_{i}.jpg"' for i in range(1, 30))
+    assert len(_parse_photo_urls(page)) == 12
 
-    def test_townhouse_maps_to_townhouse(self) -> None:
-        assert _normalise_property_type("Townhouse") == "townhouse"
 
-    def test_row_townhouse_maps_to_townhouse(self) -> None:
-        assert _normalise_property_type("Row / Townhouse") == "townhouse"
+def test_parse_photo_urls_none_found():
+    assert _parse_photo_urls("<html>no photos</html>") == []
 
-    def test_unknown_defaults_to_house(self) -> None:
-        assert _normalise_property_type("Commercial Retail") == "house"
 
+def test_parse_photo_urls_ignores_non_highres():
+    page = '"https://cdn.realtor.ca/listings/TS1/reb82/lowres/0/x_1.jpg"'
+    assert _parse_photo_urls(page) == []
 
-class TestSafeInt:
-    """Tests for _safe_int()."""
 
-    def test_plain_int(self) -> None:
-        assert _safe_int(3326) == 3326
+def test_parse_photo_urls_stops_at_query_string():
+    page = f'"{_P}/x_1.jpg?w=512"'
+    assert _parse_photo_urls(page) == [f"{_P}/x_1.jpg"]
 
-    def test_string_with_commas(self) -> None:
-        assert _safe_int("3,326") == 3326
-
-    def test_float_string(self) -> None:
-        assert _safe_int("729900.0") == 729900
-
-    def test_dollar_sign_removed_externally(self) -> None:
-        # The caller removes $ before passing
-        assert _safe_int("729900") == 729900
-
-    def test_invalid_returns_default(self) -> None:
-        assert _safe_int("N/A") == 0
-
-    def test_none_returns_default(self) -> None:
-        assert _safe_int(None) == 0
-
-    def test_custom_default(self) -> None:
-        assert _safe_int("bad", default=99) == 99
-
-
-class TestSafeFloat:
-    """Tests for _safe_float()."""
-
-    def test_plain_float(self) -> None:
-        assert _safe_float(2.5) == 2.5
-
-    def test_integer_string(self) -> None:
-        assert _safe_float("2") == 2.0
-
-    def test_invalid_returns_default(self) -> None:
-        assert _safe_float("N/A") == 0.0
-
-
-# ── Unit test — _parse_listing() ─────────────────────────────────────────────
-
-
-class TestParseListing:
-    """Tests for _parse_listing() with synthetic API response payloads."""
-
-    def _condo_payload(self) -> dict:
-        """Minimal realistic Realtor.ca API response for a condo."""
-        return {
-            "Property": {
-                "Price": "729900",
-                "Type": "Apartment",
-                "Address": {
-                    "AddressText": "5702-5 Buttermill Ave|Vaughan ON  L4K5W4",
-                    "PostalCode": "L4K5W4",
-                },
-            },
-            "Building": {
-                "BedroomsTotal": "3",
-                "BathroomTotal": "2",
-                "SizeInterior": "950 sqft",
-                "Age": "2019",
-            },
-            "Tax": {
-                "AnnualAmount": "3326",
-            },
-            "MaintenanceFee": "761",
-        }
-
-    def test_condo_address_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert "Buttermill" in listing.address
-
-    def test_condo_price_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.price == 729900
-
-    def test_condo_taxes_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.annual_taxes == 3326
-        assert listing.tax_known is True
-
-    def test_condo_fee_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.condo_fee_monthly == 761
-        assert listing.condo_fee_known is True
-
-    def test_beds_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.beds == 3
-
-    def test_baths_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.baths == 2.0
-
-    def test_sqft_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.sqft == 950
-        assert listing.sqft_known is True
-
-    def test_year_built_parsed(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.year_built == 2019
-        assert listing.year_built_known is True
-
-    def test_property_type_condo(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.property_type == "condo"
-
-    def test_province_ontario(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.province == "ON"
-
-    def test_is_toronto_false_for_vaughan(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.is_toronto is False
-
-    def test_listing_type_for_sale(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.listing_type == "for_sale"
-
-    def test_postal_code_included_in_result(self) -> None:
-        listing = _parse_listing(self._condo_payload())
-        assert listing.postal_code == "L4K5W4"
-
-    def test_postal_code_empty_when_missing(self) -> None:
-        payload = self._condo_payload()
-        payload["Property"]["Address"]["PostalCode"] = ""
-        payload["Property"]["Address"][
-            "AddressText"
-        ] = "5702-5 Buttermill Ave|Vaughan ON"
-        listing = _parse_listing(payload)
-        assert listing.postal_code == ""
-
-    def test_toronto_postal_code_sets_is_toronto(self) -> None:
-        payload = self._condo_payload()
-        payload["Property"]["Address"]["PostalCode"] = "M5V2T6"
-        payload["Property"]["Address"][
-            "AddressText"
-        ] = "100 King St W|Toronto ON  M5V2T6"
-        listing = _parse_listing(payload)
-        assert listing.is_toronto is True
-
-    def test_missing_condo_fee_sets_not_known(self) -> None:
-        payload = self._condo_payload()
-        payload.pop("MaintenanceFee")
-        payload["Building"].pop("MaintenanceFee", None)
-        listing = _parse_listing(payload)
-        assert listing.condo_fee_monthly is None
-        assert listing.condo_fee_known is False
-
-    def test_missing_tax_sets_not_known(self) -> None:
-        payload = self._condo_payload()
-        payload.pop("Tax")
-        listing = _parse_listing(payload)
-        assert listing.tax_known is False
-
-    def test_missing_sqft_sets_not_known(self) -> None:
-        payload = self._condo_payload()
-        payload["Building"].pop("SizeInterior")
-        listing = _parse_listing(payload)
-        assert listing.sqft is None
-        assert listing.sqft_known is False
-
-    def test_missing_year_sets_not_known(self) -> None:
-        payload = self._condo_payload()
-        payload["Building"].pop("Age")
-        listing = _parse_listing(payload)
-        assert listing.year_built is None
-        assert listing.year_built_known is False
-
-    def test_bc_postal_code_detects_province(self) -> None:
-        payload = self._condo_payload()
-        payload["Property"]["Address"]["PostalCode"] = "V6B1A1"
-        listing = _parse_listing(payload)
-        assert listing.province == "BC"
-
-    def test_sqm_converted_to_sqft(self) -> None:
-        payload = self._condo_payload()
-        payload["Building"]["SizeInterior"] = "88 m2"
-        listing = _parse_listing(payload)
-        # 88 sqm × 10.764 ≈ 947 sqft
-        assert listing.sqft is not None
-        assert 930 <= listing.sqft <= 960
-
-
-# ── Functionality tests — scrape_listing() with mocked httpx ─────────────────
-
-
-class TestScrapeListing:
-    """End-to-end tests for scrape_listing() with httpx mocked."""
-
-    def _sample_payload(self) -> dict:
-        return {
-            "Property": {
-                "Price": "729900",
-                "Type": "Apartment",
-                "Address": {
-                    "AddressText": "5702-5 Buttermill Ave|Vaughan ON  L4K5W4",
-                    "PostalCode": "L4K5W4",
-                },
-            },
-            "Building": {
-                "BedroomsTotal": "3",
-                "BathroomTotal": "2",
-                "SizeInterior": "950 sqft",
-                "Age": "2019",
-            },
-            "Tax": {"AnnualAmount": "3326"},
-            "MaintenanceFee": "761",
-        }
-
-    @pytest.mark.asyncio
-    async def test_successful_scrape_returns_listing(self) -> None:
-        mock_response = MagicMock()
-        mock_response.json.return_value = self._sample_payload()
-        mock_response.raise_for_status = MagicMock()
-
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-        mock_client.get = AsyncMock(return_value=mock_response)
-
-        with patch(
-            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
-        ):
-            result = await scrape_listing(
-                "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
-            )
-
-        assert result is not None
-        assert isinstance(result, ScrapedListing)
-        assert result.price == 729900
-        assert result.beds == 3
-        assert result.province == "ON"
-        assert result.postal_code == "L4K5W4"
-
-    @pytest.mark.asyncio
-    async def test_invalid_url_returns_none(self) -> None:
-        result = await scrape_listing("https://www.zillow.ca/not-realtor")
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_http_error_returns_none(self) -> None:
-        import httpx
-
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        mock_request = MagicMock()
-        mock_response = MagicMock()
-        mock_response.status_code = 403
-        mock_client.get = AsyncMock(
-            side_effect=httpx.HTTPStatusError(
-                "403 Forbidden", request=mock_request, response=mock_response
-            )
-        )
-
-        with patch(
-            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
-        ):
-            result = await scrape_listing(
-                "https://www.realtor.ca/real-estate/12345678/some-property"
-            )
-
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_network_error_returns_none(self) -> None:
-        import httpx
-
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-        mock_client.get = AsyncMock(
-            side_effect=httpx.ConnectError("Connection refused")
-        )
-
-        with patch(
-            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
-        ):
-            result = await scrape_listing(
-                "https://www.realtor.ca/real-estate/12345678/some-property"
-            )
-
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_bc_listing_still_parsed(self) -> None:
-        """Scraper returns the listing even for non-Ontario — province gate is in the router."""
-        payload = self._sample_payload()
-        payload["Property"]["Address"]["PostalCode"] = "V6B1A1"
-
-        mock_response = MagicMock()
-        mock_response.json.return_value = payload
-        mock_response.raise_for_status = MagicMock()
-
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-        mock_client.get = AsyncMock(return_value=mock_response)
-
-        with patch(
-            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
-        ):
-            result = await scrape_listing(
-                "https://www.realtor.ca/real-estate/12345678/vancouver-property"
-            )
-
-        assert result is not None
-        assert result.province == "BC"
-
-    @pytest.mark.asyncio
-    async def test_correct_property_id_sent_to_api(self) -> None:
-        """Verify the extracted property ID is passed in the API params."""
-        captured_params: dict = {}
-
-        mock_response = MagicMock()
-        mock_response.json.return_value = self._sample_payload()
-        mock_response.raise_for_status = MagicMock()
-
-        async def fake_get(url: str, **kwargs: object) -> MagicMock:
-            captured_params.update(kwargs.get("params", {}))
-            return mock_response
-
-        mock_client = AsyncMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-        mock_client.get = fake_get
-
-        with patch(
-            "scrapers.realtor_scraper.httpx.AsyncClient", return_value=mock_client
-        ):
-            await scrape_listing(
-                "https://www.realtor.ca/real-estate/27154381/5702-5-buttermill-ave-vaughan"
-            )
-
-        assert captured_params.get("PropertyID") == "27154381"
+
+# ── _parse_rendered_fields ──────────────────────────────────────────────────────
+
+
+def _detail(label: str, value: str) -> str:
+    return (
+        f'<div class="propertyDetailsSectionContentLabel">{label}</div>'
+        f'<div class="propertyDetailsSectionContentValue">{value}</div>'
+    )
+
+
+def test_detail_taxes_parsed():
+    out = _parse_rendered_fields(_detail("Annual Property Taxes", "$3,326.00(CAD)"))
+    assert out.annual_taxes == 3326 and out.taxes_known is True
+
+
+def test_detail_taxes_generic_label():
+    out = _parse_rendered_fields(_detail("Property Taxes", "$2,696.29"))
+    assert out.annual_taxes == 2696 and out.taxes_known is True
+
+
+def test_detail_condo_fee_parsed():
+    out = _parse_rendered_fields(_detail("Maintenance Fees", "$761.00 Monthly"))
+    assert out.condo_fee_monthly == 761 and out.condo_fee_known is True
+
+
+def test_detail_condo_fee_include_label_ignored():
+    # "Maintenance Fees Include" is a description, not the fee amount.
+    out = _parse_rendered_fields(_detail("Maintenance Fees Include", "Heat, Water"))
+    assert out.condo_fee_monthly is None and out.condo_fee_known is False
+
+
+def test_detail_condo_fee_company_label_ignored():
+    out = _parse_rendered_fields(_detail("Maintenance Fees Company", "ABC Corp"))
+    assert out.condo_fee_monthly is None and out.condo_fee_known is False
+
+
+def test_detail_year_built_parsed():
+    out = _parse_rendered_fields(_detail("Year Built", "2019"))
+    assert out.year_built == 2019 and out.year_built_known is True
+
+
+def test_detail_year_built_approx():
+    out = _parse_rendered_fields(_detail("Construction Year", "2015 approx"))
+    assert out.year_built == 2015 and out.year_built_known is True
+
+
+def test_detail_parking_parsed():
+    out = _parse_rendered_fields(_detail("Total Parking Spaces", "5"))
+    assert out.parking_spaces == 5
+
+
+def test_detail_above_grade_beds_parsed():
+    out = _parse_rendered_fields(_detail("Above Grade", "2"))
+    assert out.beds_above_grade == 2
+
+
+def test_detail_missing_value_sibling_skipped():
+    html = '<div class="propertyDetailsSectionContentLabel">Year Built</div>'
+    out = _parse_rendered_fields(html)
+    assert out.year_built is None and out.year_built_known is False
+
+
+def test_detail_unparseable_tax_left_unknown():
+    out = _parse_rendered_fields(_detail("Annual Property Taxes", "Contact agent"))
+    assert out.annual_taxes is None and out.taxes_known is False
+
+
+def test_detail_empty_page_returns_blank_fields():
+    out = _parse_rendered_fields("<html></html>")
+    assert out == _DetailFields()
+
+
+def test_detail_malformed_html_non_fatal():
+    # Must not raise even on junk input.
+    out = _parse_rendered_fields("<div class=propertyDetailsSectionContentLabel>x")
+    assert isinstance(out, _DetailFields)
+
+
+def test_detail_year_built_bad_value_unknown():
+    out = _parse_rendered_fields(_detail("Year Built", "old"))
+    assert out.year_built is None and out.year_built_known is False
+
+
+# ── scrape_listing: guards ──────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_invalid_url_returns_none_without_http():
+    cm, client = _client_returning([_FakeResponse(200, _PAGE)])
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "test-key"),
+        patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        result = await scrape_listing("https://www.realtor.ca/not-a-listing")
+    assert result is None
+    client.get.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_missing_api_key_returns_none():
+    result = await _scrape(_PAGE, key="")
+    assert result is None
+
+
+# ── scrape_listing: retry behaviour ─────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_transient_failures_retried_until_success():
+    cm, client = _client_returning(
+        [_FakeResponse(500), _FakeResponse(500), _FakeResponse(200, _PAGE)]
+    )
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "k"),
+        patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        result = await scrape_listing(_URL)
+    assert result is not None
+    assert client.get.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_gives_up_after_max_attempts():
+    cm, client = _client_returning([_FakeResponse(500)])
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "k"),
+        patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        result = await scrape_listing(_URL)
+    assert result is None
+    assert client.get.await_count == realtor_scraper._SCRAPER_API_ATTEMPTS
+
+
+@pytest.mark.asyncio
+async def test_first_attempt_success_one_request():
+    cm, client = _client_returning([_FakeResponse(200, _PAGE)])
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "k"),
+        patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        result = await scrape_listing(_URL)
+    assert result is not None
+    assert client.get.await_count == 1
+
+
+# ── scrape_listing: parsing ─────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_for_rent_uses_lease_price():
+    r = await _scrape(_PAGE)
+    assert r is not None
+    assert r.listing_type == "for_rent"
+    assert r.price == 2650
+
+
+@pytest.mark.asyncio
+async def test_for_sale_uses_price():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.listing_type == "for_sale"
+    assert r.price == 1_249_900
+
+
+@pytest.mark.asyncio
+async def test_no_price_or_lease_returns_none():
+    page = _PAGE.replace("leasePrice: '2,650'", "leasePrice: ''")
+    r = await _scrape(page)
+    assert r is None
+
+
+@pytest.mark.asyncio
+async def test_missing_datalayer_returns_none():
+    r = await _scrape("<html>no datalayer</html>")
+    assert r is None
+
+
+@pytest.mark.asyncio
+async def test_missing_address_returns_none():
+    page = _PAGE.replace(
+        '"name": "1205 - 33 HELENDALE AVENUE, Toronto, Ontario M4R0A4",', ""
+    )
+    r = await _scrape(page)
+    assert r is None
+
+
+@pytest.mark.asyncio
+async def test_sqft_plain_number():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.sqft == 2000
+
+
+@pytest.mark.asyncio
+async def test_sqft_metric_converted_to_sqft():
+    page = _FOR_SALE_PAGE.replace(
+        "interiorFloorSpace: '2000 sqft'", "interiorFloorSpace: '88.26 m2'"
+    )
+    r = await _scrape(page)
+    assert r is not None
+    assert r.sqft == round(88.26 * 10.7639)
+
+
+@pytest.mark.asyncio
+async def test_address_and_description_from_json_ld():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.address.startswith("103 WHITCHURCH MEWS")
+    assert r.listing_description == "Beautiful & bright home"  # HTML-unescaped
+
+
+@pytest.mark.asyncio
+async def test_building_type_captured():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.building_type == "House"
+
+
+@pytest.mark.asyncio
+async def test_taxes_from_detail_section():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.annual_taxes == 8239 and r.taxes_known is True
+
+
+@pytest.mark.asyncio
+async def test_raw_carries_mls_city_province():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.raw["mls"] == "W123"
+    assert r.raw["city"] == "Mississauga"
+    assert r.raw["province"] == "Ontario"
+
+
+@pytest.mark.asyncio
+async def test_above_grade_overrides_datalayer_beds():
+    # dataLayer bedrooms=3, but Above Grade=2 → honest bed count is 2.
+    page = _PAGE.replace("bedrooms: '2'", "bedrooms: '3'") + _detail("Above Grade", "2")
+    r = await _scrape(page)
+    assert r is not None
+    assert r.beds == 2
+
+
+@pytest.mark.asyncio
+async def test_above_grade_ignored_when_larger_than_datalayer():
+    page = _PAGE + _detail("Above Grade", "9")
+    r = await _scrape(page)
+    assert r is not None
+    assert r.beds == 2  # dataLayer value kept (9 is not a plausible reduction)
+
+
+@pytest.mark.asyncio
+async def test_photos_swept_from_page_when_more_than_json_ld():
+    page = _FOR_SALE_PAGE + " ".join(f'"{_P}/w123_{i}.jpg"' for i in range(2, 6))
+    r = await _scrape(page)
+    assert r is not None
+    assert len(r.photo_urls) >= 4
+
+
+@pytest.mark.asyncio
+async def test_days_on_market_always_none():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert r.days_on_market is None
+
+
+@pytest.mark.asyncio
+async def test_exception_during_fetch_returns_none():
+    cm = AsyncMock()
+    cm.__aenter__.side_effect = RuntimeError("boom")
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "k"),
+        patch("scrapers.realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        result = await scrape_listing(_URL)
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_url_variant_with_trailing_path_accepted():
+    r = await _scrape(
+        _PAGE, url="https://www.realtor.ca/real-estate/999/some-address-here"
+    )
+    assert r is not None
+
+
+# ── contract: the flat JSON shape the Fastify API consumes ──────────────────────
+
+# apps/api/src/routes/scrape.ts :: ScrapedListingResponse — the exact keys the API
+# reads off the /scrape response. If this drifts, the API silently mismaps fields.
+_API_CONTRACT_KEYS = {
+    "url",
+    "address",
+    "price",
+    "beds",
+    "baths",
+    "sqft",
+    "property_type",
+    "annual_taxes",
+    "taxes_known",
+    "condo_fee_monthly",
+    "condo_fee_known",
+    "year_built",
+    "year_built_known",
+    "listing_type",
+    "listing_description",
+    "photo_urls",
+    "days_on_market",
+    "raw",
+    "building_type",
+    "parking_spaces",
+}
+
+
+def test_scrape_response_shape_matches_api_contract():
+    listing = ScrapedListing(
+        url="u",
+        address="a",
+        price=1,
+        beds=1,
+        baths=1.0,
+        sqft=None,
+        property_type="p",
+        annual_taxes=None,
+        taxes_known=False,
+        condo_fee_monthly=None,
+        condo_fee_known=False,
+        year_built=None,
+        year_built_known=False,
+        listing_type="for_sale",
+        listing_description=None,
+        photo_urls=[],
+        days_on_market=None,
+        raw={},
+    )
+    assert set(dataclasses.asdict(listing).keys()) == _API_CONTRACT_KEYS
+
+
+@pytest.mark.asyncio
+async def test_scraped_result_serialises_to_contract_keys():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None
+    assert set(dataclasses.asdict(r).keys()) == _API_CONTRACT_KEYS
+
+
+# ── extra parsing coverage ──────────────────────────────────────────────────────
+
+
+def test_detail_all_fields_together():
+    html = (
+        _detail("Annual Property Taxes", "$3,000.00")
+        + _detail("Maintenance Fees", "$450.00 Monthly")
+        + _detail("Year Built", "2018")
+        + _detail("Total Parking Spaces", "2")
+    )
+    out = _parse_rendered_fields(html)
+    assert out.annual_taxes == 3000
+    assert out.condo_fee_monthly == 450
+    assert out.year_built == 2018
+    assert out.parking_spaces == 2
+
+
+def test_detail_condo_fee_plain_label():
+    out = _parse_rendered_fields(_detail("Maintenance Fees", "$300.00"))
+    assert out.condo_fee_monthly == 300 and out.condo_fee_known is True
+
+
+def test_parse_photo_urls_first_seen_sequence_wins():
+    # Same URL twice; ordering key is the first-seen sequence number.
+    page = f'"{_P}/x_5.jpg" "{_P}/x_1.jpg" "{_P}/x_5.jpg"'
+    assert _parse_photo_urls(page) == [f"{_P}/x_1.jpg", f"{_P}/x_5.jpg"]
+
+
+@pytest.mark.asyncio
+async def test_beds_parsed_as_int():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None and r.beds == 4 and isinstance(r.beds, int)
+
+
+@pytest.mark.asyncio
+async def test_baths_parsed_as_float():
+    page = _FOR_SALE_PAGE.replace("bathrooms: '4'", "bathrooms: '3.5'")
+    r = await _scrape(page)
+    assert r is not None and r.baths == 3.5
+
+
+@pytest.mark.asyncio
+async def test_property_type_passed_through_raw():
+    r = await _scrape(_FOR_SALE_PAGE)
+    assert r is not None and r.property_type == "Single Family"
+
+
+@pytest.mark.asyncio
+async def test_photos_from_json_ld_when_page_has_none():
+    # No page-wide CDN sweep hits (photo host differs) → fall back to JSON-LD image.
+    page = _PAGE.replace(
+        '"offers": {"@type": "Offer"}',
+        '"image": ["https://cdn.realtor.ca/listings/TS1/reb82/highres/0/z_1.jpg"],'
+        ' "offers": {"@type": "Offer"}',
+    )
+    r = await _scrape(page)
+    assert r is not None
+    assert r.photo_urls == [
+        "https://cdn.realtor.ca/listings/TS1/reb82/highres/0/z_1.jpg"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_condo_fee_captured_end_to_end():
+    page = _FOR_SALE_PAGE + _detail("Maintenance Fees", "$511.06 Monthly")
+    r = await _scrape(page)
+    assert r is not None
+    assert r.condo_fee_monthly == 511 and r.condo_fee_known is True
+
+
+@pytest.mark.asyncio
+async def test_parking_captured_end_to_end():
+    page = _FOR_SALE_PAGE + _detail("Total Parking Spaces", "3")
+    r = await _scrape(page)
+    assert r is not None and r.parking_spaces == 3
+
+
+@pytest.mark.asyncio
+async def test_year_built_captured_end_to_end():
+    page = _FOR_SALE_PAGE + _detail("Year Built", "2005")
+    r = await _scrape(page)
+    assert r is not None
+    assert r.year_built == 2005 and r.year_built_known is True
