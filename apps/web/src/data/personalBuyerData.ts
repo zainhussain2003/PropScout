@@ -352,14 +352,14 @@ export function computeHomeScore(
   // (EMPTY_SCHOOLS for real listings pre-CSV), arrays are empty → schoolPts 0.
   const allSchools = [...schools.elementary, ...schools.middle, ...schools.high]
   const inCatch = allSchools.filter((s) => s.inCatchment)
-  const scored = allSchools.filter((s) => s.eqao > 0)
+  const scored = allSchools.filter((s) => (s.eqao ?? 0) > 0)
   let schoolPts = 0
   let avgEqao = 0
   if (allSchools.length > 0) {
     avgEqao = inCatch.length
-      ? inCatch.reduce((s, x) => s + x.eqao, 0) / inCatch.length
+      ? inCatch.reduce((s, x) => s + (x.eqao ?? 0), 0) / inCatch.length
       : scored.length
-        ? scored.reduce((s, x) => s + x.eqao, 0) / scored.length
+        ? scored.reduce((s, x) => s + (x.eqao ?? 0), 0) / scored.length
         : 7.5
     if (avgEqao >= 9.0) schoolPts = 20
     else if (avgEqao >= 8.5) schoolPts = 17

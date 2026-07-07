@@ -81,13 +81,15 @@ export function STRPlaceholderSection({ listing }: STRPlaceholderSectionProps): 
   const cityRule = ONTARIO_STR_RULES[key] ?? ONTARIO_STR_RULES.default
   const cityName = listing.addressLine2.split('·')[0].trim()
 
+  // Placeholder rows for the "shipping Q3 2026" teaser. Values are intentionally
+  // blank em-dashes — we never invent STR figures. AirDNA fills these in Phase 2.
   const mockNumbers: Array<[string, string]> = [
-    ['Nightly ADR', '$184'],
-    ['Occupancy', '68%'],
-    ['Net rev /mo', '$3,120'],
-    ['STR – LTR', '+ $220'],
-    ['Seasonality', '±18%'],
-    ['Cleaning/turn', '$2,400/mo'],
+    ['Nightly ADR', '—'],
+    ['Occupancy', '—'],
+    ['Net rev /mo', '—'],
+    ['STR – LTR', '—'],
+    ['Seasonality', '—'],
+    ['Cleaning/turn', '—'],
   ]
 
   return (

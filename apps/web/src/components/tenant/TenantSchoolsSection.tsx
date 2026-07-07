@@ -123,7 +123,11 @@ function TenantSchoolCard({ school }: { school: TenantSchool }): JSX.Element {
           {school.name}
         </div>
         <div className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-          {school.grades}
+          {school.eqao != null && school.eqao > 0
+            ? `EQAO ${school.eqao.toFixed(1)} / 100`
+            : school.grades && school.grades !== '—'
+              ? school.grades
+              : 'No EQAO score'}
         </div>
       </div>
 

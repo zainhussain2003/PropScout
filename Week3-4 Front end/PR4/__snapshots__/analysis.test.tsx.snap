@@ -1137,7 +1137,8 @@ exports[`PropertyHero > matches snapshot 1`] = `
       class="mono"
       style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;"
     >
-      Report · Investor view
+      Report · 
+      Investor view
     </span>
     <span
       style="opacity: 0.4;"

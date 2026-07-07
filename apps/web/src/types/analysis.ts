@@ -401,6 +401,8 @@ export interface TenantSchool {
   boardLabel: string
   name: string
   grades: string
+  /** EQAO composite score (0–100, % meeting standard); null when not loaded. */
+  eqao: number | null
   distance: string
   walk: string
   quality: SchoolQuality

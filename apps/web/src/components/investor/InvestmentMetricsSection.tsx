@@ -117,7 +117,11 @@ export function InvestmentMetricsSection({
     [
       'Condo fee',
       metrics.expenses.condo,
-      listing.condoFeeMonthly > 0 ? `${fmtMoney(listing.condoFeeMonthly)}/mo` : 'N/A',
+      listing.condoFeeMonthly > 0
+        ? `${fmtMoney(listing.condoFeeMonthly)}/mo`
+        : /condo|apartment/i.test(listing.propertyType)
+          ? 'not disclosed'
+          : 'none',
     ],
     [
       'Property management',

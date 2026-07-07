@@ -26,8 +26,7 @@ exports[`SchoolCard > matches snapshot (in-catchment school) 1`] = `
       style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);"
     >
       HDSB · public
-       · 
-      JK–8
+       · JK–8
     </div>
   </div>
   <div
@@ -59,12 +58,12 @@ exports[`SchoolCard > matches snapshot (in-catchment school) 1`] = `
           class="serif tabular"
           style="font-size: 18px; line-height: 1; color: var(--pass);"
         >
-          9.1
+          91.0
         </span>
         <span
           style="font-size: 10px; color: var(--muted);"
         >
-          / 10
+          / 100
         </span>
       </div>
     </div>

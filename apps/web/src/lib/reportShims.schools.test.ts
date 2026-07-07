@@ -15,7 +15,7 @@ const SCHOOLS: SchoolsResult = {
       schoolType: 'elementary',
       board: 'TDSB',
       distanceKm: 0.6,
-      eqaoScore: 8.2,
+      eqaoScore: 82,
       fraserRankPct: 74,
       graduationRate: null,
     },
@@ -26,7 +26,7 @@ const SCHOOLS: SchoolsResult = {
       schoolType: 'middle',
       board: 'Toronto Catholic DSB',
       distanceKm: 1.2,
-      eqaoScore: 7.1,
+      eqaoScore: 71,
       fraserRankPct: null,
       graduationRate: null,
     },
@@ -52,7 +52,7 @@ describe('shimToPersonalSchools', () => {
     expect(elem.name).toBe('Jesse Ketchum Jr & Sr PS')
     expect(elem.distance).toBe('0.6 km')
     expect(elem.driveTime).toBe('1 min') // 0.6 km × 2 min/km, floor 1
-    expect(elem.eqao).toBe(8.2)
+    expect(elem.eqao).toBe(82)
     expect(elem.fraser).toBe(74)
     expect(elem.inCatchment).toBe(false)
     expect(result.high[0]!.gradRate).toBe(0.91)
@@ -65,7 +65,7 @@ describe('shimToTenantSchools', () => {
     expect(result.elementary[0]!.board).toBe('public')
     expect(result.elementary[0]!.quality).toBe('above') // fraser 74 ≥ 67
     expect(result.middle[0]!.board).toBe('catholic')
-    expect(result.middle[0]!.quality).toBe('avg') // no fraser, eqao 7.1 → ≥6.5 avg
+    expect(result.middle[0]!.quality).toBe('avg') // no fraser, eqao 71 → ≥60 avg
     expect(result.high[0]!.board).toBe('french')
     expect(result.high[0]!.quality).toBe('below') // fraser 28 < 33
   })

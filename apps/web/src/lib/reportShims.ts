@@ -18,6 +18,7 @@ import type {
   TenantSchools,
   TenantSchool,
   TenantFlag,
+  TenantRealityItem,
   TenantCostLine,
   TenantAmenity,
   TenantLeverageRow,
@@ -55,6 +56,30 @@ export function shimToTenantFlags(flags: Analysis['riskFlags']): TenantFlag[] {
     detail: f.evidence ?? 'Flagged from the listing description.',
     evidence: f.evidence ?? undefined,
   }))
+}
+
+/**
+ * Build the §03 Listed-vs-Reality comparison from the analysis's risk flags.
+ *
+ * Only flags that carry an evidence quote (the exact wording the listing used)
+ * can be shown as a claim-vs-reality pair: the quote is "how it's listed" and
+ * the flag label is the caveat to verify in person. Returns null when no flag
+ * carries evidence, so the caller falls back to the honest placeholder.
+ */
+export function shimToListedVsReality(
+  analysis: Analysis
+): { listed: string[]; reality: TenantRealityItem[] } | null {
+  const withEvidence = analysis.riskFlags.filter(
+    (f) => f.evidence != null && f.evidence.trim().length > 0
+  )
+  if (withEvidence.length === 0) return null
+
+  const listed = withEvidence.map((f) => `"${f.evidence!.trim()}"`)
+  const reality: TenantRealityItem[] = withEvidence.map((f) => ({
+    txt: f.label,
+    tone: 'bad',
+  }))
+  return { listed, reality }
 }
 
 function parseAddress(address: string): { line1: string; line2: string } {
@@ -292,11 +317,14 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     addressLine1: line1,
     addressLine2: line2 || `${listing.city}, ${listing.province}`,
     asking: listing.rentMonthly ?? 0,
+    // The hero appends the unit ("{beds} · {baths} bath", "{sqft} sqft"), so these
+    // carry bare values — beds keeps its "bed(s)" word (hero shows it as-is), but
+    // baths/sqft must be bare or they double ("2 baths bath", "700 sqft sqft").
     beds: `${listing.beds} bed${listing.beds !== 1 ? 's' : ''}`,
-    baths: `${listing.baths} bath${listing.baths !== 1 ? 's' : ''}`,
-    sqft: listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : '—',
-    floor: '—',
-    utilities: '—',
+    baths: String(listing.baths),
+    sqft: listing.sqft ? listing.sqft.toLocaleString() : '',
+    floor: '',
+    utilities: '',
     scoreNumber,
     scoreTone,
     verdictLabel,
@@ -598,8 +626,9 @@ function qualityFor(school: NearbySchool): SchoolQuality {
     return 'below'
   }
   if (school.eqaoScore != null) {
-    if (school.eqaoScore >= 8) return 'above'
-    if (school.eqaoScore >= 6.5) return 'avg'
+    // eqaoScore is a 0–100 composite (% meeting the provincial standard).
+    if (school.eqaoScore >= 75) return 'above'
+    if (school.eqaoScore >= 60) return 'avg'
     return 'below'
   }
   return 'avg'
@@ -611,7 +640,9 @@ function toPersonalSchool(school: NearbySchool): PersonalSchool {
     board: school.board ?? '—',
     distance: `${school.distanceKm.toFixed(1)} km`,
     driveTime: `${Math.max(1, Math.round(school.distanceKm * DRIVE_MIN_PER_KM))} min`,
-    eqao: school.eqaoScore ?? 0,
+    // Keep null when EQAO hasn't loaded for this school (French boards, alternative
+    // schools, tiny cohorts) so the card shows "No EQAO score" rather than a red 0.
+    eqao: school.eqaoScore,
     // Keep null when Fraser hasn't loaded (currently all schools) so the card can
     // hide the figure rather than render a fabricated "0th %ile".
     fraser: school.fraserRankPct,
@@ -638,6 +669,7 @@ function toTenantSchool(school: NearbySchool): TenantSchool {
     boardLabel: school.board ?? board,
     name: school.name,
     grades: '—',
+    eqao: school.eqaoScore,
     distance: `${school.distanceKm.toFixed(1)} km`,
     walk: `${Math.max(1, Math.round(school.distanceKm * WALK_MIN_PER_KM))} min`,
     quality: qualityFor(school),

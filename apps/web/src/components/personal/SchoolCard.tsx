@@ -13,9 +13,10 @@ interface SchoolCardProps {
   school: PersonalSchool
 }
 
+// EQAO score is a 0–100 composite (% of students meeting the provincial standard).
 function getEqaoTone(eqao: number): 'pass' | 'caution' | 'fail' {
-  if (eqao >= 8.0) return 'pass'
-  if (eqao >= 6.0) return 'caution'
+  if (eqao >= 75) return 'pass'
+  if (eqao >= 60) return 'caution'
   return 'fail'
 }
 
@@ -27,7 +28,12 @@ function getFraserLabel(fraser: number): string {
 }
 
 export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
-  const eqaoTone = getEqaoTone(school.eqao)
+  // EQAO is missing for many schools (French boards, alternative/tiny cohorts).
+  // Treat null / 0 as "no score" and hide the figure rather than render a red
+  // "0.0 / 100" that reads as a real failing result.
+  const hasEqao = school.eqao != null && school.eqao > 0
+  const eqaoValue = school.eqao ?? 0
+  const eqaoTone = getEqaoTone(eqaoValue)
   // Fraser data isn't loaded for any school yet — hide the figure entirely rather
   // than show "0th %ile" / "Below avg" that would read as a real (bad) ranking.
   const hasFraser = school.fraser != null && school.fraser > 0
@@ -86,7 +92,8 @@ export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
             color: 'var(--muted)',
           }}
         >
-          {school.board} · {school.grades}
+          {school.board}
+          {school.grades && school.grades !== '—' ? ` · ${school.grades}` : ''}
         </div>
       </div>
 
@@ -104,41 +111,49 @@ export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
           >
             EQAO
           </span>
-          {/* Bar track */}
-          <div
-            style={{
-              position: 'relative',
-              height: 6,
-              background: 'var(--line)',
-              borderRadius: 999,
-            }}
-          >
-            {/* Filled bar — width reflects score out of 10 */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                borderRadius: 999,
-                background: eqaoColor,
-                width: `${Math.round((school.eqao / 10) * 100)}%`,
-              }}
-            />
-          </div>
-          {/* Numeric score to the right of the bar */}
-          <div
-            className="row"
-            style={{ justifyContent: 'flex-end', alignItems: 'baseline', gap: 3 }}
-          >
-            <span
-              className="serif tabular"
-              style={{ fontSize: 18, lineHeight: 1, color: eqaoColor }}
-            >
-              {school.eqao.toFixed(1)}
+          {hasEqao ? (
+            <>
+              {/* Bar track */}
+              <div
+                style={{
+                  position: 'relative',
+                  height: 6,
+                  background: 'var(--line)',
+                  borderRadius: 999,
+                }}
+              >
+                {/* Filled bar — width reflects score out of 100 */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    height: '100%',
+                    borderRadius: 999,
+                    background: eqaoColor,
+                    width: `${Math.min(100, Math.round(eqaoValue))}%`,
+                  }}
+                />
+              </div>
+              {/* Numeric score to the right of the bar */}
+              <div
+                className="row"
+                style={{ justifyContent: 'flex-end', alignItems: 'baseline', gap: 3 }}
+              >
+                <span
+                  className="serif tabular"
+                  style={{ fontSize: 18, lineHeight: 1, color: eqaoColor }}
+                >
+                  {eqaoValue.toFixed(1)}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--muted)' }}>/ 100</span>
+              </div>
+            </>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--muted)', paddingTop: 2 }}>
+              No EQAO score
             </span>
-            <span style={{ fontSize: 10, color: 'var(--muted)' }}>/ 10</span>
-          </div>
+          )}
         </div>
         {hasFraser && (
           <div className="col" style={{ gap: 2, flex: 1 }}>

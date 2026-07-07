@@ -742,13 +742,13 @@ function SchoolsSection({ isReal, realSchools, catchmentNote }: SchoolsSectionPr
 
   const allSchools = hasData ? [...schools.elementary, ...schools.middle, ...schools.high] : []
   const topRanked = [...allSchools]
-    .filter((s) => (isReal ? s.eqao > 0 : s.inCatchment))
-    .sort((a, b) => b.eqao - a.eqao)[0]
+    .filter((s) => (isReal ? (s.eqao ?? 0) > 0 : s.inCatchment))
+    .sort((a, b) => (b.eqao ?? 0) - (a.eqao ?? 0))[0]
 
   const verdictLabel = !hasData
     ? 'Data pending'
     : topRanked
-      ? `${topRanked.name.split(' ').slice(0, 2).join(' ')} · EQAO ${topRanked.eqao.toFixed(1)}`
+      ? `${topRanked.name.split(' ').slice(0, 2).join(' ')} · EQAO ${(topRanked.eqao ?? 0).toFixed(1)}`
       : `${allSchools.length} nearby`
 
   return (

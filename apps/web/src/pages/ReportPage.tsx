@@ -578,10 +578,17 @@ function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.E
 
 // ── Narrative helpers ─────────────────────────────────────────────────────────
 
+/** First sentence of a narrative, split on real sentence boundaries (punctuation
+ *  + whitespace) so decimals like "$1.9M" aren't cut mid-number. No trailing dot. */
+export function firstSentence(narrative: string): string {
+  const s = narrative.split(/(?<=[.!?])\s+/)[0]?.trim() ?? narrative.trim()
+  return s.replace(/[.!?]+$/, '')
+}
+
 function buildHeadline(narrative: string | null, dealLabel: string, price: number): ReactNode {
   if (narrative) {
-    const firstSentence = narrative.split('.')[0]?.trim()
-    if (firstSentence && firstSentence.length > 10) return <>{firstSentence}.</>
+    const first = firstSentence(narrative)
+    if (first && first.length > 10) return <>{first}.</>
   }
   const v = dealLabel.toLowerCase()
   if (v.includes('hard') || v.includes('do not')) {
@@ -709,7 +716,7 @@ function TenantReportContent({
         <div className="container" style={{ marginBottom: 32 }}>
           <AIVerdictBlock
             eyebrow="Scout AI · tenant verdict"
-            headline={<>{analysis.narrative.split('.')[0]}.</>}
+            headline={<>{firstSentence(analysis.narrative)}.</>}
             sub={<>{analysis.narrative.split('. ').slice(1).join('. ')}</>}
           />
         </div>
@@ -871,6 +878,7 @@ function InvestorReportContent({
         dscr={metrics.dscr}
         onBack={handleBack}
         mapCenter={analysis.coordinates ?? null}
+        viewLabel={mode === 'landlord' ? 'Landlord view' : 'Investor view'}
       />
 
       <div className="container" style={{ marginBottom: 32 }}>
@@ -878,7 +886,7 @@ function InvestorReportContent({
           <TruncatedVerdict
             firstParagraph={
               analysis.narrative
-                ? (analysis.narrative.split('.')[0] ?? '') + '.'
+                ? firstSentence(analysis.narrative) + '.'
                 : `At ${fmtMoney(listingData.price)}, this property shows ${dealScore.label.toLowerCase()} fundamentals.`
             }
             eyebrow={verdictEyebrow}
@@ -894,32 +902,40 @@ function InvestorReportContent({
       </div>
 
       <InvestmentMetricsSection metrics={metrics} listing={listingData} />
-      {/* §02 Financing — live sliders; every metric above/below recomputes on
-          drag (deal score stays backend-sourced). */}
-      <section className="container tr-section" data-section="02">
-        <SectionHead
-          n="02"
-          topic="Financing"
-          question={
-            <>
-              Does the deal <em>pencil</em> at your numbers?
-            </>
-          }
-          verdict={`${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`}
-          tone="caution"
-        />
-        <FinancingSliders financing={financing} price={listingData.price} onChange={setFinancing} />
-      </section>
+      {/* Financing / cash-to-close / OSFI / equity are PURCHASE economics that
+          need a sale price. A for-rent listing (landlord mode) has none, so those
+          sections would render $0 / NaN — gate them all on a real price. The
+          rental economics above (cap rate, cash flow, comps) still show. */}
+      {listingData.price > 0 && (
+        <>
+          {/* §02 Financing — live sliders; every metric recomputes on drag. */}
+          <section className="container tr-section" data-section="02">
+            <SectionHead
+              n="02"
+              topic="Financing"
+              question={
+                <>
+                  Does the deal <em>pencil</em> at your numbers?
+                </>
+              }
+              verdict={`${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`}
+              tone="caution"
+            />
+            <FinancingSliders
+              financing={financing}
+              price={listingData.price}
+              onChange={setFinancing}
+            />
+          </section>
+        </>
+      )}
       <RentalCompsSection analysis={analysis} listing={listingData} />
-      {/* Purchase-transaction section — meaningless for a for-rent listing
-          (no sale price: the LTT table computed $0 while the totals card used
-          the estimated value, live 2026-07-02). */}
       {listingData.price > 0 && (
         <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
       )}
-      <OSFISection financing={financing} listing={listingData} />
+      {listingData.price > 0 && <OSFISection financing={financing} listing={listingData} />}
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
-      <EquitySection metrics={metrics} />
+      {listingData.price > 0 && <EquitySection metrics={metrics} />}
       {/* §08 Neighbourhood — stat tiles + comps + appreciation. Every field is
           data-honest: unknown stats render "—" and empty comps show the "no
           comparable-sales source yet" state (shimToNeighbourhood returns zeros

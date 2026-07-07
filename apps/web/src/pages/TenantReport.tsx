@@ -78,6 +78,7 @@ import {
   shimToTenantCostLines,
   shimToTenantAmenities,
   shimToTenantNegotiation,
+  shimToListedVsReality,
 } from '../lib/reportShims'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -276,18 +277,24 @@ function TenantPropertyHero({
                 <Icon name="key" size={14} />
                 {listing.beds} · {listing.baths} bath
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Icon name="house" size={14} />
-                {listing.sqft} sqft
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Icon name="dot" size={10} />
-                {listing.floor}
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Icon name="check" size={14} />
-                {listing.utilities}
-              </span>
+              {listing.sqft && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="house" size={14} />
+                  {listing.sqft} sqft
+                </span>
+              )}
+              {listing.floor && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="dot" size={10} />
+                  {listing.floor}
+                </span>
+              )}
+              {listing.utilities && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="check" size={14} />
+                  {listing.utilities}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1443,20 +1450,29 @@ export function TenantReport({
         <ListingAccuracySection />
       )}
 
-      {/* §03 Listed vs Reality — requires a structured claim-vs-reality extraction
-          that the live payload doesn't carry yet. Show an honest placeholder in
-          real mode (never the CHARLES fixture); the demo keeps the full section. */}
+      {/* §03 Listed vs Reality — built from the listing flags that carry an
+          evidence quote (the exact wording used vs the caveat to verify). When no
+          flag carries a quote we can't honestly compare claims, so we fall back to
+          the viewing-checklist placeholder. The demo keeps the CHARLES fixture. */}
       {isReal ? (
-        <SectionPlaceholder
-          n="03"
-          topic="Listed vs reality"
-          question={
-            <>
-              Does the listing <em>match</em> the unit?
-            </>
+        (() => {
+          const lvr = shimToListedVsReality(realAnalysis!)
+          if (lvr) {
+            return <ListedVsRealitySection listed={lvr.listed} reality={lvr.reality} />
           }
-          note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, the second bedroom's window, and what's actually included against what's advertised."
-        />
+          return (
+            <SectionPlaceholder
+              n="03"
+              topic="Listed vs reality"
+              question={
+                <>
+                  Does the listing <em>match</em> the unit?
+                </>
+              }
+              note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, the second bedroom's window, and what's actually included against what's advertised."
+            />
+          )
+        })()
       ) : (
         <ListedVsRealitySection listed={CHARLES_LISTED} reality={CHARLES_REALITY} />
       )}

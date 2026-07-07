@@ -30,6 +30,8 @@ interface PropertyHeroProps {
   onBack?: () => void
   /** Subject coordinates — renders the real Mapbox map when provided. */
   mapCenter?: { lat: number; lng: number } | null
+  /** Breadcrumb view label, e.g. "Investor view" / "Landlord view". */
+  viewLabel?: string
 }
 
 export function PropertyHero({
@@ -40,6 +42,7 @@ export function PropertyHero({
   dscr,
   onBack,
   mapCenter,
+  viewLabel = 'Investor view',
 }: PropertyHeroProps): JSX.Element {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
 
@@ -104,7 +107,7 @@ export function PropertyHero({
             textTransform: 'uppercase',
           }}
         >
-          Report · Investor view
+          Report · {viewLabel}
         </span>
         <span style={{ opacity: 0.4 }}>·</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

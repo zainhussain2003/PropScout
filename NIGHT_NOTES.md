@@ -1,3 +1,62 @@
+# Work log — 2026-07-07 · full QA + polish sweep, all 4 live reports
+
+Rendered a real live `/r/:token` for every mode against real Realtor.ca listings,
+audited every section for population / empty-state honesty / broken values / cross-mode
+UI, then fixed. Audit tokens (freshest, richest per mode):
+investor `4c777818` (Mississauga detached, income+6 schools+2 flags),
+tenant `cfa85a87` (Toronto condo, 1 flag → §03 populated) + `8c372264` (clean, 0 flags),
+personal `62bbe6e3`/`e67650e3` (Mississauga, 6 scored schools),
+landlord `df961b56` (for-sale $499,999 held as a rental).
+
+## Step-1 audit → what was found & fixed
+
+| Mode · Section               | Finding                                                                                                                          | Fix                                                                                                                                                                                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant §08 Schools           | Showed bare "—" instead of the EQAO score                                                                                        | `toTenantSchool` now carries `eqao: eqaoScore`; card renders `EQAO 72.7 / 100`; falls back to grades, else "No EQAO score"                                                                                                                                             |
+| Tenant hero chips            | Double units — "2 baths **bath**", "700 sqft **sqft**", and two stray "— —"                                                      | Shim emits bare `baths`/`sqft` (hero appends the unit); empty `sqft`/`floor`/`utilities` chips are hidden instead of rendering a lone dot/check icon                                                                                                                   |
+| Tenant §03 Listed-vs-Reality | Always an honest placeholder, even when flags carried evidence quotes                                                            | New `shimToListedVsReality` builds the claim (evidence quote) ↔ caveat (flag label) comparison from flags; placeholder only when **no** flag carries a quote. Verified: flag "Den suitable as second bedroom" → "1 mismatch · Unverified bedroom"                      |
+| Investor/Landlord §10 STR    | Blurred teaser held **fabricated** figures ($184 ADR, 68% occ, $3,120/mo…)                                                       | Dashed all six to "—" — we never invent STR numbers; AirDNA fills them in Phase 2                                                                                                                                                                                      |
+| Investor/Landlord §01        | "Condo fee **N/A**" on a freehold                                                                                                | Property-type aware: freehold → "none", condo w/o disclosed fee → "not disclosed"                                                                                                                                                                                      |
+| Investor/Landlord §08        | Verdict "Market data pending" even when income + walk + transit were present                                                     | Verdict now leads with the real signal we have (walk-based "Very walkable" / "Somewhat walkable") and only says "pending" when we truly have nothing                                                                                                                   |
+| Personal + Tenant §04/§08    | A school with **null/0 EQAO** rendered a red "0.0 / 100" (looked like a real failing score); `toPersonalSchool` coerced null → 0 | `PersonalSchool.eqao` now `number \| null`; shim keeps null; `SchoolCard` guards `hasEqao` (null **or** 0) → shows "No EQAO score" instead of a red 0. **Latent crash fixed**: card previously called `school.eqao.toFixed(1)` which would throw on a null-EQAO school |
+| Personal §04                 | Board line showed a trailing "· —" when grades weren't loaded                                                                    | Hide the "· grades" suffix when grades is empty/"—"                                                                                                                                                                                                                    |
+
+## Confirmed correct — NOT bugs (honesty discipline holds)
+
+- Personal §02 FMV / §03 Comparable Sales, investor §08 comparable sales, price-appreciation,
+  price-per-sqft trend, building permits, pop-growth: all render honest "no licensed sales feed
+  yet / StatsCan —" empty states. **Paid-source sections staying empty is correct.**
+- §04 LTT table "$0 – $55,000" is the real Ontario first bracket; §07 equity chart "$0k" is the
+  year-0 axis baseline; due-diligence "0 / 16 complete" is an unticked checklist — all legitimate.
+- Tenant §10 comps map "Not mapped individually", §02 "clean scan", §03 viewing-checklist
+  placeholder all read as honest user-facing copy (no dev/sprint/phase words anywhere in the scan).
+- `nearbyDistances` empty across all modes = Google Places key still lacks Places API (New);
+  income present only where StatsCan FSA had a row — both expected from the prior goal.
+
+## Cross-mode UI
+
+Investor & landlord share `InvestorReportContent`; landlord only swaps the breadcrumb to
+"Landlord view" (added last session) and gates the purchase-economics sections (§02 financing,
+§04 cash-to-close, §05 OSFI, §07 equity) on `price > 0`. Shared components (SectionHead, cards,
+DealScore, SunScoutPanel, STR) render identically across modes — confirmed by matching section
+markup in the DOM scans.
+
+## Verification note
+
+Every fix was verified live by extracting the rendered section text from the DOM across all four
+modes (more reliable than a screenshot for catching "$0 / 0.0 / 100 / N/A / — —" broken values).
+**Screenshots could not be captured at readable fidelity** — the harness Chrome viewport is pinned
+very wide (see [[chrome-viewport-pinned]]) so a real-width report downscales to an illegible strip,
+and the zoom/CDP capture path timed out. DOM-text audit stands as the evidence of record.
+
+## Gates (all green, ≥ floor)
+
+- web **855/855** (updated 6 snapshots for the intentional markup/copy changes; migrated the
+  `schoolCard` + `reportShims.schools` EQAO fixtures from the retired 0–10 scale to 0–100)
+- API **176/176** · both typechecks clean. (No API code changed this pass — frontend-only.)
+
+---
+
 # Work log — 2026-07-07 · neighbourhood data + schools Fraser display
 
 Filled the free/available neighbourhood data on live reports; verified on the live

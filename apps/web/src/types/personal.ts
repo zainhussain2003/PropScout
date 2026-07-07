@@ -55,7 +55,7 @@ export interface PersonalSchool {
   board: string
   distance: string
   driveTime: string
-  eqao: number // 0–10
+  eqao: number | null // EQAO composite 0–100 (% meeting standard); null when not loaded for this school
   fraser: number | null // 0–100 percentile · null when Fraser hasn't loaded for this school
   inCatchment: boolean
   grades: string // e.g. 'JK–8', '9–12'

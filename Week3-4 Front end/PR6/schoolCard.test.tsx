@@ -5,7 +5,7 @@
  * Test file path: Week3-4 Front end/PR6/schoolCard.test.tsx
  *
  * EQAO bar: SchoolCard renders a horizontal bar whose fill width =
- * (eqao / 10) * 100%. Tests assert on the inline style.width value
+ * Math.round(eqao)% (eqao is a 0–100 composite). Tests assert on the inline style.width value
  * and on the fill background token (var(--pass) / var(--caution) / var(--fail)).
  */
 
@@ -21,7 +21,7 @@ const ELEMENTARY_IN_CATCHMENT: PersonalSchool = {
   board: 'HDSB · public',
   distance: '0.6 km',
   driveTime: '2 min',
-  eqao: 9.1,
+  eqao: 91,
   fraser: 88,
   inCatchment: true,
   grades: 'JK–8',
@@ -32,7 +32,7 @@ const ELEMENTARY_NOT_IN_CATCHMENT: PersonalSchool = {
   board: 'HDSB · public',
   distance: '1.2 km',
   driveTime: '4 min',
-  eqao: 8.2,
+  eqao: 82,
   fraser: 71,
   inCatchment: false,
   grades: 'JK–8',
@@ -43,7 +43,7 @@ const HIGH_SCHOOL_WITH_GRAD_RATE: PersonalSchool = {
   board: 'HDSB · public',
   distance: '1.4 km',
   driveTime: '4 min',
-  eqao: 8.4,
+  eqao: 84,
   fraser: 76,
   inCatchment: true,
   grades: '9–12',
@@ -55,7 +55,7 @@ const BELOW_AVERAGE_SCHOOL: PersonalSchool = {
   board: 'Generic Board',
   distance: '3.0 km',
   driveTime: '8 min',
-  eqao: 6.5,
+  eqao: 65,
   fraser: 30,
   inCatchment: false,
   grades: 'JK–8',
@@ -80,25 +80,25 @@ describe('SchoolCard', () => {
     expect(screen.getByText('0.6 km · 2 min drive')).toBeInTheDocument()
   })
 
-  it('renders the EQAO bar fill with correct width for eqao=9.1 (91%)', () => {
+  it('renders the EQAO bar fill with correct width for eqao=91 (91%)', () => {
     const { container } = render(<SchoolCard school={ELEMENTARY_IN_CATCHMENT} />)
-    // Fill bar element has style.width = "91%" (= 9.1 / 10 * 100)
+    // Fill bar element has style.width = "91%" (= Math.round(91))
     const elements = Array.from(container.querySelectorAll<HTMLElement>('[style]'))
     const barFill = elements.find((el) => el.style.width === '91%')
     expect(barFill).toBeTruthy()
   })
 
-  it('EQAO bar fill background is var(--pass) for eqao >= 8', () => {
+  it('EQAO bar fill background is var(--pass) for eqao >= 75', () => {
     const { container } = render(<SchoolCard school={ELEMENTARY_IN_CATCHMENT} />)
-    // eqao=9.1 >= 8 → getEqaoTone returns 'pass' → background: var(--pass)
+    // eqao=91 >= 75 → getEqaoTone returns 'pass' → background: var(--pass)
     const elements = Array.from(container.querySelectorAll<HTMLElement>('[style]'))
     const barFill = elements.find((el) => el.style.width === '91%')
     expect(barFill?.style.background).toBe('var(--pass)')
   })
 
-  it('renders the EQAO numeric score "9.1" as visible text', () => {
+  it('renders the EQAO numeric score "91.0" as visible text', () => {
     render(<SchoolCard school={ELEMENTARY_IN_CATCHMENT} />)
-    expect(screen.getByText('9.1')).toBeInTheDocument()
+    expect(screen.getByText('91.0')).toBeInTheDocument()
   })
 
   it('renders the Fraser percentile', () => {
@@ -126,7 +126,7 @@ describe('SchoolCard', () => {
 
   it('renders a Fraser label instead of grad rate for non-high-schools', () => {
     render(<SchoolCard school={ELEMENTARY_IN_CATCHMENT} />)
-    // eqao=9.1, fraser=88 → getFraserLabel(88) = 'Top 20%'
+    // eqao=91, fraser=88 → getFraserLabel(88) = 'Top 20%'
     expect(screen.getByText('Top 20%')).toBeInTheDocument()
   })
 

@@ -735,7 +735,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             class="mono"
             style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;"
           >
-            Report · Investor view
+            Report · 
+            Investor view
           </span>
           <span
             style="opacity: 0.4;"
@@ -4925,7 +4926,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="serif tabular"
                   style="font-size: 20px; line-height: 1;"
                 >
-                  $184
+                  —
                 </span>
               </div>
               <div
@@ -4942,7 +4943,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="serif tabular"
                   style="font-size: 20px; line-height: 1;"
                 >
-                  68%
+                  —
                 </span>
               </div>
               <div
@@ -4959,7 +4960,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="serif tabular"
                   style="font-size: 20px; line-height: 1;"
                 >
-                  $3,120
+                  —
                 </span>
               </div>
               <div
@@ -4976,7 +4977,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="serif tabular"
                   style="font-size: 20px; line-height: 1;"
                 >
-                  + $220
+                  —
                 </span>
               </div>
               <div
@@ -4993,7 +4994,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="serif tabular"
                   style="font-size: 20px; line-height: 1;"
                 >
-                  ±18%
+                  —
                 </span>
               </div>
               <div
@@ -5010,7 +5011,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="serif tabular"
                   style="font-size: 20px; line-height: 1;"
                 >
-                  $2,400/mo
+                  —
                 </span>
               </div>
             </div>

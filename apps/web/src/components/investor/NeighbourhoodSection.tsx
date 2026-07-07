@@ -47,15 +47,30 @@ export function NeighbourhoodSection({
     ['Price per sqft trend', n.ppsqftTrend !== 'N/A' ? n.ppsqftTrend : '—', 'last 12 months'],
   ]
 
-  // No appreciation figure means we have no neighbourhood market data for this
-  // FSA yet — say so honestly rather than implying "modest growth" from a zero.
+  // Appreciation is a paid-source figure we often don't have. When it's missing
+  // but we *do* have core neighbourhood signals (income, walkability), lead with
+  // those rather than claiming all market data is pending — that would ignore the
+  // real data on the tiles below. Only "pending" when we truly have nothing.
   const hasAppreciation = n.appreciation5y > 0
-  const verdictTone = !hasAppreciation ? 'caution' : n.appreciation5y >= 0.2 ? 'pass' : 'caution'
-  const verdictLabel = !hasAppreciation
-    ? 'Market data pending'
-    : n.appreciation5y >= 0.2
+  const hasCoreData = n.walkScore > 0 || n.avgIncome > 0
+  const verdictLabel = hasAppreciation
+    ? n.appreciation5y >= 0.2
       ? 'Strong appreciation'
       : 'Modest growth'
+    : hasCoreData
+      ? n.walkScore >= 80
+        ? 'Very walkable'
+        : n.walkScore >= 50
+          ? 'Somewhat walkable'
+          : 'Partial market data'
+      : 'Market data pending'
+  const verdictTone = hasAppreciation
+    ? n.appreciation5y >= 0.2
+      ? 'pass'
+      : 'caution'
+    : hasCoreData && n.walkScore >= 80
+      ? 'pass'
+      : 'caution'
 
   return (
     <section className="container tr-section" data-section="08">
