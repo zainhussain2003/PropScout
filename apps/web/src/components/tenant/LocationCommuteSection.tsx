@@ -141,6 +141,11 @@ export function LocationCommuteSection({
             From this address
           </span>
 
+          {distances.length === 0 && (
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55, marginTop: 4 }}>
+              We couldn&apos;t pull nearby amenity distances for this address.
+            </p>
+          )}
           {distances.map((d, i) => (
             <div
               key={d.k}

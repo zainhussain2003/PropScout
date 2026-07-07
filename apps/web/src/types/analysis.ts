@@ -152,6 +152,21 @@ export interface SchoolsResult {
   catchmentNote: string
 }
 
+/** One distance from the listing to a nearby amenity (Google Places). */
+export interface NearbyDistance {
+  key: string
+  label: string
+  distanceKm: number
+  driveMin: number
+}
+
+/** Census stats for the listing's area (StatsCan). Null fields = no match/data. */
+export interface NeighbourhoodStats {
+  avgIncome: number | null
+  popGrowth5y: number | null
+  areaLabel: string
+}
+
 export interface Analysis {
   id: string
   token: string // share token for /r/[token]
@@ -164,6 +179,10 @@ export interface Analysis {
   narrative: string | null
   walkScore: WalkScoreResult | null
   neighbourhood: NeighbourhoodData | null
+  /** Nearest transit/grocery/highway/pharmacy distances (Google Places). */
+  nearbyDistances?: NearbyDistance[] | null
+  /** Census income + population growth for the listing's FSA (StatsCan). */
+  neighbourhoodStats?: NeighbourhoodStats | null
   hasSanityWarnings: boolean
   sunScout: SunScoutResult | null
   /** Geocoded subject-property coordinates — enables the real MiniMap.

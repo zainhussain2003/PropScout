@@ -129,6 +129,97 @@ export async function getNearbySchools(lat: number, lng: number): Promise<School
   return schools
 }
 
+// ── Nearby distances (transit / grocery / highway) ─────────────────────────────
+
+export interface NearbyDistance {
+  key: string // 'transit' | 'grocery' | 'highway' | 'pharmacy'
+  label: string // display label, e.g. "Nearest transit"
+  distanceKm: number
+  /** Rough driving-time estimate from the straight-line distance (~30 km/h urban). */
+  driveMin: number
+}
+
+// Places API (New) Text Search — the legacy nearbysearch used by getNearbySchools
+// is deprecated and returns REQUEST_DENIED unless the (also-deprecated) legacy API
+// is enabled. Text Search + rankPreference DISTANCE + a location bias gives us the
+// nearest match for a free-text query, and covers highway on-ramps (which have no
+// place type). Needs "Places API (New)" enabled on the GOOGLE_PLACES_KEY project.
+const TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText'
+const SEARCH_RADIUS_M = 8000
+
+// What we look up around the listing, as free-text queries.
+const DISTANCE_TARGETS: Array<{ key: string; label: string; query: string }> = [
+  { key: 'transit', label: 'Nearest transit', query: 'transit station' },
+  { key: 'grocery', label: 'Grocery store', query: 'grocery store' },
+  { key: 'highway', label: 'Highway on-ramp', query: 'highway on-ramp' },
+  { key: 'pharmacy', label: 'Pharmacy', query: 'pharmacy' },
+]
+
+interface TextSearchResponse {
+  places?: Array<{ location?: { latitude?: number; longitude?: number } }>
+}
+
+/** Nearest place matching a text query, as a straight-line distance in km, or null. */
+async function nearestPlaceKm(
+  lat: number,
+  lng: number,
+  key: string,
+  target: { query: string }
+): Promise<number | null> {
+  try {
+    const res = await fetch(TEXT_SEARCH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'places.location',
+      },
+      body: JSON.stringify({
+        textQuery: target.query,
+        maxResultCount: 1,
+        rankPreference: 'DISTANCE',
+        locationBias: {
+          circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS_M },
+        },
+      }),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as TextSearchResponse
+    const loc = (data.places ?? [])[0]?.location
+    if (loc?.latitude == null || loc?.longitude == null) return null
+    return Number(haversineKm(lat, lng, loc.latitude, loc.longitude).toFixed(2))
+  } catch (err) {
+    console.error(`nearestPlaceKm(${target.query}): failed`, err)
+    return null
+  }
+}
+
+/**
+ * Distances from the listing to the nearest transit stop, grocery store, highway
+ * on-ramp, and pharmacy — computed from the listing coordinates via Google Places.
+ * Returns [] (never throws) when GOOGLE_PLACES_KEY is unset; individual targets
+ * that return nothing are simply omitted (the UI shows "unavailable" then).
+ */
+export async function getNearbyDistances(lat: number, lng: number): Promise<NearbyDistance[]> {
+  const key = process.env.GOOGLE_PLACES_KEY
+  if (!key) {
+    console.warn('getNearbyDistances: GOOGLE_PLACES_KEY is not set — returning []')
+    return []
+  }
+  const out: NearbyDistance[] = []
+  for (const target of DISTANCE_TARGETS) {
+    const km = await nearestPlaceKm(lat, lng, key, target)
+    if (km == null) continue
+    out.push({
+      key: target.key,
+      label: target.label,
+      distanceKm: km,
+      driveMin: Math.max(1, Math.round((km / 30) * 60)),
+    })
+  }
+  return out
+}
+
 /**
  * Convenience: filter to nearest N per type for the report UI.
  */

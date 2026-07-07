@@ -175,7 +175,23 @@ export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): P
  * are zeroed — to be populated when Week 4-5 neighbourhood data lands.
  * Only this function needs updating at that point.
  */
+/** Google-Places distances → the {k,v,unit,tone} rows the report tables render. */
+function mapDistanceRows(analysis: Analysis): Array<{
+  k: string
+  v: string
+  unit: string
+  tone: 'pass' | 'caution'
+}> {
+  return (analysis.nearbyDistances ?? []).map((d) => ({
+    k: d.label,
+    v: d.distanceKm.toFixed(1),
+    unit: `km · ${d.driveMin} min drive`,
+    tone: d.distanceKm <= 1.5 ? 'pass' : 'caution',
+  }))
+}
+
 export function shimToPersonalNeighbourhood(analysis: Analysis): PersonalNeighbourhood {
+  const stats = analysis.neighbourhoodStats
   return {
     walkScore: analysis.walkScore?.walk ?? 0,
     transitScore: analysis.walkScore?.transit ?? 0,
@@ -183,13 +199,14 @@ export function shimToPersonalNeighbourhood(analysis: Analysis): PersonalNeighbo
     walkSub: analysis.walkScore?.description ?? '',
     transitSub: '',
     bikeSub: '',
-    avgIncome: 0,
-    popGrowth5y: 0,
+    // Real census figures when the FSA matched; 0 (→ "—" in the UI) otherwise.
+    avgIncome: stats?.avgIncome ?? 0,
+    popGrowth5y: stats?.popGrowth5y ?? 0,
     ppsqftTrend: 'N/A',
     appreciation5y: 0,
     appreciation10y: 0,
     buildingPermits: 0,
-    distances: [],
+    distances: mapDistanceRows(analysis),
   }
 }
 
@@ -239,9 +256,11 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
  */
 export function shimToNeighbourhood(analysis: Analysis): NeighbourhoodData {
   if (analysis.neighbourhood) return analysis.neighbourhood
+  const stats = analysis.neighbourhoodStats
   return {
-    avgIncome: 0,
-    popGrowth5y: 0,
+    // Real census figures when the FSA matched; 0 (→ "—" in the UI) otherwise.
+    avgIncome: stats?.avgIncome ?? 0,
+    popGrowth5y: stats?.popGrowth5y ?? 0,
     walkScore: analysis.walkScore?.walk ?? 0,
     transitScore: analysis.walkScore?.transit ?? 0,
     bikeScore: analysis.walkScore?.bike ?? 0,
@@ -593,7 +612,9 @@ function toPersonalSchool(school: NearbySchool): PersonalSchool {
     distance: `${school.distanceKm.toFixed(1)} km`,
     driveTime: `${Math.max(1, Math.round(school.distanceKm * DRIVE_MIN_PER_KM))} min`,
     eqao: school.eqaoScore ?? 0,
-    fraser: school.fraserRankPct ?? 0,
+    // Keep null when Fraser hasn't loaded (currently all schools) so the card can
+    // hide the figure rather than render a fabricated "0th %ile".
+    fraser: school.fraserRankPct,
     // Attendance boundaries are NOT ingested — never claim catchment.
     inCatchment: false,
     grades: '—',

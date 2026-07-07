@@ -28,7 +28,10 @@ function getFraserLabel(fraser: number): string {
 
 export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
   const eqaoTone = getEqaoTone(school.eqao)
-  const fraserLabel = getFraserLabel(school.fraser)
+  // Fraser data isn't loaded for any school yet — hide the figure entirely rather
+  // than show "0th %ile" / "Below avg" that would read as a real (bad) ranking.
+  const hasFraser = school.fraser != null && school.fraser > 0
+  const fraserLabel = hasFraser ? getFraserLabel(school.fraser as number) : null
 
   const eqaoColor =
     eqaoTone === 'pass' ? 'var(--pass)' : eqaoTone === 'caution' ? 'var(--caution)' : 'var(--fail)'
@@ -137,26 +140,28 @@ export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
             <span style={{ fontSize: 10, color: 'var(--muted)' }}>/ 10</span>
           </div>
         </div>
-        <div className="col" style={{ gap: 2, flex: 1 }}>
-          <span
-            className="mono"
-            style={{
-              fontSize: 9,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-            }}
-          >
-            Fraser
-          </span>
-          <span
-            className="serif tabular"
-            style={{ fontSize: 22, lineHeight: 1, color: 'var(--ink)' }}
-          >
-            {school.fraser}
-            <span style={{ fontSize: 11, color: 'var(--muted)' }}>th %ile</span>
-          </span>
-        </div>
+        {hasFraser && (
+          <div className="col" style={{ gap: 2, flex: 1 }}>
+            <span
+              className="mono"
+              style={{
+                fontSize: 9,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--muted)',
+              }}
+            >
+              Fraser
+            </span>
+            <span
+              className="serif tabular"
+              style={{ fontSize: 22, lineHeight: 1, color: 'var(--ink)' }}
+            >
+              {school.fraser}
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>th %ile</span>
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="divider" />
@@ -171,9 +176,9 @@ export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
         </span>
         {school.gradRate !== undefined ? (
           <span className="tabular">{Math.round(school.gradRate * 100)}% grad rate</span>
-        ) : (
+        ) : fraserLabel ? (
           <span>{fraserLabel}</span>
-        )}
+        ) : null}
       </div>
     </div>
   )

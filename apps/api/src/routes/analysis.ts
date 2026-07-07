@@ -29,6 +29,8 @@ import {
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
+import { getNearbyDistances } from '../services/googlePlacesService'
+import { getNeighbourhoodStats } from '../services/statsCanService'
 import { getVacancyRateByCity } from '../services/cmhcService'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
@@ -427,6 +429,27 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         }
       }
 
+      // Step 7c — nearby amenity distances (Google Places): transit, grocery,
+      // highway on-ramp, pharmacy. Null when no coords / key missing / no results.
+      let nearbyDistances: Analysis['nearbyDistances'] = null
+      if (coords) {
+        try {
+          const d = await getNearbyDistances(coords.lat, coords.lng)
+          nearbyDistances = d.length > 0 ? d : null
+        } catch {
+          nearbyDistances = null
+        }
+      }
+
+      // Step 7d — census stats (StatsCan) for the listing's FSA: median household
+      // income + 5-year population growth. Null when the FSA isn't in the table.
+      let neighbourhoodStats: Analysis['neighbourhoodStats'] = null
+      try {
+        neighbourhoodStats = await getNeighbourhoodStats(listing.postalCode)
+      } catch {
+        neighbourhoodStats = null
+      }
+
       // Step 8 — generate narrative (never throws)
       // The Python calc engine returns flag_id (not id) and no label; resolve
       // human-readable labels here for both the narrative + the UI payload.
@@ -494,6 +517,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         narrative,
         walkScore,
         neighbourhood: null,
+        nearbyDistances,
+        neighbourhoodStats,
         sunScout: toSunScout(pyData.sun_scout),
         coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
         schools,

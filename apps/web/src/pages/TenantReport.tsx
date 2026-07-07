@@ -1556,7 +1556,16 @@ export function TenantReport({
               ? []
               : CHARLES_MOBILITY_SCORES
         }
-        distances={isReal ? [] : CHARLES_DISTANCES}
+        distances={
+          isReal
+            ? (realAnalysis!.nearbyDistances ?? []).map((d) => ({
+                k: d.label,
+                v: d.distanceKm.toFixed(1),
+                unit: `km · ${d.driveMin} min drive`,
+                tone: (d.distanceKm <= 1.5 ? 'pass' : 'caution') as 'pass' | 'caution',
+              }))
+            : CHARLES_DISTANCES
+        }
         verdict={
           realAnalysis?.walkScore
             ? `Walk ${realAnalysis.walkScore.walk} · Transit ${realAnalysis.walkScore.transit ?? 0}`

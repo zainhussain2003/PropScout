@@ -118,6 +118,21 @@ export interface SchoolsResult {
   catchmentNote: string
 }
 
+/** One distance from the listing to a nearby amenity (Google Places). */
+export interface NearbyDistance {
+  key: string
+  label: string
+  distanceKm: number
+  driveMin: number
+}
+
+/** Census stats for the listing's area (StatsCan). Null fields = no match/data. */
+export interface NeighbourhoodStats {
+  avgIncome: number | null // median household income (StatsCan census)
+  popGrowth5y: number | null // 5-year population growth, decimal (0.08 = 8%)
+  areaLabel: string // e.g. the FSA "L5A" the stats were matched on
+}
+
 export interface Analysis {
   id: string
   token: string
@@ -131,6 +146,10 @@ export interface Analysis {
   hasSanityWarnings: boolean
   walkScore: WalkScoreResult | null
   neighbourhood: null // placeholder for Phase 2; always null in MVP
+  /** Nearest transit/grocery/highway/pharmacy distances (Google Places). */
+  nearbyDistances?: NearbyDistance[] | null
+  /** Census income + population growth for the listing's FSA (StatsCan). */
+  neighbourhoodStats?: NeighbourhoodStats | null
   sunScout: SunScoutResult | null
   /** Geocoded subject-property coordinates — feeds the real MiniMap (and
    * SunScout's sun-path input). Optional: analyses stored before 2026-07-01

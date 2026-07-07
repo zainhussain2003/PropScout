@@ -146,6 +146,8 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     walkScore?: Analysis['walkScore']
     coordinates?: Analysis['coordinates']
     schools?: Analysis['schools']
+    nearbyDistances?: Analysis['nearbyDistances']
+    neighbourhoodStats?: Analysis['neighbourhoodStats']
     hasSanityWarnings?: boolean
   } | null
   const dealScore = marketData?.dealScore ?? null
@@ -176,6 +178,8 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     sunScout: marketData?.sunScout ?? null,
     coordinates: marketData?.coordinates ?? null,
     schools: marketData?.schools ?? null,
+    nearbyDistances: marketData?.nearbyDistances ?? null,
+    neighbourhoodStats: marketData?.neighbourhoodStats ?? null,
   }
 }
 
@@ -265,6 +269,8 @@ export async function saveAnalysis(
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,
+        nearbyDistances: analysis.nearbyDistances ?? null,
+        neighbourhoodStats: analysis.neighbourhoodStats ?? null,
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,
@@ -805,6 +811,8 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,
+        nearbyDistances: analysis.nearbyDistances ?? null,
+        neighbourhoodStats: analysis.neighbourhoodStats ?? null,
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,

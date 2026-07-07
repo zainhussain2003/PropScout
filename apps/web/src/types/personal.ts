@@ -56,7 +56,7 @@ export interface PersonalSchool {
   distance: string
   driveTime: string
   eqao: number // 0–10
-  fraser: number // 0–100 percentile
+  fraser: number | null // 0–100 percentile · null when Fraser hasn't loaded for this school
   inCatchment: boolean
   grades: string // e.g. 'JK–8', '9–12'
   gradRate?: number // 0–1, for high schools

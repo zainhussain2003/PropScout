@@ -55,3 +55,6 @@ school-data-raw/
 school-data/
 scripts/_db_check.mjs
 scripts/_verify_schools.mjs
+
+statscan-raw/
+scripts/_build_fsa_stats.py

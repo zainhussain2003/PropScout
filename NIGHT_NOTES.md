@@ -1,3 +1,42 @@
+# Work log — 2026-07-07 · neighbourhood data + schools Fraser display
+
+Filled the free/available neighbourhood data on live reports; verified on the live
+Mississauga personal report.
+
+- **Schools Fraser rank (task 3, DONE + live):** no school has Fraser data loaded
+  (only EQAO), so the shim was rendering "0th %ile" / "Below avg". `PersonalSchool.fraser`
+  is now `number | null`, the shim keeps null (was `?? 0`), and `SchoolCard` hides the
+  Fraser figure + label entirely when null. EQAO kept.
+
+- **StatsCan median household income (task 2, DONE + live):** loaded the 2021 Census
+  Profile by FSA into a new `neighbourhood_stats` table (migration
+  20260707_add_neighbourhood_stats.sql; loader scripts/load-neighbourhood-stats.mjs).
+  Source is StatsCan 98-401-X2021013 (FSA), streamed from the 66 MB zip (disk was at
+  2.9 GB free — never extracted the 645 MB CSV). `statsCanService.getNeighbourhoodStats`
+  reads it by FSA; API adds `neighbourhoodStats` to the payload (persisted in the
+  market_data blob so it survives GET); shims read income into personal §05 + investor
+  §08. **Live: L5A = $80,000.** Unmatched FSA → honest "—".
+  - **5-year population growth: honest empty.** StatsCan's FSA profile does NOT publish
+    population 2016 or the % change (ID 2 / ID 3 blank — only 2021 population exists), so
+    growth stays "—". Would need the 2016 FSA population as a second dataset to compute.
+
+- **Distances (task 1, wired; needs Google API enabled):** `getNearbyDistances`
+  (Google Places) → transit/grocery/highway/pharmacy from the listing coords, added to
+  the payload + shims (personal §05 + tenant §07), with a user-facing "couldn't pull
+  distances" empty state (replaced the "Phase 2" dev copy). **The GOOGLE_PLACES_KEY's
+  Cloud project has NO Places API enabled** — both the legacy nearbysearch (REQUEST_DENIED)
+  and Places API New (403 PERMISSION_DENIED) are blocked, which is also why
+  googlePlacesService.getNearbySchools never worked live (schools come from Supabase).
+  Rewrote getNearbyDistances to the Places API (New) searchText so it works once enabled.
+  ACTION: enable "Places API (New)" + billing on the key's Google Cloud project.
+
+- **Sold-data sections (task 4):** §02/§03 FMV + comparable sales and §05 price-trend /
+  appreciation left as honest empty (need a paid Teranet feed — out of MVP).
+
+Web 855 + API 176 green, typecheck clean.
+
+---
+
 # Work log — 2026-07-06 · tenant report polish (populate placeholders, kill dev copy)
 
 Follow-up to the parity pass: the live tenant report had several sections that

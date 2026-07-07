@@ -929,11 +929,8 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
             From this address
           </div>
           {neigh.distances.length === 0 && (
-            <p
-              className="mono"
-              style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.12em' }}
-            >
-              Distance data · available in Phase 2
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
+              We couldn&apos;t pull nearby amenity distances for this address.
             </p>
           )}
           {neigh.distances.map((d, i, arr) => (
