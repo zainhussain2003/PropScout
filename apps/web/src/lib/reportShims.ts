@@ -303,12 +303,20 @@ export function shimToNeighbourhood(analysis: Analysis): NeighbourhoodData {
  */
 export function shimToTenantListingData(listing: Listing, analysis: Analysis): TenantListingData {
   const { line1, line2 } = parseAddress(listing.address)
+  const comps = analysis.rentalComps
+  // The tenant score is currently the investment deal score. When there are no
+  // comparable rentals for the area, the for-rent valuation falls back to
+  // proxies and the deal score craters to a misleading "Hard pass" — which
+  // tells a renter a fine apartment is terrible when the truth is we couldn't
+  // assess the rent. Suppress the gauge in that case (same condition §01 uses
+  // for its honest no-comps state). See the NIGHT_NOTES follow-up on redesigning
+  // the tenant score to tenant-relevant signals.
+  const scoreSuppressed = comps == null || comps.compCount === 0
   const scoreNumber = analysis.dealScore?.total ?? 50
   const scoreTone: TenantListingData['scoreTone'] =
     scoreNumber >= 65 ? 'pass' : scoreNumber >= 40 ? 'caution' : 'fail'
   const verdictRaw = analysis.dealScore?.verdict ?? ''
   const verdictLabel = verdictRaw.replace(/_/g, ' ')
-  const comps = analysis.rentalComps
   const targetHigh = comps?.mid ?? 0
   const targetLow = comps ? Math.round(comps.low * 0.97) : 0
 
@@ -327,6 +335,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     utilities: '',
     scoreNumber,
     scoreTone,
+    scoreSuppressed,
     verdictLabel,
     verdictSub: analysis.narrative?.split('. ')[0] ?? '',
     targetLow,

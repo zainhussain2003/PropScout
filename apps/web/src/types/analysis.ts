@@ -478,6 +478,15 @@ export interface TenantListingData {
   scoreTone: 'pass' | 'caution' | 'fail'
   verdictLabel: string
   verdictSub: string
+  /**
+   * When true, the numeric tenant score gauge + verdict are hidden in the hero.
+   * The current tenant score is the investment deal score, which craters to a
+   * misleading "Hard pass" when the for-rent valuation falls back to proxies
+   * because there are no comparable rentals for the area. In that case we show
+   * an honest "can't assess rent" state instead of a low number. See the
+   * NIGHT_NOTES follow-up on redesigning the tenant score entirely.
+   */
+  scoreSuppressed: boolean
   targetLow: number
   targetHigh: number
   chips: string[]

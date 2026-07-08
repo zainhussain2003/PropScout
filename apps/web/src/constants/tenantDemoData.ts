@@ -40,6 +40,7 @@ export const CHARLES_LISTING: TenantListingData = {
   utilities: 'Heat & water incl.',
   scoreNumber: 58,
   scoreTone: 'caution',
+  scoreSuppressed: false,
   verdictLabel: 'Negotiate first',
   verdictSub: 'Priced above market and listing may misrepresent the unit.',
   targetLow: 1950,

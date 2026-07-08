@@ -1,3 +1,44 @@
+# Work log — 2026-07-07 · fix misleading tenant score (suppress gauge when no comps)
+
+**Problem.** The live tenant report showed the **investment deal score**
+(`analysis.dealScore.total`) as the "Tenant score / 100". When there are no
+comparable rentals for the area (e.g. Vaughan `L4K0P8` — the Toronto-heavy
+scraper doesn't cover 905), the for-rent valuation falls back to price/rent
+proxies and the deal score craters to **"16 · Hard pass"** — telling a renter a
+perfectly fine apartment is terrible, when the truth is _we couldn't assess the
+rent_.
+
+**Root cause.** `apps/web/src/lib/reportShims.ts → shimToTenantListingData` set
+`scoreNumber = analysis.dealScore?.total ?? 50`. That is (a) the wrong model for
+a tenant, and (b) craters on the no-comps proxy fallback.
+
+**Fix** (same pattern as the personal HomeScore suppression):
+
+- `shimToTenantListingData` now computes `scoreSuppressed = comps == null ||
+comps.compCount === 0` — the exact condition §01 Rent positioning already uses
+  for its honest no-comps state. Added `scoreSuppressed: boolean` to the
+  `TenantListingData` type.
+- `TenantPropertyHero` renders an honest state when suppressed — "Tenant score
+  paused / Can't assess rent yet / We don't have comparable rentals for this
+  area yet…" — instead of the numeric gauge, a tone colour, or "Hard pass". No
+  low number is ever shown. When comps ARE present, the score renders exactly as
+  before.
+- `CHARLES_LISTING` demo fixture gets `scoreSuppressed: false` (has comps).
+
+**FOLLOW-UP (product decision — do NOT act on without sign-off).** Even _with_
+comps, the "tenant score" is still the **investment deal score**, which is the
+wrong model for a renter. It should be redesigned around tenant-relevant signals
+— rent positioning (asking vs comp median), fired listing flags, and livability
+(location / what's-included / commute) — not cap rate / cash flow / DSCR. This
+fix only stops the misleading _crater_; the deeper redesign is a separate,
+deliberate piece of work. See [[product-decisions-2026-07-01]].
+
+Verified live on two tenant reports: no-comps (905/Vaughan) → gauge suppressed,
+honest message, no "Hard pass"; with-comps (Toronto) → score still renders.
+Web suite + typecheck green (below).
+
+---
+
 # Work log — 2026-07-07 · full QA + polish sweep, all 4 live reports
 
 Rendered a real live `/r/:token` for every mode against real Realtor.ca listings,

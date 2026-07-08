@@ -301,35 +301,78 @@ function TenantPropertyHero({
 
         {/* RIGHT — sticky score card */}
         <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
-          {/* Tenant score gauge */}
-          <div className="col" style={{ gap: 8, alignItems: 'center' }}>
-            <DealScore
-              score={listing.scoreNumber}
-              max={100}
-              size="lg"
-              label="Tenant score / 100"
-              showVerdict
-              animate
-            />
-          </div>
-
-          {/* Verdict */}
-          <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+          {listing.scoreSuppressed ? (
+            // The tenant score is currently the investment deal score, which
+            // craters to a misleading "Hard pass" when there are no comparable
+            // rentals for the area (the for-rent valuation falls back to
+            // proxies). Show an honest state instead of a low number or tone
+            // colour — matches the §01 no-comps wording. See NIGHT_NOTES for the
+            // deeper redesign follow-up.
             <div
-              className="mono"
+              className="col"
               style={{
-                fontSize: 10,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: verdictColor,
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 8,
+                padding: '8px 4px',
               }}
             >
-              {listing.verdictLabel}
+              <div
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                Tenant score paused
+              </div>
+              <div className="serif" style={{ fontSize: 19, lineHeight: 1.25 }}>
+                Can&apos;t assess rent yet
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 280 }}>
+                We don&apos;t have comparable rentals for this area yet, so a single tenant score
+                would overstate what we know. The sections below show what we can verify — listing
+                accuracy, what&apos;s included, location, and risk flags.
+              </p>
             </div>
-            <div className="serif" style={{ fontSize: 20, lineHeight: 1.2, textWrap: 'balance' }}>
-              {listing.verdictSub}
-            </div>
-          </div>
+          ) : (
+            <>
+              {/* Tenant score gauge */}
+              <div className="col" style={{ gap: 8, alignItems: 'center' }}>
+                <DealScore
+                  score={listing.scoreNumber}
+                  max={100}
+                  size="lg"
+                  label="Tenant score / 100"
+                  showVerdict
+                  animate
+                />
+              </div>
+
+              {/* Verdict */}
+              <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: verdictColor,
+                  }}
+                >
+                  {listing.verdictLabel}
+                </div>
+                <div
+                  className="serif"
+                  style={{ fontSize: 20, lineHeight: 1.2, textWrap: 'balance' }}
+                >
+                  {listing.verdictSub}
+                </div>
+              </div>
+            </>
+          )}
 
           <div style={{ height: 1, background: 'var(--line)' }} />
 
