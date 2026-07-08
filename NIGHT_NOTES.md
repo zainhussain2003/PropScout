@@ -1,3 +1,85 @@
+# Work log — 2026-07-08 · nightly scraper → full GTA coverage (the 905 no-comps fix)
+
+**Why.** Suburban/905 listings (Vaughan L4K, Mississauga L5A, Durham, Halton) hit
+the "no comps for this area" pause because the nightly scraper's `TARGET_CITIES`
+only had 7 GTA cities + 5 non-GTA markets. Expanded to the **full GTA (23 seeds)**
+so those postals accumulate real comparables. `services/scrapers` is direct
+Playwright (NOT ScraperAPI) — more coverage costs runtime + block risk, not
+credits — so tuned conservatively and **measured, not assumed**.
+
+**What changed (code):**
+
+- `constants.TARGET_CITIES` 12 → **23**: added the 11 missing 905 municipalities
+  (Peel: caledon · York: newmarket, aurora · Halton: burlington, milton,
+  halton-hills · Durham: ajax, pickering, whitby, oshawa, clarington). **Kept** the
+  5 non-GTA markets (hamilton/ottawa/london/kitchener/waterloo) — the 2026-06-26
+  depth study measured each adding ~90 unique-to-city listings; pruning them would
+  regress real coverage (the goal was ADD GTA, not drop Ontario).
+- **Kijiji stays Toronto-only** (`KIJIJI_CITIES` untouched) — its location-ID map
+  is still the deferred sub-project (see "Kijiji multi-city blocker" below).
+- `MAX_PAGES_PER_CITY` stays **2** (env-overridable to 3). Depth 3 × 23 cities
+  lands ~12 min (at/over the ~10–12 min budget), so it's off by default per the
+  "tune down rather than risk the cron" preference.
+- **Per-city yield logging** added (`aggregate_city_yields` → `run_nightly_scrape`):
+  logs raw rows per (source, city) with a `<-- DEAD SEED` marker on any 0, so a
+  slug that stops resolving is visible instead of hidden in the source total.
+  `MIN_RAW_ROWS_PER_SOURCE` left at **5** (not lowered — thin yields stay loud).
+
+**Measured (local, all 23 cities, delay 2s, 2026-07-08). No blocking anywhere —
+0 blocked across probe + depth-1 + depth-2 full passes + FSA diagnostics.**
+
+| pass    | rentals_ca | padmapper | kijiji | distinct after dedupe |
+| ------- | ---------- | --------- | ------ | --------------------- |
+| depth 1 | 2300 raw   | 463 raw   | 46 raw | **1796**              |
+| depth 2 | 2300 raw   | 745 raw   | 92 raw | **2031**              |
+
+vs the old 12-city depth-2 (~1040 distinct) — nearly doubled. All 23 seeds
+resolve on BOTH sources at 200 (rentals 100/city cap; padmapper ~20/city/page).
+
+**KEY correction — rentals_ca is now DEPTH-INDEPENDENT.** The GraphQL rewrite
+(2026-07-05) made it one query/city (no pagination), so it returns its 100/city
+cap at any depth (2300 raw at depth 1 AND depth 2). The old "rentals_ca
+352/630/909 by depth" table was the retired card scraper — OBSOLETE. Only
+padmapper + kijiji scale with depth now. Constants doc updated.
+
+**Runtime (chosen depth 2):** 72 delay events/night (24 rentals + 46 padmapper +
+2 kijiji). Measured scrape wall-clock at delay 2s = **310s**; production delay 4s
+≈ 310 + 2×72 = **~7.6 min scrape**. Geocoding is cheap — padmapper cards mostly
+carry postal microdata and rentals_ca nodes carry coords+postal (both skip
+Mapbox); only kijiji (~90 rows) + a few padmapper rows geocode ≈ ~1 min. **Total
+≈ 8.5 min — inside the ~10–12 min budget.** Depth 3 ≈ ~12 min (padmapper page 3
+only; rentals is flat) — env lever for after a clean Railway run.
+
+**FSA landing spot-check (the "postals must land right or scraping the city is
+useless" check) — split by source, honest result:**
+
+- **padmapper is a STRICT municipal filter and lands suburban postals correctly:**
+  `vaughan-on` → **L4K** (the exact FSA the goal named), `ajax-on` → L1S/L1N/L1V,
+  `oshawa-on` → L1G/L1J/L1H. This is the reliable 905-comp source. Yield per
+  suburb is modest (~15–20 raw/page) but correctly located and accumulates nightly.
+- **rentals_ca (radius search) accuracy varies by seed:** `mississauga` lands
+  right (L5A ×12, L5B ×3, L5N ×6, L4X, L4Y — the goal's L5A/L5B ✓), but `vaughan`
+  is **Toronto-biased** — 0/99 in Vaughan FSAs, all central Toronto (M4S/M4P/M2R).
+  rentals.ca's geocoder resolves "vaughan, on, ca" to a Toronto-centred point.
+  This is **not harmful** (every row is stored + queried by its real geocoded
+  postal, so a Toronto-via-Vaughan-search row correctly serves Toronto comps — the
+  documented seed principle) but it means rentals_ca adds VOLUME, not always NEW
+  suburban coverage; **padmapper is what actually fills the 905 FSAs.**
+
+**Net honest verdict:** 905/suburban comps are now collected and correctly located
+(chiefly via padmapper's municipal pages: Vaughan L4K, Ajax L1x, Oshawa L1x,
+Mississauga L5x from both sources), accumulating nightly — a real improvement over
+Toronto-only. NOT "Vaughan is now richly covered": per-night suburban yield is
+modest and builds over the freshness window. The rentals_ca Vaughan→Toronto bias
+is a known limitation (padmapper compensates); a future fix would resolve each
+seed's namedArea against a verified centroid, same shape as the deferred Kijiji
+location-ID map.
+
+**Gates:** scraper tests **180 pass** (was 177; +3 for `aggregate_city_yields`,
+floor 151+). `MIN_RAW_ROWS_PER_SOURCE` unchanged at 5.
+
+---
+
 # Work log — 2026-07-08 · purpose-built tenant score + tenant AI verdict fix
 
 Follow-up to the 2026-07-07 suppression fix below. That stopped the _crater_;

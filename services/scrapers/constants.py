@@ -43,23 +43,51 @@ DEDUPE_WINDOW_DAYS = 7  # same address + rent + beds within 7 days = one record
 # Ontario FSA first letters (spec Section 11.4)
 ONTARIO_FSA_PREFIXES = ("K", "L", "M", "N", "P")
 
-# City slugs crawled each night. Start with the GTA + major Ontario markets;
-# grow this list as coverage expands. rentals_ca and padmapper fan out across ALL
-# of these. NOTE (verified 2026-06-25): these are DISCOVERY SEEDS, not strict
-# municipal filters — rentals_ca runs a proximity/radius search, so a "vaughan"
-# seed also surfaces nearby North York / Richmond Hill listings. That's fine:
-# rows are located by their GEOCODED postal_code (the search city is never
-# stored), and comps key on postal_code — so every discovered listing serves the
-# comps for wherever it actually is. The seeds just need to collectively cover the
-# province; precise per-seed accuracy doesn't matter.
+# City slugs crawled each night — the full GTA (Toronto + Peel + York + Halton +
+# Durham) plus the major non-GTA Ontario markets we already covered. rentals_ca
+# and padmapper fan out across ALL of these. NOTE (verified 2026-06-25): these are
+# DISCOVERY SEEDS, not strict municipal filters — rentals_ca runs a
+# proximity/radius search, so a "vaughan" seed also surfaces nearby North York /
+# Richmond Hill listings. That's fine: rows are located by their GEOCODED
+# postal_code (the search city is never stored), and comps key on postal_code — so
+# every discovered listing serves the comps for wherever it actually is. The seeds
+# just need to collectively cover the province; precise per-seed accuracy doesn't
+# matter.
+#
+# GTA EXPANSION (2026-07-08): added the 11 missing 905/suburban municipalities so
+# Vaughan/Mississauga/Durham/Halton listings get real comps instead of the
+# "no comps for this area" pause. All 23 seeds verified to resolve on BOTH sources
+# at depth 1 (rentals_ca 200/100 rows each; padmapper 200/~20 rows each; zero
+# blocking — see NIGHT_NOTES 2026-07-08). The 5 non-GTA markets (hamilton, ottawa,
+# london, kitchener, waterloo) are KEPT, not pruned: the 2026-06-26 depth study
+# measured each adding ~90 unique-to-city listings at depth — pruning them would
+# regress real coverage. Grouped by region for readability; order is irrelevant
+# (whole-run dedup collapses cross-seed overlap).
 TARGET_CITIES = (
+    # Toronto core
     "toronto",
+    # Peel
     "mississauga",
     "brampton",
+    "caledon",
+    # York
     "vaughan",
     "markham",
     "richmond-hill",
+    "newmarket",
+    "aurora",
+    # Halton
     "oakville",
+    "burlington",
+    "milton",
+    "halton-hills",
+    # Durham
+    "ajax",
+    "pickering",
+    "whitby",
+    "oshawa",
+    "clarington",
+    # Non-GTA Ontario markets (kept — each pulls ~90 unique listings at depth)
     "hamilton",
     "ottawa",
     "london",
@@ -89,16 +117,22 @@ REQUEST_DELAY_SECONDS = _env_int(
     "SCRAPER_REQUEST_DELAY_SECONDS", 4
 )  # min delay per page load
 PAGE_LOAD_TIMEOUT_MS = 30_000  # Playwright navigation timeout
-# Depth: search result pages crawled per city per source. Set to 2 as the FIRST
-# datacenter-IP ratchet — the prior default (5) was never run (all validation was
-# depth-1, residential IP), so making the first unattended Railway run the deepest
-# would stack two unvalidated risks (does the IP get blocked × does it get blocked
-# hammering deep pages fast). Depth 2 ≈ 1040 distinct listings/night across the 2
-# working sources; coverage scales ~linearly with no plateau (measured 2026-06-26,
-# see NIGHT_NOTES), so depth 3 is a clean one-variable ratchet AFTER one clean
-# Railway run with the per-source yield alarm watching.
-# Env-overridable (see _env_int): drop to 1 from Railway without a redeploy if the
-# first unattended runs get throttled.
+# Depth: search result pages crawled per city per source. Kept at 2 after the GTA
+# expansion (2026-07-08). IMPORTANT — depth now only scales padmapper + kijiji:
+# rentals_ca was rewritten to a single GraphQL query per city (no pagination), so
+# it returns its RENTALS_CA_PAGE_SIZE cap (100/city) at ANY depth. The old
+# 2026-06-26 "rentals_ca 352/630/909 by depth" table is OBSOLETE (that was the
+# retired card scraper). Measured 2026-07-08 across all 23 cities (delay 2s):
+#   depth 1 → 1796 distinct after dedupe (rentals 2300 + padmapper 463 + kijiji 46)
+#   depth 2 → 2031 distinct after dedupe (rentals 2300 + padmapper 745 + kijiji 92)
+# Depth 2 nightly ≈ 7.6 min scrape (delay 4s) + ~1 min geocode ≈ 8.5 min — inside
+# the ~10–12 min budget. Depth 3 adds only padmapper page 3 (rentals is flat) for
+# ~+280 raw but pushes runtime to ~12 min (at/over budget), so it is left OFF by
+# default (tune-up lever below, only after a clean Railway run with the yield
+# alarm watching). Zero blocking observed across depth-1/2 full passes + probes.
+# Env-overridable (see _env_int): raise to 3 (SCRAPER_MAX_PAGES_PER_CITY=3, deeper
+# 905/suburban padmapper yield) or drop to 1 (if the datacenter IP gets throttled)
+# from Railway without a redeploy.
 MAX_PAGES_PER_CITY = _env_int("SCRAPER_MAX_PAGES_PER_CITY", 2)
 
 # ── rentals.ca GraphQL source ─────────────────────────────────────────────────
@@ -120,7 +154,7 @@ RENTALS_CA_PAGE_SIZE = _env_int("SCRAPER_RENTALS_CA_PAGE_SIZE", 100)
 RENTALS_CA_RADIUS_M = _env_int("SCRAPER_RENTALS_CA_RADIUS_M", 20_000)  # 20 km
 
 # ── Per-source yield alarm ──────────────────────────────────────────────────────
-# A source crawling 12 cities × up to 5 pages should return far more than a
+# A source crawling 23 cities × up to 2 pages should return far more than a
 # handful of rows. A near-zero yield means the CSS selectors broke (the site
 # changed its markup), NOT that it was a quiet listings night — those are
 # different claims and only one is acceptable. The nightly run fails loudly

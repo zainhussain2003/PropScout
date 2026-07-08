@@ -93,6 +93,32 @@ def find_underperforming_sources(
     return [y for y in yields if y.raw_count < min_rows]
 
 
+def aggregate_city_yields(pages: list[PageFetch]) -> list[tuple[str, str, int]]:
+    """
+    Sum raw rows per (source, city) across all fetched pages.
+
+    A pure function so the per-city yield log is unit-testable in isolation. The
+    result preserves first-seen (source, city) order and sums the ``rows`` across
+    every page fetched for that pair — so a multi-page city collapses to one row
+    count, and a seed that returned nothing shows up as 0 (a visible dead seed).
+
+    Args:
+        pages: The per-page fetch records from a run (``ScrapeResult.pages``).
+
+    Returns:
+        A list of (source, city, total_rows), in first-seen order.
+    """
+    order: list[tuple[str, str]] = []
+    totals: dict[tuple[str, str], int] = {}
+    for pf in pages:
+        key = (pf.source, pf.city)
+        if key not in totals:
+            totals[key] = 0
+            order.append(key)
+        totals[key] += pf.rows
+    return [(src, city, totals[(src, city)]) for (src, city) in order]
+
+
 async def scrape_all_sources() -> ScrapeResult:
     """
     Run every source scraper in one shared browser session, tracking per-source yield.
@@ -196,6 +222,17 @@ async def run_nightly_scrape() -> NightlyOutcome:
     # selector must not hide inside a healthy-looking total.
     for y in result.yields:
         logger.info("Source yield: %-12s %5d raw listings", y.source, y.raw_count)
+
+    # Per-city yield — a source's aggregate can look healthy while one seed is
+    # dead (a slug that stopped resolving, or a region the site dropped). Logging
+    # rows per (source, city) makes a single dead seed visible instead of hidden
+    # inside the source total. A 0 here on one city is not fatal (adjacent seeds'
+    # proximity radius still covers the area) but it flags a seed worth checking.
+    for source, city, rows in aggregate_city_yields(result.pages):
+        marker = "  <-- DEAD SEED" if rows == 0 else ""
+        logger.info(
+            "City yield: %-12s %-16s %5d raw rows%s", source, city, rows, marker
+        )
 
     # Per-page fetch signal — recorded and surfaced raw for the (later, separate)
     # yield alarm. No classification here: just make the {status, rows, blocked}

@@ -304,7 +304,45 @@ async def test_failed_source_never_kills_run():
 
 # ── Per-source yield alarm (the "scraper ran" ≠ "scraper extracted rows" check) ──
 
-from rental_comps_scraper import SourceYield, find_underperforming_sources  # noqa: E402
+from rental_comps_scraper import (  # noqa: E402
+    SourceYield,
+    aggregate_city_yields,
+    find_underperforming_sources,
+)
+from sources.browser import PageFetch  # noqa: E402
+
+
+def _pf(source: str, city: str, page: int, rows: int) -> PageFetch:
+    return PageFetch(source, city, page, 200, rows, False)
+
+
+def test_aggregate_city_yields_sums_pages_per_city_in_order() -> None:
+    """Rows sum across a city's pages; (source, city) order is preserved."""
+    pages = [
+        _pf("padmapper", "vaughan", 1, 20),
+        _pf("padmapper", "vaughan", 2, 18),  # same city, page 2 — sums to 38
+        _pf("padmapper", "ajax", 1, 15),
+        _pf("rentals_ca", "vaughan", 1, 100),
+    ]
+    assert aggregate_city_yields(pages) == [
+        ("padmapper", "vaughan", 38),
+        ("padmapper", "ajax", 15),
+        ("rentals_ca", "vaughan", 100),
+    ]
+
+
+def test_aggregate_city_yields_surfaces_a_dead_seed_as_zero() -> None:
+    """A seed that returned nothing shows up as 0 — a visible dead seed."""
+    pages = [
+        _pf("padmapper", "toronto", 1, 21),
+        _pf("padmapper", "caledon", 1, 0),  # dead seed
+    ]
+    result = aggregate_city_yields(pages)
+    assert ("padmapper", "caledon", 0) in result
+
+
+def test_aggregate_city_yields_empty() -> None:
+    assert aggregate_city_yields([]) == []
 
 
 def test_find_underperforming_sources_all_healthy() -> None:
