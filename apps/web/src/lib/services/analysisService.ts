@@ -11,6 +11,7 @@
 import type { PropertyInput, FinancingInput, RentalInput } from '../../types/api'
 import type { Analysis, ReportMode } from '../../types/analysis'
 import type { Listing } from '../../types/property'
+import { withCleanNarrative } from '../narrative'
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001'
 
@@ -131,7 +132,8 @@ export async function runAnalysis(
     throw new ApiRequestError(code, message, response.status)
   }
 
-  return response.json() as Promise<Analysis>
+  const analysis = (await response.json()) as Analysis
+  return withCleanNarrative(analysis)
 }
 
 // ── Polling / scrape API ──────────────────────────────────────────────────────
@@ -306,7 +308,11 @@ export async function fetchReport(token: string): Promise<FetchReportResult> {
     throw new ApiRequestError(code, message, response.status)
   }
 
-  return response.json() as Promise<FetchReportResult>
+  const result = (await response.json()) as FetchReportResult
+  if (result.analysis) {
+    result.analysis = withCleanNarrative(result.analysis)
+  }
+  return result
 }
 
 // ── Province waitlist ─────────────────────────────────────────────────────────
@@ -349,5 +355,7 @@ export async function getAnalysisByToken(token: string): Promise<GetAnalysisResu
   if (response.status === 404) return null
   if (!response.ok) return null
 
-  return response.json() as Promise<GetAnalysisResult>
+  const result = (await response.json()) as GetAnalysisResult
+  result.analysis = withCleanNarrative(result.analysis)
+  return result
 }
