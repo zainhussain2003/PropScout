@@ -91,9 +91,15 @@ describe('shimToTenantListingData — score suppression', () => {
     expect(data.scoreSuppressed).toBe(true)
   })
 
-  it('keeps the score when real comps are present', () => {
+  it('shows a purpose-built tenant score (not the investment deal score) when comps exist', () => {
+    // LISTING asks 2500 vs comp median 2900 (below market), no flags, no
+    // walk/light → the tenant score should be strong, NOT the deal score's
+    // "16 · hard pass". This is the whole point of the redesign.
     const data = shimToTenantListingData(LISTING, baseAnalysis(COMPS))
     expect(data.scoreSuppressed).toBe(false)
-    expect(data.scoreNumber).toBe(16) // still the deal score — redesign is a follow-up
+    expect(data.scoreNumber).not.toBe(16) // no longer the investment deal score
+    expect(data.scoreNumber).toBeGreaterThanOrEqual(75)
+    expect(data.scoreTone).toBe('pass')
+    expect(data.verdictLabel).toBe('Fair rent')
   })
 })

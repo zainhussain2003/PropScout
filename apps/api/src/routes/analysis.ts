@@ -491,6 +491,12 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         rentTrend: 'flat',
         vacancyRate: cmhcVacancyRate,
         riskFlagSummary: flagLabels || undefined,
+        // Tenant-verdict inputs — without these the tenant prompt saw only $0
+        // asking/range and wrongly concluded "no market data available" even
+        // when §01 showed real comps.
+        askingRent: listing.rentMonthly ?? undefined,
+        rentLow: rentalForCalc.low,
+        rentHigh: rentalForCalc.high,
       }
 
       const narrative = await generateNarrative(narrativeInput)

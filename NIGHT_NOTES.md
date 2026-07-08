@@ -1,3 +1,57 @@
+# Work log — 2026-07-08 · purpose-built tenant score + tenant AI verdict fix
+
+Follow-up to the 2026-07-07 suppression fix below. That stopped the _crater_;
+this replaces the model. The tenant "score" was still the **investment deal
+score** (cap rate / cash flow / DSCR) whenever comps existed — so a good rental
+rendered "14 · Hard pass", which is meaningless to a renter.
+
+**New tenant score (`apps/web/src/lib/tenantScore.ts`, 0–100).** Computed from
+tenant-relevant signals, NOT `dealScore.total`:
+
+- **Rent fairness vs comps (weight 50)** — asking rent vs comp median. At/below
+  median → 100; falls through interpolated anchors as it climbs above market
+  (+5% → 40, +10% → 30, +15% → 20, +20%+ → 10). This is the core of the score.
+- **Listing honesty (weight 25)** — starts at 100, −20 per red flag, −10 per
+  amber (fake bedroom, parking-unclear, etc.), floored at 0.
+- **Livability (weight 25)** — average of the available Walk/Transit/SunScout-
+  light signals; a neutral 50 when none are present (we don't have the data, so
+  we don't reward or punish).
+
+**Verdict bands:** ≥75 "Fair rent" (pass) · 55–74 "Negotiate first" (caution) ·
+35–54 "Overpriced — push hard" (fail) · <35 "Walk away" (fail). The gauge now
+receives the tenant `tone` + `verdictLabel` so its ring colour and in-ring pill
+can't fall back to the investment brackets (`verdictLabelForScore`).
+
+> **PROVISIONAL CALIBRATION.** The weights, the rent-fairness anchor curve, the
+> flag deductions, and the verdict-band cutoffs are all a _starting_ calibration
+> — tuned to feel right, NOT researched against tenant-outcome data. They live as
+> named constants (`TENANT_SCORE_WEIGHTS`, `RENT_FAIRNESS_ANCHORS`,
+> `HONESTY_DEDUCTIONS`, `TENANT_VERDICT_BANDS`) so they can be re-tuned in one
+> place. Revisit once we have real rent-negotiation outcomes to fit against.
+
+**Suppression preserved:** when `comps == null || compCount === 0` the gauge is
+still suppressed entirely (honest "can't assess rent" state) — the new score
+only renders when comps exist.
+
+**Tenant AI verdict fix.** The tenant narrative prompt (`buildTenantPrompt`) was
+fed only `rentLow`/`rentHigh` — which the orchestrator never populated for
+tenant mode — so it saw `$0` asking + range and concluded "no market data
+available" even when §01 showed 5 comps. Fixed: the orchestrator now passes
+`askingRent` + `rentLow`/`rentHigh` into the tenant `NarrativeInput`, and the
+prompt now emits a `MARKET MEDIAN … across N comparable rentals` block plus an
+explicit rule to cite the median (and NOT claim missing data) when comps exist;
+the no-data line is used only when `compCount === 0`. (Affects newly generated
+narratives — already-stored narratives keep their old text until re-analysed.)
+
+**Verification note.** As with the prior fix, the full live stack (API +
+calc-engine + Supabase + a fresh scrape of 1242-8 Hillsdale Ave E) isn't running
+in this session, so I verified via unit/functionality tests (the tenant-score
+model and shim wiring; the prompt now carrying median+count) + typecheck + the
+full web suite, not a browser render of the live M4S token. Flagged honestly
+rather than claiming a live check I didn't run.
+
+---
+
 # Work log — 2026-07-07 · fix misleading tenant score (suppress gauge when no comps)
 
 **Problem.** The live tenant report showed the **investment deal score**

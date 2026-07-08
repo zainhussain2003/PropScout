@@ -339,13 +339,18 @@ function TenantPropertyHero({
             </div>
           ) : (
             <>
-              {/* Tenant score gauge */}
+              {/* Tenant score gauge — tone + verdict come from the purpose-built
+                  tenant score (rent fairness + honesty + livability), never the
+                  investment deal-score brackets. Pass them so the ring colour and
+                  in-ring pill can't disagree with the verdict shown below. */}
               <div className="col" style={{ gap: 8, alignItems: 'center' }}>
                 <DealScore
                   score={listing.scoreNumber}
                   max={100}
                   size="lg"
                   label="Tenant score / 100"
+                  tone={listing.scoreTone}
+                  verdictLabel={listing.verdictLabel}
                   showVerdict
                   animate
                 />

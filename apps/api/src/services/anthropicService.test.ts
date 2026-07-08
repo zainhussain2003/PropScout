@@ -160,6 +160,30 @@ describe('generateNarrative', () => {
     expect(prompt).toContain('ASKING RENT')
   })
 
+  it('tenant mode with comps → prompt cites the median + comp count, not "no market data"', async () => {
+    mockMessagesCreate.mockResolvedValueOnce(makeTextResponse('Above median — negotiate.'))
+
+    await generateNarrative({
+      mode: 'tenant',
+      tier: 'pro',
+      address: '1242-8 Hillsdale Ave E, Toronto, ON',
+      askingRent: 3100,
+      rentMid: 2900,
+      rentLow: 2600,
+      rentHigh: 3200,
+      compCount: 5,
+      riskFlagSummary: 'None identified',
+      lightScore: 58,
+    })
+
+    const prompt = (mockMessagesCreate.mock.calls[0][0] as { messages: Array<{ content: string }> })
+      .messages[0].content
+    expect(prompt).toContain('MARKET MEDIAN')
+    expect(prompt).toContain('5 comparable rentals')
+    expect(prompt).toContain('Do NOT say market data is unavailable')
+    expect(prompt).not.toContain('no comparable rentals for this area yet')
+  })
+
   it('free tier → prompt contains 1 paragraph instruction', async () => {
     mockMessagesCreate.mockResolvedValueOnce(makeTextResponse('Short verdict.'))
 

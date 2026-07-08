@@ -38,6 +38,7 @@ import {
   PROPERTY_COST_ESTIMATES,
   formatPropertyType,
 } from '../constants/defaults'
+import { computeTenantScore } from './tenantScore'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -304,19 +305,32 @@ export function shimToNeighbourhood(analysis: Analysis): NeighbourhoodData {
 export function shimToTenantListingData(listing: Listing, analysis: Analysis): TenantListingData {
   const { line1, line2 } = parseAddress(listing.address)
   const comps = analysis.rentalComps
-  // The tenant score is currently the investment deal score. When there are no
-  // comparable rentals for the area, the for-rent valuation falls back to
-  // proxies and the deal score craters to a misleading "Hard pass" — which
-  // tells a renter a fine apartment is terrible when the truth is we couldn't
-  // assess the rent. Suppress the gauge in that case (same condition §01 uses
-  // for its honest no-comps state). See the NIGHT_NOTES follow-up on redesigning
-  // the tenant score to tenant-relevant signals.
+  // When there are no comparable rentals for the area, the for-rent valuation
+  // falls back to proxies and any score would be guesswork — suppress the gauge
+  // (same condition §01 uses for its honest no-comps state).
   const scoreSuppressed = comps == null || comps.compCount === 0
-  const scoreNumber = analysis.dealScore?.total ?? 50
-  const scoreTone: TenantListingData['scoreTone'] =
-    scoreNumber >= 65 ? 'pass' : scoreNumber >= 40 ? 'caution' : 'fail'
-  const verdictRaw = analysis.dealScore?.verdict ?? ''
-  const verdictLabel = verdictRaw.replace(/_/g, ' ')
+
+  // Tenant score — a PURPOSE-BUILT model (rent fairness vs comps + listing
+  // honesty + livability), NOT the investment deal score. The deal score
+  // (cap rate / cash flow / DSCR) is meaningless to a renter and used to render
+  // a good rental as "14 · Hard pass". Only computed when comps exist; the
+  // suppressed no-comps branch keeps a neutral placeholder that never renders.
+  let scoreNumber = 50
+  let scoreTone: TenantListingData['scoreTone'] = 'caution'
+  let verdictLabel = 'Rent not yet assessable'
+  if (comps && comps.compCount > 0) {
+    const ts = computeTenantScore({
+      askingRent: listing.rentMonthly,
+      comps,
+      flags: analysis.riskFlags,
+      walk: analysis.walkScore?.walk,
+      transit: analysis.walkScore?.transit,
+      light: analysis.sunScout?.sunScore,
+    })
+    scoreNumber = ts.total
+    scoreTone = ts.tone
+    verdictLabel = ts.verdictLabel
+  }
   const targetHigh = comps?.mid ?? 0
   const targetLow = comps ? Math.round(comps.low * 0.97) : 0
 

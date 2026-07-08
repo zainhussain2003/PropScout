@@ -146,11 +146,22 @@ function buildTenantPrompt(input: NarrativeInput): string {
       ? 'Write 1 paragraph only. 60–120 words.'
       : 'Write 2 paragraphs as specified.'
 
+  // Do we actually have comparable rentals? Only claim "no market data" when we
+  // genuinely don't — otherwise anchor the verdict on the median + comp count.
+  const hasComps = (input.compCount ?? 0) > 0
+  const marketBlock = hasComps
+    ? `MARKET MEDIAN: ${fmtCurrency(input.rentMid)}/mo across ${input.compCount} comparable rentals (range ${fmtCurrency(input.rentLow)} – ${fmtCurrency(input.rentHigh)}/mo)`
+    : `MARKET DATA: none — no comparable rentals for this area yet`
+
+  const marketRule = hasComps
+    ? 'You HAVE market data: compare the asking rent to the median and cite the number of comparables. Do NOT say market data is unavailable.'
+    : 'You have NO comparable rentals — say plainly that market rent cannot be benchmarked yet, and do not invent a target number.'
+
   return `You are a tenant advisor reviewing a rental listing.
 
 UNIT: ${input.address}
 ASKING RENT: ${fmtCurrency(input.askingRent)}/mo
-MARKET RANGE: ${fmtCurrency(input.rentLow)} – ${fmtCurrency(input.rentHigh)}/mo
+${marketBlock}
 LEVERAGE: ${input.leverageLevel ?? 'N/A'} — ${input.leverageReason ?? 'N/A'}
 FLAGS: ${input.riskFlagSummary ?? 'None identified'}
 SUNSCOUT: ${lightScore}/100
@@ -160,7 +171,7 @@ Write a 2-paragraph verdict:
 2. The one thing they must confirm before signing.
 
 Rules: second person. Direct. Maximum 180 words. Plain paragraphs only.
-Do not mention PropScout.
+Do not mention PropScout. ${marketRule}
 
 ${tierInstruction}`
 }
