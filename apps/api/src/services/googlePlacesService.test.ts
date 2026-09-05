@@ -1,6 +1,11 @@
 /**
  * Unit tests for googlePlacesService.
  * fetch is mocked — no real Google Places API calls.
+ *
+ * These exercise the **Places API (New)** contract (POST places:searchNearby,
+ * displayName/location/rating field mask). The legacy `nearbysearch` shape
+ * (`results[].geometry.location`, body `status`) is gone — Google no longer
+ * activates that endpoint on any project.
  */
 
 import { getNearbySchools, pickNearestPerType, type School } from './googlePlacesService'
@@ -41,16 +46,15 @@ describe('getNearbySchools', () => {
     process.env.GOOGLE_PLACES_KEY = 'test-key'
     mockFetch.mockResolvedValueOnce(
       makeResponse({
-        status: 'OK',
-        results: [
+        places: [
           {
-            name: 'Lakeview Elementary',
-            geometry: { location: { lat: 43.66, lng: -79.39 } },
+            displayName: { text: 'Lakeview Elementary' },
+            location: { latitude: 43.66, longitude: -79.39 },
             rating: 4.2,
           },
           {
-            name: 'St. Mary Catholic High School',
-            geometry: { location: { lat: 43.7, lng: -79.4 } },
+            displayName: { text: 'St. Mary Catholic High School' },
+            location: { latitude: 43.7, longitude: -79.4 },
             rating: 3.8,
           },
         ],
@@ -69,11 +73,11 @@ describe('getNearbySchools', () => {
     expect(result[1].board).toBe('catholic')
   })
 
-  it('returns [] on non-OK status', async () => {
+  it('returns [] on HTTP 403 when Places API (New) is not enabled', async () => {
     process.env.GOOGLE_PLACES_KEY = 'test-key'
     jest.spyOn(console, 'warn').mockImplementation(() => undefined)
     mockFetch.mockResolvedValueOnce(
-      makeResponse({ status: 'REQUEST_DENIED', error_message: 'bad key' })
+      makeResponse({ error: { code: 403, status: 'PERMISSION_DENIED' } }, 403)
     )
 
     const result = await getNearbySchools(43.65, -79.38)
@@ -89,19 +93,60 @@ describe('getNearbySchools', () => {
     expect(result).toEqual([])
   })
 
+  it('POSTs to Places API (New) with the key in the header, not the query string', async () => {
+    process.env.GOOGLE_PLACES_KEY = 'test-key'
+    mockFetch.mockResolvedValueOnce(makeResponse({ places: [] }))
+
+    await getNearbySchools(43.65, -79.38)
+
+    const [url, init] = mockFetch.mock.calls[0]
+    expect(url).toBe('https://places.googleapis.com/v1/places:searchNearby')
+    expect(url).not.toContain('maps.googleapis.com')
+    expect(url).not.toContain('test-key') // key must never ride in the URL
+    expect(init.method).toBe('POST')
+    expect(init.headers['X-Goog-Api-Key']).toBe('test-key')
+    expect(init.headers['X-Goog-FieldMask']).toContain('places.displayName')
+
+    const body = JSON.parse(init.body)
+    expect(body.includedTypes).toContain('school')
+    expect(body.rankPreference).toBe('DISTANCE')
+    expect(body.locationRestriction.circle.center).toEqual({
+      latitude: 43.65,
+      longitude: -79.38,
+    })
+  })
+
+  it('skips places missing a name or coordinates', async () => {
+    process.env.GOOGLE_PLACES_KEY = 'test-key'
+    mockFetch.mockResolvedValueOnce(
+      makeResponse({
+        places: [
+          { location: { latitude: 43.66, longitude: -79.39 } }, // no displayName
+          { displayName: { text: 'No Coords School' } }, // no location
+          {
+            displayName: { text: 'Good School' },
+            location: { latitude: 43.66, longitude: -79.39 },
+          },
+        ],
+      })
+    )
+
+    const result = await getNearbySchools(43.65, -79.38)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].name).toBe('Good School')
+    expect(result[0].rating).toBeNull()
+  })
+
   it('sorts results by distance ascending', async () => {
     process.env.GOOGLE_PLACES_KEY = 'test-key'
     mockFetch.mockResolvedValueOnce(
       makeResponse({
-        status: 'OK',
-        results: [
+        places: [
+          { displayName: { text: 'Far School' }, location: { latitude: 43.8, longitude: -79.5 } },
           {
-            name: 'Far School',
-            geometry: { location: { lat: 43.8, lng: -79.5 } },
-          },
-          {
-            name: 'Near School',
-            geometry: { location: { lat: 43.66, lng: -79.39 } },
+            displayName: { text: 'Near School' },
+            location: { latitude: 43.66, longitude: -79.39 },
           },
         ],
       })
