@@ -355,6 +355,32 @@ tiles reappear on their own, since the filter is driven by whether a value exist
 
 ---
 
+### D-012 · Lint added to CI, and the five dead directives it had been hiding removed
+
+**Chosen.** New `Lint — web + api` CI job running both workspaces' eslint with
+`--max-warnings 0`; removed the five `/* eslint-disable no-console */` directives
+that made `npm run lint --workspace=apps/api` fail.
+
+**Why.** `npm run lint --workspace=apps/api` was failing on **master** — five files
+carried a `no-console` disable that suppressed nothing, because the rule is
+configured as `["warn", { allow: ["error", "warn"] }]` and those files only use
+`console.error` / `console.warn`. Nothing caught it because CI ran typecheck and
+tests but never lint. Verified pre-existing by checking out master and reproducing
+the same five errors, so this is not a regression from this branch.
+
+Together with the scrapers job (D-008), CI now covers every check the repo defines.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Delete the failing lint scripts             | Removes the signal instead of the problem.                                                   |
+| Keep the directives, relax `--max-warnings` | The directives are genuinely dead; loosening the gate to accommodate dead code is backwards. |
+| Add lint to CI without fixing the errors    | Lands a red pipeline on master.                                                              |
+| Fix the errors, leave lint out of CI        | Exactly how it rotted the first time.                                                        |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

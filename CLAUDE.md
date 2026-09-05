@@ -1032,6 +1032,7 @@ propscout/
 │   ├── DESIGN_README.md               # Design system — typography, tokens, interactions
 │   ├── COMPONENT_MANIFEST.md          # Every design surface → React component + build order
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
+│   ├── DECISIONS.md                   # Decision log — every judgement call + the alternatives rejected
 │   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
 │   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
 │   ├── PR10-design-humanization-prompt.md  # PR10 spec — token revision, copy, imagery, founder note
@@ -1293,6 +1294,15 @@ propscout/
 │       └── services/                  # Service layer — external calls never inline
 │           ├── supabase_service.py    # source_url upsert writes (scraped_at refresh, first_seen_at insert-only)
 │           └── mapbox_service.py      # Geocoding, non-fatal on failure
+│
+├── scripts/                           # One-off data loaders and builders (not part of a service)
+│   ├── _build_fsa_stats.py            # StatsCan 2021 FSA profile → fsa_stats.csv (median income)
+│   ├── _build_fsa_growth.py           # 2016+2021 FSA populations → pop_growth_5y (the 2021 profile
+│   │                                  # leaves that characteristic blank — see docs/DECISIONS.md D-010)
+│   ├── _build_schools_csv.py          # EQAO/Fraser source files → schools CSV
+│   ├── load-neighbourhood-stats.mjs   # Upsert fsa_stats.csv → neighbourhood_stats
+│   ├── load-schools.mjs               # Upsert schools CSV → schools
+│   └── smoke-test.mjs                 # Post-deploy smoke check
 │
 ├── supabase/
 │   └── migrations/                    # All schema changes — never edit DB directly in dashboard

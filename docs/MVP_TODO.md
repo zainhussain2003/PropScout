@@ -405,7 +405,7 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 - [ ] Return nearest 3 per type (elementary, middle, high) with distance and drive time
 - [ ] Highlight schools within catchment area (TDSB polygon data — Toronto first)
 - [ ] Walk Score API integration (Walk Score + Transit Score) — service layer exists (`walkscore_service.py`), wiring pending
-- [ ] Statistics Canada — demographics by postal code (household income, population growth)
+- [x] Statistics Canada — demographics by postal code (household income, population growth) — 1,626 FSAs with median income, 1,625 with 5-year population growth; loaders in `scripts/`
 - [ ] CMHC vacancy rate by city (public API, refresh quarterly) — service stub exists (`cmhc_service.py`)
 - [ ] Neighbourhood intelligence module assembled from above sources
 

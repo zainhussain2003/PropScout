@@ -77,6 +77,22 @@ jobs:
           cd services/calc-engine
           pytest tests/test_regression.py -v
 
+  lint:
+    name: Lint — web + api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      # Both workspaces run eslint with --max-warnings 0. This was never wired into
+      # CI, so `npm run lint --workspace=apps/api` had been failing on master
+      # (5 dead eslint-disable directives) without anything catching it.
+      - run: npm run lint --workspace=apps/web
+      - run: npm run lint --workspace=apps/api
+
   test-scrapers:
     name: Tests — scrapers
     runs-on: ubuntu-latest

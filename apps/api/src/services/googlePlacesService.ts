@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Google Places API service — nearby amenity distances and school discovery.
  * Docs: https://developers.google.com/maps/documentation/places/web-service/search-nearby

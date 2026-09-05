@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Walk Score + Transit Score API service.
  * Docs: https://www.walkscore.com/professional/api.php
