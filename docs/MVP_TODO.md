@@ -35,6 +35,11 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 
 ### Zillow.ca scraper
 
+> **A 506-line draft exists** at `services/scrapers/_unported/zillow_scraper.py`
+> (+ 423 lines of tests), salvaged from the closed PR #6 before that branch was
+> deleted. It is not wired in and needs porting to the current `sources/` layout —
+> see `services/scrapers/_unported/README.md`. Read it before starting from scratch.
+
 - [ ] Playwright headless Chrome setup on Railway
 - [ ] Navigate to listing URL, wait for full page load
 - [ ] Extract same fields as Realtor.ca scraper
@@ -44,6 +49,10 @@ Tick off tasks as they are completed. Build in this order — each week's work d
 - [ ] Cloudflare bypass — deferred to FUTURE.md (blocked; Zillow.ca URL validation done in frontend only)
 
 ### Listing type detection
+
+> **A draft exists** at `services/scrapers/_unported/listing_type.py` (139 lines
+>
+> - tests), same provenance as the Zillow draft above. Not wired in.
 
 - [ ] Parse URL to detect for-sale vs for-rent (spec Section 3) — scraper pipeline
 - [ ] Fallback: detect from scraped price format (monthly = rental)
