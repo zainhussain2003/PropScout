@@ -457,6 +457,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
       >
         Below 3% threshold
       </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        What the property earns in a year, after running costs, as a share of its price. Here that is $10,730 a year on $729,900 — before any mortgage.
+      </div>
     </div>
     <div
       class="col"
@@ -479,6 +484,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         style="font-size: 11px; color: var(--muted);"
       >
         per month
+      </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        Money leaves your pocket every month. Rent does not cover the mortgage, taxes, insurance and fees — you top up $2,431 to hold it.
       </div>
     </div>
     <div
@@ -503,6 +513,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
       >
         On $160,053 invested
       </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        What your own money earns in year one. For every $100 of the $160,053 you put in, you get back less than you put in.
+      </div>
     </div>
     <div
       class="col"
@@ -525,6 +540,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         style="font-size: 11px; color: var(--muted);"
       >
         Will not qualify
+      </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        The bank's test: does the rent cover the mortgage on its own? Here it covers 44% of it. Most lenders want at least 100%, and many want 110%.
       </div>
     </div>
     <div
@@ -549,6 +569,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
       >
         mortgage P+I
       </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        Your mortgage payment alone — the loan and its interest. Taxes, insurance and condo fees are on top of this.
+      </div>
     </div>
     <div
       class="col"
@@ -572,6 +597,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
       >
         annual
       </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        A year of rent, minus every running cost except the mortgage. This is the number a lender or appraiser starts from.
+      </div>
     </div>
     <div
       class="col"
@@ -593,7 +623,12 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         class="mono"
         style="font-size: 11px; color: var(--muted);"
       >
-        Gross Rent Multiplier
+        price ÷ annual rent
+      </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        Roughly how many years of rent it takes to equal the purchase price — 21.0 here. Lower is better; a quick way to compare two buildings.
       </div>
     </div>
     <div
@@ -618,6 +653,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
       >
         to cover all costs
       </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        The rent you would need to stop losing money. The market pays about $2,900, so you are $1,685 short.
+      </div>
     </div>
     <div
       class="col"
@@ -640,6 +680,11 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         style="font-size: 11px; color: var(--muted);"
       >
         before expenses
+      </div>
+      <div
+        style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
+      >
+        A year of rent as a share of the price, before any costs. Useful for a first glance; cap rate is the honest version.
       </div>
     </div>
   </div>
@@ -1468,7 +1513,7 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        Contract rate
+        Your actual rate
       </span>
       <span
         class="mono tabular"
@@ -1483,7 +1528,7 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        Stress buffer
+        Government safety margin
       </span>
       <span
         class="mono tabular"
@@ -1498,7 +1543,7 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        Qualifying rate (higher of)
+        Rate you must prove you can afford
       </span>
       <span
         class="mono tabular"
@@ -1513,7 +1558,7 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        Qualifying payment
+        Payment at that rate
       </span>
       <span
         class="mono tabular"
@@ -1528,7 +1573,7 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        GDS ratio
+        Share of your income it takes
       </span>
       <span
         class="mono tabular"
@@ -1543,7 +1588,7 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        Threshold
+        Most the bank allows
       </span>
       <span
         class="mono tabular"

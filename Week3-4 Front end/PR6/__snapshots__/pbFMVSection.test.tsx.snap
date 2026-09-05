@@ -78,7 +78,7 @@ exports[`PBFMVSection > matches snapshot 1`] = `
           >
             −
             0.6
-            % vs P50
+            % vs typical
           </span>
         </div>
       </div>
@@ -123,9 +123,10 @@ exports[`PBFMVSection > matches snapshot 1`] = `
       >
         <div
           class="mono"
-          style="font-size: 10px; letter-spacing: 0.1em; color: var(--muted);"
+          style="font-size: 10px; letter-spacing: 0.1em; color: var(--muted); cursor: help;"
+          title="25th percentile — 1 in 4 comparable homes sold for less"
         >
-          P25 · low
+          Lower end
         </div>
         <div
           class="mono tabular"
@@ -140,9 +141,10 @@ exports[`PBFMVSection > matches snapshot 1`] = `
       >
         <div
           class="mono"
-          style="font-size: 10px; letter-spacing: 0.1em; color: var(--muted);"
+          style="font-size: 10px; letter-spacing: 0.1em; color: var(--muted); cursor: help;"
+          title="Median — half of comparable homes sold for less, half for more"
         >
-          P50 · median
+          Typical
         </div>
         <div
           class="mono tabular"
@@ -157,9 +159,10 @@ exports[`PBFMVSection > matches snapshot 1`] = `
       >
         <div
           class="mono"
-          style="font-size: 10px; letter-spacing: 0.1em; color: var(--muted);"
+          style="font-size: 10px; letter-spacing: 0.1em; color: var(--muted); cursor: help;"
+          title="75th percentile — 1 in 4 comparable homes sold for more"
         >
-          P75 · high
+          Upper end
         </div>
         <div
           class="mono tabular"

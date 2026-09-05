@@ -243,6 +243,51 @@ downloading Chromium (~2 min) would buy nothing.
 
 ---
 
+### D-009 · Report copy rewritten for a general audience, across all four modes
+
+**Chosen.** Every headline metric now carries a one-line, jargon-free explanation
+written from that property's real numbers (`Metric.plainEnglish`). Statistical and
+industry notation is replaced with plain words on the page, with the precise term
+kept in a `title` tooltip:
+
+| Was                                         | Now                                   |
+| ------------------------------------------- | ------------------------------------- |
+| `P25 · low` / `P50 · median` / `P75 · high` | `Lower end` / `Typical` / `Upper end` |
+| `% vs P50`                                  | `% vs typical`                        |
+| `GDS ratio`                                 | `Share of your income it takes`       |
+| `Contract rate`                             | `Your actual rate`                    |
+| `Qualifying rate (higher of)`               | `Rate you must prove you can afford`  |
+| `Threshold`                                 | `Most the bank allows`                |
+| `GRM` sub-label `Gross Rent Multiplier`     | `price ÷ annual rent` + a sentence    |
+
+**Why.** The reports were readable by someone who already knew the vocabulary and
+opaque to everyone else. "DSCR 0.13×" tells an analyst everything and a first-time
+landlord nothing; expanding an acronym into its full name ("Gross Rent Multiplier")
+explains nothing either. The explanations are generated from the actual figures, so
+they stay true per property — e.g. DSCR reads _"The bank's test: does the rent cover
+the mortgage on its own? Here it covers 13% of it. Most lenders want at least 100%."_
+
+Covers all four modes: investor and landlord share the metrics grid and OSFI card;
+tenant and investor share the comps bar; personal buyer has its own value bar.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                                                                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Info icon opening a glossary modal per term | Hides the explanation behind a click, at the exact moment of confusion, and adds a modal to a page that already has several.                                                                         |
+| Tooltip-only on the existing jargon labels  | Invisible on touch devices, and leaves the page reading as jargon to anyone who does not hover.                                                                                                      |
+| A glossary section at the end of the report | Makes the reader hold a question across the whole page, then hunt.                                                                                                                                   |
+| Drop the technical terms entirely           | Rejected — the terms are the shared language of the industry, and a Pro user comparing to a lender's numbers needs them. Both are kept: plain words lead, exact terms remain in labels and tooltips. |
+
+**Trade-off accepted.** Tiles are taller, so the metrics grid is longer. Judged
+worth it: an unexplained number the reader cannot act on is not saving space, it is
+wasting it.
+
+**Revisit if** user testing shows the explanations read as patronising to
+experienced investors — the fix would be a density toggle, not deletion.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

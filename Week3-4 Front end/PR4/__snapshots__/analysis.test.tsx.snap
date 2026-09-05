@@ -2692,9 +2692,10 @@ exports[`RentalCompsBar > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.08em; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.08em; color: var(--muted); cursor: help;"
+        title="25th percentile — 1 in 4 comparable rentals ask less than this"
       >
-        P25 · low
+        Lower end
       </div>
       <div
         class="mono tabular"
@@ -2709,9 +2710,10 @@ exports[`RentalCompsBar > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.08em; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.08em; color: var(--muted); cursor: help;"
+        title="Median — half of comparable rentals ask less, half ask more"
       >
-        P50 · median
+        Typical
       </div>
       <div
         class="mono tabular"
@@ -2726,9 +2728,10 @@ exports[`RentalCompsBar > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.08em; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.08em; color: var(--muted); cursor: help;"
+        title="75th percentile — 1 in 4 comparable rentals ask more than this"
       >
-        P75 · high
+        Upper end
       </div>
       <div
         class="mono tabular"

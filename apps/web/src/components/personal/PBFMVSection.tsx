@@ -119,7 +119,7 @@ export function PBFMVSection({
       )}
 
       <div className="card" style={{ padding: 28 }}>
-        {/* Header row — asking price + % vs P50 */}
+        {/* Header row — asking price + % vs the typical (median) comparable */}
         <div
           className="row"
           style={{
@@ -154,7 +154,7 @@ export function PBFMVSection({
                 }}
               >
                 {score.askVsMid >= 0 ? '+' : '−'}
-                {Math.abs(score.askVsMid * 100).toFixed(1)}% vs P50
+                {Math.abs(score.askVsMid * 100).toFixed(1)}% vs typical
               </span>
             </div>
           </div>
@@ -181,7 +181,7 @@ export function PBFMVSection({
                 'linear-gradient(90deg, color-mix(in oklab, var(--accent) 18%, var(--bg-elev)), color-mix(in oklab, var(--accent) 55%, transparent), color-mix(in oklab, var(--accent) 18%, var(--bg-elev)))',
             }}
           />
-          {/* P25 / P50 / P75 ticks */}
+          {/* Lower-end / typical / upper-end ticks (25th, 50th, 75th percentile) */}
           {[0, 50, 100].map((p) => (
             <div
               key={p}
@@ -224,15 +224,37 @@ export function PBFMVSection({
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 18 }}>
           {(
             [
-              { lbl: 'P25 · low', val: fmv.low, align: 'flex-start' },
-              { lbl: 'P50 · median', val: fmv.mid, align: 'center' },
-              { lbl: 'P75 · high', val: fmv.high, align: 'flex-end' },
+              {
+                lbl: 'Lower end',
+                val: fmv.low,
+                align: 'flex-start',
+                hint: '25th percentile — 1 in 4 comparable homes sold for less',
+              },
+              {
+                lbl: 'Typical',
+                val: fmv.mid,
+                align: 'center',
+                hint: 'Median — half of comparable homes sold for less, half for more',
+              },
+              {
+                lbl: 'Upper end',
+                val: fmv.high,
+                align: 'flex-end',
+                hint: '75th percentile — 1 in 4 comparable homes sold for more',
+              },
             ] as const
           ).map((t) => (
             <div key={t.lbl} className="col" style={{ alignItems: t.align, gap: 2 }}>
               <div
                 className="mono"
-                style={{ fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
+                // Precise percentile meaning on hover, plain words on the page.
+                title={t.hint}
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.1em',
+                  color: 'var(--muted)',
+                  cursor: 'help',
+                }}
               >
                 {t.lbl}
               </div>
