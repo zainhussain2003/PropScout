@@ -288,6 +288,73 @@ experienced investors — the fix would be a density toggle, not deletion.
 
 ---
 
+### D-010 · 5-year population growth computed from two censuses, not one profile
+
+**Chosen.** New `scripts/_build_fsa_growth.py` derives `pop_growth_5y` from two
+StatsCan sources and merges it into `statscan-raw/fsa_stats.csv`, which the
+existing `load-neighbourhood-stats.mjs` then upserts.
+
+**Why.** `pop_growth_5y` was null for all 1,646 FSAs, so the report's "5-year pop.
+growth" tile always read "—". `_build_fsa_stats.py` was written to read
+characteristic ID 3 ("Population percentage change, 2016 to 2021") from the 2021
+Census Profile for FSAs — but that profile leaves characteristics 2 and 3 blank at
+FSA level; only the 2021 population is published there. `NIGHT_NOTES.md:349`
+recorded this at the time. Re-downloading that 645 MB file would have reproduced
+the same empty column.
+
+The figure has to be computed from two population counts:
+
+- **2021** — WDS table `98-10-0019` ("Population and dwelling counts: Canada and
+  forward sortation areas"). A **125 KB** zip covering all 1,646 FSAs.
+- **2016** — 2016 Census Profile for FSAs, `98-401-X2016046`. A 49 MB zip holding
+  a 317 MB CSV, streamed through `zipfile` rather than extracted.
+
+Result: **1,625 FSAs** with real growth (518 in Ontario); only 21 remain null.
+Spot-checked against known areas — Vaughan L4K +29.4%, downtown Toronto M5V
++21.8%, Mississauga L5A −0.9%, Clanton Park M3H +3.8%.
+
+**Alternatives considered**
+
+| Option                                                            | Why not                                                                                                       |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Re-download the 2021 FSA profile and re-run the original script   | The column it needs is blank at FSA level. Would have burned a 645 MB download to produce the same nulls.     |
+| Estimate growth from a coarser geography (CMA or census division) | Invents a number for the FSA that no source published — exactly what the report's data discipline forbids.    |
+| Leave it as an honest "—"                                         | Defensible, and what was there. Rejected because the data genuinely exists, just in two files instead of one. |
+| Store the raw 2016/2021 populations and compute in the API        | More flexible, but needs a schema change and a migration for a figure the UI only consumes as a percentage.   |
+
+**Note on volatility.** Small-population downtown FSAs swing hard — K1P reads
++89.7% on a base of 340 people. That is the true StatsCan figure, not a bug, but
+if the tile ever looks absurd this is why. Worth suppressing growth below some
+population floor if it misleads in practice.
+
+---
+
+### D-011 · Empty neighbourhood tiles are omitted, and the omission is stated
+
+**Chosen.** `NeighbourhoodSection` renders only tiles that have a figure, then
+prints one line naming what was left out: _"Not shown for this address: active
+building permits, price per sqft trend. We leave a figure out rather than estimate
+one."_
+
+**Why.** The section previously rendered a fixed six-tile grid with "—" wherever
+data was missing. On a real report that meant four tiles with numbers and a
+trailing run of dashes, which reads as a broken page rather than an honest gap —
+and it buried the tiles that did have real data.
+
+**Alternatives considered**
+
+| Option                                  | Why not                                                                                                                                              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keep the dashes                         | Honest, but it makes a complete section look unfinished, which is the opposite of the intent.                                                        |
+| Hide missing tiles silently             | Cleanest visually, and rejected on principle: the reader cannot tell the difference between "we checked and there is nothing" and "we never looked". |
+| Show the tile with "not available" text | Same wall of empty tiles, more words in it.                                                                                                          |
+| Collapse to a "show all fields" toggle  | Extra interaction for information most readers do not want.                                                                                          |
+
+**Revisit if** building permits and price-per-sqft ever get a data source — the
+tiles reappear on their own, since the filter is driven by whether a value exists.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.
@@ -297,10 +364,9 @@ Recorded so they are not mistaken for oversights.
 - **Comparable recent sales is empty** on real reports: _"No comparable-sales
   source yet."_ Honest, but it is a visible hole in the investor report. Needs a
   sold-price data source (Teranet is listed as out of MVP scope).
-- **5-year population growth, active building permits, price-per-sqft trend** all
-  render `—` on real data. Same category: honest placeholders, but three empty
-  tiles in one section reads as unfinished. Consider hiding empty tiles rather
-  than showing dashes, or filling them.
+- **Active building permits and price-per-sqft trend** still have no data source.
+  They are now omitted from the grid rather than shown as dashes (D-011), with the
+  omission stated in prose. 5-year population growth is **resolved** (D-010).
 - **Google Places** still returns `[]` until Places API (New) + billing are enabled
   on the Cloud project, so nearby transit/grocery/highway distances stay blank.
 - **`docs/MVP_TODO.md` mode naming**: the API accepts `investor` while the DB

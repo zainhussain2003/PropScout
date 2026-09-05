@@ -26,26 +26,60 @@ export function NeighbourhoodSection({
 }: NeighbourhoodSectionProps): JSX.Element {
   const n = neighbourhood
 
-  const statTiles: Array<[string, string, string]> = [
-    ['Median income (FSA)', n.avgIncome > 0 ? fmtMoney(n.avgIncome) : '—', 'StatsCan 2021'],
-    ['5-year pop. growth', n.popGrowth5y !== 0 ? fmtPct(n.popGrowth5y, 1) : '—', 'StatsCan'],
-    [
-      'Walk Score',
-      n.walkScore > 0 ? String(n.walkScore) : '—',
-      n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable',
-    ],
-    [
-      'Transit Score',
-      n.transitScore > 0 ? String(n.transitScore) : '—',
-      n.transitScore >= 80 ? 'Excellent' : 'Some transit',
-    ],
-    [
-      'Active building permits',
-      n.buildingPermits > 0 ? String(n.buildingPermits) : '—',
-      'in 1km radius',
-    ],
-    ['Price per sqft trend', n.ppsqftTrend !== 'N/A' ? n.ppsqftTrend : '—', 'last 12 months'],
+  // Every tile we *could* show, paired with whether we actually have the figure.
+  // Tiles without data are not rendered as "—": a grid of dashes reads as a broken
+  // page rather than an honest gap, and it buries the tiles that do have real
+  // numbers. What is missing is still stated explicitly, in one line below the
+  // grid, so nothing is quietly hidden.
+  const candidateTiles: Array<{
+    label: string
+    value: string
+    note: string
+    present: boolean
+  }> = [
+    {
+      label: 'Median income (FSA)',
+      value: fmtMoney(n.avgIncome),
+      note: 'StatsCan 2021',
+      present: n.avgIncome > 0,
+    },
+    {
+      label: '5-year pop. growth',
+      value: fmtPct(n.popGrowth5y, 1),
+      note: 'StatsCan · 2016 to 2021',
+      present: n.popGrowth5y !== 0,
+    },
+    {
+      label: 'Walk Score',
+      value: String(n.walkScore),
+      note: n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable',
+      present: n.walkScore > 0,
+    },
+    {
+      label: 'Transit Score',
+      value: String(n.transitScore),
+      note: n.transitScore >= 80 ? 'Excellent' : 'Some transit',
+      present: n.transitScore > 0,
+    },
+    {
+      label: 'Active building permits',
+      value: String(n.buildingPermits),
+      note: 'in 1km radius',
+      present: n.buildingPermits > 0,
+    },
+    {
+      label: 'Price per sqft trend',
+      value: n.ppsqftTrend,
+      note: 'last 12 months',
+      present: n.ppsqftTrend !== 'N/A',
+    },
   ]
+
+  const statTiles: Array<[string, string, string]> = candidateTiles
+    .filter((t) => t.present)
+    .map((t) => [t.label, t.value, t.note])
+
+  const missingLabels = candidateTiles.filter((t) => !t.present).map((t) => t.label)
 
   // Appreciation is a paid-source figure we often don't have. When it's missing
   // but we *do* have core neighbourhood signals (income, walkability), lead with
@@ -118,6 +152,21 @@ export function NeighbourhoodSection({
           </div>
         ))}
       </div>
+
+      {missingLabels.length > 0 && (
+        <p
+          style={{
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: 'var(--muted)',
+            margin: '-8px 0 22px',
+          }}
+        >
+          Not shown for this address:{' '}
+          <span style={{ color: 'var(--ink-2)' }}>{missingLabels.join(', ').toLowerCase()}</span>.
+          We leave a figure out rather than estimate one.
+        </p>
+      )}
 
       {/* Comparable sales + appreciation */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}>
