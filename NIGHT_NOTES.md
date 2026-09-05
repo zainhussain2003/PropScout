@@ -1,3 +1,98 @@
+# Work log — 2026-09-05 · two silently-broken external feeds fixed
+
+Picked the project back up after ~2 months idle. Full gates re-run green before
+touching anything (calc 351 · scrapers 180 · API 177 · web 879 · typecheck clean),
+local `master` fast-forwarded to `origin/master` (it was 23 behind; the work was
+never stranded — only the local ref was stale). Then audited every external
+dependency. Two were dead, both **failing silently**.
+
+## 🔴 Bank of Canada rate feed — dead since the `BofC-today` group was retired
+
+`GET /rates/mortgage` was serving **4.79% from a cached fetch on 2026-05-27** and
+reporting `source: "cached"`. Root cause: the Bank of Canada retired the Valet
+group endpoint `.../valet/observations/group/BofC-today/json`, which now 404s
+("Group BofC-today not found"). `_fetch_live_rate()` catches **every** exception
+and returns `None`, so a permanently-dead endpoint was indistinguishable from a
+transient outage — it just fell through to the stale-cache branch forever.
+
+**Impact:** the default mortgage rate feeds mortgage payment → cash flow → DSCR →
+cap rate → CoC → deal score. Live prime is **4.45%** (2026-09-02) vs the 4.79%
+being used — a ~0.34pp error on every financing calculation in every report.
+
+**Fix:** repointed `BOC_VALET_URL` to the explicit single-series endpoint
+`.../valet/observations/V80691311/json?recent=1` and `BOC_PRIME_SERIES` to
+`V80691311`. The response shape is identical (`observations[-1][<series>]["v"]`),
+so no parsing logic changed. Series IDs are stable and independent of Valet's
+group definitions, which is what broke.
+
+**Why it went unnoticed — and the guard added.** Every existing test mocked
+`httpx.get`, so all 20 passed no matter what URL the constant held. Added two
+`@pytest.mark.network` contract tests that call the real endpoint: one asserts
+HTTP 200 + the series present + a sane 0–30% value, the other asserts
+`get_current_rate()` actually returns `source: "live"`. Both **skip** on transport
+failure (offline CI) but **fail** on contract failure — being offline is not the
+same as the endpoint being gone. Marker registered in `setup.cfg`.
+
+**Verified live:** `{"rate":0.0445,"source":"live","warning":null}` through both
+the calc engine and the Fastify API.
+
+## 🔴 Google Places — legacy endpoint that can never be enabled again
+
+Two separate problems, only one of which is code:
+
+1. **Account-side (needs you).** No Google Maps API is enabled on the project
+   owning `GOOGLE_PLACES_KEY` — Places (New), Geocoding, Distance Matrix and
+   Timezone all deny. Places (New) returns `403 PERMISSION_DENIED`; legacy APIs
+   return `REQUEST_DENIED: You're calling a legacy API, which is not enabled for
+your project`. **Enable "Places API (New)" + attach billing** in Cloud Console.
+   Until then `getNearbyDistances` returns `[]` and the Neighbourhood section's
+   transit/grocery/highway/pharmacy distances stay blank (degrades honestly).
+
+2. **Code-side (fixed).** `getNearbySchools` still called the **legacy**
+   `maps.googleapis.com/maps/api/place/nearbysearch/json`. Google no longer
+   activates that endpoint on any project, so it could never have worked even
+   after enabling billing. Migrated to Places API (New) `places:searchNearby`
+   (POST, `X-Goog-Api-Key` header, `includedTypes: [school, primary_school,
+secondary_school]`, `rankPreference: DISTANCE`, 8km `locationRestriction`),
+   matching how `getNearbyDistances` was already written. Response parsing moved
+   from `results[].name` / `geometry.location.{lat,lng}` to
+   `places[].displayName.text` / `location.{latitude,longitude}`.
+
+**Scope correction worth recording:** `googlePlacesService.getNearbySchools` is
+**not** what fills the report's school section — `analysis.ts:426` calls
+`supabaseService.getNearbySchools`, which queries the `schools` table (4,937 EQAO
+rows, already loaded). The Places version is currently wired into no route. So the
+Google outage never affected schools; it only affects the amenity distances. The
+module docstring now says this so the next reader doesn't repeat the mistake.
+
+Tests updated to the Places (New) contract (the old ones asserted the legacy
+shape, so they'd have kept passing against a permanently-broken endpoint). Added
+a request-shape test that pins the URL, the POST method, the key travelling in
+the header rather than the query string, and the search body.
+
+## Also found (not fixed — flagging)
+
+- **`FUTURE.md` is orphaned.** `docs/MVP_TODO.md:44` references it, but it exists
+  only on the abandoned `test/full-suite` / `fix/data-contract-mismatches` /
+  `feat/financing-scenarios` branches, never on master. It documents the
+  ScraperAPI decision and the CREA DDF plan (pursue at 50+ paying users).
+- **`services/agents/` is untracked but NOT ignored** — commits `dd0da1c` /
+  `5b826a1` claim to gitignore it, yet no `agents` rule exists in `.gitignore` on
+  master, so it shows as untracked with `node_modules` inside.
+- **Stripe is entirely unconfigured** — `STRIPE_SECRET_KEY` empty, no
+  `STRIPE_PRICE_*` keys at all.
+- **Nightly scraper IS deployed** (Railway project `daring-abundance`) and has
+  been running — newest `scraped_at` is 2026-09-05 06:09 UTC, matching the
+  `0 6 * * *` cron. The "Blocked on you → Tier 1: deploy nightly scraper" item
+  below is **done**; 6,479 rental listings are in the table.
+- **CMHC vacancy + Ontario property tax rates** are still the placeholder /
+  2024-25 values called out below.
+
+**Gates after the fixes:** API **179** (+2) · calc **353** (+2) · scrapers 180 ·
+web 879 · typecheck clean both workspaces.
+
+---
+
 # Work log — 2026-07-08 · nightly scraper → full GTA coverage (the 905 no-comps fix)
 
 **Why.** Suburban/905 listings (Vaughan L4K, Mississauga L5A, Durham, Halton) hit
