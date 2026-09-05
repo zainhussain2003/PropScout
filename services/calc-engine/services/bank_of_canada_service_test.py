@@ -9,6 +9,7 @@ Covers:
   - Cache freshness boundary (exactly at TTL boundary)
   - Malformed API responses handled gracefully
   - Date formatting in warning messages
+  - Live contract test: the configured Valet endpoint is actually reachable
 """
 
 import json
@@ -25,7 +26,7 @@ from services.bank_of_canada_service import (
     _save_cache,
     get_current_rate,
 )
-from constants.rates import MORTGAGE_RATE_FALLBACK
+from constants.rates import BOC_PRIME_SERIES, BOC_VALET_URL, MORTGAGE_RATE_FALLBACK
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ def _make_boc_response(prime_value: str = "5.20") -> MagicMock:
     mock.raise_for_status = MagicMock()
     mock.json.return_value = {
         "observations": [
-            {"d": "2026-05-23", "PRIME": {"v": prime_value}},
+            {"d": "2026-05-23", BOC_PRIME_SERIES: {"v": prime_value}},
         ]
     }
     return mock
@@ -261,10 +262,84 @@ def test_nonnumeric_value_falls_back(cache_path: Path) -> None:
     mock = MagicMock()
     mock.raise_for_status = MagicMock()
     mock.json.return_value = {
-        "observations": [{"d": "2026-05-23", "PRIME": {"v": "N/A"}}]
+        "observations": [{"d": "2026-05-23", BOC_PRIME_SERIES: {"v": "N/A"}}]
     }
 
     with patch("services.bank_of_canada_service.httpx.get", return_value=mock):
         result = get_current_rate(cache_file=cache_path)
 
     assert result["source"] == "fallback"
+
+
+# ── Live contract test ─────────────────────────────────────────────────────────
+#
+# The mocked tests above pass no matter what BOC_VALET_URL points at, which is
+# exactly how the retirement of the `BofC-today` group went unnoticed for
+# months: `_fetch_live_rate()` swallows every exception, so a 404 was
+# indistinguishable from a healthy service serving a stale cache. This test
+# calls the real endpoint so a moved or renamed series fails loudly.
+#
+# It is deliberately tolerant of *transport* failure (offline CI, DNS, timeout)
+# but intolerant of *contract* failure (non-200, missing series, unparseable
+# value) — being offline is not the same as the endpoint being gone.
+
+
+@pytest.mark.network
+def test_boc_valet_endpoint_is_reachable_and_serves_the_prime_series() -> None:
+    """
+    BOC_VALET_URL must return the configured series with a numeric value.
+
+    Guards against the Bank of Canada retiring or renaming the endpoint, which
+    would otherwise degrade silently into an indefinitely stale cached rate.
+    """
+    import httpx
+
+    try:
+        response = httpx.get(BOC_VALET_URL, timeout=15.0)
+    except httpx.RequestError as exc:
+        pytest.skip(f"network unavailable — cannot verify BoC contract: {exc}")
+
+    assert response.status_code == 200, (
+        f"BOC_VALET_URL returned HTTP {response.status_code}. "
+        f"The Bank of Canada may have retired this endpoint again. "
+        f"URL: {BOC_VALET_URL}"
+    )
+
+    observations = response.json().get("observations", [])
+    assert observations, f"No observations returned from {BOC_VALET_URL}"
+
+    entry = observations[-1].get(BOC_PRIME_SERIES)
+    assert entry is not None, (
+        f"Series {BOC_PRIME_SERIES!r} missing from the latest observation "
+        f"(keys present: {sorted(observations[-1].keys())})"
+    )
+
+    rate = float(entry["v"]) / 100.0
+    assert 0.0 < rate < 0.30, f"Prime rate {rate:.4f} outside a sane 0–30% band"
+
+
+@pytest.mark.network
+def test_get_current_rate_returns_live_source_against_the_real_api(
+    cache_path: Path,
+) -> None:
+    """
+    End-to-end: with no cache, a real fetch must yield source="live".
+
+    If this returns "cached" or "fallback" the live feed is broken, which is
+    the precise failure mode this pair of tests exists to surface.
+    """
+    try:
+        import httpx
+
+        httpx.get(BOC_VALET_URL, timeout=15.0)
+    except httpx.RequestError as exc:
+        pytest.skip(f"network unavailable — cannot verify live fetch: {exc}")
+
+    result = get_current_rate(cache_file=cache_path)
+
+    assert result["source"] == "live", (
+        f"Expected a live rate but got source={result['source']!r} "
+        f"(warning={result.get('warning')!r}) — the BoC feed is not working."
+    )
+    assert result["warning"] is None
+    assert 0.0 < result["rate"] < 0.30

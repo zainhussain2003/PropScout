@@ -1,15 +1,26 @@
 /* eslint-disable no-console */
 /**
- * Google Places API service — used for school discovery.
+ * Google Places API service — nearby amenity distances and school discovery.
  * Docs: https://developers.google.com/maps/documentation/places/web-service/search-nearby
  *
- * Uses the legacy Nearby Search endpoint (rankby=distance, type=school) which
- * remains the cheapest option for "schools within X km of a coordinate" today.
+ * Both lookups use **Places API (New)**. The legacy `maps.googleapis.com/.../
+ * place/nearbysearch/json` endpoint this file used to call for schools is no
+ * longer activatable on Google Cloud projects — it answers every request with
+ * `REQUEST_DENIED: You're calling a legacy API, which is not enabled for your
+ * project`, regardless of the key. Migrated 2026-09-05.
+ *
+ * Requires "Places API (New)" enabled (and billing attached) on the project
+ * owning GOOGLE_PLACES_KEY. Without it every call returns HTTP 403
+ * PERMISSION_DENIED and these functions degrade to [] as designed.
  *
  * Returns [] (never throws) when:
  *   - GOOGLE_PLACES_KEY is not set
  *   - The API request fails
  *   - No results
+ *
+ * NOTE: the report's school section is served by `supabaseService.getNearbySchools`
+ * (the EQAO/Fraser `schools` table), not by this module. `getNearbySchools` here
+ * is the Places-backed alternative and is currently not wired into any route.
  *
  * The Google API returns up to 20 places per page; for our use case (need
  * ~3 per type) we only consume the first page.
@@ -19,7 +30,13 @@
  * acceptable — the UI dedupes by name anyway.
  */
 
-const NEARBY_SEARCH_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
+const NEARBY_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchNearby'
+
+/** Search radius for school discovery, in metres. */
+const SCHOOL_SEARCH_RADIUS_M = 8000
+
+/** Google Place types that denote a school. */
+const SCHOOL_PLACE_TYPES = ['school', 'primary_school', 'secondary_school']
 
 export interface School {
   name: string
@@ -29,16 +46,15 @@ export interface School {
   rating: number | null
 }
 
+/** A single place in a Places API (New) searchNearby response. */
 interface PlaceResult {
-  name?: string
+  displayName?: { text?: string }
   rating?: number
-  geometry?: { location?: { lat: number; lng: number } }
+  location?: { latitude?: number; longitude?: number }
 }
 
 interface NearbyResponse {
-  status?: string
-  results?: PlaceResult[]
-  error_message?: string
+  places?: PlaceResult[]
 }
 
 /** Haversine distance between two lat/lng points, in km. */
@@ -80,16 +96,34 @@ export async function getNearbySchools(lat: number, lng: number): Promise<School
     return []
   }
 
-  const url = `${NEARBY_SEARCH_URL}?location=${lat},${lng}&rankby=distance&type=school&key=${key}`
-
   let res: Response
   try {
-    res = await fetch(url)
+    res = await fetch(NEARBY_SEARCH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'places.displayName,places.location,places.rating',
+      },
+      body: JSON.stringify({
+        includedTypes: SCHOOL_PLACE_TYPES,
+        maxResultCount: 20,
+        rankPreference: 'DISTANCE',
+        locationRestriction: {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: SCHOOL_SEARCH_RADIUS_M,
+          },
+        },
+      }),
+    })
   } catch (err) {
     console.error('getNearbySchools: fetch failed', err)
     return []
   }
 
+  // Places API (New) signals every error through the HTTP status (403 when the
+  // API is not enabled on the project), not through a body `status` field.
   if (!res.ok) {
     console.warn(`getNearbySchools: HTTP ${res.status}`)
     return []
@@ -103,24 +137,17 @@ export async function getNearbySchools(lat: number, lng: number): Promise<School
     return []
   }
 
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    console.warn(
-      `getNearbySchools: API status=${data.status ?? 'unknown'} ${data.error_message ?? ''}`
-    )
-    return []
-  }
-
-  const places = data.results ?? []
+  const places = data.places ?? []
   const schools: School[] = []
   for (const p of places) {
-    const name = p.name?.trim()
-    const loc = p.geometry?.location
-    if (!name || !loc) continue
+    const name = p.displayName?.text?.trim()
+    const loc = p.location
+    if (!name || loc?.latitude == null || loc?.longitude == null) continue
     schools.push({
       name,
       type: classifyType(name),
       board: classifyBoard(name),
-      distanceKm: Number(haversineKm(lat, lng, loc.lat, loc.lng).toFixed(2)),
+      distanceKm: Number(haversineKm(lat, lng, loc.latitude, loc.longitude).toFixed(2)),
       rating: typeof p.rating === 'number' ? p.rating : null,
     })
   }
@@ -139,11 +166,10 @@ export interface NearbyDistance {
   driveMin: number
 }
 
-// Places API (New) Text Search — the legacy nearbysearch used by getNearbySchools
-// is deprecated and returns REQUEST_DENIED unless the (also-deprecated) legacy API
-// is enabled. Text Search + rankPreference DISTANCE + a location bias gives us the
-// nearest match for a free-text query, and covers highway on-ramps (which have no
-// place type). Needs "Places API (New)" enabled on the GOOGLE_PLACES_KEY project.
+// Places API (New) Text Search. Text Search + rankPreference DISTANCE + a
+// location bias gives us the nearest match for a free-text query, and covers
+// highway on-ramps (which have no place type — so searchNearby cannot find them).
+// Needs "Places API (New)" enabled on the GOOGLE_PLACES_KEY project.
 const TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText'
 const SEARCH_RADIUS_M = 8000
 
