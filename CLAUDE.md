@@ -1015,6 +1015,7 @@ propscout/
 ├── .env.example                       # Committed — placeholder values only
 ├── .gitignore                         # Covers .env, node_modules, __pycache__, .venv, dist
 ├── README.md                          # Setup instructions, how to run tests, architecture overview
+├── FUTURE.md                          # Out-of-MVP-scope items (CREA DDF, Cloudflare bypass) — referenced by MVP_TODO
 ├── package.json                       # Monorepo root — workspaces for apps/web and apps/api
 │
 ├── .github/
@@ -1281,6 +1282,9 @@ propscout/
 │       ├── rental_comps_scraper.py + rental_comps_scraper_test.py  # Nightly pipeline orchestrator
 │       ├── normalization.py + normalization_test.py  # Rent/beds/postal parsing — pure functions
 │       ├── dedupe.py + dedupe_test.py # Same address + rent + beds within 7 days = one record
+│       ├── _unported/                # Salvaged, NOT wired in — Zillow scraper (506 ln) +
+│       │                             # listing-type drafts from closed PR #6. Excluded from
+│       │                             # pytest via conftest collect_ignore_glob. See its README.
 │       ├── sources/                   # One module per rental site (selectors are TEMPLATE)
 │       │   ├── browser.py + browser_test.py  # Shared Playwright launch, politeness delay, PageFetch block detection
 │       │   ├── rentals_ca.py + rentals_ca_test.py
