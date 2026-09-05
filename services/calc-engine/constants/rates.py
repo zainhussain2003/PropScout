@@ -16,16 +16,28 @@ OSFI_FLOOR_RATE: float = 0.0525
 # no cached value exists. Represents a mid-cycle 5-year fixed rate.
 MORTGAGE_RATE_FALLBACK: float = 0.0479  # 4.79%
 
-# Bank of Canada Valet API — group endpoint returning today's key rates.
+# Bank of Canada Valet API — single-series endpoint for the prime rate.
+# `recent=1` returns only the latest observation.
+#
+# NOTE (2026-09-05): the previous group endpoint
+# `.../valet/observations/group/BofC-today/json` was retired by the Bank of
+# Canada and now returns 404 ("Group BofC-today not found"). Because
+# `_fetch_live_rate()` swallows all exceptions, the failure was silent and the
+# service served a months-stale cached rate. Pinned to the explicit series ID
+# below, which is stable and independent of Valet's group definitions.
+# `bank_of_canada_service_test.py::test_boc_valet_endpoint_is_reachable` is the
+# live contract test that fails loudly if this endpoint moves again.
 BOC_VALET_URL: str = (
-    "https://www.bankofcanada.ca/valet/observations/group/BofC-today/json"
+    "https://www.bankofcanada.ca/valet/observations/V80691311/json?recent=1"
 )
 
 # The Valet API series ID for the prime business loan rate.
 # Prime drives variable mortgage rates; fixed rates track the 5-yr GoC bond.
 # We use prime as a starting-point default — users should override with their
 # actual quoted rate.
-BOC_PRIME_SERIES: str = "PRIME"
+# V80691311 is the series ID for "Prime rate"; it is also the key each
+# observation is returned under, so it doubles as the response field name.
+BOC_PRIME_SERIES: str = "V80691311"
 
 # How long a cached rate is considered fresh before a refetch is attempted.
 BOC_CACHE_TTL_DAYS: int = 7
