@@ -12,6 +12,16 @@ import { Icon } from '../shared/Icon'
 interface TruncatedVerdictProps {
   /** The first paragraph of the AI verdict — shown in full. */
   firstParagraph: string
+  /**
+   * The real second paragraph of this property's verdict, blurred as a teaser.
+   *
+   * Omit it when the tier only produced one paragraph — the component then renders
+   * neutral skeleton bars. It must never be given invented prose: this block used to
+   * hardcode a fabricated paragraph ("$4,733 going out every month … DSCR 0.45×")
+   * which contradicted the real figures on every free report, and which blur does
+   * not hide from screen readers, copy-paste, or page-text extraction.
+   */
+  blurredParagraph?: string
   /** Called when the user clicks "Unlock full verdict" — typically opens UpgradeModal. */
   onUnlock?: () => void
   /** Mode-specific eyebrow, e.g. "Scout AI · tenant verdict". */
@@ -20,6 +30,7 @@ interface TruncatedVerdictProps {
 
 export function TruncatedVerdict({
   firstParagraph,
+  blurredParagraph,
   onUnlock,
   eyebrow = 'Scout AI · investor verdict',
 }: TruncatedVerdictProps): JSX.Element {
@@ -81,10 +92,13 @@ export function TruncatedVerdict({
         {firstParagraph}
       </div>
 
-      {/* Fade-out preview of paragraph 2 — blurred and faded */}
+      {/* Fade-out preview of paragraph 2 — blurred and faded.
+          aria-hidden + inert to assistive tech: it is a visual "there is more here"
+          affordance, not content anyone is meant to read. */}
       <div data-testid="verdict-blur" style={{ position: 'relative', marginTop: 22 }}>
         <div
           className="serif"
+          aria-hidden="true"
           style={{
             fontSize: 'clamp(17px, 1.7vw, 21px)',
             lineHeight: 1.5,
@@ -95,11 +109,7 @@ export function TruncatedVerdict({
             overflow: 'hidden',
           }}
         >
-          Run the numbers at current rates and you are looking at $4,733 going out every month
-          against roughly $2,900 coming in — a $1,833 shortfall every single month before a single
-          vacancy or repair. The DSCR sits at 0.45×, which means most investment mortgage products
-          will not even be available to you here. The only scenario where this makes sense is as a
-          personal residence, not a rental.
+          {blurredParagraph ?? <VerdictSkeletonLines />}
         </div>
         {/* Gradient fade overlay */}
         <div
@@ -136,6 +146,30 @@ export function TruncatedVerdict({
           Unlock full verdict <Icon name="arrow" size={13} />
         </button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Neutral placeholder bars shown behind the paywall blur when there is no real
+ * second paragraph to tease. Deliberately text-free: the alternative — inventing
+ * plausible prose — puts numbers in the DOM that contradict the report.
+ */
+function VerdictSkeletonLines(): JSX.Element {
+  const widths = ['96%', '99%', '92%', '61%']
+  return (
+    <div className="col" style={{ gap: 12, paddingTop: 4 }}>
+      {widths.map((w, i) => (
+        <div
+          key={i}
+          style={{
+            height: 13,
+            width: w,
+            borderRadius: 999,
+            background: 'color-mix(in oklab, var(--bg) 34%, transparent)',
+          }}
+        />
+      ))}
     </div>
   )
 }

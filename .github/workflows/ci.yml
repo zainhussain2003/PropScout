@@ -77,6 +77,27 @@ jobs:
           cd services/calc-engine
           pytest tests/test_regression.py -v
 
+  test-scrapers:
+    name: Tests — scrapers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd services/scrapers
+          pip install -r requirements.txt
+      # Playwright browsers are NOT installed: every scraper test mocks the
+      # network and the browser. Installing chromium here would add ~2 min for
+      # nothing. Add `playwright install --with-deps chromium` if a test ever
+      # needs a real browser.
+      - name: Unit tests
+        run: |
+          cd services/scrapers
+          pytest . -v
+
   golden-dataset:
     name: Golden dataset regression (95%+ gate)
     runs-on: ubuntu-latest

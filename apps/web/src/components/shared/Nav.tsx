@@ -20,13 +20,17 @@ const headerStyle: React.CSSProperties = {
   zIndex: 50,
   backdropFilter: 'saturate(180%) blur(14px)',
   WebkitBackdropFilter: 'saturate(180%) blur(14px)',
-  background: 'color-mix(in oklab, var(--bg) 78%, transparent)',
+  // 94%, not 78%. At 78% the hero's 64px Instrument Serif headline stayed plainly
+  // legible through the bar while scrolling — it read as a rendering glitch rather
+  // than intentional frosting. The blur is still active, so the bar keeps its
+  // frosted depth over photos and maps; it just now reads as a surface.
+  background: 'color-mix(in oklab, var(--bg) 94%, transparent)',
   borderBottom: '1px solid var(--line)',
 }
 
 const headerStyleReport: React.CSSProperties = {
   ...headerStyle,
-  background: 'color-mix(in oklab, var(--bg) 84%, transparent)',
+  background: 'color-mix(in oklab, var(--bg) 96%, transparent)',
 }
 
 // ── Landing nav ──────────────────────────────────────────────────

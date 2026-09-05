@@ -7,7 +7,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
     style="min-height: 100vh; background: var(--bg);"
   >
     <header
-      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 96%, transparent); border-bottom: 1px solid var(--line);"
     >
       <div
         class="container row"
@@ -529,7 +529,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
     style="min-height: 100vh; background: var(--bg);"
   >
     <header
-      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 96%, transparent); border-bottom: 1px solid var(--line);"
     >
       <div
         class="container row"
@@ -762,7 +762,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             style="gap: 28px;"
           >
             <div
-              style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; height: 360px;"
+              style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; grid-template-rows: 360px; height: 360px; overflow: hidden;"
             >
               <div
                 class="photo-ph"
@@ -775,11 +775,11 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               </div>
               <div
                 class="col"
-                style="gap: 8px;"
+                style="gap: 8px; min-height: 0px;"
               >
                 <div
                   class="photo-ph"
-                  style="border-radius: 14px; flex: 1 1 0%; position: relative; overflow: hidden;"
+                  style="border-radius: 14px; flex: 1 1 0%; min-height: 0px; position: relative; overflow: hidden;"
                 >
                   <span>
                     living
@@ -787,7 +787,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 </div>
                 <div
                   class="photo-ph"
-                  style="border-radius: 14px; flex: 1 1 0%; position: relative; overflow: hidden;"
+                  style="border-radius: 14px; flex: 1 1 0%; min-height: 0px; position: relative; overflow: hidden;"
                 >
                   <span>
                     kitchen
@@ -795,7 +795,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 </div>
                 <div
                   class="photo-ph"
-                  style="border-radius: 14px; flex: 1 1 0%; position: relative; overflow: hidden;"
+                  style="border-radius: 14px; flex: 1 1 0%; min-height: 0px; position: relative; overflow: hidden;"
                 >
                   <span>
                     floorplan
@@ -5765,7 +5765,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
     style="min-height: 100vh; background: var(--bg);"
   >
     <header
-      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+      style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 96%, transparent); border-bottom: 1px solid var(--line);"
     >
       <div
         class="container row"

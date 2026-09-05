@@ -15,7 +15,21 @@ import { RENT_BOUNDS, CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
 import { serializeError, isTimeoutError } from '../lib/http'
 import { saveListing, createPendingAnalysis } from '../services/supabaseService'
 
-const SCRAPER_URL = process.env.SCRAPER_URL ?? 'http://localhost:8001'
+// Where to send scrape requests.
+//
+// Production wires /scrape through the **calc engine** (commit b8d12ce, "Path A"):
+// on Railway both SCRAPER_URL and CALC_ENGINE_URL point at the same service, which
+// mounts /scrape alongside /rates and /analysis. The standalone
+// `services/scrapers/main.py` app (port 8001) is the older Path-B topology and is
+// not deployed.
+//
+// The previous default here was http://localhost:8001, which meant a developer
+// running the documented two processes (calc engine + API) got a 503 on every
+// analysis, because nothing listens on 8001. Falling back to CALC_ENGINE_URL makes
+// local dev match production. Set SCRAPER_URL explicitly to run the standalone
+// scraper service instead.
+const SCRAPER_URL =
+  process.env.SCRAPER_URL ?? process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
 // FSA first letter → province abbreviation (Ontario handled separately via isOntarioPostalCode)
 const FSA_PROVINCE_MAP: Record<string, string> = {

@@ -356,7 +356,13 @@ interface HeroProps {
 
 function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   const [sampleIdx, setSampleIdx] = useState(0)
-  const [url, setUrl] = useState(SAMPLE_LISTINGS[0].url)
+  // Starts EMPTY. This used to be seeded with SAMPLE_LISTINGS[0].url, which put a
+  // real (submittable) value in the primary input on first paint: the field looked
+  // filled-in, clicking into it and typing appended to the existing URL and produced
+  // a garbled link, and clearing it first was an undiscoverable extra step. The
+  // "Try one of ours" buttons below the field already load a sample deliberately,
+  // which is the honest way to offer one.
+  const [url, setUrl] = useState('')
   const [stage, setStage] = useState<HeroStage>('idle')
   const [progress, setProgress] = useState(0)
   const [errorMsg, setErrorMsg] = useState('')
@@ -432,10 +438,14 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               'Could not read that listing — check the URL and try again, or enter the details manually.'
             )
           } else {
-            setError('Something went wrong — please try again.')
+            // The API's error shape carries a message written for end users
+            // (see apps/api/src/types/api.ts). Prefer it over a generic string —
+            // "Analysis service temporarily unavailable" tells someone to wait and
+            // retry; "Something went wrong" tells them nothing.
+            setError(err.message || 'Something went wrong — please try again.')
           }
         } else {
-          setError('Something went wrong — please try again.')
+          setError('Could not reach PropScout — check your connection and try again.')
         }
       } finally {
         setLoading(false)
@@ -576,7 +586,12 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               <button
                 className="btn btn-primary"
                 onClick={handleAnalyze}
-                disabled={loading}
+                // Disabled while the field is empty rather than letting the click
+                // through to a red validation error. Nothing has gone wrong yet —
+                // the person simply hasn't pasted anything — so the button reads as
+                // "not ready" instead of scolding them for pressing it.
+                disabled={loading || url.trim() === ''}
+                title={url.trim() === '' ? 'Paste a listing link first' : undefined}
                 style={{ padding: '14px 22px', fontSize: 15, flexShrink: 0 }}
               >
                 {loading

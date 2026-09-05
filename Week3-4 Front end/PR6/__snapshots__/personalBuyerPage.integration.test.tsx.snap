@@ -5,7 +5,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   class="report-page-mobile-padding"
 >
   <header
-    style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 84%, transparent); border-bottom: 1px solid var(--line);"
+    style="position: sticky; top: 0px; z-index: 50; backdrop-filter: saturate(180%) blur(14px); background: color-mix(in oklab, var(--bg) 96%, transparent); border-bottom: 1px solid var(--line);"
   >
     <div
       class="container row"
