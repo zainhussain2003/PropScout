@@ -27,6 +27,16 @@ import { ScoutMark } from '../components/shared/ScoutMark'
 import { ModeModal } from '../components/shared/ModeModal'
 import type { ListingPreviewData } from '../components/shared/ModeModal'
 import { validateUrl } from '../lib/validateUrl'
+import { classifyInput } from '../lib/classifyInput'
+import {
+  lookupAddress,
+  startFromAddress,
+  type AddressLookupResult,
+} from '../lib/services/analysisService'
+import {
+  AddressDetailsCard,
+  type AddressDetailsValue,
+} from '../components/shared/AddressDetailsCard'
 import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
 import { scrapeUrl, ApiRequestError } from '../lib/services/analysisService'
@@ -371,6 +381,8 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   const [listing, setListing] = useState<Listing | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  // A resolved address awaiting the few details only the user has (price, beds).
+  const [addressResult, setAddressResult] = useState<AddressLookupResult | null>(null)
 
   const pickSample = (i: number): void => {
     setSampleIdx(i)
@@ -410,7 +422,45 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
       return
     }
 
-    // Real URL submit path — validate then call the scrape API.
+    // One field, two kinds of input. Decide which before sending, so someone who
+    // typed a perfectly good address is never told "that doesn't look like a
+    // valid URL" — the message that reads as the product being broken.
+    const classified = classifyInput(url)
+
+    if (classified.kind === 'unusable') {
+      setStage('error')
+      setErrorMsg(classified.message ?? 'Try a listing link, or a street address.')
+      return
+    }
+
+    if (classified.kind === 'address') {
+      setLoading(true)
+      setError(null)
+      void (async () => {
+        try {
+          const result = await lookupAddress(classified.value)
+          if (result.ok) {
+            setAddressResult(result)
+          } else {
+            setError(
+              `PropScout covers Ontario for now — that address is in ${result.province}. ` +
+                "We'll let you know when we reach it."
+            )
+          }
+        } catch (err) {
+          setError(
+            err instanceof ApiRequestError
+              ? err.message
+              : "We couldn't look that address up — try again."
+          )
+        } finally {
+          setLoading(false)
+        }
+      })()
+      return
+    }
+
+    // Listing-link path — validate then call the scrape API.
     const urlErr = validateUrl(url)
     if (urlErr !== null) {
       setStage('error')
@@ -510,10 +560,10 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 marginTop: 22,
               }}
             >
-              Paste a Realtor.ca or Zillow link. In under a minute you get rental comps from live
-              Ontario data, true monthly costs with the OSFI stress test applied, risk flags, and a
-              written verdict. Built for Canadian rules — semi-annual compounding, land transfer
-              tax, CMHC — not US math with a maple leaf on it.
+              Paste a listing link, or just type the address. In under a minute you get rental comps
+              from live Ontario data, true monthly costs with the OSFI stress test applied, risk
+              flags, and a written verdict. Built for Canadian rules — semi-annual compounding, land
+              transfer tax, CMHC — not US math with a maple leaf on it.
             </p>
           </div>
 
@@ -551,15 +601,17 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     if (e.key === 'Enter') handleAnalyze()
                   }}
                   disabled={loading}
-                  placeholder="Paste a listing URL"
-                  aria-label="Listing URL"
+                  placeholder="Listing link or address"
+                  aria-label="Listing link or property address"
                   style={{
                     flex: 1,
                     background: 'transparent',
                     border: 'none',
                     outline: 'none',
-                    fontFamily: "'Geist Mono', monospace",
-                    fontSize: 13,
+                    // Mono suits a URL and fights an address; addresses are the
+                    // input most people will type. Sans reads as "type anything here".
+                    fontFamily: 'inherit',
+                    fontSize: 14,
                     color: 'var(--ink)',
                     minWidth: 0,
                   }}
@@ -591,7 +643,7 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 // the person simply hasn't pasted anything — so the button reads as
                 // "not ready" instead of scolding them for pressing it.
                 disabled={loading || url.trim() === ''}
-                title={url.trim() === '' ? 'Paste a listing link first' : undefined}
+                title={url.trim() === '' ? 'Paste a link or type an address first' : undefined}
                 style={{ padding: '14px 22px', fontSize: 15, flexShrink: 0 }}
               >
                 {loading
@@ -700,6 +752,55 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {addressResult !== null && (
+              <div style={{ marginTop: 18 }}>
+                <AddressDetailsCard
+                  address={addressResult.address}
+                  city={addressResult.city}
+                  postalCode={addressResult.postalCode}
+                  submitting={loading}
+                  error={error}
+                  onBack={() => {
+                    setAddressResult(null)
+                    setError(null)
+                  }}
+                  onSubmit={(details: AddressDetailsValue) => {
+                    setLoading(true)
+                    setError(null)
+                    void (async () => {
+                      try {
+                        const { token, listing: created } = await startFromAddress({
+                          address: addressResult.address,
+                          postalCode: addressResult.postalCode,
+                          city: addressResult.city,
+                          lat: addressResult.coordinates.lat,
+                          lng: addressResult.coordinates.lng,
+                          ...details,
+                        })
+                        // Hand off to the same ModeModal the listing-link path
+                        // uses. The mode is a real question — an investor and a
+                        // tenant get different reports for the same address — and
+                        // /analyzing needs it. Skipping the modal and navigating
+                        // straight there dropped the mode and bounced back home.
+                        setToken(token)
+                        setListing(created)
+                        setAddressResult(null)
+                        setShowModal(true)
+                      } catch (err) {
+                        setError(
+                          err instanceof ApiRequestError
+                            ? err.message
+                            : 'Could not start the report — please try again.'
+                        )
+                      } finally {
+                        setLoading(false)
+                      }
+                    })()
+                  }}
+                />
               </div>
             )}
 

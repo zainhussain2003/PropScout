@@ -492,6 +492,9 @@ describe('POST / - coordinates in the analysis payload', () => {
       lat: 43.7942,
       lng: -79.5268,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
 
     const res = await app.inject({
@@ -553,6 +556,9 @@ describe('POST / - SunScout wiring', () => {
       lat: 43.7942,
       lng: -79.5268,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
     global.fetch = jest
       .fn()
@@ -713,6 +719,9 @@ describe('POST / - schools wiring', () => {
       lat: 43.7942,
       lng: -79.5268,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
     global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })

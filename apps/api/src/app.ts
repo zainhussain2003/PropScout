@@ -62,6 +62,8 @@ async function main(): Promise<void> {
   await fastify.register(import('./routes/pdf'), { prefix: '/analysis' })
 
   await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
+  // Address-first entry: many people know the address but not the listing URL.
+  await fastify.register(import('./routes/address'), { prefix: '/address' })
 
   await fastify.register(import('./routes/billing'), { prefix: '/billing' })
 

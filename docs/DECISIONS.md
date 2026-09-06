@@ -669,6 +669,148 @@ An outage falls back to the open-sky figure with `obstructionAssessed: false` �
 
 ---
 
+### D-020 · The one input accepts an address as well as a listing link
+
+**Chosen.** The hero field takes either. `classifyInput` decides which before
+anything is sent; an address goes to `POST /address` (geocode + province gate),
+then a short details card, then the existing ModeModal and pipeline.
+
+**Why.** The product accepted exactly one thing: a Realtor.ca URL. That works if
+you are already on Realtor.ca with the tab open, and is a dead end otherwise —
+someone who saw a sign on a lawn, got the address in a text, or is standing
+outside the building had nothing to paste. Worse, typing a perfectly good address
+returned _"That doesn't look like a valid URL"_, which reads as the product being
+broken rather than the input being wrong. That is the single most likely place to
+lose a first-time user.
+
+**Still not a search box.** An address identifies _one_ property; it does not open
+a catalogue. The moment we let people browse listings we are competing with
+HouseSigma and Realtor.ca at what they already do well, and the thing that makes
+PropScout worth using — one link, one question, one verdict — becomes a feature
+buried inside a worse version of a portal. `classifyInput`'s docstring says this
+so the next person does not "improve" it into search.
+
+**What an address can and cannot give.** Location is enough for SunScout (with
+real obstruction), walk and transit scores, schools, census income and growth, and
+rental comps. Price does not exist in any address lookup, and inventing it would
+fabricate the number the whole report turns on. So the details card asks for it.
+
+**Alternatives considered**
+
+| Option                                                     | Why not                                                                                                                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Look the address up in a listings feed and auto-fill price | Needs the paid Repliers plan; and a property not currently listed has no price to find. Would work sometimes and fail confusingly the rest of the time. |
+| Separate "URL" and "address" tabs                          | Two inputs where one will do. The user should not have to classify their own input before typing.                                                       |
+| Accept the address and estimate the price from comps       | Fabricates the number the report turns on. Same objection as D-004 and D-016.                                                                           |
+| Keep URL-only and improve the error message                | Better message, same dead end.                                                                                                                          |
+
+**Three real defects the live testing exposed**
+
+1. **Wrong building.** Mapbox reads "229-701 Sheppard Ave W" as street number 229
+   and returns M2N 1N2 — a different building from the real M3H 0B2 — at full
+   confidence. `splitUnitPrefix` strips the unit before geocoding and re-attaches
+   it after, which also feeds SunScout's floor inference.
+2. **Confident nonsense.** "asdfghjkl" scored 0.66 and resolved to a real street
+   in Ingleside, Ontario. A geocoder always returns _something_; a weak match
+   produces a complete, plausible report about a place the user never typed.
+   Matches below 0.9 relevance are now rejected (real addresses score 1.0).
+3. **My own regression.** I first appended ", Ontario, Canada" to bias matching.
+   It made things worse in both directions — it manufactured matches for nonsense,
+   and it made a Vancouver address return "we couldn't find that" instead of
+   reaching the BC waitlist gate. Removed; `country=CA` alone is correct.
+
+**Revisit if** Repliers covers Ontario — an address could then pre-fill price and
+beds, leaving the card as confirmation rather than data entry.
+
+---
+
+### D-021 · The details card is written for someone who is not confident with computers
+
+**Chosen.** Confirm the matched address first with a visible way back; two
+required fields (price, bedrooms); everything else visibly optional with a line
+saying what it improves; plain-language labels; `inputMode` for numeric keyboards;
+16px inputs; validation only on submit.
+
+**Why each of those**
+
+- **Confirm before asking.** Being told "that's not my building" _after_ filling a
+  form is the fastest way to lose someone. The address and a "No, search again"
+  button come before any field.
+- **Two required, not twelve.** Asking for taxes, year built, parking and
+  bathrooms up front reads as work. Price and bedrooms are the two the report
+  genuinely cannot proceed without.
+- **Optional means optional.** Each optional field says what it buys ("Often the
+  difference between a good and bad deal"), so skipping feels allowed rather than
+  careless.
+- **"What's it listed for?" not "List price (CAD)."** Same field, no vocabulary.
+- **16px inputs.** Below 16px, iOS Safari zooms the page on focus and the user
+  loses their place — a real, common, invisible-in-desktop-testing failure.
+- **`inputMode="numeric"`.** A phone shows a number pad instead of a QWERTY
+  keyboard for a price.
+- **No red until submit.** Per-keystroke validation marks a half-typed number as
+  wrong, which reads as being told off mid-sentence.
+
+**Verified on a 375×812 viewport**: single-column fields at full width, 16px
+throughout, correct `inputMode`, no horizontal overflow.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                     |
+| ------------------------------------------- | --------------------------------------------------------------------------- |
+| Multi-step wizard, one question per screen  | More taps and more chances to abandon, for six fields that fit on one card. |
+| Ask nothing; run with defaults              | Produces a deal score from an invented price — the worst possible failure.  |
+| Ask everything the scraper would have found | Twelve fields of homework before any value is shown.                        |
+
+---
+
+### D-022 · Address submit hands off to the ModeModal, not straight to /analyzing
+
+**Chosen.** After `POST /address/start` returns a token, the address path opens
+the same ModeModal the listing-link path uses.
+
+**Why.** My first version navigated directly to `/analyzing?token=…&kind=sale`.
+That page expects `mode`, not `kind`, so it bounced silently back to the landing
+page — the form appeared to do nothing. Beyond the bug, the mode is a real
+question: an investor and a personal buyer get materially different reports for
+the same address, and the product should not guess which one you are. Reusing the
+existing modal keeps both entry paths converging on one flow.
+
+---
+
+### D-023 · The test suite must not call OpenStreetMap
+
+**Chosen.** An autouse fixture in `services/calc-engine/conftest.py` replaces
+`build_profile` with one that reports the data source as unavailable.
+
+**Why.** Wiring obstruction into `POST /analysis/` (D-019) made every router test
+issue a real Overpass request. The calc suite went from **~6s to 29–73s** and
+started failing intermittently — one run reported `1 failed, 373 passed`, and the
+same suite passed on rerun untouched. Overpass is a free, rate-limited community
+endpoint; a test that fails because someone else's server is busy teaches nothing
+and trains people to rerun until green, which is how real failures get ignored.
+
+Returning an _unavailable_ profile is not a fiction: it is exactly what production
+does during an Overpass outage, so the path under test is a real one. The
+obstruction geometry itself is covered by 21 tests that pass buildings in directly
+and never touch the network.
+
+**Measured after:** 374 passed in 5.34s and 5.27s on consecutive runs.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Patch it in each affected test             | Seven-plus call sites, and the next test to hit the route silently reintroduces the network. |
+| Record/replay HTTP fixtures                | Real fidelity, real maintenance; overkill for a dependency the suite should simply not have. |
+| Leave it and tolerate the flake            | Normalises rerunning until green, which is how genuine regressions get waved through.        |
+| Gate on an env var read in production code | Puts test scaffolding in the shipped path.                                                   |
+
+**Worth noting for the future:** this only surfaced because the suite was run
+twice. A single green run after a change that adds a network dependency proves
+less than it appears to.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.
