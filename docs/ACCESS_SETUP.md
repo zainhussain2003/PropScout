@@ -117,13 +117,20 @@ Whichever path you pick: the **API key/token**, the **base URL**, and any
 **attribution string** the licence requires (most MLS feeds mandate a "Data
 provided by…" line — I will render it in the report).
 
-### What I will do meanwhile
+### What I checked before concluding this
 
-I will not leave this section empty while you decide. I am building the
-**appreciation and fair-market-value band from free aggregate sources** (StatsCan
-residential property values, CREA aggregate benchmarks), which fills the FMV bar
-and the appreciation tile with real numbers. Address-level "here are the last 10
-sales" still needs one of the above.
+Free aggregate sources were tested and ruled out, so this is not an untried
+assumption:
+
+- **StatsCan 34-10-0013** ("Residential property values") — province-level totals
+  from 2005. No neighbourhood granularity.
+- **CREA MLS® HPI** — the benchmark data is published through a web tool, not as a
+  bulk download or public API.
+- **Our own `listings` table** — 22 rows, all asking prices, no sale dates.
+
+So there is no free substitute that fills this section, at any granularity useful
+to a specific address. It stays honestly empty until a licensed feed is in place —
+which is why this decision is worth making sooner rather than later.
 
 ---
 
