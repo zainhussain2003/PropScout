@@ -13,13 +13,10 @@ import { useState, useEffect } from 'react'
 import type { ListingData, DealScoreData } from '../../types/analysis'
 import { DealScore } from './DealScore'
 import { MiniMap } from './MiniMap'
+import { ListingVisual } from './ListingVisual'
 import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
-
-/** Height of the hero photo grid, in px. Pins the grid row so real listing
- *  photos of any aspect ratio cannot grow it and overlap the address. */
-const PHOTO_GRID_HEIGHT_PX = 360
 
 interface PropertyHeroProps {
   listing: ListingData
@@ -48,13 +45,20 @@ export function PropertyHero({
   mapCenter,
   viewLabel = 'Investor view',
 }: PropertyHeroProps): JSX.Element {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
+  // Only the gauge size depends on this now; the layout collapse is CSS.
+  // matchMedia reads the viewport, so it agrees with the stylesheet and is not
+  // thrown off by horizontal overflow the way window.innerWidth was.
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 900px)').matches)
 
   useEffect(() => {
-    const handler = (): void => setIsMobile(window.innerWidth <= 480)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    const mq = window.matchMedia('(max-width: 900px)')
+    const handler = (e: MediaQueryListEvent): void => setIsMobile(e.matches)
+    setIsMobile(mq.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   }, [])
+
+  const hasPhotos = (listing.photoUrls?.length ?? 0) > 0
 
   const verdictColor =
     score.tone === 'pass'
@@ -129,97 +133,21 @@ export function PropertyHero({
         </span>
       </div>
 
-      {/* Two-column hero — single column on mobile, score card first */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr',
-          gap: 'clamp(28px, 3.5vw, 52px)',
-          alignItems: 'flex-start',
-        }}
-      >
+      {/* Two-column hero — collapses to one column via CSS (.report-hero), not
+          a JS width check. See the rule in global.css for why. */}
+      <div className="report-hero">
         {/* LEFT — photos + chips + address */}
         <div className="col" style={{ gap: 28 }}>
-          {/* Photo grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 1fr',
-              gap: 8,
-              // `height` alone is not enough: with no explicit rows the single
-              // implicit row is content-sized, so the thumbnail stack's intrinsic
-              // height (3 real listing photos ≈ 640px) grew the row past 360 and the
-              // main photo's `height: 100%` resolved against the ROW, spilling over
-              // the address heading below. Pinning the row makes the grid
-              // independent of the images' intrinsic size.
-              gridTemplateRows: PHOTO_GRID_HEIGHT_PX + 'px',
-              height: PHOTO_GRID_HEIGHT_PX,
-              overflow: 'hidden',
-            }}
-          >
-            {/* Main photo */}
-            <div
-              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
-              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
-            >
-              {listing.photoUrls?.[0] ? (
-                <img
-                  src={listing.photoUrls[0]}
-                  alt={`Exterior of ${listing.addressLine1}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <span>exterior · {listing.propertyType.toLowerCase()}</span>
-              )}
-            </div>
-
-            {/* Thumbnail stack — minHeight:0 lets the flex children shrink below
-                their intrinsic image height instead of forcing the row taller. */}
-            <div className="col" style={{ gap: 8, minHeight: 0 }}>
-              {(['living', 'kitchen', 'floorplan'] as const).map((label, idx) => (
-                <div
-                  key={label}
-                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
-                  style={{
-                    borderRadius: 14,
-                    flex: 1,
-                    minHeight: 0,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {listing.photoUrls?.[idx + 1] ? (
-                    <img
-                      src={listing.photoUrls[idx + 1]}
-                      alt={label}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span>{label}</span>
-                  )}
-                  {idx === 2 && (
-                    <div
-                      className="mono"
-                      style={{
-                        position: 'absolute',
-                        right: 10,
-                        bottom: 10,
-                        fontSize: 10,
-                        letterSpacing: '0.1em',
-                        padding: '3px 8px',
-                        background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-                        borderRadius: 999,
-                        color: 'var(--ink)',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      + more
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Photos when the listing has them, the property on a map when it
+              does not. Never fixed room-labelled frames: an address-entered
+              listing has no photos, and the old grid rendered four grey tiles
+              and a "+ 18 more" badge regardless. */}
+          <ListingVisual
+            photoUrls={listing.photoUrls}
+            address={`${listing.addressLine1}, ${listing.addressLine2}`}
+            center={mapCenter}
+            propertyType={listing.propertyType.toLowerCase()}
+          />
 
           {/* Chips, address, quick facts */}
           <div className="col" style={{ gap: 18 }}>
@@ -273,21 +201,28 @@ export function PropertyHero({
             </div>
           </div>
 
-          {/* MiniMap — rental comp markers near the property */}
-          <MiniMap
-            height={180}
-            address={`${listing.addressLine1}, ${listing.addressLine2}`}
-            pins={[]}
-            center={mapCenter}
-          />
+          {/* MiniMap — only when the hero visual is photos. With no photos the
+              hero already shows this exact map, and rendering it twice looked
+              like a bug. */}
+          {hasPhotos && (
+            <MiniMap
+              height={180}
+              address={`${listing.addressLine1}, ${listing.addressLine2}`}
+              pins={[]}
+              center={mapCenter}
+            />
+          )}
         </div>
 
         {/* RIGHT — sticky score card (order: -1 on mobile to appear above photo grid) */}
         <div
-          className="card col"
-          style={{ padding: 32, gap: 24, position: 'sticky', top: 84, order: isMobile ? -1 : 0 }}
+          className="card col report-hero-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
         >
           {/* Gauge — capped at 84px on mobile */}
+          {/* showVerdict is deliberately off: the same verdict label is
+              rendered directly below the gauge, so the in-ring pill was a
+              duplicate — and a clipped one for long labels. */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
             <DealScore
               score={score.displayTotal}
@@ -295,7 +230,6 @@ export function PropertyHero({
               tone={score.tone}
               size={isMobile ? 'sm' : 'lg'}
               label="Deal score / 100"
-              showVerdict={!isMobile}
               verdictLabel={score.label}
               animate
             />

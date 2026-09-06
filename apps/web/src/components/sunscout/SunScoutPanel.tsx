@@ -164,6 +164,7 @@ export function SunScoutPanel({
       />
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1.5fr',

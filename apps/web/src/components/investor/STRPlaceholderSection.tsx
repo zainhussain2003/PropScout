@@ -106,7 +106,10 @@ export function STRPlaceholderSection({ listing }: STRPlaceholderSectionProps): 
         tone="caution"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}
+      >
         {/* Coming-soon card */}
         <div
           className="card col"

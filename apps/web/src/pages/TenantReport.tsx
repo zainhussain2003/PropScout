@@ -38,6 +38,7 @@ import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { Metric } from '../components/analysis/Metric'
 import { AIVerdictBlock } from '../components/analysis/AIVerdictBlock'
 import { MiniMap } from '../components/analysis/MiniMap'
+import { ListingVisual } from '../components/analysis/ListingVisual'
 import { FlagDeepRow } from '../components/tenant/FlagDeepRow'
 import { ListedVsRealitySection } from '../components/tenant/ListedVsRealitySection'
 import { WhatsIncludedSection } from '../components/tenant/WhatsIncludedSection'
@@ -96,6 +97,8 @@ interface TenantPropertyHeroProps {
   listing?: TenantListingData
   /** Pro PDF download handler (usePdfExport) — no-op on the demo route. */
   onPDF?: () => void
+  /** Subject coordinates — renders the real map when the listing has no photos. */
+  mapCenter?: { lat: number; lng: number } | null
 }
 
 function TenantPropertyHero({
@@ -103,6 +106,7 @@ function TenantPropertyHero({
   onBack,
   listing: listingProp,
   onPDF,
+  mapCenter = null,
 }: TenantPropertyHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const listing = listingProp ?? CHARLES_LISTING
@@ -182,69 +186,15 @@ function TenantPropertyHero({
       >
         {/* LEFT — photos + chips + address */}
         <div className="col" style={{ gap: 28 }}>
-          {/* Photo grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, height: 360 }}>
-            {/* Hero photo */}
-            <div
-              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
-              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
-            >
-              {listing.photoUrls?.[0] ? (
-                <img
-                  src={listing.photoUrls[0]}
-                  alt={`Exterior of ${listing.addressLine1}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <span>unit · skyline view</span>
-              )}
-            </div>
-
-            {/* Thumbnail stack */}
-            <div className="col" style={{ gap: 8 }}>
-              {(['living', 'kitchen', 'bedroom'] as const).map((label, idx) => (
-                <div
-                  key={label}
-                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
-                  style={{
-                    borderRadius: 14,
-                    flex: 1,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {listing.photoUrls?.[idx + 1] ? (
-                    <img
-                      src={listing.photoUrls[idx + 1]}
-                      alt={label}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span>{label}</span>
-                  )}
-                  {idx === 2 && (
-                    <div
-                      className="mono"
-                      style={{
-                        position: 'absolute',
-                        right: 10,
-                        bottom: 10,
-                        fontSize: 10,
-                        letterSpacing: '0.1em',
-                        padding: '3px 8px',
-                        background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-                        borderRadius: 999,
-                        color: 'var(--ink)',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      + 18 more
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Photos when the listing has them, the property on a map when it
+              does not. The old grid rendered four grey frames and a hardcoded
+              "+ 18 more" badge even for a listing with zero photos. */}
+          <ListingVisual
+            photoUrls={listing.photoUrls}
+            address={`${listing.addressLine1}, ${listing.addressLine2}`}
+            center={mapCenter}
+            propertyType="unit"
+          />
 
           {/* Chips + address + quick facts */}
           <div className="col" style={{ gap: 18 }}>
@@ -351,7 +301,6 @@ function TenantPropertyHero({
                   label="Tenant score / 100"
                   tone={listing.scoreTone}
                   verdictLabel={listing.verdictLabel}
-                  showVerdict
                   animate
                 />
               </div>
@@ -1327,6 +1276,7 @@ export function TenantReport({
         onBack={() => window.history.back()}
         listing={tenantListing}
         onPDF={pdf.exportPdf}
+        mapCenter={realAnalysis?.coordinates ?? null}
       />
 
       {/* AI verdict */}

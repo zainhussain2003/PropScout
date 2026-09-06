@@ -184,7 +184,13 @@ export function DealScore({
                 borderRadius: 999,
                 border: `1px solid ${color}`,
                 background: `color-mix(in oklab, ${color} 8%, transparent)`,
-                whiteSpace: 'nowrap',
+                // No nowrap: the pill sits inside the ring, so a long verdict
+                // ("Overpriced — push hard") was clipped mid-word by the gauge
+                // container. Wrapping is the lesser evil; callers that render
+                // the same label below the gauge should not set showVerdict.
+                maxWidth: '100%',
+                textAlign: 'center',
+                lineHeight: 1.3,
               }}
             >
               {verdictLabel ?? verdictLabelForScore(clamped)}

@@ -177,7 +177,10 @@ export function NeighbourhoodSection({
       )}
 
       {/* Comparable sales + appreciation */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}
+      >
         {/* Comparable sales */}
         <div className="card col" style={{ padding: 28, gap: 18 }}>
           <div

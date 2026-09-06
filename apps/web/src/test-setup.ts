@@ -45,3 +45,26 @@ declare module '@vitest/expect' {
     toHaveNoViolations(): void
   }
 }
+
+// jsdom implements no matchMedia. Components read it to decide gauge size and
+// to agree with the stylesheet's breakpoints (see .report-hero in global.css),
+// so without this every test rendering a report hero throws.
+//
+// Defaults to "not matching", i.e. the desktop layout — the same thing jsdom's
+// 1024px default viewport implies.
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string): MediaQueryList =>
+      ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => false,
+      }) as unknown as MediaQueryList,
+  })
+}

@@ -830,16 +830,23 @@ body::-webkit-scrollbar-thumb {
 
 /* ── Mobile grid collapse helpers ────────────────────────────── */
 
-@media (max-width: 480px) {
+/* 900px, not 480px: a two-column report section does not become usable at
+   481px — its content has a minimum width (metric tables, 12-month bar rows),
+   so below roughly 900px the columns stop shrinking and push the whole page
+   sideways instead. This matches .report-hero so the page collapses as one. */
+@media (max-width: 900px) {
   .grid-1col-mobile {
     grid-template-columns: 1fr !important;
-  }
-  .grid-2col-mobile {
-    grid-template-columns: 1fr 1fr !important;
   }
   /* Puts the last child (score card column) above content on mobile */
   .hero-score-first > *:last-child {
     order: -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-2col-mobile {
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 
@@ -929,5 +936,68 @@ body::-webkit-scrollbar-thumb {
   .hero-verdict {
     justify-self: stretch;
     max-width: none;
+  }
+}
+
+/* ── Report hero ─────────────────────────────────────────────────
+   Photos/map on the left, score card on the right.
+
+   The columns were set from JS via `window.innerWidth <= 480`. That is the
+   wrong measurement twice over: innerWidth includes the scrollbar and, when
+   anything overflows horizontally, it reports the OVERFLOWING width — 723px on
+   a 375px phone — so the check said "not mobile" and kept two columns, which
+   caused the overflow that broke the check. A media query reads the viewport
+   and cannot be fooled by its own output.
+
+   minmax(0, …) is load-bearing: a bare 1.5fr floors at min-content, so a wide
+   score-card row or a long address pushed the grid past the viewport instead
+   of shrinking. */
+.report-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(28px, 3.5vw, 52px);
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .report-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Verdict first on a phone: the reason to read the page is the score, not
+     the photo. */
+  .report-hero > .report-hero-score {
+    order: -1;
+  }
+}
+
+/* ── Report nav on small screens ─────────────────────────────────
+   The report nav carried Share link / Sign in / Save alongside the breadcrumb.
+   At 375px that row is 422px wide, so it pushed the page 348px past the
+   viewport — every section then scrolled sideways.
+
+   Share and Save are already offered by StickyActionBar on mobile, so hiding
+   them here removes a duplicate rather than a capability. Sign in and the
+   theme toggle stay, because nothing else offers them. */
+@media (max-width: 900px) {
+  .nav-hide-sm {
+    display: none !important;
+  }
+
+  /* The breadcrumb takes the space that is left and truncates; the action
+     group keeps its intrinsic width. Every ancestor needs min-width:0, or a
+     flex item refuses to shrink below its content and the slug overlaps the
+     buttons instead of ellipsising. */
+  .nav-crumbs {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .nav-slug {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

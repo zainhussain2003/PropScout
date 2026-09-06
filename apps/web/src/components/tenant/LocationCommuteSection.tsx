@@ -43,7 +43,10 @@ export function LocationCommuteSection({
         tone={overallTone}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}
+      >
         {/* LEFT — mobility scores */}
         <div className="card col" style={{ padding: 28, gap: 24 }}>
           <div

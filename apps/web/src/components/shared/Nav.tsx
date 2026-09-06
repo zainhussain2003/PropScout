@@ -121,13 +121,19 @@ function ReportNav({
   return (
     <header style={headerStyleReport}>
       <div className="container row" style={{ padding: '14px 0', justifyContent: 'space-between' }}>
-        <div className="row gap-16">
+        {/* min-width: 0 lets this shrink. Without it the breadcrumb keeps its
+            full intrinsic width and shoves the action group off a 375px
+            screen, which is what pushed the whole page sideways. */}
+        <div className="row gap-16 nav-crumbs" style={{ minWidth: 0 }}>
           <Wordmark height={22} />
-          <div className="row gap-8" style={{ color: 'var(--muted)', fontSize: 13 }}>
+          <div className="row gap-8" style={{ color: 'var(--muted)', fontSize: 13, minWidth: 0 }}>
             <span style={{ opacity: 0.55 }}>/</span>
-            <span>{reportLabel}</span>
-            <span style={{ opacity: 0.55 }}>/</span>
+            <span className="nav-hide-sm">{reportLabel}</span>
+            <span className="nav-hide-sm" style={{ opacity: 0.55 }}>
+              /
+            </span>
             <span
+              className="nav-slug"
               onClick={handleSlugClick}
               aria-label="Copy share link"
               style={{
@@ -153,19 +159,27 @@ function ReportNav({
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
           </button>
-          <button className="btn btn-ghost" style={{ padding: '10px 14px' }}>
+          {/* Share and Save are duplicated by StickyActionBar on mobile, and
+              this row overflowed a 375px viewport. Hidden there, not removed. */}
+          <button className="btn btn-ghost nav-hide-sm" style={{ padding: '10px 14px' }}>
             <Icon name="link" size={13} /> Share link
           </button>
           <button className="btn btn-ghost" onClick={onSignIn} style={{ padding: '10px 14px' }}>
             Sign in
           </button>
-          {tier === 'free' ? (
-            <LockedButton label="Save" icon="plus" onClick={() => openUpgradeModal('portfolio')} />
-          ) : (
-            <button className="btn btn-primary" onClick={onSignIn}>
-              Save to account <Icon name="arrow" size={13} />
-            </button>
-          )}
+          <span className="nav-hide-sm">
+            {tier === 'free' ? (
+              <LockedButton
+                label="Save"
+                icon="plus"
+                onClick={() => openUpgradeModal('portfolio')}
+              />
+            ) : (
+              <button className="btn btn-primary" onClick={onSignIn}>
+                Save to account <Icon name="arrow" size={13} />
+              </button>
+            )}
+          </span>
         </div>
       </div>
     </header>

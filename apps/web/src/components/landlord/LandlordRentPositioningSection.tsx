@@ -57,6 +57,7 @@ export function LandlordRentPositioningSection({
       />
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.4fr 1fr',

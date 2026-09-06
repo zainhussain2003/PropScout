@@ -1197,6 +1197,87 @@ runs, and gc-052…gc-058 are marked as real-derived so the distinction survives
 
 ---
 
+### D-034 · A report never shows photo frames for photos it does not have
+
+**The problem, as seen on screen.** Every report opened with a four-frame photo
+grid — a large "exterior · condo" tile, thumbnails labelled "living",
+"kitchen", "floorplan", and a **"+ 18 more"** badge — rendered whether or not
+the listing had a single photo. A listing entered by address never has any,
+because there is no page to take them from. So the first thing a reader studied
+was 360px of empty grey claiming eighteen photos that did not exist.
+
+It made a finished report look broken, and it invented content, which is the one
+thing this product must not do. The "+ 18 more" was a literal hardcoded string
+in `TenantReport.tsx` and `LandlordPropertyHero.tsx`.
+
+**Chosen.** One shared `ListingVisual` used by all three heroes:
+
+- photos exist → main image plus **however many thumbnails there actually are**,
+  and "+ N more" only when N > 0;
+- exactly one photo → it fills the width instead of sitting beside empty frames;
+- no photos → the property on a real map, with the caption _"No listing photos ·
+  report built from the address"_.
+
+The map is honest, useful, and carries the same visual weight, so the page still
+opens on something worth looking at. When the hero shows a map, the section map
+lower down is suppressed — rendering the same map twice read as a fault.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Keep the grid, drop the "+ 18 more"        | Four empty grey frames still imply four missing photos.                                  |
+| Stock or illustrative imagery              | A picture of a building that is not this building is a fabrication, just a prettier one. |
+| Collapse the hero to text only             | The report then opens on nothing, and the page loses its anchor.                         |
+| Scrape photos for address-entered listings | There is no listing page to scrape. That is the premise of address entry.                |
+
+---
+
+### D-035 · Report layout collapses via CSS, not `window.innerWidth`
+
+**The bug.** At 375px the report hero stayed in two columns and the page
+scrolled sideways by 348px. `PropertyHero` chose its columns with
+`window.innerWidth <= 480` — and `innerWidth` reports the **overflowing** width,
+not the viewport. Content overflowed → `innerWidth` read 723 → the check said
+"not mobile" → two columns → which caused the overflow. The measurement was
+downstream of its own effect.
+
+**Chosen.** `.report-hero` in `global.css` with a media query, which reads the
+viewport and cannot be fooled. `minmax(0, 1.5fr)` rather than `1.5fr`, because a
+bare `fr` floors at min-content and refuses to shrink. `matchMedia` where JS
+still needs the breakpoint (gauge size), so it agrees with the stylesheet.
+
+Also raised `.grid-1col-mobile` from 480px to 900px and applied it to the eight
+report sections that had fixed two-column grids. A two-column section does not
+become usable at 481px — its content has a minimum width, so below roughly 900px
+the columns stop shrinking and push the page sideways instead.
+
+**Nav.** The report nav's Share / Sign in / Save row is 422px wide and would not
+shrink, shoving itself off screen. Share and Save are already offered by
+`StickyActionBar` on mobile, so they are hidden there — a duplicate removed, not
+a capability. The breadcrumb gets `min-width: 0` so it truncates instead of
+pushing the buttons out.
+
+Horizontal overflow at 375px went from **348px to 10px**; desktop is unchanged
+at 0.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Fix the JS threshold (480 → 900)       | Still measures the wrong thing. The feedback loop remains; it just triggers at a different width. |
+| `ResizeObserver` on the container      | Correct but heavy for what one media query expresses, and it still disagrees with the stylesheet. |
+| Leave sections at the 480px breakpoint | Measured: they overflow well above 480px, which is what pushed the page sideways.                 |
+| Let the nav row wrap                   | A two-line nav on every report is worse than hiding two buttons duplicated below.                 |
+
+**Not fixed, and honest about it.** ~10px of overflow remains from the sticky
+action bar. And the in-app browser here renders WebGL through Microsoft Basic
+Render Driver, so Mapbox paints intermittently for me — it renders correctly in
+a normal browser, so the map is **not** known-broken; I simply cannot judge it
+reliably from this environment.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.
