@@ -544,6 +544,54 @@ set in production — comps would then describe the wrong continent, labelled or
 
 ---
 
+### D-017 · Amenity results beyond the search radius are dropped
+
+**Chosen.** `nearestPlaceKm` returns null when the match is farther than
+`SEARCH_RADIUS_M` (8km) from the property.
+
+**Why.** With Places live, the first real report showed **"Highway on-ramp —
+15.62 km, ~31 min"** for a North York condo. The 401 is roughly 2km away, so the
+number was visibly wrong to anyone who knows Toronto — the worst kind of error in
+a pitch, because it discredits the numbers that _are_ right.
+
+Cause: `locationBias` is a _preference_, not a limit. Few places are literally
+named "highway on-ramp", so Places reached past the circle and returned one in
+Etobicoke. `locationRestriction` is not a usable substitute — it returns nothing
+at all for these queries, which was checked before settling on the cap.
+
+A "nearest amenity" 15km away is not an answer to the question the section asks,
+so it is omitted. The other three targets (transit 70m, grocery 0.99km, pharmacy
+0.56km) are unaffected and correct.
+
+**Alternatives considered**
+
+| Option                                    | Why not                                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Show it with a caveat                     | The tile has room for a number, not an explanation. A wrong number with a footnote is still a wrong number.      |
+| Swap to `locationRestriction`             | Returns zero results for these text queries — verified. Would silently remove all four amenities.                |
+| Query a place _type_ instead of free text | No Places type for a highway on-ramp; that is why it was a text query to begin with.                             |
+| Drop the highway target entirely          | Over-corrects: it works in areas where on-ramps are named. The radius cap keeps it where it is genuinely nearby. |
+
+---
+
+### D-018 · The old Google key was in the wrong project
+
+**Recorded because it cost real time.** `GOOGLE_PLACES_KEY` was failing with
+`PERMISSION_DENIED` and the assumption — mine, and in the earlier setup notes —
+was that the project simply needed billing and the API enabled.
+
+Both were true, but insufficient: the key belonged to a **different project
+entirely**. Enabling Places on the newly-billed project could never have fixed it.
+The Maps onboarding flow created a fresh "Maps Platform API Key" in the correct
+project (`352178646394`), and swapping to that is what actually worked.
+
+The tell was in the error body all along, once the key was right:
+_"Places API (New) has not been used in project **352178646394** before"_ — a
+project id worth reading before assuming the problem is configuration rather than
+identity. Noted in `docs/ACCESS_SETUP.md` §3 for the next time.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

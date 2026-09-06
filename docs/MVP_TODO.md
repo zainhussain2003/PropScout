@@ -440,9 +440,9 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 - [ ] Load EQAO dataset into Supabase `schools` table (download from eqao.on.ca)
 - [ ] Scrape Fraser Institute school rankings (fraserinstitute.org/school-performance)
 - [ ] Store Fraser data in `schools` table alongside EQAO
-- [ ] Google Places API integration — find nearby schools by coordinates (type=school)
-      — code migrated to Places API (New) and waiting; **blocked**: the Cloud project
-      has no Maps API enabled and no billing (see `docs/ACCESS_SETUP.md` §3)
+- [x] Google Places API integration — Places API (New) enabled and live; amenity
+      distances (transit/grocery/pharmacy) returning real values. Schools still come
+      from the Supabase EQAO table, not Places.
 - [ ] Match Google Places results to `schools` table by name + address
 - [ ] Return nearest 3 per type (elementary, middle, high) with distance and drive time
 - [ ] Highlight schools within catchment area (TDSB polygon data — Toronto first)

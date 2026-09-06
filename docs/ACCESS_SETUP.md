@@ -157,7 +157,21 @@ which is why this decision is worth making sooner rather than later.
 
 ---
 
-## 3. 🔴 Google Places — enable two things
+## 3. ✅ Google Places — DONE
+
+**Completed 2026-09-06.** Billing linked, **Places API (New)** enabled on project
+`352178646394` ("My First Project"), and `GOOGLE_PLACES_KEY` in `.env` replaced.
+
+**The old key was the problem, not just the API.** It belonged to a different
+project, so enabling APIs here would never have fixed it. The Maps onboarding flow
+created a new "Maps Platform API Key" in this project; that is the one now in
+`.env`. If you ever see `PERMISSION_DENIED` again, check the project id in the
+error message before anything else.
+
+Verified live: nearest transit **70 m**, grocery **0.99 km**, pharmacy **0.56 km**
+for the Sheppard Ave test property, plus real school results.
+
+### Original setup steps (for reference)
 
 Currently **every** Google Maps API on the project owning `GOOGLE_PLACES_KEY`
 denies: Places (New) returns `403 PERMISSION_DENIED`, and legacy APIs return
