@@ -972,6 +972,103 @@ type an address."_
 
 ---
 
+### D-028 · Address-entered listings get their own row (`source_url` is NULL, not `''`)
+
+**Chosen.** Made `listings.source_url` nullable (migration
+`20260906_listings_source_url_nullable.sql`), write NULL rather than `''` for
+listings that came from a typed address, and insert rather than upsert when
+there is no source URL.
+
+**The bug.** `source_url` was `text unique not null`, written on the assumption
+that every listing comes from a page we scraped. Address entry (D-020) has no
+URL, so every such listing was stored with the empty string — and the UNIQUE
+constraint meant they all competed for one row. `saveListing` upserted on
+`source_url`, so the collision was silent rather than an error: **each new
+address overwrote the previous listing, and share tokens issued earlier
+repointed at whatever property was entered most recently.** Two people
+analysing two addresses would each see the other's property.
+
+Found by running the flow end to end, not by a unit test — every unit test
+mocked the database, so the constraint that caused it was never exercised.
+
+**Why NULL rather than a synthetic URL.** Postgres treats NULLs as distinct for
+uniqueness, so scraped listings keep deduplicating on their URL while every
+address-entered listing gets its own row. NULL is also what "there is no source
+page" actually means; a synthetic `address://<uuid>` would put a non-URL in a
+column named `source_url` and mislead the next person to read the table.
+
+**Alternatives considered**
+
+| Option                                          | Why not                                                                                                                     |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Synthetic unique value, e.g. `address://<uuid>` | No migration needed, but stores something that is not a URL in `source_url` and leaves the misleading NOT NULL invariant.   |
+| Drop the UNIQUE constraint entirely             | Breaks scraped-listing deduplication, which is the reason the constraint exists.                                            |
+| Key address listings on a normalised address    | Two people analysing the same building would share one listing row and overwrite each other's price. Same class of bug.     |
+| Leave the upsert and accept overwrites          | This is the bug. A user's saved report silently becoming someone else's property is the worst failure the product can have. |
+
+**Regression cover.** `supabaseService.test.ts` now asserts that a listing with
+no URL is inserted and never upserted, that a scraped listing still upserts on
+`source_url`, and that two addresses produce two rows.
+
+---
+
+### D-029 · Comparable sales render on the personal buyer report, labelled by provenance
+
+**Chosen.** Wired `PBSalesSection` to the comps the analysis actually returns.
+On a live report it renders them when there are any and keeps the honest empty
+state when there are none. When the comps came from the provider's sample
+coverage area, the section says so in `--caution`: _"Real sales from the
+provider's sample coverage area — not this neighbourhood."_
+
+**Why.** The comps integration landed in the API and reached the investor
+report, but the personal buyer report — where comparable sales are the headline
+section (§03) — still rendered the demo fixtures' empty state regardless. The
+data was being fetched, mapped, and thrown away.
+
+**What is deliberately not filled in.** The feed carries sold price and date but
+no days-on-market and no distance from the subject. Those columns render an em
+dash. A zero in a DOM column reads as "sold the same day" and is
+indistinguishable from a real figure, so the type makes them `number | null`
+and the absence is explicit rather than encoded as a plausible number.
+
+**§02 Fair market value stays empty on purpose.** It would be trivial to derive
+an FMV band from these comps, and it would be wrong: while sample mode is on
+they are Tacoma sales, and positioning a Vaughan condo against them would be
+confidently incorrect in a way nothing on the page would reveal. It switches on
+when the Repliers plan covers Ontario.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Render sample comps with no provenance label | Presents Tacoma sales as this listing's neighbours. Exactly the fabrication the empty state existed to prevent. |
+| Keep the empty state until Ontario data      | The pipeline then ships untested; this is what let the wiring gap survive unnoticed in the first place.         |
+| Show 0 for days on market                    | A precise-looking lie. Worse than a dash, because nothing signals it is unknown.                                |
+| Derive the FMV band from sample comps        | Confidently wrong. See above.                                                                                   |
+
+---
+
+### D-030 · The maintenance reserve does not assert a build era it does not know
+
+**Chosen.** `maintenanceNote(0)` now returns _"1.5% of value / yr · build year
+unknown"_ instead of _"pre-1980 build"_.
+
+**Why.** `yearBuilt` is 0 when the listing did not state one, which is always
+for address-entered listings. Zero fell through to the final branch, so the
+report told the user their possibly brand-new condo was a pre-1980 build. The
+1.5% rate is kept — the conservative choice when age is unknown — but the
+stated reason is now the true one.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Use the 0.5% rate when unknown         | Understates the reserve on an old building, which flatters the deal. Wrong direction to be wrong in. |
+| Hide the note when the year is unknown | The user then cannot see why the reserve is what it is, and the figure looks arbitrary.              |
+| Ask for build year in the details card | Another required field on a form deliberately kept to two (D-021), for a second-order number.        |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

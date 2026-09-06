@@ -30,6 +30,7 @@ import {
   getAnalysisByToken,
   getNearbySchools,
   haversineKm,
+  saveListing,
   SCHOOL_CATCHMENT_NOTE,
 } from './supabaseService'
 import type { Analysis } from '../types/analysis'
@@ -786,5 +787,77 @@ describe('getNearbySchools', () => {
 
     const result = await getNearbySchools(HOME.lat, HOME.lng)
     expect(result!.elementary.map((s) => s.name)).toEqual(['Has coords'])
+  })
+})
+
+// ── saveListing ───────────────────────────────────────────────────────────────
+
+describe('saveListing — how a listing is keyed', () => {
+  function listingFixture(over: Partial<Listing> = {}): Omit<Listing, 'id'> {
+    return {
+      url: '',
+      listingType: 'for-sale',
+      address: '5702 - 5 Buttermill Avenue, Vaughan',
+      city: 'Vaughan',
+      province: 'ON',
+      postalCode: 'L4K3X4',
+      price: 729_900,
+      rentMonthly: null,
+      beds: 3,
+      baths: 2,
+      sqft: 900,
+      propertyType: 'condo',
+      yearBuilt: null,
+      parkingSpots: 0,
+      condoFeeMonthly: 761,
+      condoFeeKnown: true,
+      annualTaxes: 3326,
+      description: null,
+      photos: [],
+      scrapedAt: new Date().toISOString(),
+      ...over,
+    } as Omit<Listing, 'id'>
+  }
+
+  it('inserts, never upserts, a listing entered by address', async () => {
+    // Regression: address-entered listings have no source URL, so they were all
+    // written with source_url = '' and every one collided on that single row.
+    // Each new address overwrote the previous listing and share tokens issued
+    // earlier silently repointed at a stranger's property.
+    const chain = makeQueryChain({ data: { id: 'listing-1' }, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await saveListing(listingFixture({ url: '' }), 'manual')
+
+    expect(chain.insert).toHaveBeenCalledTimes(1)
+    expect(chain.upsert).not.toHaveBeenCalled()
+  })
+
+  it('still upserts a scraped listing so re-analysing one page reuses its row', async () => {
+    const chain = makeQueryChain({ data: { id: 'listing-2' }, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await saveListing(
+      listingFixture({ url: 'https://www.realtor.ca/real-estate/28145902/x' }),
+      'realtor_ca'
+    )
+
+    expect(chain.upsert).toHaveBeenCalledTimes(1)
+    expect(chain.upsert.mock.calls[0][1]).toEqual({ onConflict: 'source_url' })
+    expect(chain.insert).not.toHaveBeenCalled()
+  })
+
+  it('gives two different addresses two different rows', async () => {
+    const first = makeQueryChain({ data: { id: 'listing-a' }, error: null })
+    const second = makeQueryChain({ data: { id: 'listing-b' }, error: null })
+    mockFrom.mockReturnValueOnce(first).mockReturnValueOnce(second)
+
+    const a = await saveListing(listingFixture({ address: '5 Buttermill Ave, Vaughan' }), 'manual')
+    const b = await saveListing(
+      listingFixture({ address: '88 Blue Jays Way, Toronto', url: '' }),
+      'manual'
+    )
+
+    expect(a).not.toBe(b)
   })
 })

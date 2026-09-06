@@ -25,7 +25,8 @@ function db(): DbClient {
 
 interface ListingRow {
   id: string
-  source_url: string
+  /** NULL when the listing came from a typed address rather than a scraped page. */
+  source_url: string | null
   source: string
   listing_type: string
   address: string
@@ -80,7 +81,11 @@ function listingToRow(
   source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
 ): Omit<ListingRow, 'id' | 'scraped_at'> {
   return {
-    source_url: listing.url,
+    // NULL, not '', when the listing came from a person rather than a page.
+    // source_url is UNIQUE: every empty string competes for one row, so '' made
+    // address-entered listings overwrite each other. Postgres treats NULLs as
+    // distinct. See migration 20260906_listings_source_url_nullable.sql.
+    source_url: listing.url === '' ? null : listing.url,
     source,
     listing_type: listing.listingType === 'for-sale' ? 'for_sale' : 'for_rent',
     address: listing.address,
@@ -112,7 +117,9 @@ function listingToRow(
 function rowToListing(row: ListingRow): Listing {
   return {
     id: row.id,
-    url: row.source_url,
+    // Listing.url is '' for address-entered listings — the domain type's way of
+    // saying "no source page", matching what POST /address/start writes.
+    url: row.source_url ?? '',
     listingType: row.listing_type === 'for_sale' ? 'for-sale' : 'for-rent',
     address: row.address,
     city: row.city ?? '',
@@ -706,11 +713,24 @@ export async function saveListing(
   source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
 ): Promise<string> {
   const payload = listingToRow(listing as Listing, source)
-  const { data, error } = await db()
-    .from('listings')
-    .upsert(payload, { onConflict: 'source_url' })
-    .select('id')
-    .single()
+
+  // Upserting on source_url deduplicates re-analyses of the same listing page,
+  // which is the whole point — for scraped listings.
+  //
+  // Listings entered by address have no source URL. They were all written with
+  // source_url = '', so every one of them collided on that single row: each new
+  // address overwrote the previous listing, and share tokens issued earlier
+  // silently repointed at a stranger's property. Two people analysing two
+  // addresses would see each other's.
+  //
+  // Without a URL there is nothing to deduplicate against, so insert instead.
+  const hasSourceUrl = payload.source_url !== '' && payload.source_url != null
+
+  const query = hasSourceUrl
+    ? db().from('listings').upsert(payload, { onConflict: 'source_url' })
+    : db().from('listings').insert(payload)
+
+  const { data, error } = await query.select('id').single()
 
   if (error != null || data == null) {
     throw new Error(`saveListing failed: ${error?.message ?? 'no data returned'}`)

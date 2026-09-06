@@ -53,6 +53,7 @@ import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
+import { toPersonalComps } from '../lib/comparableSales'
 import type {
   HomeScore,
   PersonalMonthlyCost,
@@ -1624,6 +1625,14 @@ export function PersonalBuyerPage({
   // a red flag must read as a real deduction, not the no-flags baseline.
   const flagsForScore = isReal ? realAnalysis!.riskFlags : undefined
 
+  // §03 Comparable sales. Fixtures are demo-only; a live report renders the
+  // sales the analysis actually returned, or the honest empty state when the
+  // provider has no coverage for this area.
+  const liveComps = useMemo(
+    () => (isReal ? toPersonalComps(realAnalysis!.comparableSales ?? []) : []),
+    [isReal, realAnalysis]
+  )
+
   const score = useMemo(
     () => computeHomeScore(property, schoolsForScore, neighbourhood, lightScore, flagsForScore),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1694,7 +1703,12 @@ export function PersonalBuyerPage({
         medianPPSqft={isReal ? undefined : 538}
         isEstimated={isReal}
       />
-      <PBSalesSection comps={PB_COMPS} isSampleData={isReal} />
+      <PBSalesSection
+        comps={PB_COMPS}
+        isSampleData={isReal}
+        liveComps={liveComps}
+        liveCompsAreSample={realAnalysis?.comparableSalesAreSample ?? false}
+      />
       <SchoolsSection
         isReal={isReal}
         realSchools={personalSchools}

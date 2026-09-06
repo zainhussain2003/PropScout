@@ -423,7 +423,7 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 - [x] Fair-market-value band low/mid/high derived from the comps' price per sqft
       (`deriveFmvBand`; returns null below 3 usable comps)
 - [ ] Render licence attribution in the report — most MLS feeds mandate it
-- [ ] Wire into investor §08 comparable sales + personal buyer `PBSalesSection`
+- [x] Wire into investor §08 comparable sales + personal buyer `PBSalesSection` (D-029)
 - [ ] Remove the honest empty state once real comps land
 - [x] Unit tests (21, incl. a live contract test against the real API)
 - [ ] Add a regression case with known comps

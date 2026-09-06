@@ -17,7 +17,20 @@ interface PBTrueCostSectionProps {
   monthly: PersonalMonthlyCost
 }
 
-function maintenanceNote(yearBuilt: number): string {
+/**
+ * Describe the maintenance reserve rate and the build era it came from.
+ *
+ * `yearBuilt` is 0 when the listing did not state one — address-entered
+ * listings never do. That used to fall through to the last branch and print
+ * "pre-1980 build", asserting an age we do not know about a building that may
+ * be brand new. The 1.5% rate is kept for the unknown case because it is the
+ * conservative choice, but the note says why rather than inventing an era.
+ *
+ * @param yearBuilt - year of construction, or 0 when unknown
+ * @returns the reserve rate with the reason for it
+ */
+export function maintenanceNote(yearBuilt: number): string {
+  if (yearBuilt <= 0) return '1.5% of value / yr · build year unknown'
   if (yearBuilt >= 2010) return '0.5% of value / yr · 2010+ build'
   if (yearBuilt >= 1980) return '1.0% of value / yr · 1980-era build'
   return '1.5% of value / yr · pre-1980 build'

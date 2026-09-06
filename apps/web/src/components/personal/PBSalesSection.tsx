@@ -10,21 +10,44 @@
 import type { PersonalComp } from '../../types/personal'
 import { SectionHead } from '../shared/SectionHead'
 import { fmtMoney } from '../../lib/investorCalc'
+import { medianOf } from '../../lib/comparableSales'
 
 interface PBSalesSectionProps {
+  /**
+   * Demo fixtures. Rendered only on the demo route; on a live report these are
+   * never shown, because they describe someone else's neighbourhood.
+   */
   comps: PersonalComp[]
   /**
-   * True in LIVE mode: there is no comparable-SALES data source yet (PropScout
-   * has no sold-price feed). We must NOT render the `comps` fixtures as if they
-   * were this listing's real neighbours — show the honest empty state instead.
-   * Only the demo route (isSampleData=false) renders the sample table.
+   * True in LIVE mode. The fixtures in `comps` must never be presented as this
+   * listing's real neighbours, so a live report renders `liveComps` if there
+   * are any and the honest empty state if there are not.
    */
   isSampleData?: boolean
+  /**
+   * Real comparable sales for this property, from the analysis payload. Empty
+   * when no sales feed is configured or the area has no coverage.
+   */
+  liveComps?: PersonalComp[]
+  /**
+   * True when `liveComps` came from the provider's sample coverage area rather
+   * than this property's neighbourhood. They are real sales, but not local
+   * ones, so the section says so rather than implying they are next door.
+   */
+  liveCompsAreSample?: boolean
 }
 
-export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionProps): JSX.Element {
-  // LIVE: no sold-price source exists — honest empty, never the fixture comps.
-  if (isSampleData) {
+export function PBSalesSection({
+  comps,
+  isSampleData = false,
+  liveComps = [],
+  liveCompsAreSample = false,
+}: PBSalesSectionProps): JSX.Element {
+  // A live report shows real comps when we have them, and nothing invented when
+  // we do not. Fixtures are for the demo route only.
+  const rows: PersonalComp[] = isSampleData ? liveComps : comps
+
+  if (rows.length === 0) {
     return (
       <section className="container tr-section">
         <SectionHead
@@ -50,13 +73,14 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
   }
 
   // Median by sold price (middle value of sorted array)
-  const sorted = [...comps].sort((a, b) => a.sold - b.sold)
+  const sorted = [...rows].sort((a, b) => a.sold - b.sold)
   const mid = Math.floor(sorted.length / 2)
   const median = sorted[mid]
 
-  // Median DOM (middle value of DOM-sorted array)
-  const sortedByDOM = [...comps].sort((a, b) => a.dom - b.dom)
-  const medianDOM = sortedByDOM[Math.floor(sortedByDOM.length / 2)].dom
+  // DOM and $/sqft can be missing on live comps — median over what is known,
+  // and null when nothing is, so the footer shows a dash instead of a zero.
+  const medianDOM = medianOf(rows.map((c) => c.dom))
+  const medianPpsqft = medianOf(rows.map((c) => c.ppsqft))
 
   const COLS = 'repeat(1, 2fr) 0.8fr 0.8fr 1fr 0.8fr 0.8fr'
 
@@ -70,11 +94,24 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
             What's <em>actually</em> selling around here?
           </>
         }
-        verdict={`${comps.length} sales · last 6 mo`}
+        verdict={`${rows.length} sales · last 6 mo`}
         tone="pass"
       />
 
-      {isSampleData && (
+      {isSampleData && liveCompsAreSample && (
+        <p
+          className="mono"
+          style={{
+            fontSize: 11,
+            color: 'var(--caution)',
+            letterSpacing: '0.12em',
+            marginBottom: 16,
+          }}
+        >
+          Real sales from the provider&apos;s sample coverage area — not this neighbourhood
+        </p>
+      )}
+      {!isSampleData && (
         <p
           className="mono"
           style={{
@@ -84,7 +121,7 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
             marginBottom: 16,
           }}
         >
-          Sample comparables · real sales data in Phase 2
+          Sample comparables · demo report
         </p>
       )}
 
@@ -117,14 +154,14 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
         </div>
 
         {/* Data rows */}
-        {comps.map((c, i) => (
+        {rows.map((c, i) => (
           <div
             key={c.addr}
             style={{
               display: 'grid',
               gridTemplateColumns: COLS,
               padding: '14px 24px',
-              borderBottom: i < comps.length - 1 ? '1px solid var(--line)' : 'none',
+              borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 'none',
               fontSize: 13.5,
               alignItems: 'center',
             }}
@@ -132,7 +169,7 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
             <div className="col" style={{ gap: 2 }}>
               <span style={{ color: 'var(--ink)' }}>{c.addr}</span>
               <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                {c.distance} · sold {c.soldDate}
+                {c.distance !== null ? `${c.distance} · ` : ''}sold {c.soldDate}
               </span>
             </div>
             <span className="mono tabular" style={{ textAlign: 'right', color: 'var(--ink)' }}>
@@ -145,10 +182,10 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
               {fmtMoney(c.sold)}
             </span>
             <span className="mono tabular" style={{ textAlign: 'right', color: 'var(--ink-2)' }}>
-              ${c.ppsqft}
+              {c.ppsqft !== null ? `$${c.ppsqft}` : '—'}
             </span>
             <span className="mono tabular" style={{ textAlign: 'right', color: 'var(--ink-2)' }}>
-              {c.dom}d
+              {c.dom !== null ? `${c.dom}d` : '—'}
             </span>
           </div>
         ))}
@@ -186,10 +223,10 @@ export function PBSalesSection({ comps, isSampleData = false }: PBSalesSectionPr
             {fmtMoney(median.sold)}
           </span>
           <span className="mono tabular" style={{ textAlign: 'right', color: 'var(--accent)' }}>
-            ${median.ppsqft}
+            {medianPpsqft !== null ? `$${medianPpsqft}` : '—'}
           </span>
           <span className="mono tabular" style={{ textAlign: 'right', color: 'var(--accent)' }}>
-            {medianDOM}d
+            {medianDOM !== null ? `${medianDOM}d` : '—'}
           </span>
         </div>
       </div>

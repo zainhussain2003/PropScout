@@ -77,9 +77,18 @@ export interface PersonalComp {
   sqft: number
   sold: number
   soldDate: string // e.g. 'Apr 2026'
-  dom: number
-  ppsqft: number
-  distance: string // e.g. '0.05 km'
+  /**
+   * Days on market, or null when the source does not publish it.
+   *
+   * Nullable because the live MLS feed carries sold price and date but not DOM.
+   * A sentinel number (0, -1) would render as a real figure in the table and be
+   * indistinguishable from a same-day sale, so the absence is typed instead.
+   */
+  dom: number | null
+  /** Price per square foot, or null when the comp had no usable square footage. */
+  ppsqft: number | null
+  /** e.g. '0.05 km'; null when the source gives no distance from the subject. */
+  distance: string | null
 }
 
 // ── Neighbourhood ─────────────────────────────────────────────────────────────
