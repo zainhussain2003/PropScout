@@ -54,8 +54,16 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     # Parking included
     (
         "parking_included",
+        # "includes one dedicated parking space" and "Complete with one
+        # dedicated parking space" both appear in scraped listings; the
+        # qualifier between "one" and "parking" defeated the original wording.
+        #
+        # The count/article prefix is required so "no parking space" (gc-018)
+        # and "Parking may be rented from the property manager" (gc-017) stay
+        # negative.
         re.compile(
-            r"\b(parking included|includes parking|one parking|1 parking|underground parking)\b",
+            r"\b(parking included|includes parking|one parking|1 parking|underground parking"
+            r"|(one|1|a)\s+(dedicated|assigned|owned|designated)\s+parking\s+(space|spot))\b",
             re.IGNORECASE,
         ),
         85,
@@ -81,8 +89,17 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     # Utilities
     (
         "utilities_included",
+        # "Maintenance Fee Includes All Utilities And Cable TV" and "Maintenance
+        # Fees Include Hydro And Cable" both appear in scraped listings and both
+        # missed the original wording.
+        #
+        # Restricted to hydro / heat / "all utilities" on purpose. A fee that
+        # includes water alone is not utilities-included in any sense that
+        # changes the monthly cost — "Condo fee includes water and building
+        # insurance" (golden case gc-001) must stay negative.
         re.compile(
-            r"\b(all utilities included|heat and hydro included|utilities incl)\b",
+            r"\b(all utilities included|heat and hydro included|utilities incl"
+            r"|fees?\s+includes?\s+[^.]{0,40}?(hydro|heat|all utilities))\b",
             re.IGNORECASE,
         ),
         90,
@@ -107,8 +124,17 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     ),
     (
         "recently_renovated",
+        # The qualifier list comes from real Realtor.ca prose, not invention:
+        # "Fully Renovated", "Completely Renovated In 2023" and "Professionally
+        # renovated in May 2025" all appear in scraped listings and all slipped
+        # past the original "newly renovated" wording.
+        #
+        # A qualifier is required. Bare "renovated" would fire on "renovated in
+        # 1998", which is not a selling point and not what this flag means.
         re.compile(
-            r"\b(newly renovated|recently updated|gut renovation"
+            r"\b((newly|recently|fully|completely|professionally|extensively|just)\s+"
+            r"renovated|recently updated|gut renovation|extensive renovations"
+            r"|renovated in (19|20)\d\d"
             r"|brand new (kitchen|bath|floors))\b",
             re.IGNORECASE,
         ),

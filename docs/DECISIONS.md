@@ -1142,6 +1142,61 @@ this set rather than sit alongside it.
 
 ---
 
+### D-033 · The golden dataset is validated against real listings, not just itself
+
+**What was asked.** Whether the expanded golden dataset (D-032) is _reliable_.
+
+**Finding: it was not, as evidence about real listings.** The dataset passed at
+100%, but I wrote both the cases and the patterns, so the cases used the exact
+vocabulary the patterns already matched. That is circular — it proves the rules
+are self-consistent, not that they work.
+
+**How it was checked.** Ran the extractor over the **22 real Realtor.ca
+descriptions** already in the `listings` table (average ~1,000 characters).
+Only **6 of 22** fired any flag. Inspecting the silent 16 showed genuine misses,
+not clean listings:
+
+| Real phrasing (verbatim from scraped listings) | Should fire          | Did fire |
+| ---------------------------------------------- | -------------------- | -------- |
+| "Fully Renovated Two-Bedroom Condo"            | `recently_renovated` | no       |
+| "Completely Renovated In 2023"                 | `recently_renovated` | no       |
+| "Professionally renovated in May 2025"         | `recently_renovated` | no       |
+| "Maintenance Fees Include Hydro And Cable"     | `utilities_included` | no       |
+| "The Maintenance Fee Includes All Utilities"   | `utilities_included` | no       |
+| "one dedicated parking space"                  | `parking_included`   | no       |
+
+Only `newly renovated` was matched; every other way a listing says the same
+thing was invisible.
+
+**Fixed.** Widened the three patterns against that evidence and locked the real
+phrasings in as golden cases gc-052…gc-058. Real-world recall went **6/22 →
+10/22** while the synthetic set stayed at 100%, which is the check that matters:
+the wider patterns did **not** start over-matching. Specifically `gc-001`
+("Condo fee includes water and building insurance") stays negative — the
+utilities rule is deliberately limited to hydro, heat and "all utilities",
+because water alone does not change the monthly cost — and gc-017/gc-018
+("parking may be rented", "no parking space") stay negative too.
+
+**A qualifier is required for renovation.** Bare `renovated` would fire on
+"renovated in 1998", which is not what the flag means. The list of qualifiers is
+taken from observed prose, not invented.
+
+**Still true, and worth repeating.** 22 listings is a small sample from a
+handful of Toronto FSAs. It is enough to disprove "the rules work on real
+prose"; it is not enough to prove they do. The set should grow as the scraper
+runs, and gc-052…gc-058 are marked as real-derived so the distinction survives.
+
+**Alternatives considered**
+
+| Option                                         | Why not                                                                                                                    |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Trust the 100% synthetic pass                  | Circular. It was 100% before the pets contradiction was found too.                                                         |
+| Match bare "renovated" / "parking"             | Fires on "renovated in 1998" and "no parking space". Recall bought with false positives is a bad trade.                    |
+| Mutation-test the patterns instead             | Would show the dataset constrains the regex, but still never leaves the vocabulary I chose. Real prose is the harder test. |
+| Wait for a larger scrape before touching rules | Six concrete misses were already in hand. Fixing them now is strictly better than fixing them later.                       |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.
