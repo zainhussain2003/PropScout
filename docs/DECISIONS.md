@@ -900,6 +900,78 @@ against current tokens, which is a design task rather than a code one.
 
 ---
 
+### D-026 · The hero leads with a verdict, not a stock image
+
+**Chosen.** Split the hero into two columns: the headline and the input on the
+left, and on the right a small card showing a real product output — a deal score
+of 15, "Hard pass", against a $3.5M Mississauga listing with −$23,534/mo cash
+flow. Added one contrastive line under the `<h1>` in Instrument Serif and
+`--accent`: _"We don't list properties. We tell you whether to buy one."_
+
+**Why.** The reference the user supplied (nothtechnologygroup.com) works on two
+devices: a short contrastive claim that says what the company is _not_, and a
+cinematic hero. The claim transfers directly. The cinematic part does not — its
+imagery is a stock close-up of an eye, which is the single most worn AI-company
+trope; copying it would land us exactly where the user said not to be.
+
+The honest translation is to make the hero image _the thing the product
+produces_. Nobody else scores a Canadian listing and makes a call on it, so the
+verdict card is both the most distinctive asset we have and a truthful preview.
+
+**Deliberately a bad score.** The showcase verdict is a hard pass, not a
+recommendation. A tool that only ever shows good news is an advert, not an
+advisor, and the product's entire claim is that it will tell you not to buy.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Full-bleed photograph of a house or skyline | Every real-estate site on earth opens this way; it says "listings", which is the one thing we are not.         |
+| Abstract gradient / mesh hero               | The exact "AI-looking" surface the user asked to move away from, and it proves nothing about the product.      |
+| Keep the single-column typographic hero     | Was working, but the first product evidence sat two full screens down. The strongest asset was below the fold. |
+| Show a strong score (e.g. 78) instead       | Reads as marketing. The hard pass is more distinctive and more honest about what the product is for.           |
+
+---
+
+### D-027 · The showcase's largest panel shows a rent distribution, not an empty map
+
+**Chosen.** Replaced the 200px placeholder box inside the showcase "Rent
+positioning" card — a grey rectangle captioned _"Toronto · M4Y · 1km radius"_ —
+with a distribution of the 36 comps behind the quoted range: ten $50 buckets
+from $1,800 to $2,300, the market-mid bucket in `--accent`, the asking-rent
+bucket in `--caution`.
+
+**Why.** It was the biggest single element in the page's only piece of product
+proof, and it rendered as a rectangle with nothing in it. To a first-time
+visitor that reads as unfinished software, which undoes everything the rest of
+the page is arguing.
+
+A map would have been the wrong replacement twice over. The showcase already
+renders a real Mapbox comps map in the column beside this one, so it would have
+been a duplicate; and a map answers _where_, while the panel is titled "Rent
+positioning" and is asking _how much_.
+
+The distribution answers it, and it carries the argument the panel exists to
+make: the mass of the building sits in the low $1,900s and this ask is out in a
+thin tail with three comps behind it. That is the negotiation case, and it is
+precisely what a listing site will never show you.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Render a second real Mapbox map                  | Duplicates the comps map already in the adjacent column, and costs a tile request on every landing-page view.                                                           |
+| Keep the placeholder, restyle it                 | The problem is that it is empty, not that it is ugly.                                                                                                                   |
+| Drop the panel and let the range bar stand alone | The range bar gives three numbers with no sense of shape; "$2,150 against a $1,800–$2,300 range" sounds unremarkable until you see that almost nothing trades up there. |
+| Wire it to live comp data                        | The landing page must render identically for everyone and is snapshot-tested; live data would make it flaky and slow.                                                   |
+
+**Also changed.** The closing CTA read _"Stop building the spreadsheet again.
+Paste the URL."_ Since D-020 the input takes an address too, so the page was
+contradicting itself between the hero and the footer. Now: _"Paste a link, or
+type an address."_
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

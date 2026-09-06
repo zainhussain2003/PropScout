@@ -204,6 +204,103 @@ function ShowcaseRentalCompsBar({ low, mid, high, ask }: ShowcaseRentalCompsBarP
   )
 }
 
+/**
+ * The 36 comps behind the rent range, as a distribution.
+ *
+ * This slot used to be a 200px empty grey box captioned "Toronto · M4Y · 1km
+ * radius" — a placeholder for a map. It sat in the largest panel of the landing
+ * page's one piece of product proof, so the first real thing a visitor studied
+ * was a rectangle with nothing in it. A map was also the wrong answer twice
+ * over: the showcase already renders a real comps map in the column beside
+ * this, and a map answers "where", while the panel is titled "Rent positioning"
+ * and is asking "how much".
+ *
+ * A distribution answers it. It shows the shape of the market — that most of
+ * the building sits in the low $1,900s and the ask is out in a thin tail — which
+ * is the argument for negotiating, and the thing a listing site never shows you.
+ *
+ * Figures are fixed sample data for the showcase, consistent with the 14
+ * building + 22 nearby comps quoted above the panel.
+ */
+const SHOWCASE_RENT_BUCKETS = [2, 3, 5, 7, 6, 4, 3, 3, 2, 1] as const
+const SHOWCASE_BUCKET_LOW = 1800
+const SHOWCASE_BUCKET_WIDTH = 50
+
+interface ShowcaseRentDistributionProps {
+  /** Market mid — drawn as the reference line. */
+  mid: number
+  /** This unit's asking rent — the highlighted bucket. */
+  ask: number
+}
+function ShowcaseRentDistribution({ mid, ask }: ShowcaseRentDistributionProps): JSX.Element {
+  const bucketOf = (v: number): number =>
+    Math.floor((v - SHOWCASE_BUCKET_LOW) / SHOWCASE_BUCKET_WIDTH)
+  const askBucket = bucketOf(ask)
+  const midBucket = bucketOf(mid)
+  const tallest = Math.max(...SHOWCASE_RENT_BUCKETS)
+
+  return (
+    <div className="col gap-8">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${SHOWCASE_RENT_BUCKETS.length}, 1fr)`,
+          alignItems: 'end',
+          gap: 4,
+          height: 132,
+        }}
+      >
+        {SHOWCASE_RENT_BUCKETS.map((count, i) => {
+          const isAsk = i === askBucket
+          const isMid = i === midBucket
+          return (
+            <div key={i} className="col" style={{ justifyContent: 'flex-end', height: '100%' }}>
+              <span
+                className="mono tabular"
+                style={{
+                  fontSize: 10,
+                  textAlign: 'center',
+                  marginBottom: 4,
+                  color: isAsk ? 'var(--caution)' : 'var(--muted)',
+                }}
+              >
+                {count}
+              </span>
+              <div
+                style={{
+                  height: `${(count / tallest) * 100}%`,
+                  borderRadius: 4,
+                  // The asking rent is the point of the panel, so it is the only
+                  // bar that carries a verdict colour. The market mid is marked
+                  // but not judged.
+                  background: isAsk
+                    ? 'var(--caution)'
+                    : isMid
+                      ? 'var(--accent)'
+                      : 'color-mix(in oklab, var(--accent) 22%, transparent)',
+                }}
+              />
+            </div>
+          )
+        })}
+      </div>
+      {/* Endpoints are deliberately absent: the range bar directly below this
+          already prints $1,800 and $2,300, and repeating them read as a bug. */}
+      <div
+        className="mono"
+        style={{
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          color: 'var(--muted)',
+          textAlign: 'center',
+        }}
+      >
+        36 COMPS · 90 DAYS · 1KM RADIUS
+      </div>
+    </div>
+  )
+}
+
 interface ShowcaseAIVerdictBlockProps {
   addr: string
   headline: ReactNode
@@ -534,37 +631,108 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
       >
         <div className="container col gap-32">
           {/* Headline strip */}
-          <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
-            <div className="row gap-12" style={{ marginBottom: 24 }}>
-              <span className="chip" style={{ background: 'transparent' }}>
-                <span
-                  style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
-                  className="live-dot"
-                />
-                Live in Ontario
-              </span>
-              <span className="chip">v0.9 · MVP preview</span>
+          {/* Two columns on desktop: the claim on the left, an actual verdict on the
+              right. The reference site leads with a cinematic stock image; the more
+              honest equivalent here is the thing the product produces. Nobody else
+              gives a Canadian listing a score and a hard call, so showing one is
+              both the differentiator and the proof. Collapses to one column on a
+              phone, where the verdict follows the claim. */}
+          <div className="hero-split">
+            <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
+              <div className="row gap-12" style={{ marginBottom: 24 }}>
+                <span className="chip" style={{ background: 'transparent' }}>
+                  <span
+                    style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
+                    className="live-dot"
+                  />
+                  Live in Ontario
+                </span>
+                <span className="chip">v0.9 · MVP preview</span>
+              </div>
+
+              <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
+                Know what a Canadian listing is
+                <br />
+                worth before you sign anything.
+              </h1>
+
+              {/* One contrastive line, borrowed in form from the reference's "We
+                don't just install AI. We run the workflow." Says what we are not,
+                then what we are — which is also the thing that keeps us from
+                drifting into being another listings portal. */}
+              <p
+                className="serif"
+                style={{
+                  fontSize: clampStr(19, 25),
+                  lineHeight: 1.3,
+                  color: 'var(--accent)',
+                  marginTop: 18,
+                  maxWidth: 640,
+                }}
+              >
+                We don&apos;t list properties. We tell you whether to buy one.
+              </p>
+
+              <p
+                style={{
+                  fontSize: clampStr(17, 21),
+                  maxWidth: 720,
+                  color: 'var(--ink-2)',
+                  marginTop: 22,
+                }}
+              >
+                Paste a listing link, or just type the address. In under a minute you get rental
+                comps from live Ontario data, true monthly costs with the OSFI stress test applied,
+                risk flags, and a written verdict. Built for Canadian rules — semi-annual
+                compounding, land transfer tax, CMHC — not US math with a maple leaf on it.
+              </p>
             </div>
 
-            <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
-              Know what a Canadian listing is
-              <br />
-              worth before you sign anything.
-            </h1>
-
-            <p
-              style={{
-                fontSize: clampStr(17, 21),
-                maxWidth: 720,
-                color: 'var(--ink-2)',
-                marginTop: 22,
-              }}
-            >
-              Paste a listing link, or just type the address. In under a minute you get rental comps
-              from live Ontario data, true monthly costs with the OSFI stress test applied, risk
-              flags, and a written verdict. Built for Canadian rules — semi-annual compounding, land
-              transfer tax, CMHC — not US math with a maple leaf on it.
-            </p>
+            {/* A real verdict from a real analysis — the $3.499M Byngmount listing
+                that scores 15/100 as a rental. Deliberately a bad score: a tool
+                that only ever shows good news is an advert, not an advisor. */}
+            <aside className="hero-verdict" aria-label="Example verdict">
+              <div
+                className="card col"
+                style={{ padding: 28, gap: 14, alignItems: 'center', textAlign: 'center' }}
+              >
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'var(--muted)',
+                  }}
+                >
+                  A verdict, not a listing
+                </span>
+                <ShowcaseDealScore score={15} size={148} label="Deal score" />
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--fail)',
+                  }}
+                >
+                  Hard pass
+                </span>
+                <p
+                  style={{
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
+                    color: 'var(--ink-2)',
+                    margin: 0,
+                    maxWidth: 240,
+                  }}
+                >
+                  A $3.5M Mississauga listing, underwritten as a rental. Cash flow −$23,534/mo. We
+                  say so.
+                </p>
+              </div>
+            </aside>
           </div>
 
           {/* Main URL input card */}
@@ -1136,39 +1304,34 @@ function ReportShowcase(): JSX.Element {
 
             {/* Rent positioning */}
             <div className="card col gap-20" style={{ padding: 24 }}>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <h4
-                  className="serif"
-                  style={{ fontSize: 22, whiteSpace: 'nowrap', paddingRight: 8 }}
-                >
+              {/* Wraps on a phone: at 375px the nowrap heading and the comp
+                  count collided, and the meta line broke mid-phrase beside it. */}
+              <div
+                className="row"
+                style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}
+              >
+                <h4 className="serif" style={{ fontSize: 22, paddingRight: 8 }}>
                   Rent positioning
                 </h4>
                 <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
                   14 building comps · 22 nearby · 90d
                 </span>
               </div>
-              {/* MiniMap placeholder */}
-              <div
-                style={{
-                  height: 200,
-                  borderRadius: 10,
-                  background: 'var(--bg-elev)',
-                  border: '1px solid var(--line)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  Toronto · M4Y · 1km radius
-                </span>
-              </div>
+              <ShowcaseRentDistribution mid={1950} ask={2150} />
               <ShowcaseRentalCompsBar low={1800} mid={1950} high={2300} ask={2150} />
             </div>
 
             {/* Listing accuracy */}
             <div className="card col gap-4" style={{ padding: 24 }}>
-              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+              <div
+                className="row"
+                style={{
+                  justifyContent: 'space-between',
+                  marginBottom: 8,
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}
+              >
                 <h4 className="serif" style={{ fontSize: 22 }}>
                   Listing accuracy
                 </h4>
@@ -2528,7 +2691,7 @@ function CTASection(): JSX.Element {
               { color: 'var(--bg)', textWrap: 'balance', marginBottom: 24 } as React.CSSProperties
             }
           >
-            Stop building the spreadsheet again. Paste the URL.
+            Stop building the spreadsheet again. Paste a link, or type an address.
           </h2>
           <p
             style={{

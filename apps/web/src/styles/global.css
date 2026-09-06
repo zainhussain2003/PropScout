@@ -905,3 +905,29 @@ body::-webkit-scrollbar-thumb {
   accent-color: var(--accent);
   cursor: pointer;
 }
+
+/* ── Hero split ──────────────────────────────────────────────────
+   Claim on the left, a real verdict on the right. One column below 900px so a
+   phone reads the claim first and meets the verdict straight after, rather than
+   squeezing a 148px gauge alongside a 40px headline. */
+.hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.85fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: center;
+}
+.hero-verdict {
+  justify-self: end;
+  width: 100%;
+  max-width: 340px;
+}
+
+@media (max-width: 900px) {
+  .hero-split {
+    grid-template-columns: 1fr;
+  }
+  .hero-verdict {
+    justify-self: stretch;
+    max-width: none;
+  }
+}
