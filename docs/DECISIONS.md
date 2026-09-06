@@ -450,6 +450,57 @@ comparable-sales source exists yet rather than estimating one.
 
 ---
 
+### D-015 · Comparable sales built against Repliers' US sample data
+
+**Chosen.** Built the full integration — `comparableSalesService.ts`, the
+`ComparableSale` type, wiring through the analysis route, persistence in the
+`market_data` blob, 21 tests — against the free Repliers key, which returns **US
+sample data only**.
+
+**Why.** The free key covers WA, CO, TN, FL, NC, MO, TX, KS, SC, OK and has **zero
+Canadian listings** (`?city=Toronto` returns 0). But the record shape is identical
+to production — `soldPrice`, `soldDate`, `lastStatus: Sld`, `details.numBedrooms /
+numBathrooms / sqft`, `map.latitude/longitude` — and the API accepts exactly the
+query the spec calls for (`lat`/`long`/`radius`, `status=U&lastStatus=Sld`). So the
+integration can be written and genuinely proven now, and going live is a key
+change rather than a code change.
+
+Reversing the earlier position in D-014 (don't build before the provider is
+chosen) is deliberate: the provider **is** now chosen, and a real key with a real
+response shape removes the risk that motivated waiting.
+
+**What this does and does not buy.** Every Ontario report still shows the honest
+empty state, because there is no Canadian data behind the key. That is correct
+behaviour, not a bug — and it is why the live test uses Tacoma coordinates: a
+Toronto lat/long would return `[]` and prove nothing.
+
+**Alternatives considered**
+
+| Option                                         | Why not                                                                                                                               |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Wait for the paid plan before writing any code | Pays for a feed before knowing the integration works. Building first means the upgrade is a one-line change with tests already green. |
+| Point the live test at Toronto                 | Would return `[]` and pass vacuously, testing nothing.                                                                                |
+| Mock everything, skip live tests               | Exactly how the Bank of Canada endpoint rotted silently for months (D-001).                                                           |
+
+**Design choices inside the service**
+
+- **12-month cap on comps.** A two-year-old sale says little about today's market;
+  a stale comp is worse than one fewer comp.
+- **Unusable rows are dropped, not blanked.** A row with no sale price, address or
+  date is discarded rather than rendered with a gap — same rule as D-004.
+- **FMV band uses price per sqft, not raw price**, so a 600 sqft condo is not
+  compared against a 2,000 sqft house on the same street. It returns null below
+  three usable comps: two points is not a distribution, and a band drawn from them
+  would look authoritative while meaning nothing.
+- **Radius stays at 1km** per spec §7.3, even though it is sparse in low-density
+  areas — the live test needed dense coordinates to find any. If real Ontario data
+  proves 1km too tight, widen it deliberately rather than by accident.
+
+**Still needed to ship**: a Repliers plan covering TRREB/Ontario, and the licence's
+required attribution string (most MLS feeds mandate a "Data provided by…" line).
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

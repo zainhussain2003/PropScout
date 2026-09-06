@@ -412,18 +412,20 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 
 ### Once a provider is chosen
 
-- [ ] Decide provider (see `docs/ACCESS_SETUP.md` §2) — **needs Zain**
-- [ ] Obtain API key + base URL + required attribution string — **needs Zain**
-- [ ] `comparableSalesService.ts` in `apps/api/src/services/` — one file per external
-      API, so swapping provider later is a one-file change
+- [x] Provider decided: **Repliers**
+- [x] API key obtained (free tier) — **still needs**: a plan covering TRREB/Ontario,
+      and the licence's required attribution string
+- [x] `comparableSalesService.ts` in `apps/api/src/services/` — Repliers; swapping
+      provider later is a one-file change
 - [ ] `comparable_sales` table + migration (address, sale price, sqft, beds/baths,
       sale date, price per sqft, source, fetched_at)
-- [ ] Query: last 10 sales within 1km, same property type (spec §7.3)
-- [ ] Fair-market-value band low/mid/high derived from the comps
+- [x] Query: last 10 sales within 1km, sold within 12 months (spec §7.3)
+- [x] Fair-market-value band low/mid/high derived from the comps' price per sqft
+      (`deriveFmvBand`; returns null below 3 usable comps)
 - [ ] Render licence attribution in the report — most MLS feeds mandate it
 - [ ] Wire into investor §08 comparable sales + personal buyer `PBSalesSection`
 - [ ] Remove the honest empty state once real comps land
-- [ ] Unit + functionality tests; sanity check FMV band is within 0.5×–2× asking
+- [x] Unit tests (21, incl. a live contract test against the real API)
 - [ ] Add a regression case with known comps
 
 ### Interim behaviour (shipped)

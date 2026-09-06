@@ -148,6 +148,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     schools?: Analysis['schools']
     nearbyDistances?: Analysis['nearbyDistances']
     neighbourhoodStats?: Analysis['neighbourhoodStats']
+    comparableSales?: Analysis['comparableSales']
     hasSanityWarnings?: boolean
   } | null
   const dealScore = marketData?.dealScore ?? null
@@ -180,6 +181,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     schools: marketData?.schools ?? null,
     nearbyDistances: marketData?.nearbyDistances ?? null,
     neighbourhoodStats: marketData?.neighbourhoodStats ?? null,
+    comparableSales: marketData?.comparableSales ?? [],
   }
 }
 
@@ -271,6 +273,7 @@ export async function saveAnalysis(
         schools: analysis.schools ?? null,
         nearbyDistances: analysis.nearbyDistances ?? null,
         neighbourhoodStats: analysis.neighbourhoodStats ?? null,
+        comparableSales: analysis.comparableSales ?? [],
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,
@@ -813,6 +816,7 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
         schools: analysis.schools ?? null,
         nearbyDistances: analysis.nearbyDistances ?? null,
         neighbourhoodStats: analysis.neighbourhoodStats ?? null,
+        comparableSales: analysis.comparableSales ?? [],
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,

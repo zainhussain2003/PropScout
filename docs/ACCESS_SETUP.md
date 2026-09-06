@@ -10,7 +10,30 @@ Legend: 🔴 blocks a feature · 🟡 unblocks polish · ⚪ no rush
 
 ---
 
-## 1. 🟡 Stripe — set up now, activate later
+## 1. ✅ Stripe — DONE (test mode), local only
+
+**Completed 2026-09-06.** Three CAD monthly recurring products created in the
+sandbox, all six env vars set in local `.env`, and a webhook endpoint created via
+the API. Verified end to end: a real test checkout session returns 1000 CAD and a
+`checkout.stripe.com` URL.
+
+| Product          | Price ID                         |
+| ---------------- | -------------------------------- |
+| Investor Pro $10 | `price_1UCULC3XJvDRet2zdpU64iIf` |
+| Professional $59 | `price_1UCUNM3XJvDRet2zN2lWVm4W` |
+| Team / REIT $299 | `price_1UCUOH3XJvDRet2zXLt7SVVg` |
+
+Webhook `we_1UCUWG3XJvDRet2zyIAZ9SdD` → `…/webhooks/stripe`, enabled, listening for
+`checkout.session.completed`, `customer.subscription.updated`,
+`customer.subscription.deleted`.
+
+**Deliberately NOT added to Railway.** Billing stays dormant in production, which
+is what "in place for later, not activated" means — the API returns 503
+`BILLING_UNAVAILABLE` there (D-013). Copy the six values into the Railway
+`@propscout/api` service whenever you want paid plans live. Swap `sk_test_`/
+`pk_test_` for live keys only when you actually intend to charge people.
+
+### Original setup steps (kept for reference / redoing in live mode)
 
 The code is **already complete**: `stripeService.ts` (checkout + billing portal),
 `POST /billing/checkout`, `POST /billing/portal`, and a signature-verified
