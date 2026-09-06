@@ -1278,6 +1278,73 @@ reliably from this environment.
 
 ---
 
+### D-036 · Depth and motion become tokens; a report gets a section rail
+
+**Asked for:** modern and appealing to use, explicitly _not_ cinematic.
+
+**What was actually missing.** The token file had **two** shadows, three tight
+radii, and **no motion tokens at all**. `.card` — the single most repeated
+surface in the product, dozens per report — had no transition and no hover
+state. Every surface therefore sat at the same depth and nothing responded to
+being touched. That is why better formatting still read as "the same look":
+the page was well arranged and completely inert.
+
+**Chosen.**
+
+1. **A three-level elevation scale** (`--shadow-sm` / `--shadow-card` /
+   `--shadow-raised`), each a tight contact shadow plus a wide soft one. The
+   contact shadow is what stops a card looking pasted onto the background. Dark
+   mode carries depth through an inset top highlight instead, because a shadow
+   on a dark ground reads as nothing.
+2. **Motion tokens** — `--ease`, `--dur-fast`, `--dur`, `--dur-slow`. These
+   timings were already specified in CLAUDE.md but retyped at every call site,
+   so they had drifted from 0.12s to 0.3s across components.
+3. **Radii up one step** (6/12/18 → 8/14/20). The cheapest single change that
+   stops a dense data page reading like an internal admin tool.
+4. **`.card-interactive`**, deliberately separate from `.card`. Almost no report
+   card is clickable; giving every one a hover lift would promise an
+   interaction that is not there, which is worse than being inert.
+5. **`ReportSectionRail`** — a fixed rail in the left margin listing the
+   report's sections, tracking the reader on scroll and jumping on click.
+
+**Why the rail is the "appealing to use" half.** A report is eleven sections and
+several thousand pixels of dense numbers, and the only way through it was to
+scroll and hope — no sense of how much was left, which section you were in, or
+how to get back to one. The rail gives the document a visible shape.
+
+It **reads the DOM rather than keeping a list**: sections come from
+`[data-section]` and labels from a `data-section-topic` that `SectionHead` now
+emits, so a section added, removed or renamed appears correctly with no second
+place to update. A hardcoded table of contents would drift silently.
+
+**Deliberate limits.**
+
+- Labels appear only above 1620px. At 1440px the margin is 80px, so a 190px
+  label would sit on top of the report; below that the rail stays a column of
+  numbers, which still answers "where am I" and "how much is left".
+- Hidden below 1240px — it lives in a margin that does not exist on a phone.
+- A scroll listener, not `IntersectionObserver`: sections are taller than the
+  viewport, so several intersect at once and the observer cannot say which one
+  is being read without re-deriving positions anyway.
+- `prefers-reduced-motion` keeps the colour and shadow changes and drops the
+  transform. The state change is information; being moved around is not.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Full-bleed cinematic sections, scroll motion | Explicitly ruled out. It also does not transfer: most of the surface is a report, not a landing page.                         |
+| Restyle the type scale and palette           | The palette is PR10's measured, contrast-checked system. Changing it to look different would trade accessibility for novelty. |
+| Hover lift on every `.card`                  | Implies clickability across dozens of inert surfaces.                                                                         |
+| A horizontal sticky tab bar of sections      | Eats vertical space on every screen and truncates at eleven sections.                                                         |
+| Hardcode the rail's section list             | Drifts the moment a section is renamed, and silently.                                                                         |
+
+**Not claimed.** This is a foundation and one navigational addition. The report's
+own visual identity — the score card is still nine rows of small grey text
+around an underplayed gauge — is untouched and is the obvious next move.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

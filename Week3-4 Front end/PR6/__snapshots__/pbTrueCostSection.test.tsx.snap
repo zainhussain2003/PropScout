@@ -6,6 +6,8 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
 >
   <div
     class="tr-section-head"
+    data-section-n="01"
+    data-section-topic="True monthly cost"
   >
     <div
       class="col gap-12"

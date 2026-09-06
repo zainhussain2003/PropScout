@@ -6,6 +6,8 @@ exports[`PBSalesSection > matches snapshot 1`] = `
 >
   <div
     class="tr-section-head"
+    data-section-n="03"
+    data-section-topic="Comparable sales"
   >
     <div
       class="col gap-12"

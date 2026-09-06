@@ -27,6 +27,7 @@ import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
+import { ReportSectionRail } from '../components/shared/ReportSectionRail'
 import { Icon } from '../components/shared/Icon'
 import { SectionHead } from '../components/shared/SectionHead'
 import { PropertyHero } from '../components/analysis/PropertyHero'
@@ -1169,6 +1170,10 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
           </div>
         </>
       )}
+
+      {/* Desktop-only map of the document; renders nothing until the report's
+          sections exist, and nothing at all on narrow screens. */}
+      <ReportSectionRail scanKey={analysis?.token ?? null} />
 
       <StickyActionBar
         onShare={() => void navigator.clipboard.writeText(window.location.href)}

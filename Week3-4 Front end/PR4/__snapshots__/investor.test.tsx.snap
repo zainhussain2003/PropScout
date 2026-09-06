@@ -393,6 +393,8 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
 >
   <div
     class="tr-section-head"
+    data-section-n="01"
+    data-section-topic="Investment metrics"
   >
     <div
       class="col gap-12"
@@ -1078,6 +1080,8 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
 >
   <div
     class="tr-section-head"
+    data-section-n="08"
+    data-section-topic="Neighbourhood"
   >
     <div
       class="col gap-12"
@@ -1619,6 +1623,8 @@ exports[`STRPlaceholderSection > matches snapshot 1`] = `
 >
   <div
     class="tr-section-head"
+    data-section-n="10"
+    data-section-topic="STR vs LTR"
   >
     <div
       class="col gap-12"

@@ -828,6 +828,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="01"
+      data-section-topic="True monthly cost"
     >
       <div
         class="col gap-12"
@@ -1282,6 +1284,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="02"
+      data-section-topic="Fair market value"
     >
       <div
         class="col gap-12"
@@ -1519,6 +1523,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="03"
+      data-section-topic="Comparable sales"
     >
       <div
         class="col gap-12"
@@ -2065,6 +2071,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="04"
+      data-section-topic="Schools"
     >
       <div
         class="col gap-12"
@@ -2994,6 +3002,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="05"
+      data-section-topic="Neighbourhood"
     >
       <div
         class="col gap-12"
@@ -3505,6 +3515,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="06"
+      data-section-topic="SunScout"
     >
       <div
         class="col gap-12"
@@ -4002,6 +4014,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="07"
+      data-section-topic="Risks & conditions"
     >
       <div
         class="col gap-12"
@@ -4147,6 +4161,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="09"
+      data-section-topic="Before you bid"
     >
       <div
         class="col gap-12"

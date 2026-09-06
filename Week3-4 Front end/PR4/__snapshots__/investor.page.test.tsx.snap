@@ -2280,6 +2280,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="01"
+          data-section-topic="Investment metrics"
         >
           <div
             class="col gap-12"
@@ -2779,6 +2781,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="02"
+          data-section-topic="Financing scenarios"
         >
           <div
             class="col gap-12"
@@ -3202,6 +3206,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="03"
+          data-section-topic="Rental comps"
         >
           <div
             class="col gap-12"
@@ -3424,6 +3430,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="04"
+          data-section-topic="Cash to close"
         >
           <div
             class="col gap-12"
@@ -3847,6 +3855,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="05"
+          data-section-topic="OSFI stress test"
         >
           <div
             class="col gap-12"
@@ -4034,6 +4044,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="06"
+          data-section-topic="Risk flags"
         >
           <div
             class="col gap-12"
@@ -4182,6 +4194,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="07"
+          data-section-topic="Equity build"
         >
           <div
             class="col gap-12"
@@ -4361,6 +4375,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="08"
+          data-section-topic="Neighbourhood"
         >
           <div
             class="col gap-12"
@@ -4754,6 +4770,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="09"
+          data-section-topic="SunScout"
         >
           <div
             class="col gap-12"
@@ -4849,6 +4867,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="10"
+          data-section-topic="STR vs LTR"
         >
           <div
             class="col gap-12"
@@ -5165,6 +5185,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
       >
         <div
           class="tr-section-head"
+          data-section-n="11"
+          data-section-topic="Due diligence"
         >
           <div
             class="col gap-12"
