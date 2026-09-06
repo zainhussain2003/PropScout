@@ -1,5 +1,8 @@
 playwright==1.47.0
 supabase==2.7.4
 httpx==0.27.2
+# realtor_scraper.py parses listing HTML with BeautifulSoup. Pinned to match
+# services/calc-engine/requirements.txt, which runs the same parser in prod.
+beautifulsoup4==4.12.3
 pytest==8.3.2
 pytest-asyncio==0.24.0
