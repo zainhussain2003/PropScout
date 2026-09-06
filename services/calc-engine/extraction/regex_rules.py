@@ -68,8 +68,13 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     ),
     (
         "pets_allowed",
+        # The negative lookbehinds stop "no pets permitted" / "not pets allowed"
+        # from matching. Without them a no-pets building fired BOTH no_pets and
+        # pets_allowed, and the tenant report could show a listing as pet
+        # friendly when the description said the opposite. Caught by gc-019.
         re.compile(
-            r"\b(pets (welcome|allowed|ok|permitted)|pet friendly)\b", re.IGNORECASE
+            r"(?<!\bno )(?<!\bnot )\b(pets (welcome|allowed|ok|permitted)|pet friendly)\b",
+            re.IGNORECASE,
         ),
         88,
     ),

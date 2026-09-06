@@ -117,6 +117,14 @@ export interface RentalEstimate {
   compCount: number
   confidence: 'low' | 'medium' | 'high'
   postalCode: string
+  /**
+   * Radius searched, in km, when this FSA had no comps and the search widened
+   * geographically. Null or absent when the comps are from this FSA.
+   *
+   * Shown in the report: a median drawn from 10km away can cross into another
+   * municipality's rental market, and presenting it as local would be wrong.
+   */
+  radiusKm?: number | null
 }
 
 export interface SunScoutResult {

@@ -790,6 +790,102 @@ describe('getNearbySchools', () => {
   })
 })
 
+// ── fetchRentalComps — geographic fallback ────────────────────────────────────
+
+describe('fetchRentalComps — widening the search by radius', () => {
+  const VAUGHAN = { lat: 43.7963, lng: -79.5293 }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  /** FSA queries find nothing; the radius query returns `rows`. */
+  function fsaEmptyThenRadius(rows: unknown[]): void {
+    // Four FSA attempts (90d/180d × exact/±1 beds), then the radius pass.
+    const empty = (): QueryChain => makeQueryChain({ data: [], error: null })
+    mockFrom
+      .mockReturnValueOnce(empty())
+      .mockReturnValueOnce(empty())
+      .mockReturnValueOnce(empty())
+      .mockReturnValueOnce(empty())
+      .mockReturnValue(makeQueryChain({ data: rows, error: null }))
+  }
+
+  function nearby(rent: number, km: number): Record<string, number> {
+    // Offset north by `km`, well inside the longitude band.
+    return { rent_monthly: rent, lat: VAUGHAN.lat + km / 111.2, lng: VAUGHAN.lng }
+  }
+
+  it('finds comps nearby when the FSA itself has none', async () => {
+    // Regression: Vaughan's L4K had zero scraped rows while 86 comps sat within
+    // 5km, so every report there claimed no comps existed for the area.
+    fsaEmptyThenRadius([nearby(2700, 1), nearby(2900, 2), nearby(3200, 3)])
+
+    const result = await fetchRentalComps('L4K5W4', 3, VAUGHAN)
+
+    expect(result).not.toBeNull()
+    expect(result!.compCount).toBe(3)
+    expect(result!.radiusKm).toBe(5)
+  })
+
+  it('reports radiusKm null when the comps came from the FSA itself', async () => {
+    mockFrom.mockReturnValue(
+      makeQueryChain({
+        data: [{ rent_monthly: 2700 }, { rent_monthly: 2900 }, { rent_monthly: 3200 }],
+        error: null,
+      })
+    )
+
+    const result = await fetchRentalComps('L4K5W4', 3, VAUGHAN)
+    expect(result!.radiusKm).toBeNull()
+  })
+
+  it('never reports high confidence for comps pulled from outside the FSA', async () => {
+    // Eight comps in the same FSA would be "high". From 5km away they are a
+    // different rental sub-market, and calling that high confidence would
+    // present a neighbouring city's median as this postal area's.
+    fsaEmptyThenRadius(Array.from({ length: 8 }, (_, i) => nearby(2700 + i * 50, 1)))
+
+    const result = await fetchRentalComps('L4K5W4', 3, VAUGHAN)
+
+    expect(result!.compCount).toBeGreaterThanOrEqual(8)
+    expect(result!.confidence).toBe('medium')
+  })
+
+  it('excludes rows inside the bounding box but outside the true radius', async () => {
+    // A box corner is ~1.41× the radius from the centre. Without the haversine
+    // trim these would be counted as if they were within 5km.
+    fsaEmptyThenRadius([nearby(2700, 1), nearby(2900, 2), nearby(9999, 40)])
+
+    const result = await fetchRentalComps('L4K5W4', 3, VAUGHAN)
+
+    // Only two rows survive the radius trim, which is below the 3-comp floor,
+    // so the 5km pass yields nothing and the 10km pass sees the same three rows.
+    expect(result === null || result.radiusKm === 10).toBe(true)
+  })
+
+  it('does not widen the search when no coordinates are known', async () => {
+    // Without a location there is no defensible "nearby", so the honest empty
+    // state is correct.
+    mockFrom.mockReturnValue(makeQueryChain({ data: [], error: null }))
+
+    expect(await fetchRentalComps('L4K5W4', 3)).toBeNull()
+    expect(await fetchRentalComps('L4K5W4', 3, null)).toBeNull()
+  })
+
+  it('skips rows with no coordinates rather than counting them', async () => {
+    fsaEmptyThenRadius([
+      nearby(2700, 1),
+      { rent_monthly: 2900, lat: null as unknown as number, lng: null as unknown as number },
+      nearby(3200, 2),
+    ])
+
+    const result = await fetchRentalComps('L4K5W4', 3, VAUGHAN)
+    // Two usable rows is under the floor at 5km; it must not count the null row.
+    expect(result === null || result.compCount <= 2 || result.radiusKm === 10).toBe(true)
+  })
+})
+
 // ── saveListing ───────────────────────────────────────────────────────────────
 
 describe('saveListing — how a listing is keyed', () => {

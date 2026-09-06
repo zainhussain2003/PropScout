@@ -2,11 +2,7 @@
   {
     "id": "gc-001",
     "description": "Beautiful 2+1 condo in the heart of Vaughan. Currently tenanted at $2,700/month. Tenant would like to stay. Condo fee includes water and building insurance. One underground parking spot included.",
-    "expected_flags": {
-      "tenanted": true,
-      "parking_included": true,
-      "utilities_included": false
-    },
+    "expected_flags": { "tenanted": true, "parking_included": true, "utilities_included": false },
     "notes": "Calibration case — tenant in place + parking"
   },
   {
@@ -23,10 +19,311 @@
   {
     "id": "gc-003",
     "description": "Sold as-is. Handyman special in need of TLC. Great bones. Investor opportunity. Short-term rental permitted in building.",
-    "expected_flags": {
-      "needs_work": true,
-      "str_history": true
-    },
+    "expected_flags": { "needs_work": true, "str_history": true },
     "notes": "Fixer-upper + STR flag"
+  },
+  {
+    "id": "gc-004",
+    "description": "Bright 1-bedroom in Liberty Village with tenant in place until June 2027. Buyer must assume the existing lease.",
+    "expected_flags": { "tenanted": true },
+    "notes": "'tenant in place' phrasing"
+  },
+  {
+    "id": "gc-005",
+    "description": "Spacious 3-bed semi in Oshawa, currently rented to AAA tenants paying $3,100/mo.",
+    "expected_flags": { "tenanted": true },
+    "notes": "'currently rented' phrasing"
+  },
+  {
+    "id": "gc-006",
+    "description": "Move-in ready detached in Barrie. Vacant possession on closing. Owner occupied since 2015.",
+    "expected_flags": { "tenanted": false },
+    "notes": "Negative — vacant, must not fire tenanted"
+  },
+  {
+    "id": "gc-007",
+    "description": "Well-kept bungalow in Peterborough. Sellers are downsizing; possession is flexible.",
+    "expected_flags": { "tenanted": false },
+    "notes": "Negative — no tenancy language at all"
+  },
+  {
+    "id": "gc-008",
+    "description": "Turnkey Muskoka-style chalet, operated as an Airbnb for the past three seasons with strong occupancy.",
+    "expected_flags": { "str_history": true },
+    "notes": "Airbnb keyword"
+  },
+  {
+    "id": "gc-009",
+    "description": "Downtown loft. VRBO and vacation rental income history available on request.",
+    "expected_flags": { "str_history": true },
+    "notes": "VRBO / vacation rental"
+  },
+  {
+    "id": "gc-010",
+    "description": "Quiet family building in Etobicoke. Board does not permit rentals under one year.",
+    "expected_flags": { "str_history": false },
+    "notes": "Negative — long-term-only building"
+  },
+  {
+    "id": "gc-011",
+    "description": "Detached in Brampton with a finished basement apartment, separate entrance, and second kitchen.",
+    "expected_flags": { "basement_unit": true },
+    "notes": "Basement apartment"
+  },
+  {
+    "id": "gc-012",
+    "description": "Raised bungalow featuring an in-law suite on the lower level, ideal for extended family.",
+    "expected_flags": { "basement_unit": true },
+    "notes": "In-law suite"
+  },
+  {
+    "id": "gc-013",
+    "description": "Legal secondary suite registered with the City of Kitchener.",
+    "expected_flags": { "basement_unit": true },
+    "notes": "Secondary suite"
+  },
+  {
+    "id": "gc-014",
+    "description": "Two-storey with an unfinished basement offering excellent storage and workshop space.",
+    "expected_flags": { "basement_unit": false },
+    "notes": "Negative — unfinished basement is not a unit"
+  },
+  {
+    "id": "gc-015",
+    "description": "Corner unit with one parking and a locker included in the purchase price.",
+    "expected_flags": { "parking_included": true },
+    "notes": "'one parking'"
+  },
+  {
+    "id": "gc-016",
+    "description": "Sun-filled suite at Yonge & Eglinton. Underground parking included.",
+    "expected_flags": { "parking_included": true },
+    "notes": "Underground parking"
+  },
+  {
+    "id": "gc-017",
+    "description": "Studio in the Distillery District. Parking may be rented from the property manager at $180 monthly.",
+    "expected_flags": { "parking_included": false },
+    "notes": "Negative — parking is rented separately, not included"
+  },
+  {
+    "id": "gc-018",
+    "description": "Efficient junior one-bedroom. This suite has no parking space; street permit available from the city.",
+    "expected_flags": { "parking_included": false },
+    "notes": "Negative — explicitly without parking"
+  },
+  {
+    "id": "gc-019",
+    "description": "Bright two-bedroom in Hamilton. Sorry, no pets permitted in this building.",
+    "expected_flags": { "no_pets": true, "pets_allowed": false },
+    "notes": "no_pets fires, pets_allowed must not"
+  },
+  {
+    "id": "gc-020",
+    "description": "Pet friendly building with a dog run on the podium level.",
+    "expected_flags": { "pets_allowed": true, "no_pets": false },
+    "notes": "pets_allowed fires, no_pets must not"
+  },
+  {
+    "id": "gc-021",
+    "description": "Cats and dogs welcome. Pets allowed with no weight restriction.",
+    "expected_flags": { "pets_allowed": true, "no_pets": false },
+    "notes": "Explicit pets allowed"
+  },
+  {
+    "id": "gc-022",
+    "description": "Renovated townhouse in Guelph close to the university and transit.",
+    "expected_flags": { "no_pets": false, "pets_allowed": false },
+    "notes": "Negative — silent on pets"
+  },
+  {
+    "id": "gc-023",
+    "description": "Lease includes all utilities included plus internet — a true all-in monthly cost.",
+    "expected_flags": { "utilities_included": true, "utilities_extra": false },
+    "notes": "All utilities included"
+  },
+  {
+    "id": "gc-024",
+    "description": "Heat and hydro included in the maintenance fee; tenant pays internet only.",
+    "expected_flags": { "utilities_included": true },
+    "notes": "Heat and hydro included"
+  },
+  {
+    "id": "gc-025",
+    "description": "Hydro extra. Tenant pays utilities and tenant insurance.",
+    "expected_flags": { "utilities_extra": true, "utilities_included": false },
+    "notes": "Utilities extra"
+  },
+  {
+    "id": "gc-026",
+    "description": "Condo fee covers building insurance and common elements.",
+    "expected_flags": { "utilities_included": false, "utilities_extra": false },
+    "notes": "Negative — fee described, utilities unstated"
+  },
+  {
+    "id": "gc-027",
+    "description": "Estate sale, sold as-is where-is. Property needs work throughout.",
+    "expected_flags": { "needs_work": true, "recently_renovated": false },
+    "notes": "As-is estate sale"
+  },
+  {
+    "id": "gc-028",
+    "description": "Handyman special on a 50-foot lot. Bring your contractor.",
+    "expected_flags": { "needs_work": true },
+    "notes": "Handyman special"
+  },
+  {
+    "id": "gc-029",
+    "description": "Fixer-upper with solid structure; needs updating in kitchen and baths.",
+    "expected_flags": { "needs_work": true },
+    "notes": "Fixer-upper + needs updating"
+  },
+  {
+    "id": "gc-030",
+    "description": "Brand new kitchen, newly renovated bathrooms, and refinished hardwood throughout.",
+    "expected_flags": { "recently_renovated": true, "needs_work": false },
+    "notes": "Renovated, not needing work"
+  },
+  {
+    "id": "gc-031",
+    "description": "Recently updated with a gut renovation completed in 2025.",
+    "expected_flags": { "recently_renovated": true },
+    "notes": "Gut renovation"
+  },
+  {
+    "id": "gc-032",
+    "description": "Original owner home, lovingly maintained and in excellent condition.",
+    "expected_flags": { "needs_work": false, "recently_renovated": false },
+    "notes": "Negative — neither"
+  },
+  {
+    "id": "gc-033",
+    "description": "Former grow-op, fully remediated in 2024 with documentation available.",
+    "expected_flags": { "grow_op_history": true },
+    "notes": "Grow-op disclosed"
+  },
+  {
+    "id": "gc-034",
+    "description": "Property was previously used for cannabis cultivation. Buyer to satisfy themselves.",
+    "expected_flags": { "grow_op_history": true },
+    "notes": "Cannabis cultivation"
+  },
+  {
+    "id": "gc-035",
+    "description": "Sun-filled family home backing onto a ravine with mature gardens.",
+    "expected_flags": { "grow_op_history": false },
+    "notes": "Negative — clean listing"
+  },
+  {
+    "id": "gc-036",
+    "description": "Buyer to note the property sits within a designated flood plain; conservation authority approval required.",
+    "expected_flags": { "flooding_history": true },
+    "notes": "Flood plain"
+  },
+  {
+    "id": "gc-037",
+    "description": "Lower level was affected by a flooded basement in 2023; waterproofing has since been installed.",
+    "expected_flags": { "flooding_history": true },
+    "notes": "Flooded basement"
+  },
+  {
+    "id": "gc-038",
+    "description": "Waterfront cottage with 100 feet of clean shoreline and a dry boathouse.",
+    "expected_flags": { "flooding_history": false },
+    "notes": "Negative — water nearby but no flood claim"
+  },
+  {
+    "id": "gc-039",
+    "description": "Third unit was added without a permit; buyer to verify legality with the municipality.",
+    "expected_flags": { "illegal_unit_risk": true },
+    "notes": "Unpermitted addition"
+  },
+  {
+    "id": "gc-040",
+    "description": "Legal non-conforming duplex use predating current zoning.",
+    "expected_flags": { "illegal_unit_risk": true },
+    "notes": "Non-conforming"
+  },
+  {
+    "id": "gc-041",
+    "description": "Basement apartment is unpermitted and does not meet fire code separation.",
+    "expected_flags": { "illegal_unit_risk": true, "basement_unit": true },
+    "notes": "Both basement and illegal risk"
+  },
+  {
+    "id": "gc-042",
+    "description": "Fully permitted 2023 addition with final building inspection passed.",
+    "expected_flags": { "illegal_unit_risk": false },
+    "notes": "Negative — permitted work"
+  },
+  {
+    "id": "gc-043",
+    "description": "Note: a special assessment has been approved for garage membrane replacement.",
+    "expected_flags": { "special_assessment_risk": true },
+    "notes": "Special assessment"
+  },
+  {
+    "id": "gc-044",
+    "description": "Recent reserve fund study identified a shortfall; fee increase anticipated.",
+    "expected_flags": { "special_assessment_risk": true },
+    "notes": "Reserve fund shortfall"
+  },
+  {
+    "id": "gc-045",
+    "description": "Status certificate shows a fully funded reserve and no planned capital work.",
+    "expected_flags": { "special_assessment_risk": false },
+    "notes": "Negative — healthy reserve"
+  },
+  {
+    "id": "gc-046",
+    "description": "Seller makes no representations or warranties as to the condition of the property.",
+    "expected_flags": { "verify_history": true },
+    "notes": "No representations clause"
+  },
+  {
+    "id": "gc-047",
+    "description": "Remediation completed by a licensed contractor; restoration documents on file.",
+    "expected_flags": { "verify_history": true },
+    "notes": "Remediation / restoration"
+  },
+  {
+    "id": "gc-048",
+    "description": "Immaculate two-bedroom with south exposure and unobstructed lake views.",
+    "expected_flags": { "verify_history": false },
+    "notes": "Negative — clean listing"
+  },
+  {
+    "id": "gc-049",
+    "description": "Investor alert: legal basement suite currently rented at $1,900/mo, one parking included, hydro extra. Non-conforming third unit in the rear — buyer to verify.",
+    "expected_flags": {
+      "basement_unit": true,
+      "tenanted": true,
+      "parking_included": true,
+      "utilities_extra": true,
+      "illegal_unit_risk": true
+    },
+    "notes": "Dense multi-flag investor listing"
+  },
+  {
+    "id": "gc-050",
+    "description": "Renovated Leslieville semi, brand new kitchen, pet friendly street, vacant possession on closing.",
+    "expected_flags": {
+      "recently_renovated": true,
+      "pets_allowed": true,
+      "tenanted": false,
+      "needs_work": false
+    },
+    "notes": "Renovated + pets + vacant"
+  },
+  {
+    "id": "gc-051",
+    "description": "Short-term rental permitted. All utilities included in the monthly fee. Underground parking included. Sold as-is.",
+    "expected_flags": {
+      "str_history": true,
+      "utilities_included": true,
+      "parking_included": true,
+      "needs_work": true
+    },
+    "notes": "Four positives at once"
   }
 ]

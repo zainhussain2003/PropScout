@@ -1069,6 +1069,79 @@ stated reason is now the true one.
 
 ---
 
+### D-031 · Rental comps widen by radius when the FSA has none
+
+**Chosen.** `fetchRentalComps` now takes the subject's coordinates. When the FSA
+search finds nothing, it searches outward — 5km, then 10km — using a bounding
+box in Postgres trimmed to a true circle by haversine. The radius used is
+returned as `radiusKm` and shown in the report: _"within 5km, not this postal
+area"_. Confidence is capped at medium for 5km and low for 10km.
+
+**Why.** The existing fallbacks widened the date window (90→180 days) and the
+bed count (exact→±1) but never the location, so an FSA with no scraped rows
+returned nothing. Vaughan's L4K — the Metropolitan Centre, a dense condo
+corridor — had **zero** rows while **86 comps sat within 5km**. Every report
+there fell back to the gross-yield proxy and told the user no comps existed.
+
+That fallback was not neutral. The proxy assumes ~6% gross yield, which on a
+$729,900 listing implies about $3,650/mo. The real local median is **$2,475**.
+The proxy was overstating rent by roughly 47% and making a bad deal look
+survivable: the same listing scores 13 on the proxy and **8** on real comps,
+with cash flow moving from about −$1,833 to −$2,724. The missing-data path was
+flattering exactly the deals the product exists to warn people off.
+
+**Why not just scrape more.** Worth doing, and the seeds already cover 23 GTA
+municipalities, but coverage will always have holes — new FSAs, thin weeks,
+sources changing markup. The report should degrade to "comps from nearby,
+disclosed" rather than "no data", regardless of how good coverage gets.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Fall back to the neighbouring FSA by string | L4K and L4J happen to be adjacent; L4K and L4B are not. FSA codes are not ordered geographically, so this is right by luck.     |
+| PostGIS / a stored procedure                | Correct at scale, but a dependency and a migration for what is a fallback path. Bounding box + haversine uses existing columns. |
+| Keep the gross-yield proxy                  | It is the bug. A silently wrong rent is worse than a disclosed nearby one.                                                      |
+| Widen without disclosing                    | Presents a Mississauga median as Vaughan's. The whole point is that the reader can discount it.                                 |
+
+---
+
+### D-032 · The golden dataset covers every flag, positively and negatively
+
+**Chosen.** Expanded `golden_cases.json` from 3 cases (12 assertions, 8 flags)
+to 51 cases (78 assertions) covering all 15 regex flags, each with at least one
+case asserting it _should_ fire and one asserting it _should not_. Added two
+tests beside the accuracy gate: one failing if any flag lacks positive or
+negative coverage, one failing on duplicate case ids.
+
+**Why the negative cases matter most.** The old suite passed at 100% while
+testing three flags. A pattern that matched everything would have passed it.
+The first run of the expanded set immediately caught a real contradiction:
+_"Sorry, no pets permitted"_ fired **both** `no_pets` and `pets_allowed`,
+because `pets (welcome|allowed|ok|permitted)` matches inside "no pets
+permitted". A tenant reading that report would have been told the building was
+pet friendly when the listing said the opposite. Fixed with negative lookbehinds
+for "no " and "not "; accuracy went 98.7% → 100%.
+
+**Honest limit — these are not scraped listings.** The spec asks for 50 _real_
+Ontario listing descriptions. These are written to read like real ones and are
+labelled by what a careful human would conclude, but they are synthetic. They
+prove the rules behave as intended on the language they target; they do **not**
+prove real Realtor.ca prose falls inside that language. Collecting genuine
+descriptions needs the scraper running at volume, and should replace or extend
+this set rather than sit alongside it.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Wait for real scraped descriptions          | The gate stays untested meanwhile, which is how the pets contradiction survived. Synthetic now, real later, is strictly better. |
+| Generate cases from the patterns themselves | Circular — every case passes by construction and nothing is ever caught.                                                        |
+| Positive cases only                         | What the old set effectively was. Rewards over-matching, which is the dominant failure mode of a regex pipeline.                |
+| Label these as real listings                | They are not. Presenting invented prose as scraped data is the exact dishonesty the rest of the product avoids.                 |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

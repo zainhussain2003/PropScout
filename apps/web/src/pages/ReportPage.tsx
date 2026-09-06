@@ -237,6 +237,7 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
   if (!comps || comps.compCount === 0) return null
 
   const { low, mid, high, compCount, confidence } = comps
+  const radiusKm = comps.radiusKm ?? null
 
   return (
     <section className="container tr-section" data-section="03">
@@ -273,6 +274,10 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
             }}
           >
             Market rent range · {compCount} comparable rentals
+            {/* Disclosed, not hidden: when this FSA had no comps the search
+                widened by radius, and comps from a few km away can sit in a
+                different rental market. */}
+            {radiusKm !== null && ` · within ${radiusKm}km, not this postal area`}
           </span>
           <span
             className="mono"

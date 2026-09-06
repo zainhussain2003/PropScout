@@ -256,10 +256,23 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // deductions to the deal score. Doing extraction here too would be
       // duplicate work and the result would be ignored.)
 
+      // Geocode BEFORE the comps lookup and the calc engine call. lat/lng in
+      // property_data is what makes the calc engine's SunScout (sun-path)
+      // branch fire, and the comps search needs it to widen by radius when the
+      // FSA has no rows. Non-fatal: null coords skip SunScout, the real map,
+      // and the geographic comp fallback, but the report still runs.
+      const coords = await geocodeAddress(listing.address)
+
       // Step 4 — fetch rental comps from nightly-scraped rental_listings.
       // Falls back to a low-confidence estimate from the listing's own rent
       // (or the price-based proxy) when the FSA has no comps yet.
-      const comps = await fetchRentalComps(listing.postalCode, listing.beds).catch(() => null)
+      // Coordinates let the search widen by radius when this FSA has no rows —
+      // dense condo FSAs such as Vaughan's L4K had none while dozens of comps
+      // sat within 5km. Without them the report fell back to a gross-yield
+      // proxy and told the user there were no comps for the area.
+      const comps = await fetchRentalComps(listing.postalCode, listing.beds, coords).catch(
+        () => null
+      )
 
       const rentalFallback =
         listing.rentMonthly ?? Math.round((listing.price ?? 0) * RENT_TO_PRICE_MONTHLY)
@@ -342,11 +355,6 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       } catch {
         dismissedFlagIds = []
       }
-
-      // Geocode BEFORE the calc engine call — lat/lng in property_data is what
-      // makes the calc engine's SunScout (sun-path) branch fire. Non-fatal:
-      // null coords just skip SunScout and the real map.
-      const coords = await geocodeAddress(listing.address)
 
       const calcPayload = {
         // Forwarded so the calc engine runs the extraction pipeline and
@@ -546,6 +554,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
               compCount: comps.compCount,
               confidence: comps.confidence,
               postalCode: listing.postalCode,
+              radiusKm: comps.radiusKm,
             }
           : null,
         riskFlags: resolvedFlags,

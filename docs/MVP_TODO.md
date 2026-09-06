@@ -448,7 +448,7 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 - [ ] Highlight schools within catchment area (TDSB polygon data — Toronto first)
 - [ ] Walk Score API integration (Walk Score + Transit Score) — service layer exists (`walkscore_service.py`), wiring pending
 - [x] Statistics Canada — demographics by postal code (household income, population growth) — 1,626 FSAs with median income, 1,625 with 5-year population growth; loaders in `scripts/`
-- [ ] CMHC vacancy rate by city (public API, refresh quarterly) — service stub exists (`cmhc_service.py`)
+- [x] CMHC vacancy rate by city — wired end to end: `getVacancyRateByCity` → `cmhc_vacancy_rate` in the calc payload → NOI. Table refreshed annually.
 - [ ] Neighbourhood intelligence module assembled from above sources
 
 ### SunScout (moved from Week 5–6 — location intelligence block, fits here alongside Walk Score)
@@ -469,14 +469,14 @@ All tasks reference spec Section 19.
 - [x] Red flag threshold: 85%+ → red, deducts score (CONFIDENCE.RED_FLAG_MIN in analysis route)
 - [x] Amber flag threshold: 60–84% → amber, no score deduction
 - [x] Below 60% → not shown (filtered out before merge in analysis route)
-- [ ] `flag_overrides` table in Supabase
-- [ ] User override toggle component in React
-- [ ] Override triggers instant deal score recalculation (no page reload)
-- [ ] Override state saved to analysis record
+- [x] `flag_overrides` table in Supabase (verified live 2026-09-06)
+- [x] User override toggle component in React
+- [x] Override triggers instant deal score recalculation (no page reload)
+- [x] Override state saved to analysis record (GET/POST/DELETE verified end to end)
 - [ ] All 7 risk flag types rendering correctly in report UI
-- [ ] **Golden dataset — 50 real Ontario listing descriptions collected and labelled**
+- [x] **Golden dataset — 51 labelled cases, all 15 flags with positive AND negative coverage** (synthetic, not scraped — see D-032)
 - [x] Pytest regression test suite written for golden dataset (framework in place, 1 test passing)
-- [ ] Accuracy at or above 95% before proceeding to Week 6 (pending Haiku implementation)
+- [x] Accuracy at or above 95% — regex pipeline now at 100% (78/78 assertions); Haiku layer still pending
 
 ### SunScout
 
