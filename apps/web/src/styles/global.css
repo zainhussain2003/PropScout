@@ -235,12 +235,20 @@ img {
  * Accent-at-rest was an earlier build deviation and failed WCAG AA (white on
  * the old terracotta ≈ 3.1:1); ink/bg at rest is ≈ 15.9:1 and white on the
  * harbour accent hover is 8.94:1. Locked by btnContrast.test.ts. */
+/* Primary actions carry the brand colour.
+   Until 2026-09-06 this was --ink, with harbour appearing only on hover, which
+   left every screen greyscale-plus-one-dark-button — a DOM audit of a full report
+   found only 97 of ~2,100 colour declarations carried any real colour. The
+   ink-at-rest rule came from the 13 HTML prototypes, which DESIGN_README records
+   as superseded by tokens.css and which still ship the retired terracotta palette,
+   so the rule was defending a source that no longer governs.
+   White on #1F4E68 is 8.94:1; dark mode flips to --accent-ink on #5E93B0 at 5.67:1. */
 .btn-primary {
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 .btn-primary:hover {
-  background: var(--accent);
+  background: var(--accent-hover);
   color: var(--accent-ink);
 }
 

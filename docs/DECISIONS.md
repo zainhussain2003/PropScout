@@ -857,6 +857,49 @@ with the prototypes updated, rather than by drifting the CSS.
 
 ---
 
+### D-025 · Primary buttons carry the brand colour
+
+**Chosen.** `.btn-primary` rests on `--accent` and hovers to `--accent-hover`,
+reversing the previous ink-at-rest rule. `btnContrast.test.ts` and the
+DESIGN_README divergence table were updated to match.
+
+**Why the earlier reasoning (D-024) was wrong.** I reverted this once because a
+test asserted `--ink`, justified as _"all 13 HTML prototypes ship
+`.btn-primary { background: var(--ink) }`"_. That justification does not hold:
+`DESIGN_README.md` states plainly that **`tokens.css` now supersedes every
+warm-cream prototype**, and `MVP_TODO.md:394` still lists resyncing them as
+outstanding. The prototypes carry the _retired terracotta_ palette. The test was
+pinning the most prominent element on every screen to a design source the project
+had already formally replaced.
+
+Deferring to the design source was right in principle; I just had not checked
+whether that source still governed. Worth remembering: "there is a test for it"
+answers what the rule is, not whether the reason behind it survives.
+
+**Measured effect.** Brand-colour declarations on the landing page went from a
+handful to **296** (harbour 223, sage 31, clay 12, amber 12, accent-soft 18). The
+DOM audit that prompted this found only 97 across an entire report.
+
+**Contrast, both themes.** Light: white on `#1F4E68` = **8.94:1**. Dark: the token
+system flips to `#0C1116` on `#5E93B0` = **5.67:1** — verified live rather than
+assumed, because a naive swap would have put white on the lightened blue at
+2.72:1, which the token comment had already warned about.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Use the existing `.btn-accent` on hero CTAs only | Makes the landing page's main button differ from every other primary button. Inconsistency reads as an oversight, not a choice. |
+| Keep ink, add colour elsewhere                   | Tried — chips alone (D-024) moved the needle far too little. The primary button is the single most repeated coloured surface.   |
+| Warm the whole neutral ground                    | Reverses PR10's measured decision and breaks `--caution`'s AA margin on limestone.                                              |
+
+**Not done, and deliberately.** The 13 prototypes in `docs/design_handoff/` are
+still on terracotta and are now one rule further out of date. Resyncing them is
+already tracked (`MVP_TODO.md:394`); doing it properly means regenerating them
+against current tokens, which is a design task rather than a code one.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.
