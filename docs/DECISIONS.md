@@ -811,6 +811,52 @@ less than it appears to.
 
 ---
 
+### D-024 · Chips carry the brand tint; the primary button stays ink
+
+**Context.** The brief was to make the product look less machine-generated and
+more human — colourway, not just copy. A DOM audit of a full report found that of
+~2,100 colour declarations, only **97 carried real colour** (accent 45, sage 27,
+clay 25). Everything else was the ink/muted grey ramp. Greyscale plus one dark
+button is the visual signature of a template.
+
+**Chosen — chips use `--accent-soft`.** The token's own definition is _"tinted
+fills — chips, hover washes, card headers"_, but `.chip` was rendering
+`--chip-bg` (neutral grey) and `--accent-soft` appeared in exactly two places,
+both on the landing page. Chips repeat dozens of times per report, so this is
+where a faint tint does the most work. Contrast measured before and after:
+**8.08:1 → 7.80:1**, against an AA requirement of 4.5:1.
+
+**Rejected — recolouring `.btn-primary`.** I changed it to the accent first,
+reasoning from `CLAUDE.md`'s token table ("--accent … brand, Pro badge, CTAs").
+That was wrong, and `src/styles/btnContrast.test.ts` caught it:
+
+> All 13 HTML prototypes ship `.btn-primary { background: var(--ink) }`; the
+> accent belongs to hover and `.btn-accent`.
+
+So ink-at-rest is a deliberate, tested decision traceable to the design source,
+and a dedicated `.btn-accent` variant already exists for accent CTAs (used by the
+paywall components). `CLAUDE.md` says design wins where the two disagree, so the
+change was reverted.
+
+**Worth recording as a contradiction rather than silently resolving:**
+`tokens.css` says `--accent-soft` is for chips while `global.css` gave chips
+`--chip-bg`, and `CLAUDE.md`'s table says the accent is for CTAs while the
+prototypes and their test say buttons are ink. The chip case had no test and the
+token comment was explicit, so it was changed; the button case had both a test and
+a prototype lineage, so it was left alone. If more brand colour is wanted on
+primary buttons, that is a change to the design source — worth doing deliberately,
+with the prototypes updated, rather than by drifting the CSS.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Warm the background from cool limestone to cream | Directly reverses PR10, whose stated rationale is a _"cooler neutral ground so verdict colors and the blue accent carry the temperature"_ — and `--caution` was darkened specifically to pass AA on limestone. Undoing it would break a measured contrast decision to chase a feeling. |
+| Swap the hero CTA to `.btn-accent`               | Sanctioned variant, but it makes the landing page's main button differ from every other primary button in the product. A consistency change, not a one-off.                                                                                                                            |
+| Add a second accent hue for warmth               | A two-accent palette needs its own contrast work across both themes; not something to introduce mid-session without design review.                                                                                                                                                     |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

@@ -271,7 +271,12 @@ img {
   gap: 6px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: var(--chip-bg);
+  /* --accent-soft, not --chip-bg: the token's own definition is "tinted fills —
+     chips, hover washes, card headers", but every chip was rendering in neutral
+     grey. Chips repeat dozens of times per report, so this is where a faint brand
+     tint does the most to stop the page reading as greyscale. At 8% opacity the
+     text contrast is unchanged. */
+  background: var(--accent-soft);
   color: var(--ink-2);
   font-size: 12px;
   font-weight: 500;
