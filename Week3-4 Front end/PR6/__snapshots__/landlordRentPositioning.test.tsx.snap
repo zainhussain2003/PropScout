@@ -45,6 +45,7 @@ exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
     </span>
   </div>
   <div
+    class="grid-1col-mobile"
     style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; align-items: flex-start;"
   >
     <div

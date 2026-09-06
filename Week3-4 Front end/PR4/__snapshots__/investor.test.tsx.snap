@@ -1260,6 +1260,7 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
     </div>
   </div>
   <div
+    class="grid-1col-mobile"
     style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px;"
   >
     <div
@@ -1657,6 +1658,7 @@ exports[`STRPlaceholderSection > matches snapshot 1`] = `
     </span>
   </div>
   <div
+    class="grid-1col-mobile"
     style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;"
   >
     <div
