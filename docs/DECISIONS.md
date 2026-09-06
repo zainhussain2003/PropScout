@@ -381,6 +381,75 @@ Together with the scrapers job (D-008), CI now covers every check the repo defin
 
 ---
 
+### D-013 · Stripe wired but dormant, failing with an honest 503
+
+**Chosen.** The Stripe client is constructed lazily, and a missing key raises a
+typed `StripeNotConfiguredError` that `/billing/checkout` and `/billing/portal`
+turn into **503 `BILLING_UNAVAILABLE`** — _"Paid plans are not open yet —
+everything on the free tier still works."_
+
+**Why.** The billing code was already complete (checkout, portal, signature-verified
+webhook); only the keys were absent, in local `.env` and in the Railway API service
+alike. Two problems followed from that:
+
+1. `new Stripe(process.env.STRIPE_SECRET_KEY!)` ran at **module load**, so an
+   unconfigured environment built a client with an empty key and surfaced the
+   failure at an unrelated moment.
+2. Any billing attempt failed deep inside the Stripe SDK and came back as a
+   **500 `CHECKOUT_FAILED`** — "Could not start checkout, please try again" — which
+   tells a user the product is broken when the truth is that paid plans are simply
+   not switched on yet. Retrying, as instructed, would never work.
+
+Genuine Stripe failures still return 500; only the not-configured case is a 503.
+
+**Alternatives considered**
+
+| Option                                                        | Why not                                                                                                                                                                                              |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Leave it — nobody can reach billing without an account anyway | The paywall CTAs are live in the UI. A signed-in user clicking "Go Pro" gets a 500 today.                                                                                                            |
+| Hide every billing CTA when unconfigured                      | Better UX eventually, and worth doing — but it needs a config flag on the client, so `isStripeConfigured()` is exported ready for it. The server still must not 500 regardless of what the UI shows. |
+| Throw at boot if Stripe is unconfigured                       | Would take the whole API down over a feature that is deliberately dormant.                                                                                                                           |
+| Put placeholder/test keys in the repo                         | Never — keys do not go in git, and fake ones only move the failure.                                                                                                                                  |
+
+**Setup path** is written up in `docs/ACCESS_SETUP.md` §1: three CAD recurring
+products, the `price_` (not `prod_`) ids, test-mode keys, and the webhook secret.
+Everything can be done in Stripe **Test mode** — no business activation, nothing
+charged — which is what "in place for future billing, not activated" needs.
+
+---
+
+### D-014 · Comparable sales is blocked on a licensing decision, and says so
+
+**Chosen.** Added a dedicated, clearly-marked **BLOCKED** section to
+`docs/MVP_TODO.md` with the full task list, and wrote the four provider options up
+in `docs/ACCESS_SETUP.md` §2. No speculative provider abstraction has been built.
+
+**Why.** Canadian sold prices are licensed. There is no free or public source for
+what a given address sold for — CREA and the local boards control it, and every
+consumer site showing sold data is a licensee. I checked the free routes before
+concluding this: StatsCan table 34-10-0013 ("Residential property values") is
+province-level from 2005, and CREA's HPI is not published as a bulk download.
+
+I deliberately did **not** build a provider-agnostic `comparableSalesService`
+ahead of the decision: Repliers, Realtyna, Bridge and DDF differ enough in shape
+that an abstraction written now would likely be the wrong one, and would have to be
+rewritten against whichever is chosen. The task list is ready so the work is
+mechanical once a key exists.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                    |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Scrape HouseSigma / Zolo / Wahi                  | Their terms forbid it, and it is licensed board data. Legal risk to the product.                           |
+| Estimate sale prices from active asking prices   | Asking is not sold. Presenting a derived guess as "recent sales" is exactly the fabrication D-004 removed. |
+| Show comps from our own `listings` table         | 22 rows, all asking prices, no sale dates. Not comparable sales.                                           |
+| Build the abstraction now, wire a provider later | Real risk of building the wrong shape; the interface should follow the chosen feed.                        |
+
+**Interim behaviour is unchanged and honest**: the report states that no
+comparable-sales source exists yet rather than estimating one.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

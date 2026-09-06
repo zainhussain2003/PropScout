@@ -395,12 +395,52 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 
 ---
 
+## Comparable recent sales — BLOCKED on a data-provider decision
+
+> **Status: blocked, not forgotten.** Canadian sold prices are licensed data.
+> Unlike the US there is no free or public source for what a given address sold
+> for — CREA and the local boards control it, and every consumer site showing sold
+> data is a licensee. Scraping them is off the table. Until a feed is in place the
+> report says so honestly rather than estimating.
+>
+> The decision, the four options and their cost/lead-time are laid out in
+> `docs/ACCESS_SETUP.md` §2. **Recommended: a third-party MLS API (Repliers /
+> Realtyna / Bridge)** — days rather than months, and swappable later.
+>
+> What is needed to unblock: provider API key, base URL, and the licence's required
+> attribution string.
+
+### Once a provider is chosen
+
+- [ ] Decide provider (see `docs/ACCESS_SETUP.md` §2) — **needs Zain**
+- [ ] Obtain API key + base URL + required attribution string — **needs Zain**
+- [ ] `comparableSalesService.ts` in `apps/api/src/services/` — one file per external
+      API, so swapping provider later is a one-file change
+- [ ] `comparable_sales` table + migration (address, sale price, sqft, beds/baths,
+      sale date, price per sqft, source, fetched_at)
+- [ ] Query: last 10 sales within 1km, same property type (spec §7.3)
+- [ ] Fair-market-value band low/mid/high derived from the comps
+- [ ] Render licence attribution in the report — most MLS feeds mandate it
+- [ ] Wire into investor §08 comparable sales + personal buyer `PBSalesSection`
+- [ ] Remove the honest empty state once real comps land
+- [ ] Unit + functionality tests; sanity check FMV band is within 0.5×–2× asking
+- [ ] Add a regression case with known comps
+
+### Interim behaviour (shipped)
+
+- [x] Honest empty state — "No comparable-sales source yet" rather than an estimate
+- [x] Appreciation tile shows "—" rather than a fabricated growth figure
+
+---
+
 ## Week 4–5 — School, neighbourhood, and sun data
 
 - [ ] Load EQAO dataset into Supabase `schools` table (download from eqao.on.ca)
 - [ ] Scrape Fraser Institute school rankings (fraserinstitute.org/school-performance)
 - [ ] Store Fraser data in `schools` table alongside EQAO
 - [ ] Google Places API integration — find nearby schools by coordinates (type=school)
+      — code migrated to Places API (New) and waiting; **blocked**: the Cloud project
+      has no Maps API enabled and no billing (see `docs/ACCESS_SETUP.md` §3)
 - [ ] Match Google Places results to `schools` table by name + address
 - [ ] Return nearest 3 per type (elementary, middle, high) with distance and drive time
 - [ ] Highlight schools within catchment area (TDSB polygon data — Toronto first)

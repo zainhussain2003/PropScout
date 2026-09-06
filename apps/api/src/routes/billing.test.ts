@@ -22,12 +22,24 @@ jest.mock('../services/supabaseService', () => ({
 jest.mock('../services/stripeService', () => ({
   createCheckoutSession: jest.fn(),
   createBillingPortalSession: jest.fn(),
+  // Real class, not a stub: billing.ts branches on `instanceof`, so a jest.fn()
+  // here would make the dormant-billing path untestable.
+  StripeNotConfiguredError: class StripeNotConfiguredError extends Error {
+    constructor(missing: string[]) {
+      super(`Stripe is not configured — missing: ${missing.join(', ')}`)
+      this.name = 'StripeNotConfiguredError'
+    }
+  },
 }))
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import billingRoutes from './billing'
 import { getSupabase, getUserById } from '../services/supabaseService'
-import { createCheckoutSession, createBillingPortalSession } from '../services/stripeService'
+import {
+  StripeNotConfiguredError,
+  createCheckoutSession,
+  createBillingPortalSession,
+} from '../services/stripeService'
 
 const mockGetSupabase = getSupabase as jest.Mock
 const mockGetUserById = getUserById as jest.Mock
@@ -167,5 +179,45 @@ describe('POST /portal', () => {
     const body = res.json() as { url: string }
     expect(body.url).toBe('https://billing.stripe.com/session/test')
     expect(mockCreatePortal).toHaveBeenCalledWith('cus_123')
+  })
+
+  // ── Billing dormant (Stripe not configured) ─────────────────────────────────
+
+  describe('when Stripe is not configured', () => {
+    it('returns 503 BILLING_UNAVAILABLE from /checkout, not a 500', async () => {
+      mockGetSupabase.mockReturnValue(makeAuthMock(true))
+      mockGetUserById.mockResolvedValue({ stripe_customer_id: null })
+      mockCreateCheckout.mockRejectedValue(new StripeNotConfiguredError(['STRIPE_SECRET_KEY']))
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/checkout',
+        headers: { authorization: 'Bearer valid-token' },
+        payload: { tier: 'pro' },
+      })
+
+      // Paid plans simply are not open yet — that is not a server fault, and a 500
+      // would read as a broken product rather than a feature not switched on.
+      expect(res.statusCode).toBe(503)
+      const body = JSON.parse(res.body)
+      expect(body.code).toBe('BILLING_UNAVAILABLE')
+      expect(body.message).toMatch(/free tier still works/i)
+    })
+
+    it('still returns 500 for a genuine Stripe failure', async () => {
+      mockGetSupabase.mockReturnValue(makeAuthMock(true))
+      mockGetUserById.mockResolvedValue({ stripe_customer_id: null })
+      mockCreateCheckout.mockRejectedValue(new Error('Stripe API is down'))
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/checkout',
+        headers: { authorization: 'Bearer valid-token' },
+        payload: { tier: 'pro' },
+      })
+
+      expect(res.statusCode).toBe(500)
+      expect(JSON.parse(res.body).code).toBe('CHECKOUT_FAILED')
+    })
   })
 })
