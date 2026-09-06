@@ -578,6 +578,19 @@ function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.E
 
 // ── Narrative helpers ─────────────────────────────────────────────────────────
 
+/**
+ * Everything after the first sentence — the real remainder of this property's
+ * verdict, used as the blurred paywall teaser.
+ *
+ * Returns undefined when the narrative is a single sentence, so TruncatedVerdict
+ * falls back to neutral skeleton bars rather than showing invented prose.
+ */
+export function restAfterFirstSentence(narrative: string): string | undefined {
+  const parts = narrative.split(/(?<=[.!?])\s+/).slice(1)
+  const rest = parts.join(' ').trim()
+  return rest.length > 0 ? rest : undefined
+}
+
 /** First sentence of a narrative, split on real sentence boundaries (punctuation
  *  + whitespace) so decimals like "$1.9M" aren't cut mid-number. No trailing dot. */
 export function firstSentence(narrative: string): string {
@@ -889,6 +902,9 @@ function InvestorReportContent({
                 ? firstSentence(analysis.narrative) + '.'
                 : `At ${fmtMoney(listingData.price)}, this property shows ${dealScore.label.toLowerCase()} fundamentals.`
             }
+            blurredParagraph={
+              analysis.narrative ? restAfterFirstSentence(analysis.narrative) : undefined
+            }
             eyebrow={verdictEyebrow}
             onUnlock={() => openUpgradeModal('verdict')}
           />
@@ -940,7 +956,11 @@ function InvestorReportContent({
           data-honest: unknown stats render "—" and empty comps show the "no
           comparable-sales source yet" state (shimToNeighbourhood returns zeros
           when the API has no neighbourhood data, never fabricated figures). */}
-      <NeighbourhoodSection listing={listingData} neighbourhood={shimToNeighbourhood(analysis)} />
+      <NeighbourhoodSection
+        listing={listingData}
+        neighbourhood={shimToNeighbourhood(analysis)}
+        compsAreSample={analysis.comparableSalesAreSample ?? false}
+      />
       <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="09" token={analysis.token} />
       {/* §10 STR analysis — a Phase-2 informational placeholder (municipal STR-rule
           guidance by postal code), not fabricated property data. Present in the

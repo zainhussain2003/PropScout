@@ -3,6 +3,12 @@
  *
  * Shows: contract rate, stress buffer, qualifying rate, qualifying payment,
  * GDS ratio, and pass/fail verdict. Updates whenever financing prop changes.
+ *
+ * Row labels are deliberately plain rather than the industry terms ("contract
+ * rate", "qualifying rate", "GDS", "threshold"). The stress test is the step that
+ * decides whether someone can buy at all, and it is read by first-time buyers who
+ * have never met the vocabulary. The exact terms stay in the explanatory footnote
+ * below the card, so nothing is lost for a reader who knows them.
  */
 
 import type { OSFIResult, FinancingInputs } from '../../types/analysis'
@@ -29,22 +35,22 @@ export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Elemen
     bold?: boolean
     colorVar?: string
   }> = [
-    { label: 'Contract rate', value: fmtPct(financing.mortgageRate, 2) },
-    { label: 'Stress buffer', value: '+2.00 pts' },
+    { label: 'Your actual rate', value: fmtPct(financing.mortgageRate, 2) },
+    { label: 'Government safety margin', value: '+2.00 pts' },
     {
-      label: 'Qualifying rate (higher of)',
+      label: 'Rate you must prove you can afford',
       value: fmtPct(osfi.qualifyingRate, 2),
       bold: true,
       colorVar: 'var(--accent)',
     },
-    { label: 'Qualifying payment', value: `${fmtMoney(osfi.qualifyingPmt)}/mo` },
+    { label: 'Payment at that rate', value: `${fmtMoney(osfi.qualifyingPmt)}/mo` },
     {
-      label: 'GDS ratio',
+      label: 'Share of your income it takes',
       value: fmtPct(osfi.gds, 1),
       bold: true,
       colorVar: osfi.pass ? 'var(--pass)' : 'var(--fail)',
     },
-    { label: 'Threshold', value: fmtPct(osfi.threshold, 0) },
+    { label: 'Most the bank allows', value: fmtPct(osfi.threshold, 0) },
   ]
 
   return (

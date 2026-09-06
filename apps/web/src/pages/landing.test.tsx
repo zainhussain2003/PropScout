@@ -71,12 +71,26 @@ describe('LandingPage', () => {
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument()
   })
 
-  it('shows validation error when Analyze is clicked with empty input', async () => {
+  it('starts with an empty URL field so nothing is pre-filled for the user', () => {
+    renderLanding()
+    // The field used to be seeded with a real sample URL, which read as the user's
+    // own input and got mangled when they typed into it.
+    expect(screen.getByPlaceholderText(/paste a listing url/i)).toHaveValue('')
+  })
+
+  it('disables Analyze while the URL field is empty', () => {
+    renderLanding()
+    // Nothing has gone wrong yet — the person just hasn't pasted anything — so the
+    // button reads as "not ready" rather than punishing the click with a red error.
+    expect(screen.getByRole('button', { name: /analyze/i })).toBeDisabled()
+  })
+
+  it('shows a validation error when Analyze is clicked with an unusable URL', async () => {
     renderLanding()
     const input = screen.getByPlaceholderText(/paste a listing url/i)
-    // Clear the pre-filled sample URL
-    fireEvent.change(input, { target: { value: '' } })
+    fireEvent.change(input, { target: { value: 'not-a-url' } })
     const analyzeButton = screen.getByRole('button', { name: /analyze/i })
+    expect(analyzeButton).toBeEnabled()
     fireEvent.click(analyzeButton)
     expect(await screen.findByText(/not a usable link/i)).toBeInTheDocument()
   })

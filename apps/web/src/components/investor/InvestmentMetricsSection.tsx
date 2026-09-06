@@ -30,6 +30,7 @@ export function InvestmentMetricsSection({
     label: string
     value: string
     sub: string
+    plainEnglish: string
     status: 'pass' | 'caution' | 'fail' | 'neutral'
   }> = [
     {
@@ -41,12 +42,17 @@ export function InvestmentMetricsSection({
           : metrics.capRate >= 0.03
             ? '3–5% range'
             : 'Below 3% threshold',
+      plainEnglish: `What the property earns in a year, after running costs, as a share of its price. Here that is ${fmtMoney(metrics.noi)} a year on ${fmtMoney(listing.price)} — before any mortgage.`,
       status: metrics.capRate >= 0.05 ? 'pass' : metrics.capRate >= 0.03 ? 'caution' : 'fail',
     },
     {
       label: 'Monthly cash flow',
       value: fmtMoney(metrics.cashFlowMonthly),
       sub: 'per month',
+      plainEnglish:
+        metrics.cashFlowMonthly < 0
+          ? `Money leaves your pocket every month. Rent does not cover the mortgage, taxes, insurance and fees — you top up ${fmtMoney(Math.abs(metrics.cashFlowMonthly))} to hold it.`
+          : 'What lands in your pocket each month once every bill and the mortgage are paid.',
       status:
         metrics.cashFlowMonthly >= 200 ? 'pass' : metrics.cashFlowMonthly >= 0 ? 'caution' : 'fail',
     },
@@ -54,6 +60,7 @@ export function InvestmentMetricsSection({
       label: 'Cash-on-cash',
       value: fmtPct(metrics.cashOnCashReturn),
       sub: `On ${fmtMoney(metrics.totalCashInvested)} invested`,
+      plainEnglish: `What your own money earns in year one. For every $100 of the ${fmtMoney(metrics.totalCashInvested)} you put in, you get ${metrics.cashOnCashReturn < 0 ? 'back less than you put in' : `$${(metrics.cashOnCashReturn * 100).toFixed(2)} back`}.`,
       status:
         metrics.cashOnCashReturn >= 0.05
           ? 'pass'
@@ -70,36 +77,50 @@ export function InvestmentMetricsSection({
           : metrics.dscr >= 1.0
             ? 'Marginal'
             : 'Will not qualify',
+      plainEnglish: `The bank's test: does the rent cover the mortgage on its own? Here it covers ${Math.round(metrics.dscr * 100)}% of it. Most lenders want at least 100%, and many want 110%.`,
       status: metrics.dscr >= 1.1 ? 'pass' : metrics.dscr >= 1.0 ? 'caution' : 'fail',
     },
     {
       label: 'Monthly payment',
       value: fmtMoney(metrics.mortgagePaymentMonthly),
       sub: 'mortgage P+I',
+      plainEnglish:
+        'Your mortgage payment alone — the loan and its interest. Taxes, insurance and condo fees are on top of this.',
       status: 'neutral',
     },
     {
       label: 'NOI',
       value: fmtMoney(metrics.noi),
       sub: 'annual',
+      plainEnglish:
+        'A year of rent, minus every running cost except the mortgage. This is the number a lender or appraiser starts from.',
       status: 'neutral',
     },
     {
       label: 'GRM',
       value: metrics.grm > 0 ? metrics.grm.toFixed(1) : '—',
-      sub: metrics.grm > 0 ? 'Gross Rent Multiplier' : 'No comps available',
+      sub: metrics.grm > 0 ? 'price ÷ annual rent' : 'No comps available',
+      plainEnglish:
+        metrics.grm > 0
+          ? `Roughly how many years of rent it takes to equal the purchase price — ${metrics.grm.toFixed(1)} here. Lower is better; a quick way to compare two buildings.`
+          : 'Needs local rental comparables before it can be worked out.',
       status: 'neutral',
     },
     {
       label: 'Break-even rent',
       value: fmtMoney(metrics.breakEvenRent),
       sub: 'to cover all costs',
+      plainEnglish: `The rent you would need to stop losing money. The market pays about ${fmtMoney(listing.rentEstimate)}, so you are ${metrics.breakEvenRent > listing.rentEstimate ? `${fmtMoney(metrics.breakEvenRent - listing.rentEstimate)} short` : 'clear of it'}.`,
       status: metrics.breakEvenRent <= listing.rentEstimate ? 'pass' : 'fail',
     },
     {
       label: 'Gross yield',
       value: grossYield > 0 ? fmtPct(grossYield) : '—',
       sub: grossYield > 0 ? 'before expenses' : 'No comps available',
+      plainEnglish:
+        grossYield > 0
+          ? 'A year of rent as a share of the price, before any costs. Useful for a first glance; cap rate is the honest version.'
+          : 'Needs local rental comparables before it can be worked out.',
       status: 'neutral',
     },
   ]
@@ -168,6 +189,7 @@ export function InvestmentMetricsSection({
             label={tile.label}
             value={tile.value}
             sub={tile.sub}
+            plainEnglish={tile.plainEnglish}
             status={tile.status}
           />
         ))}

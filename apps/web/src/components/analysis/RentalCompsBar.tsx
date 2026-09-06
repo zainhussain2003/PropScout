@@ -209,15 +209,38 @@ export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarP
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
         {(
           [
-            { lbl: 'P25 · low', val: low, align: 'flex-start' },
-            { lbl: 'P50 · median', val: mid, align: 'center' },
-            { lbl: 'P75 · high', val: high, align: 'flex-end' },
+            {
+              lbl: 'Lower end',
+              val: low,
+              align: 'flex-start',
+              hint: '25th percentile — 1 in 4 comparable rentals ask less than this',
+            },
+            {
+              lbl: 'Typical',
+              val: mid,
+              align: 'center',
+              hint: 'Median — half of comparable rentals ask less, half ask more',
+            },
+            {
+              lbl: 'Upper end',
+              val: high,
+              align: 'flex-end',
+              hint: '75th percentile — 1 in 4 comparable rentals ask more than this',
+            },
           ] as const
         ).map((t) => (
           <div key={t.lbl} className="col" style={{ alignItems: t.align, gap: 2 }}>
             <div
               className="mono"
-              style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--muted)' }}
+              // `hint` carries the precise statistical meaning for anyone who wants
+              // it, without putting "P25" in front of someone who does not.
+              title={t.hint}
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.08em',
+                color: 'var(--muted)',
+                cursor: 'help',
+              }}
             >
               {t.lbl}
             </div>

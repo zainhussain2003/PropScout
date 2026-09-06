@@ -294,7 +294,16 @@ export function shimToNeighbourhood(analysis: Analysis): NeighbourhoodData {
     appreciation5y: 0,
     appreciation10y: 0,
     ppsqftTrend: 'N/A',
-    comps: [],
+    // Real comparable sales when the provider returned any; [] renders the honest
+    // "no comparable-sales source yet" state. NeighbourhoodData.comps only needs
+    // the display fields, so soldPrice/pricePerSqft are dropped here.
+    comps: (analysis.comparableSales ?? []).map((c) => ({
+      addr: c.addr,
+      beds: c.beds,
+      sqft: c.sqft,
+      sold: c.sold,
+      date: c.date,
+    })),
   }
 }
 

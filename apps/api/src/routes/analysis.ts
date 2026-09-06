@@ -31,6 +31,7 @@ import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
 import { getNearbyDistances } from '../services/googlePlacesService'
 import { getNeighbourhoodStats } from '../services/statsCanService'
+import { getComparableSalesWithProvenance } from '../services/comparableSalesService'
 import { getVacancyRateByCity } from '../services/cmhcService'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
@@ -450,6 +451,22 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         neighbourhoodStats = null
       }
 
+      // Step 7e — comparable recent sales within 1km (spec §7.3). Empty whenever
+      // the provider is unconfigured, out of coverage, or has nothing nearby —
+      // the report then shows its honest "no comparable-sales source" state
+      // rather than estimating a sale price. See docs/DECISIONS.md D-014.
+      let comparableSales: Analysis['comparableSales'] = []
+      let comparableSalesAreSample = false
+      if (coords) {
+        try {
+          const r = await getComparableSalesWithProvenance(coords.lat, coords.lng)
+          comparableSales = r.comps
+          comparableSalesAreSample = r.isSample
+        } catch {
+          comparableSales = []
+        }
+      }
+
       // Step 8 — generate narrative (never throws)
       // The Python calc engine returns flag_id (not id) and no label; resolve
       // human-readable labels here for both the narrative + the UI payload.
@@ -525,6 +542,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         neighbourhood: null,
         nearbyDistances,
         neighbourhoodStats,
+        comparableSales,
+        comparableSalesAreSample,
         sunScout: toSunScout(pyData.sun_scout),
         coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
         schools,

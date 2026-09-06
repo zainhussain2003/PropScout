@@ -171,14 +171,18 @@ describe('RentalCompsBar', () => {
     )
   })
 
-  it('renders the P25/P50/P75 percentile values', () => {
+  it('renders the plain-language range labels with percentile tooltips', () => {
     render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2950} />)
     expect(screen.getByText('$2,700')).toBeInTheDocument()
     expect(screen.getByText('$2,900')).toBeInTheDocument()
     expect(screen.getByText('$3,200')).toBeInTheDocument()
-    expect(screen.getByText('P25 · low')).toBeInTheDocument()
-    expect(screen.getByText('P50 · median')).toBeInTheDocument()
-    expect(screen.getByText('P75 · high')).toBeInTheDocument()
+    // Labels are deliberately plain-language, not statistical notation — the exact
+    // percentile meaning lives in each label's `title` for readers who want it.
+    expect(screen.getByText('Lower end')).toBeInTheDocument()
+    expect(screen.getByText('Typical')).toBeInTheDocument()
+    expect(screen.getByText('Upper end')).toBeInTheDocument()
+    expect(screen.getByTitle(/25th percentile/i)).toBeInTheDocument()
+    expect(screen.getByTitle(/Median — half of comparable rentals/i)).toBeInTheDocument()
   })
 
   it('renders the asking-rent header with the ask value', () => {

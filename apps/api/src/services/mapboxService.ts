@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Mapbox geocoding service.
  * Docs: https://docs.mapbox.com/api/search/geocoding/

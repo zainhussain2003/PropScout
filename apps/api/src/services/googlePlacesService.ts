@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Google Places API service — nearby amenity distances and school discovery.
  * Docs: https://developers.google.com/maps/documentation/places/web-service/search-nearby
@@ -213,7 +212,19 @@ async function nearestPlaceKm(
     const data = (await res.json()) as TextSearchResponse
     const loc = (data.places ?? [])[0]?.location
     if (loc?.latitude == null || loc?.longitude == null) return null
-    return Number(haversineKm(lat, lng, loc.latitude, loc.longitude).toFixed(2))
+
+    const km = haversineKm(lat, lng, loc.latitude, loc.longitude)
+
+    // `locationBias` is a preference, not a limit, so Places can return a match far
+    // outside the circle when few places carry the queried name. "Highway on-ramp"
+    // does exactly that — named on-ramps are sparse, and a North York condo was
+    // getting an on-ramp 15.6km away in Etobicoke, presented as its nearest.
+    // Anything beyond the radius we searched is not an answer to the question we
+    // asked, so it is dropped rather than shown. (locationRestriction is not a
+    // usable substitute here: it returns nothing at all for these queries.)
+    if (km > SEARCH_RADIUS_M / 1000) return null
+
+    return Number(km.toFixed(2))
   } catch (err) {
     console.error(`nearestPlaceKm(${target.query}): failed`, err)
     return null

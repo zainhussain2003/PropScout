@@ -5,11 +5,11 @@
  * Test file path: Week3-4 Front end/PR6/pbFMVSection.test.tsx
  *
  * Burlington fixture: price=$875,000, fmv={low:845000, mid:880000, high:925000}
- *   askVsMid = (875000 - 880000) / 880000 ≈ -0.00568  → shows "−0.6% vs P50"
+ *   askVsMid = (875000 - 880000) / 880000 ≈ -0.00568  → shows "−0.6% vs typical"
  *   getFMVVerdict: price=875000 > 855500 (low + 30% spread), but ≤ 893500 (mid + 30% spread)
  *                  → "At market", tone 'pass'
  *
- * "Below median" is indicated by a "−" sign in the "% vs P50" badge (not a separate
+ * "Below median" is indicated by a "−" sign in the "% vs typical" badge (not a separate
  * text label "below median"). Tests assert on the actual rendered output.
  */
 
@@ -77,19 +77,19 @@ describe('PBFMVSection', () => {
     expect(screen.getByText('Fair market value')).toBeInTheDocument()
   })
 
-  it('renders the FMV low marker label "P25 · low"', () => {
+  it('renders the FMV low marker label "Lower end"', () => {
     render(<PBFMVSection property={PB_PROPERTY} score={BURLINGTON_SCORE} />)
-    expect(screen.getByText('P25 · low')).toBeInTheDocument()
+    expect(screen.getByText('Lower end')).toBeInTheDocument()
   })
 
-  it('renders the FMV mid marker label "P50 · median"', () => {
+  it('renders the FMV mid marker label "Typical"', () => {
     render(<PBFMVSection property={PB_PROPERTY} score={BURLINGTON_SCORE} />)
-    expect(screen.getByText('P50 · median')).toBeInTheDocument()
+    expect(screen.getByText('Typical')).toBeInTheDocument()
   })
 
-  it('renders the FMV high marker label "P75 · high"', () => {
+  it('renders the FMV high marker label "Upper end"', () => {
     render(<PBFMVSection property={PB_PROPERTY} score={BURLINGTON_SCORE} />)
-    expect(screen.getByText('P75 · high')).toBeInTheDocument()
+    expect(screen.getByText('Upper end')).toBeInTheDocument()
   })
 
   it('renders the asking price of Burlington ($875,000)', () => {
@@ -97,27 +97,27 @@ describe('PBFMVSection', () => {
     expect(screen.getByText('$875,000')).toBeInTheDocument()
   })
 
-  it('Burlington askVsMid < 0 — the "% vs P50" badge shows a "−" minus prefix', () => {
+  it('Burlington askVsMid < 0 — the "% vs typical" badge shows a "−" minus prefix', () => {
     render(<PBFMVSection property={PB_PROPERTY} score={BURLINGTON_SCORE} />)
-    // askVsMid ≈ -0.00568 → badge shows "−0.6% vs P50"
+    // askVsMid ≈ -0.00568 → badge shows "−0.6% vs typical"
     // Component uses '−' (em-dash variant) when askVsMid < 0
-    expect(screen.getByText(/vs P50/)).toBeInTheDocument()
-    const badge = screen.getByText(/vs P50/).textContent ?? ''
+    expect(screen.getByText(/vs typical/)).toBeInTheDocument()
+    const badge = screen.getByText(/vs typical/).textContent ?? ''
     // The badge text starts with '−' (negative prefix) for below-median
     expect(badge).toMatch(/^[−-]/)
   })
 
-  it('modified above-median property — "% vs P50" badge shows a "+" plus prefix', () => {
+  it('modified above-median property — "% vs typical" badge shows a "+" plus prefix', () => {
     render(<PBFMVSection property={ABOVE_MID_PROPERTY} score={ABOVE_MID_SCORE} />)
-    // askVsMid > 0 → badge shows "+X.X% vs P50"
-    const badge = screen.getByText(/vs P50/).textContent ?? ''
+    // askVsMid > 0 → badge shows "+X.X% vs typical"
+    const badge = screen.getByText(/vs typical/).textContent ?? ''
     expect(badge).toMatch(/^\+/)
   })
 
-  it('at-median property (price === mid) — "% vs P50" badge shows "+" or is near zero', () => {
+  it('at-median property (price === mid) — "% vs typical" badge shows "+" or is near zero', () => {
     render(<PBFMVSection property={AT_MID_PROPERTY} score={AT_MID_SCORE} />)
     // askVsMid === 0 → component renders '+' prefix per: score.askVsMid >= 0 ? '+' : '−'
-    const badge = screen.getByText(/vs P50/).textContent ?? ''
+    const badge = screen.getByText(/vs typical/).textContent ?? ''
     expect(badge).toMatch(/^\+/)
   })
 

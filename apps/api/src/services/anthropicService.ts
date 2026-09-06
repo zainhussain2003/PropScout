@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Anthropic from '@anthropic-ai/sdk'
 import type { ReportMode } from '../types/analysis'
 

@@ -17,6 +17,10 @@ import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
 
+/** Height of the hero photo grid, in px. Pins the grid row so real listing
+ *  photos of any aspect ratio cannot grow it and overlap the address. */
+const PHOTO_GRID_HEIGHT_PX = 360
+
 interface PropertyHeroProps {
   listing: ListingData
   score: DealScoreData
@@ -142,7 +146,15 @@ export function PropertyHero({
               display: 'grid',
               gridTemplateColumns: '2fr 1fr',
               gap: 8,
-              height: 360,
+              // `height` alone is not enough: with no explicit rows the single
+              // implicit row is content-sized, so the thumbnail stack's intrinsic
+              // height (3 real listing photos ≈ 640px) grew the row past 360 and the
+              // main photo's `height: 100%` resolved against the ROW, spilling over
+              // the address heading below. Pinning the row makes the grid
+              // independent of the images' intrinsic size.
+              gridTemplateRows: PHOTO_GRID_HEIGHT_PX + 'px',
+              height: PHOTO_GRID_HEIGHT_PX,
+              overflow: 'hidden',
             }}
           >
             {/* Main photo */}
@@ -161,8 +173,9 @@ export function PropertyHero({
               )}
             </div>
 
-            {/* Thumbnail stack */}
-            <div className="col" style={{ gap: 8 }}>
+            {/* Thumbnail stack — minHeight:0 lets the flex children shrink below
+                their intrinsic image height instead of forcing the row taller. */}
+            <div className="col" style={{ gap: 8, minHeight: 0 }}>
               {(['living', 'kitchen', 'floorplan'] as const).map((label, idx) => (
                 <div
                   key={label}
@@ -170,6 +183,7 @@ export function PropertyHero({
                   style={{
                     borderRadius: 14,
                     flex: 1,
+                    minHeight: 0,
                     position: 'relative',
                     overflow: 'hidden',
                   }}

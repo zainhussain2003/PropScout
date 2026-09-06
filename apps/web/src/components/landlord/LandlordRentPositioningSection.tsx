@@ -218,9 +218,10 @@ export function LandlordRentPositioningSection({
           maxWidth: 720,
         }}
       >
-        Every metric on this page recalculates from your slider above. P25/P50/P75 are the last 60
-        days of <span className="tabular">{property.compCount}</span> verified rentals in this
-        building. Confidence: {property.compConfidence}.
+        Every number on this page moves with the slider above. The range comes from the last 60 days
+        of <span className="tabular">{property.compCount}</span> verified rentals in this building —
+        a quarter asked less than the lower end, a quarter asked more than the upper end.
+        Confidence: {property.compConfidence}.
       </p>
     </section>
   )

@@ -16,7 +16,11 @@
 
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
-import { createCheckoutSession, createBillingPortalSession } from '../services/stripeService'
+import {
+  StripeNotConfiguredError,
+  createCheckoutSession,
+  createBillingPortalSession,
+} from '../services/stripeService'
 import { getUserById } from '../services/supabaseService'
 import { getSupabase } from '../services/supabaseService'
 
@@ -62,6 +66,20 @@ async function billingRoutes(fastify: FastifyInstance): Promise<void> {
           user?.stripe_customer_id
         )
       } catch (err) {
+        // Billing is dormant until the Stripe account is set up (see
+        // docs/ACCESS_SETUP.md §1). Say that plainly instead of returning a 500,
+        // which reads as a broken product rather than a feature not yet switched on.
+        if (err instanceof StripeNotConfiguredError) {
+          fastify.log.warn({ err: err.message }, 'checkout attempted before Stripe was configured')
+          return reply
+            .status(503)
+            .send(
+              makeError(
+                'BILLING_UNAVAILABLE',
+                'Paid plans are not open yet — everything on the free tier still works.'
+              ) as never
+            )
+        }
         fastify.log.error(err, 'createCheckoutSession failed')
         return reply
           .status(500)
@@ -105,6 +123,17 @@ async function billingRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       url = await createBillingPortalSession(user.stripe_customer_id)
     } catch (err) {
+      if (err instanceof StripeNotConfiguredError) {
+        fastify.log.warn({ err: err.message }, 'portal attempted before Stripe was configured')
+        return reply
+          .status(503)
+          .send(
+            makeError(
+              'BILLING_UNAVAILABLE',
+              'Paid plans are not open yet — everything on the free tier still works.'
+            ) as never
+          )
+      }
       fastify.log.error(err, 'createBillingPortalSession failed')
       return reply
         .status(500)

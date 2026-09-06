@@ -150,6 +150,18 @@ export interface Analysis {
   nearbyDistances?: NearbyDistance[] | null
   /** Census income + population growth for the listing's FSA (StatsCan). */
   neighbourhoodStats?: NeighbourhoodStats | null
+  /**
+   * Recent comparable sales within 1km (spec §7.3). Empty when the provider is
+   * unconfigured or has no coverage — the report shows an honest empty state
+   * rather than estimating a sale price.
+   */
+  comparableSales?: ComparableSale[]
+  /**
+   * True when the comps came from the provider's sample coverage area rather
+   * than this property's neighbourhood (REPLIERS_SAMPLE_MODE). The report must
+   * label them — they are real sales, but not local ones.
+   */
+  comparableSalesAreSample?: boolean
   sunScout: SunScoutResult | null
   /** Geocoded subject-property coordinates — feeds the real MiniMap (and
    * SunScout's sun-path input). Optional: analyses stored before 2026-07-01
@@ -159,4 +171,25 @@ export interface Analysis {
    * stored before 2026-07-02 don't carry it; null until the EQAO/Fraser CSV
    * is loaded (empty table) or when geocoding failed. */
   schools?: SchoolsResult | null
+}
+
+/**
+ * One recent comparable sale near the subject property (spec §7.3).
+ *
+ * `sold` and `date` are pre-formatted for display; `soldPrice` and
+ * `pricePerSqft` stay numeric so the FMV band can be derived from them.
+ * `pricePerSqft` is null when the listing had no usable square footage — a comp
+ * still worth showing, but not one that can inform a per-sqft band.
+ */
+export interface ComparableSale {
+  addr: string
+  /** e.g. "3 bed · 2 bath", or "—" when the feed omitted both. */
+  beds: string
+  sqft: number
+  /** Formatted for display, e.g. "$705,000". */
+  sold: string
+  soldPrice: number
+  /** e.g. "Mar 2026". */
+  date: string
+  pricePerSqft: number | null
 }
