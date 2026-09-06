@@ -597,6 +597,46 @@ describe('POST / - SunScout wiring', () => {
       monthlyHours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
       sunScore: 72,
       verdict: 'good',
+      // Obstruction (spec §17 Phase 2). The fixture is an older calc-engine
+      // response with no obstruction fields, so the mapper must default them —
+      // assessed:false, everything else null. That distinction matters: false
+      // means "we checked and the sky is open", null means "not assessed".
+      obstructionAssessed: false,
+      obstructionOpenness: null,
+      obstructionBuildingsUsed: null,
+      obstructionBuildingsUnknown: null,
+      hoursLostToBuildings: null,
+    })
+  })
+
+  it('maps obstruction fields when the calc engine reports them', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      makeCalcResponse({
+        ...CALC_ENGINE_FIXTURE,
+        sun_scout: {
+          ...PY_SUN_SCOUT,
+          obstruction_assessed: true,
+          obstruction_openness: 0.842,
+          obstruction_buildings_used: 21,
+          obstruction_buildings_unknown: 16,
+          hours_lost_to_buildings: 667.0,
+        },
+      })
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.sunScout).toMatchObject({
+      obstructionAssessed: true,
+      obstructionOpenness: 0.842,
+      obstructionBuildingsUsed: 21,
+      obstructionBuildingsUnknown: 16,
+      hoursLostToBuildings: 667.0,
     })
   })
 

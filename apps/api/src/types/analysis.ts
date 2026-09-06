@@ -92,6 +92,23 @@ export interface SunScoutResult {
   monthlyHours: number[] // 12 values, index 0=Jan, index 11=Dec (bedroom_main window)
   sunScore: number
   verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
+  /**
+   * Optional throughout: analyses stored before 2026-09-06 predate obstruction
+   * and carry none of these fields, so absent and false are both possible.
+   *
+   * Whether surrounding buildings were actually assessed (spec §17 Phase 2).
+   * False means the sky was treated as open — either the lookup failed or the
+   * area had no usable building heights. Distinct from "assessed and clear".
+   */
+  obstructionAssessed?: boolean
+  /** Share of the sky dome unobstructed, 0–1. Null when not assessed. */
+  obstructionOpenness?: number | null
+  /** Footprints that carried a usable height. */
+  obstructionBuildingsUsed?: number | null
+  /** Footprints found but skipped for want of a height tag — the model's blind spot. */
+  obstructionBuildingsUnknown?: number | null
+  /** Annual direct-sun hours lost to neighbouring buildings vs an open sky. */
+  hoursLostToBuildings?: number | null
 }
 
 /** One school from the schools table, ranked by straight-line distance. */

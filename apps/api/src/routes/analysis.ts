@@ -130,6 +130,13 @@ export interface PySunScout {
   monthly_hours: number[]
   sun_score: number
   verdict: string
+  // Obstruction (spec §17 Phase 2) — optional so an older calc-engine build,
+  // or a deploy where the two services are briefly out of step, still parses.
+  obstruction_assessed?: boolean
+  obstruction_openness?: number | null
+  obstruction_buildings_used?: number | null
+  obstruction_buildings_unknown?: number | null
+  hours_lost_to_buildings?: number | null
 }
 
 interface PyAnalysisOutput {
@@ -153,6 +160,11 @@ export function toSunScout(py: PySunScout | null | undefined): Analysis['sunScou
     monthlyHours: py.monthly_hours,
     sunScore: py.sun_score,
     verdict: py.verdict as NonNullable<Analysis['sunScout']>['verdict'],
+    obstructionAssessed: py.obstruction_assessed ?? false,
+    obstructionOpenness: py.obstruction_openness ?? null,
+    obstructionBuildingsUsed: py.obstruction_buildings_used ?? null,
+    obstructionBuildingsUnknown: py.obstruction_buildings_unknown ?? null,
+    hoursLostToBuildings: py.hours_lost_to_buildings ?? null,
   }
 }
 

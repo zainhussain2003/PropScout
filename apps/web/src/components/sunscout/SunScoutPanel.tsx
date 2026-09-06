@@ -299,6 +299,76 @@ export function SunScoutPanel({
             {sunScoutData.annualPeakSunHours.toFixed(0)} estimated annual peak sun hours (primary
             window). Bright units rent 8–14% faster than comparable dim units.
           </p>
+
+          {sunScoutData.obstructionAssessed === true && (
+            <div
+              style={{
+                marginTop: 4,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: 'var(--surface-2, color-mix(in oklab, var(--ink) 4%, transparent))',
+                border: '1px solid var(--line)',
+              }}
+            >
+              <div
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: 6,
+                }}
+              >
+                Real surroundings · checked
+              </div>
+              <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
+                {typeof sunScoutData.hoursLostToBuildings === 'number' &&
+                sunScoutData.hoursLostToBuildings > 0 ? (
+                  <>
+                    Neighbouring buildings take about{' '}
+                    <strong style={{ color: 'var(--ink)' }}>
+                      {Math.round(sunScoutData.hoursLostToBuildings).toLocaleString('en-CA')} hours
+                    </strong>{' '}
+                    of direct sun off this unit each year — the figures above already have that
+                    deducted.
+                  </>
+                ) : (
+                  <>
+                    Nothing nearby meaningfully blocks this unit — the surrounding buildings were
+                    checked and the sky is effectively open.
+                  </>
+                )}
+                {typeof sunScoutData.obstructionOpenness === 'number' && (
+                  <>
+                    {' '}
+                    Sky openness{' '}
+                    <span className="mono">
+                      {Math.round(sunScoutData.obstructionOpenness * 100)}%
+                    </span>
+                    .
+                  </>
+                )}
+              </p>
+              {typeof sunScoutData.obstructionBuildingsUnknown === 'number' &&
+                sunScoutData.obstructionBuildingsUnknown > 0 && (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      color: 'var(--muted)',
+                      margin: '8px 0 0',
+                    }}
+                  >
+                    Based on {sunScoutData.obstructionBuildingsUsed ?? 0} nearby building
+                    {(sunScoutData.obstructionBuildingsUsed ?? 0) === 1 ? '' : 's'} with a known
+                    height. {sunScoutData.obstructionBuildingsUnknown} more had no height on record
+                    and were left out rather than guessed — mostly low-rise, but it means this is a
+                    floor, not a ceiling, on how much shade there is.
+                  </p>
+                )}
+            </div>
+          )}
         </div>
       </div>
     </section>

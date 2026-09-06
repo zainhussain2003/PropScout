@@ -20,6 +20,7 @@ from models.schemas import (
     SunScoutRequest,
     SunScoutResponse,
 )
+from sunscout.obstruction import build_profile, infer_floor_from_address
 from sunscout.sun_path import calculate_sun_hours
 from constants.rates import get_maintenance_rate
 from calculations.mortgage import calculate_monthly_payment
@@ -85,7 +86,12 @@ class AnalysisRequest(BaseModel):
 
 
 def _build_sun_scout(
-    lat: float, lng: float, azimuth_deg: float = 180.0, context: str = ""
+    lat: float,
+    lng: float,
+    azimuth_deg: float = 180.0,
+    context: str = "",
+    floor: int | None = None,
+    assess_obstruction: bool = False,
 ) -> SunScoutOutput | None:
     """
     Run the pvlib sun-path calculation and shape it for the API.
@@ -95,23 +101,60 @@ def _build_sun_scout(
         lng: Property longitude (decimal degrees).
         azimuth_deg: Primary facade bearing (0=N, 90=E, 180=S, 270=W).
         context: Address or label for error logs.
+        floor: Unit storey, used only when assessing obstruction.
+        assess_obstruction: Query surrounding buildings and deduct blocked hours.
 
     Returns:
         SunScoutOutput, or None on any calculation failure (non-fatal —
         the rest of the report must still load).
     """
     try:
+        # Open-sky baseline first: it is the reference the obstruction result is
+        # reported against ("you lose N hours to the buildings around you"), and
+        # it is what we fall back to if the surroundings cannot be assessed.
         ss = calculate_sun_hours(lat, lng, azimuth_deg)
-        bedroom_main = ss.window_hours.get("bedroom_main", {})
+
+        obstructed = None
+        profile = None
+        if assess_obstruction:
+            try:
+                profile = build_profile(lat, lng, floor=floor)
+                if profile.available:
+                    obstructed = calculate_sun_hours(
+                        lat, lng, azimuth_deg, floor=floor, assess_obstruction=True
+                    )
+                else:
+                    profile = None
+            except Exception as exc:  # noqa: BLE001
+                # Overpass is a free community endpoint; an outage must degrade
+                # to the open-sky figure, never fail the report.
+                logger.warning("Obstruction lookup failed for %s: %s", context, exc)
+                profile = None
+
+        chosen = obstructed or ss
+        bedroom_main = chosen.window_hours.get("bedroom_main", {})
         monthly_hours = [bedroom_main.get(m, 0.0) for m in range(1, 13)]
         return SunScoutOutput(
-            annual_peak_sun_hours=ss.annual_peak_sun_hours,
-            summer_daily_hours=ss.summer_daily_hours,
-            winter_daily_hours=ss.winter_daily_hours,
-            seasonal_grid=ss.seasonal_grid,
+            annual_peak_sun_hours=chosen.annual_peak_sun_hours,
+            summer_daily_hours=chosen.summer_daily_hours,
+            winter_daily_hours=chosen.winter_daily_hours,
+            seasonal_grid=chosen.seasonal_grid,
             monthly_hours=monthly_hours,
-            sun_score=ss.sun_score,
-            verdict=ss.verdict,
+            sun_score=chosen.sun_score,
+            verdict=chosen.verdict,
+            obstruction_assessed=profile is not None,
+            obstruction_openness=round(profile.openness, 3) if profile else None,
+            obstruction_buildings_used=(
+                profile.buildings_considered if profile else None
+            ),
+            obstruction_buildings_unknown=(
+                profile.buildings_skipped if profile else None
+            ),
+            hours_lost_to_buildings=(
+                round(ss.annual_peak_sun_hours - obstructed.annual_peak_sun_hours, 1)
+                if obstructed
+                else None
+            ),
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("SunScout failed for %s: %s", context or f"({lat},{lng})", exc)
@@ -135,7 +178,15 @@ async def recalculate_sun_scout(body: SunScoutRequest) -> SunScoutResponse:
         calculation fails.
     """
     return SunScoutResponse(
-        sun_scout=_build_sun_scout(body.lat, body.lng, body.azimuth_deg)
+        sun_scout=_build_sun_scout(
+            body.lat,
+            body.lng,
+            body.azimuth_deg,
+            floor=body.floor,
+            # Assess here too: without it, changing facade direction would
+            # silently drop the obstruction adjustment and the score would jump.
+            assess_obstruction=True,
+        )
     )
 
 
@@ -352,7 +403,18 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     # ── 6. SunScout (non-fatal — skipped when lat/lng unavailable) ───────────
     sun_scout_result: SunScoutOutput | None = None
     if prop.lat is not None and prop.lng is not None:
-        sun_scout_result = _build_sun_scout(prop.lat, prop.lng, context=prop.address)
+        # Assess real surroundings (spec §17 Phase 2). The floor is inferred from
+        # the unit number where the Toronto <floor><unit> convention applies; when
+        # it cannot be inferred the model assumes ground level, which understates
+        # sun for a high unit rather than overstating it. The report says whether
+        # obstruction was assessed and the UI lets the reader correct the floor.
+        sun_scout_result = _build_sun_scout(
+            prop.lat,
+            prop.lng,
+            context=prop.address,
+            floor=infer_floor_from_address(prop.address),
+            assess_obstruction=True,
+        )
 
     # ── 7. Assemble and return output ─────────────────────────────────────────
     metrics = InvestmentMetricsOutput(

@@ -592,6 +592,83 @@ identity. Noted in `docs/ACCESS_SETUP.md` §3 for the next time.
 
 ---
 
+### D-019 · SunScout obstruction uses OpenStreetMap, not Mapbox 3D
+
+**Chosen.** `sunscout/obstruction.py` queries OpenStreetMap via Overpass for
+building footprints within 150m, converts each to a horizon profile, and the
+sun-path loop drops any hour where the sun sits below that skyline.
+
+**Why this is the differentiator.** Sun-path maths alone gives every unit in a
+tower the same score — a ground-floor unit boxed in by neighbours scores
+identically to the penthouse. Measured at Yonge–Dundas, south-facing:
+
+|                              | score            | annual hours | vs open sky      |
+| ---------------------------- | ---------------- | ------------ | ---------------- |
+| Sun-path only                | 87.3 "excellent" | 3,619        | —                |
+| Ground floor, real buildings | **72.8 "good"**  | 2,952        | **−667h (−18%)** |
+| 10th floor                   | 76.0             | 3,045        | −574h            |
+| 40th floor                   | 87.3 "excellent" | 3,619        | 0                |
+
+Same coordinates, same facade. That spread is the product claim.
+
+**Why OSM over Mapbox 3D (which spec §17 names).** Mapbox's 3D buildings are
+_derived from_ OSM; reading OSM directly avoids decoding vector tiles server-side
+to recover data we would then re-derive. Measured Toronto coverage:
+
+| area          | buildings | with height/levels |
+| ------------- | --------- | ------------------ |
+| downtown core | 18        | 13 (72%)           |
+| Yonge–Dundas  | 37        | 21 (56%)           |
+| North York    | 49        | 2 (4%)             |
+
+The raw percentages look bad until you notice **coverage correlates with the
+buildings that matter**: towers are tagged (CN Tower 553m, Pantages 45 levels),
+untagged ones are overwhelmingly detached houses that shade almost nothing. The
+model reports how many it skipped so the report can say so.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                                                            |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Mapbox 3D tiles, per spec              | Vector-tile decoding server-side for data OSM gives directly as JSON. Revisit if OSM coverage proves insufficient outside Toronto. |
+| Assume a height for untagged buildings | Manufactures obstruction that may not exist. The whole point is measuring real surroundings.                                       |
+| Ray-trace against a full 3D mesh       | Far more accurate and far slower; a 1°-resolution horizon is well inside the error introduced by missing heights.                  |
+| Ship without obstruction (status quo)  | Leaves the score saying a basement and a penthouse are equally bright.                                                             |
+
+**Two bugs found by checking against reality rather than trusting the output**
+
+1. Sampling only footprint _corners_ left holes mid-wall. Fixed by filling each
+   edge's arc.
+2. Taking a footprint's min/max bearing broke on any building surrounding the
+   observer — the Eaton Centre, 28m away, spans bearings 0°–359°, and would have
+   blacked out the entire sky from one building. Fixed by walking consecutive
+   vertices and always taking the short arc.
+
+A third finding was **not** a bug: due south reading "clear" at Yonge–Dundas is
+correct — the 145°–212° gap is Dundas Square itself. Worth stating, because the
+instinct was to "fix" it.
+
+**Deliberate limits, documented in the module and surfaced in the UI**
+
+- No terrain (flat enough in urban Ontario; would matter in Vancouver).
+- No trees — a summer-shaded window may score higher than it lives.
+- Direct sun only; a blocked hour still has skylight.
+- Untagged buildings skipped, so the result is a **floor on how much shade there
+  is, not a ceiling**. The report says exactly that.
+
+**Floor inference.** Listings expose a unit number, never a floor, and the floor
+decides whether a tower matters. `infer_floor_from_address` reads the Toronto
+`<floor><unit>` convention (3705 → 37, 229 → 2). It is a convention, not a rule,
+so it only ever refines an estimate and is never stated back to the user as fact.
+When it cannot be inferred the model assumes ground level — understating sun for a
+high unit rather than overstating it.
+
+**Failure behaviour.** Overpass is a free community endpoint that rate-limits.
+An outage falls back to the open-sky figure with `obstructionAssessed: false` —
+"we did not check" is never rendered as "nothing is in the way".
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

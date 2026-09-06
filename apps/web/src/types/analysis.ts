@@ -127,6 +127,16 @@ export interface SunScoutResult {
   monthlyHours: number[] // 12 values, index 0=Jan, index 11=Dec (bedroom_main window)
   sunScore: number
   verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
+  /**
+   * Building-obstruction results (spec §17 Phase 2). All optional: analyses
+   * stored before 2026-09-06 predate the feature, and `false` ("we checked, the
+   * sky is open") is a different claim from absent ("we did not check").
+   */
+  obstructionAssessed?: boolean
+  obstructionOpenness?: number | null
+  obstructionBuildingsUsed?: number | null
+  obstructionBuildingsUnknown?: number | null
+  hoursLostToBuildings?: number | null
 }
 
 /** One school from the schools table, ranked by straight-line distance. */
