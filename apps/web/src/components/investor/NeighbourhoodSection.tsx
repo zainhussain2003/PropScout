@@ -16,6 +16,13 @@ import { SectionHead } from '../shared/SectionHead'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
 
 interface NeighbourhoodSectionProps {
+  /**
+   * True when the comps come from the provider's sample coverage rather than
+   * this property's area. They are real sales somewhere else, so they are
+   * labelled rather than presented as local comparables.
+   */
+  compsAreSample?: boolean
+
   listing: ListingData
   neighbourhood: NeighbourhoodData
 }
@@ -23,6 +30,7 @@ interface NeighbourhoodSectionProps {
 export function NeighbourhoodSection({
   listing: _listing,
   neighbourhood,
+  compsAreSample = false,
 }: NeighbourhoodSectionProps): JSX.Element {
   const n = neighbourhood
 
@@ -203,6 +211,26 @@ export function NeighbourhoodSection({
           </div>
 
           <div className="col" style={{ gap: 0 }}>
+            {compsAreSample && n.comps.length > 0 && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  marginBottom: 12,
+                  borderRadius: 10,
+                  background: 'color-mix(in oklab, var(--caution) 12%, transparent)',
+                  border: '1px solid color-mix(in oklab, var(--caution) 40%, transparent)',
+                  fontSize: 12.5,
+                  lineHeight: 1.5,
+                  color: 'var(--ink-2)',
+                }}
+              >
+                <strong style={{ color: 'var(--caution)' }}>Sample data — not this area.</strong>{' '}
+                These are real recorded sales from the data provider&apos;s demo coverage, shown to
+                exercise this section before Ontario comparables are licensed. Do not read them as
+                comparables for this address.
+              </div>
+            )}
+
             {n.comps.length === 0 && (
               <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
                 No comparable-sales source yet — recent sold prices aren&apos;t available for this
@@ -224,7 +252,8 @@ export function NeighbourhoodSection({
                 <div className="col" style={{ gap: 2 }}>
                   <span style={{ fontSize: 14, color: 'var(--ink)' }}>{comp.addr}</span>
                   <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    {comp.beds} bed · {comp.sqft.toLocaleString('en-CA')} sqft
+                    {comp.beds === '—' ? '— bed' : `${comp.beds} bed`}
+                    {comp.sqft > 0 ? ` · ${comp.sqft.toLocaleString('en-CA')} sqft` : ''}
                   </span>
                 </div>
                 <div className="col" style={{ alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>

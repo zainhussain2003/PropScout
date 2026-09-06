@@ -31,7 +31,7 @@ import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
 import { getNearbyDistances } from '../services/googlePlacesService'
 import { getNeighbourhoodStats } from '../services/statsCanService'
-import { getComparableSales } from '../services/comparableSalesService'
+import { getComparableSalesWithProvenance } from '../services/comparableSalesService'
 import { getVacancyRateByCity } from '../services/cmhcService'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
@@ -456,9 +456,12 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // the report then shows its honest "no comparable-sales source" state
       // rather than estimating a sale price. See docs/DECISIONS.md D-014.
       let comparableSales: Analysis['comparableSales'] = []
+      let comparableSalesAreSample = false
       if (coords) {
         try {
-          comparableSales = await getComparableSales(coords.lat, coords.lng)
+          const r = await getComparableSalesWithProvenance(coords.lat, coords.lng)
+          comparableSales = r.comps
+          comparableSalesAreSample = r.isSample
         } catch {
           comparableSales = []
         }
@@ -540,6 +543,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         nearbyDistances,
         neighbourhoodStats,
         comparableSales,
+        comparableSalesAreSample,
         sunScout: toSunScout(pyData.sun_scout),
         coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
         schools,

@@ -1314,10 +1314,8 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
               class="mono"
               style="font-size: 11px; color: var(--muted);"
             >
-              3
-               bed · 
-              945
-               sqft
+              3 bed
+               · 945 sqft
             </span>
           </div>
           <div
@@ -1354,10 +1352,8 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
               class="mono"
               style="font-size: 11px; color: var(--muted);"
             >
-              3
-               bed · 
-              970
-               sqft
+              3 bed
+               · 970 sqft
             </span>
           </div>
           <div
@@ -1394,10 +1390,8 @@ exports[`NeighbourhoodSection > matches snapshot 1`] = `
               class="mono"
               style="font-size: 11px; color: var(--muted);"
             >
-              3
-               bed · 
-              925
-               sqft
+              3 bed
+               · 925 sqft
             </span>
           </div>
           <div

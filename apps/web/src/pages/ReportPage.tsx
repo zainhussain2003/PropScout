@@ -956,7 +956,11 @@ function InvestorReportContent({
           data-honest: unknown stats render "—" and empty comps show the "no
           comparable-sales source yet" state (shimToNeighbourhood returns zeros
           when the API has no neighbourhood data, never fabricated figures). */}
-      <NeighbourhoodSection listing={listingData} neighbourhood={shimToNeighbourhood(analysis)} />
+      <NeighbourhoodSection
+        listing={listingData}
+        neighbourhood={shimToNeighbourhood(analysis)}
+        compsAreSample={analysis.comparableSalesAreSample ?? false}
+      />
       <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="09" token={analysis.token} />
       {/* §10 STR analysis — a Phase-2 informational placeholder (municipal STR-rule
           guidance by postal code), not fabricated property data. Present in the

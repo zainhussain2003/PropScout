@@ -501,6 +501,49 @@ required attribution string (most MLS feeds mandate a "Data provided by…" line
 
 ---
 
+### D-016 · Sample comps keep their real addresses and are labelled, never relocated
+
+**Chosen.** `REPLIERS_SAMPLE_MODE=true` (dev only, off by default) queries the
+provider's sample coverage so §08 can be exercised end to end. The comps come back
+with their **real US addresses unchanged**, the payload carries
+`comparableSalesAreSample`, and the report renders an amber banner above them:
+_"Sample data — not this area … Do not read them as comparables for this address."_
+
+**Why.** The question asked was whether the US sample listings could be converted
+to random GTA addresses to test the system, on the reasoning that it is just data.
+It is not just data — it is the specific claim a buyer would act on.
+
+Rewriting `6816 190th Avenue, Longbranch WA → 12 Maple Street, Vaughan ON` produces
+a report stating that a named Ontario address sold for a specific price on a
+specific date. No such transaction exists. That is indistinguishable from a real
+comp on the page, it is the number that most directly moves a purchase decision,
+and it would survive into screenshots, PDFs and a pitch demo with nothing marking
+it as invented. It is the same class of problem as the fabricated verdict paragraph
+in D-004, and worse, because sale prices are load-bearing.
+
+Keeping the real Tacoma addresses makes the sample self-evident — nobody mistakes
+"525 Broadway, Tacoma" for a comparable to a North York condo — while still
+exercising the full path: query, mapping, filtering, persistence, shim, render.
+
+**Alternatives considered**
+
+| Option                                                       | Why not                                                                                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Rewrite addresses to plausible GTA ones                      | Fabricates a specific, actionable, unverifiable claim about a real address. The core objection.                     |
+| Rewrite to obviously fake addresses ("123 Test St, Toronto") | Safer, but still asserts a sale that never happened, and "Test St" reads as an unfinished product in a demo.        |
+| Keep the section empty until the paid plan                   | Leaves the render path completely unexercised — the double "bed" label below would not have been caught.            |
+| Seed a local fixture file instead of calling the API         | Tests the renderer but not the integration: the mapping, the filters and the live response shape all go unverified. |
+
+**Caught because of this.** Running real data through the renderer immediately
+exposed two display bugs invisible to fixtures: the row template appends `" bed"`
+to a field that already contained it (`"1 bed · 1 bath bed"`), and an unknown bed
+count rendered `"— bed"`. Both fixed; the service now returns just the count.
+
+**Turn it off** by removing `REPLIERS_SAMPLE_MODE` from `.env`. It must never be
+set in production — comps would then describe the wrong continent, labelled or not.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

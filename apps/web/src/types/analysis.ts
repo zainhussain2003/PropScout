@@ -183,6 +183,22 @@ export interface Analysis {
   nearbyDistances?: NearbyDistance[] | null
   /** Census income + population growth for the listing's FSA (StatsCan). */
   neighbourhoodStats?: NeighbourhoodStats | null
+  /** Recent comparable sales within 1km (spec §7.3); empty when unavailable. */
+  comparableSales?: Array<{
+    addr: string
+    beds: string
+    sqft: number
+    sold: string
+    soldPrice: number
+    date: string
+    pricePerSqft: number | null
+  }>
+  /**
+   * True when those comps came from the provider's sample coverage rather than
+   * this property's area — the report labels them instead of presenting them as
+   * local comparables.
+   */
+  comparableSalesAreSample?: boolean
   hasSanityWarnings: boolean
   sunScout: SunScoutResult | null
   /** Geocoded subject-property coordinates — enables the real MiniMap.

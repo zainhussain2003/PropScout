@@ -156,6 +156,12 @@ export interface Analysis {
    * rather than estimating a sale price.
    */
   comparableSales?: ComparableSale[]
+  /**
+   * True when the comps came from the provider's sample coverage area rather
+   * than this property's neighbourhood (REPLIERS_SAMPLE_MODE). The report must
+   * label them — they are real sales, but not local ones.
+   */
+  comparableSalesAreSample?: boolean
   sunScout: SunScoutResult | null
   /** Geocoded subject-property coordinates — feeds the real MiniMap (and
    * SunScout's sun-path input). Optional: analyses stored before 2026-07-01

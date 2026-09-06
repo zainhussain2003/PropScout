@@ -46,6 +46,14 @@ const MAX_SALE_AGE_DAYS = 365
 
 const REQUEST_TIMEOUT_MS = 8_000
 
+/**
+ * Downtown Tacoma — inside the free key's US sample coverage and dense enough
+ * that a 1km radius returns recent sales. Used ONLY when REPLIERS_SAMPLE_MODE is
+ * explicitly enabled, so the comps section can be exercised before the account is
+ * on a plan covering Ontario.
+ */
+const SAMPLE_MODE_COORDS: readonly [number, number] = [47.2529, -122.4443]
+
 /** A single listing as Repliers returns it. Only the fields we consume. */
 interface RepliersListing {
   soldPrice?: number | string
@@ -130,12 +138,14 @@ export function toComparableSale(
   if (!isRecentEnough(listing.soldDate, now)) return null
 
   const beds = num(listing.details?.numBedrooms)
-  const baths = num(listing.details?.numBathrooms)
   const sqft = num(listing.details?.sqft)
 
   return {
     addr,
-    beds: beds === null ? '—' : baths === null ? `${beds} bed` : `${beds} bed · ${baths} bath`,
+    // Just the count — the report renders "{beds} bed · {sqft} sqft", so including
+    // the word here produced "1 bed · 1 bath bed". Baths are dropped rather than
+    // squeezed in: the row has no slot for them.
+    beds: beds === null ? '—' : String(beds),
     sqft: sqft ?? 0,
     sold: formatMoney(soldPrice),
     soldPrice,
@@ -158,8 +168,15 @@ export async function getComparableSales(lat: number, lng: number): Promise<Comp
     return []
   }
 
+  const sampleMode = process.env.REPLIERS_SAMPLE_MODE === 'true'
+  // In sample mode, query a location the sample dataset actually covers so the
+  // rendering path can be exercised end to end. The addresses stay REAL and
+  // unmodified — they are simply somewhere else, which is why the payload flags
+  // them and the report labels them. See getComparableSalesWithProvenance.
+  const [qLat, qLng] = sampleMode ? SAMPLE_MODE_COORDS : [lat, lng]
+
   const url =
-    `${REPLIERS_BASE_URL}?lat=${lat}&long=${lng}&radius=${SEARCH_RADIUS_KM}` +
+    `${REPLIERS_BASE_URL}?lat=${qLat}&long=${qLng}&radius=${SEARCH_RADIUS_KM}` +
     `&status=U&lastStatus=Sld&resultsPerPage=${MAX_COMPS * 3}&pageNum=1`
 
   let res: Response
@@ -227,4 +244,30 @@ export function deriveFmvBand(
     high: Math.round(at(0.75) * subjectSqft),
     basedOn: psf.length,
   }
+}
+
+/**
+ * Comparable sales plus whether they describe this property's actual neighbourhood.
+ *
+ * `isSample` is true when REPLIERS_SAMPLE_MODE returned comps from the sample
+ * dataset's coverage area instead of the subject's. The addresses and prices are
+ * real MLS records — they are simply somewhere else — so the report MUST label
+ * them rather than present them as local comparables.
+ *
+ * Rewriting those addresses to plausible GTA ones was considered and rejected: it
+ * would produce a report stating that a specific Toronto address sold for a
+ * specific price, which is not true of any real transaction. That is the same
+ * fabrication removed in D-004, and it is far more dangerous here because sale
+ * prices are the number a buyer would act on.
+ *
+ * @param lat - property latitude
+ * @param lng - property longitude
+ */
+export async function getComparableSalesWithProvenance(
+  lat: number,
+  lng: number
+): Promise<{ comps: ComparableSale[]; isSample: boolean }> {
+  const comps = await getComparableSales(lat, lng)
+  const isSample = process.env.REPLIERS_SAMPLE_MODE === 'true' && comps.length > 0
+  return { comps, isSample }
 }

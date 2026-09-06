@@ -149,6 +149,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     nearbyDistances?: Analysis['nearbyDistances']
     neighbourhoodStats?: Analysis['neighbourhoodStats']
     comparableSales?: Analysis['comparableSales']
+    comparableSalesAreSample?: Analysis['comparableSalesAreSample']
     hasSanityWarnings?: boolean
   } | null
   const dealScore = marketData?.dealScore ?? null
@@ -182,6 +183,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     nearbyDistances: marketData?.nearbyDistances ?? null,
     neighbourhoodStats: marketData?.neighbourhoodStats ?? null,
     comparableSales: marketData?.comparableSales ?? [],
+    comparableSalesAreSample: marketData?.comparableSalesAreSample ?? false,
   }
 }
 
@@ -274,6 +276,7 @@ export async function saveAnalysis(
         nearbyDistances: analysis.nearbyDistances ?? null,
         neighbourhoodStats: analysis.neighbourhoodStats ?? null,
         comparableSales: analysis.comparableSales ?? [],
+        comparableSalesAreSample: analysis.comparableSalesAreSample ?? false,
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,
@@ -817,6 +820,7 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
         nearbyDistances: analysis.nearbyDistances ?? null,
         neighbourhoodStats: analysis.neighbourhoodStats ?? null,
         comparableSales: analysis.comparableSales ?? [],
+        comparableSalesAreSample: analysis.comparableSalesAreSample ?? false,
         hasSanityWarnings: analysis.hasSanityWarnings,
       },
       calculated_metrics: analysis.metrics ?? null,

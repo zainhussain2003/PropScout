@@ -57,7 +57,7 @@ describe('toComparableSale', () => {
     const c = toComparableSale(listing(), NOW)
     expect(c).not.toBeNull()
     expect(c?.addr).toBe('12 Main St, Toronto')
-    expect(c?.beds).toBe('3 bed · 2 bath')
+    expect(c?.beds).toBe('3') // just the count — the report adds the word "bed"
     expect(c?.sold).toBe('$705,000')
     expect(c?.date).toBe('Mar 2026')
     expect(c?.soldPrice).toBe(705000)
@@ -104,10 +104,10 @@ describe('toComparableSale', () => {
     const c = toComparableSale(listing({ details: { numBedrooms: 2, sqft: undefined } }), NOW)
     expect(c).not.toBeNull()
     expect(c?.pricePerSqft).toBeNull()
-    expect(c?.beds).toBe('2 bed')
+    expect(c?.beds).toBe('2')
   })
 
-  it('shows an em dash when the feed omits beds and baths entirely', () => {
+  it('shows an em dash when the feed omits the bedroom count', () => {
     const c = toComparableSale(listing({ details: {} }), NOW)
     expect(c?.beds).toBe('—')
   })
