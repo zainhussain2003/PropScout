@@ -58,3 +58,6 @@ scripts/_verify_schools.mjs
 
 statscan-raw/
 scripts/_build_fsa_stats.py
+
+# Agent sandbox run output — 22 log files, regenerated on every run.
+services/agents/logs/
