@@ -50,10 +50,10 @@ sentence governs every judgement below.
 
 ## 3. Where things stand
 
-- **Branch:** `feat/address-input-and-mobile`, 12 commits ahead of `master`.
+- **Branch:** `feat/address-input-and-mobile`, 16 commits ahead of `master`.
   Open PR **#21**. Everything is pushed.
 - **Production:** `propscout.ca` is live on Vercel but runs `master` — none of
-  the last 12 commits are deployed.
+  the last 16 commits are deployed.
 - **Supabase project:** `dvlmkecrpoelqlzhwebg` ("PropScout"). One project serves
   both local dev and production. There is no staging database.
 - **Local stack:** web `:5173`, API `:3001`, calc engine `:8000`.
@@ -195,7 +195,7 @@ the regex tier runs. That is the larger half of §19.
 
 ### 3. Deploy this branch
 
-`propscout.ca` runs `master` and is 12 commits behind. Merging #21 ships
+`propscout.ca` runs `master` and is 16 commits behind. Merging #21 ships
 address entry, real SunScout obstruction, the comps radius fallback, the
 extraction fixes, and the UI work.
 
