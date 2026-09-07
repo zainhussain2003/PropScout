@@ -7,7 +7,12 @@ jest.mock('@anthropic-ai/sdk', () => ({
   })),
 }))
 
-import { extractListingFlags, generateNarrative, type NarrativeInput } from './anthropicService'
+import {
+  extractListingFlags,
+  generateNarrative,
+  hasOnlyGroundedCurrency,
+  type NarrativeInput,
+} from './anthropicService'
 
 function makeTextResponse(text: string): { content: Array<{ type: string; text: string }> } {
   return { content: [{ type: 'text', text }] }
@@ -101,6 +106,18 @@ const BASE_INVESTOR: NarrativeInput = {
 }
 
 describe('generateNarrative', () => {
+  it('accepts dollar amounts copied from the provided metrics, including a negative cash flow', () => {
+    expect(
+      hasOnlyGroundedCurrency('Cash flow is −$1,833 and the fee is $761.', BASE_INVESTOR)
+    ).toBe(true)
+  })
+
+  it('rejects a calculated purchase target that was not provided', () => {
+    expect(
+      hasOnlyGroundedCurrency('This works around a $300,000 purchase price.', BASE_INVESTOR)
+    ).toBe(false)
+  })
+
   it('investor mode, pro tier → calls Sonnet, returns narrative string', async () => {
     const narrative = 'The $761-per-month condo fee ends this deal before it starts.'
     mockMessagesCreate.mockResolvedValueOnce(makeTextResponse(narrative))
@@ -111,6 +128,16 @@ describe('generateNarrative', () => {
     expect(mockMessagesCreate).toHaveBeenCalledTimes(1)
     const call = mockMessagesCreate.mock.calls[0][0] as { model: string }
     expect(call.model).toBe('claude-sonnet-4-6')
+    const prompt = (mockMessagesCreate.mock.calls[0][0] as { messages: Array<{ content: string }> })
+      .messages[0].content
+    expect(prompt).toContain('Do not calculate or invent an offer price')
+  })
+
+  it('replaces a narrative containing an unprovided dollar target with the safe fallback', async () => {
+    mockMessagesCreate.mockResolvedValueOnce(
+      makeTextResponse('The deal would work at roughly $300,000. Negotiate toward that target.')
+    )
+    await expect(generateNarrative(BASE_INVESTOR)).resolves.toBe(FALLBACK)
   })
 
   it('personal mode, pro tier → prompt contains personal use marker', async () => {
@@ -182,6 +209,23 @@ describe('generateNarrative', () => {
     expect(prompt).toContain('5 comparable rentals')
     expect(prompt).toContain('Do NOT say market data is unavailable')
     expect(prompt).not.toContain('no comparable rentals for this area yet')
+  })
+
+  it('allows a tenant target copied from the supplied market range', async () => {
+    mockMessagesCreate.mockResolvedValueOnce(
+      makeTextResponse('Negotiate to $2,600, the supplied low.')
+    )
+    const result = await generateNarrative({
+      mode: 'tenant',
+      tier: 'pro',
+      address: '8 Hillsdale Ave E, Toronto, ON',
+      askingRent: 3100,
+      rentMid: 2900,
+      rentLow: 2600,
+      rentHigh: 3200,
+      compCount: 5,
+    })
+    expect(result).toContain('$2,600')
   })
 
   it('free tier → prompt contains 1 paragraph instruction', async () => {

@@ -972,6 +972,14 @@ waitlist (id uuid PK, email text, province char(2), created_at timestamptz)
 
 ## 12. AI narrative spec
 
+Narrative output is allowed to repeat only dollar amounts present in its
+structured input. The service validates every `$` claim before returning the
+text; an unprovided offer price, negotiation target, derived dollar gap, or
+decimal currency amount rejects the whole narrative and returns the explicit
+temporary-unavailable fallback. Prompts carry the same rule. Tenant targets may
+use a provided asking, low, mid, or high rent; the model may not invent a
+midpoint. This guard does not validate non-currency prose or percentages.
+
 > **TEMPLATE CODE** — All prompts below are starting templates. Iterate on wording, tone, and structure based on output quality during development. The gold-standard examples in this section are the quality target — if generated output does not match that quality, refine the prompt, not the examples.
 
 ### Purpose

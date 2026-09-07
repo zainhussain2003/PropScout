@@ -1498,6 +1498,35 @@ width are both 365px (the browser reserves 10px for its scrollbar).
 
 ---
 
+### D-042 · Reject AI narratives with unprovided dollar claims
+
+**Chosen.** Narrative prompts forbid calculated dollar amounts, and the service
+post-validates every currency claim against the numeric fields supplied to the
+model. It compares exact rounded dollar values while accepting commas, spacing,
+and negative signs. Any unprovided or decimal currency amount rejects the whole
+narrative and returns the existing explicit temporary-unavailable fallback.
+Tenant targets may repeat a supplied asking, low, mid, or high rent.
+
+**Why.** The real Buttermill narrative proposed a roughly $300,000 purchase
+target. The calculation engine supplied asking price, rent, cash flow and
+break-even rent, but no purchase target. A prompt instruction alone cannot make
+fabricated money safe; a deterministic output boundary can.
+
+**Alternatives considered**
+
+| Option                               | Why not                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Strengthen the prompt only           | The model can still disobey it, as the live run demonstrated.                                                                        |
+| Allow arithmetic-derived dollar gaps | Reimplements financial calculations in prose without a tested source field.                                                          |
+| Delete only the offending sentence   | Sentence splitting can leave dependent claims and produce incoherent advice.                                                         |
+| Validate every number in the prose   | Addresses, scores, percentages, counts and ordinary quantities need different semantics; currency is the observed high-risk failure. |
+
+**Limit.** This boundary does not prove that non-currency prose or percentages
+are grounded. Add typed source fields and validators when a real failure exposes
+those classes; do not claim general narrative factuality from this guard.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

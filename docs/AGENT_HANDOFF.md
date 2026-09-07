@@ -20,7 +20,10 @@ It is the state of play, the rules, the traps, and the work queue.
 > Vercel confirms `VITE_API_URL` is scoped to both Preview and Production.
 > Automatic approval review blocked revealing its secret value, so the endpoint
 > itself remains unverified. The branch changes are not yet merged to `master`;
-> production approval is still required. See D-037 through D-041.
+> production approval is still required. See D-037 through D-042.
+> A follow-up commit after the first Preview closes the live narrative blocker:
+> dollar claims are now rejected unless they exactly match a supplied metric
+> (D-042). Re-run CI and use the newest Preview before merging.
 
 ---
 
@@ -60,7 +63,7 @@ sentence governs every judgement below.
 
 ```
 npm test --workspace=apps/web        # 913 passed, 73 files
-npm test --workspace=apps/api        # 222 passed, 2 skipped
+npm test --workspace=apps/api        # 226 passed, 2 skipped
 python -m pytest services/calc-engine/ -q   # 398 passed
 python -m pytest services/scrapers/ -q      # 180 passed
 npm run typecheck --workspace=apps/web

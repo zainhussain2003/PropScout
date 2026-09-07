@@ -68,6 +68,39 @@ function fmtNum(n: number | null | undefined, decimals = 2): string {
   return n.toFixed(decimals)
 }
 
+const CURRENCY_FIELDS: Array<keyof NarrativeInput> = [
+  'price',
+  'cashFlowMonthly',
+  'cashFlowAnnual',
+  'rentMid',
+  'breakEvenRent',
+  'condoFeeMonthly',
+  'monthlyOwnershipCost',
+  'fmvLow',
+  'fmvHigh',
+  'askingRent',
+  'rentLow',
+  'rentHigh',
+]
+
+/** Reject dollar claims the model could not have copied from its inputs. */
+export function hasOnlyGroundedCurrency(text: string, input: NarrativeInput): boolean {
+  const allowed = new Set<number>()
+  for (const field of CURRENCY_FIELDS) {
+    const value = input[field]
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      allowed.add(Math.round(Math.abs(value)))
+    }
+  }
+
+  const claims = text.matchAll(/\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)/g)
+  for (const claim of claims) {
+    const value = Number(claim[1]?.replace(/,/g, ''))
+    if (!Number.isInteger(value) || !allowed.has(value)) return false
+  }
+  return true
+}
+
 function buildInvestmentPrompt(input: NarrativeInput): string {
   const condoFee =
     input.condoFeeMonthly == null
@@ -107,6 +140,7 @@ Write a 3-paragraph investment verdict:
 Rules: second person ("you"). Be direct. Maximum 280 words. Plain paragraphs only.
 No bullet points. Do not mention PropScout. Do not say "as an AI."
 Assume the reader has seen all the numbers already — add judgment, not repetition.
+Use only dollar amounts stated in the inputs above. Do not calculate or invent an offer price, negotiation target, required purchase price, or dollar difference. If the exact condition requires a number not provided above, say it must be calculated first.
 
 ${tierInstruction}`
 }
@@ -134,6 +168,7 @@ Write a 3-paragraph verdict:
 
 Rules: second person. Warm but direct. Maximum 240 words. Plain paragraphs only.
 Do not mention PropScout.
+Use only dollar amounts stated in the inputs above. Do not calculate or invent an offer price, negotiation target, or dollar difference.
 
 ${tierInstruction}`
 }
@@ -171,6 +206,7 @@ Write a 2-paragraph verdict:
 
 Rules: second person. Direct. Maximum 180 words. Plain paragraphs only.
 Do not mention PropScout. ${marketRule}
+Use only dollar amounts stated in the inputs above. Any target must be one of the provided market rent amounts; do not invent a midpoint or dollar difference.
 
 ${tierInstruction}`
 }
@@ -205,6 +241,11 @@ export async function generateNarrative(input: NarrativeInput): Promise<string> 
     const block = response.content[0]
     if (!block || block.type !== 'text') {
       console.error(`generateNarrative: non-text content block for mode=${input.mode}`)
+      return NARRATIVE_FALLBACK
+    }
+
+    if (!hasOnlyGroundedCurrency(block.text, input)) {
+      console.error(`generateNarrative: rejected ungrounded currency claim for mode=${input.mode}`)
       return NARRATIVE_FALLBACK
     }
 

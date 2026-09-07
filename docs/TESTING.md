@@ -787,6 +787,7 @@ Run these immediately before going live:
 - [x] Cash to close counts the API closing-cost total once: $145,980 down + $13,473 including LTT = $159,453.
 - [x] Personal live report keeps the overall score paused until Ontario FMV exists, even when schools and SunScout are present.
 - [x] Tenant live report renders an em dash and reason when asking rent is absent.
+- [x] Narrative output accepts supplied dollar amounts and falls back when the model invents an offer price or negotiation target.
 - [x] Report widths tested at 1280px and 375px; document width equals viewport width at 375px.
 
 ---
