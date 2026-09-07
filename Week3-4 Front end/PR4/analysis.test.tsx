@@ -479,6 +479,46 @@ describe('PropertyHero', () => {
     expect(screen.getAllByText('Hard pass').length).toBeGreaterThanOrEqual(1)
   })
 
+  it('makes the backend verdict a headline and exposes weighted points accessibly', () => {
+    render(
+      <PropertyHero
+        listing={LISTING}
+        score={VAUGHAN_SCORE}
+        cashFlowMonthly={-2724}
+        capRate={0.0081}
+        dscr={0.15}
+      />
+    )
+    expect(screen.getByRole('heading', { name: 'Hard pass' })).toBeInTheDocument()
+    expect(screen.getAllByText('Hard pass')).toHaveLength(1)
+    expect(screen.getByText('−$2,724')).toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: 'Cap rate' })).toHaveAttribute('aria-valuemax', '25')
+    expect(screen.getByRole('meter', { name: 'Rental demand' })).toHaveStyle({ width: '40%' })
+    expect(screen.getByText(/95-point scale/)).toBeInTheDocument()
+  })
+
+  it('preserves a gated verdict when component points are high', () => {
+    render(
+      <PropertyHero
+        listing={LISTING}
+        score={{
+          ...VAUGHAN_SCORE,
+          displayTotal: 42,
+          label: 'Marginal',
+          tone: 'caution',
+          verdict: 'marginal',
+          breakdown: { ...VAUGHAN_SCORE.breakdown, capRate: 25, cashFlow: 25 },
+        }}
+        cashFlowMonthly={500}
+        capRate={0.06}
+        dscr={1.25}
+      />
+    )
+    expect(screen.getByRole('heading', { name: 'Marginal' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Deal score: 42 out of 100')).toBeInTheDocument()
+    expect(screen.queryByText('Strong deal')).not.toBeInTheDocument()
+  })
+
   it('renders all listing chips', () => {
     render(
       <PropertyHero

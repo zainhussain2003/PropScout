@@ -1,6 +1,6 @@
 # PropScout — MVP Testing Guide
 
-Last updated: May 2026
+Last updated: September 2026
 Reference spec: `propscout_platform_spec.md`
 Build tasks: `MVP_TODO.md`
 
@@ -775,9 +775,19 @@ Run these immediately before going live:
 
 **✋ Golden dataset final run**
 
-- [ ] Run the full extraction pipeline regression suite one final time
-- [ ] Confirm 95%+ accuracy before going live
-- [ ] Document the final accuracy score and date in this file
+- [x] Run the full extraction pipeline regression suite one final time
+- [x] Confirm 95%+ accuracy before going live
+- [x] 2026-09-07: 96-case development corpus passed 653/653 assertions; real full-description precision and recall both 48/48. This is not held-out accuracy.
+
+**🔗 Report truthfulness and score-card verification — 2026-09-07**
+
+- [x] Investor/landlord hero uses the backend 8 / hard-pass verdict and shows −$2,724/month before the weighted 25/25/20/15/10 component bars.
+- [x] Address-entry reports show a map and explicit no-photo caption; no photo frames or “+ N more” badge.
+- [x] Unknown build year uses the 1% middle maintenance assumption and labels why; address-entry parking renders as not provided.
+- [x] Cash to close counts the API closing-cost total once: $145,980 down + $13,473 including LTT = $159,453.
+- [x] Personal live report keeps the overall score paused until Ontario FMV exists, even when schools and SunScout are present.
+- [x] Tenant live report renders an em dash and reason when asking rent is absent.
+- [x] Report widths tested at 1280px and 375px; document width equals viewport width at 375px.
 
 ---
 
@@ -803,4 +813,4 @@ Every time Realtor.ca or Zillow.ca changes their page structure:
 
 ---
 
-_PropScout · Testing Guide · May 2026 · Update this file as new features are added_
+_PropScout · Testing Guide · September 2026 · Update this file as new features are added_

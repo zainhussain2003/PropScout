@@ -1345,6 +1345,159 @@ around an underplayed gauge — is untouched and is the obvious next move.
 
 ---
 
+### D-037 · The investment verdict leads the score card
+
+**Chosen.** A headline verdict, a prominent monthly cash-flow panel, and weighted
+component bars replace the centered gauge and equal-width hairlines. Keep the
+PR10 palette and assigned font roles. Spacing, typography, rules, and motion use
+tokens; reduced motion disables gauge and bar transitions. The backend remains
+the authority for both the score and verdict. Explain the 95-point component
+scale and normalized 100-point display, including risk limits. Zero points have
+zero fill; invalid points show an em dash rather than a plausible score.
+
+**Why.** A reader should see the recommendation and monthly financial consequence
+before studying the inputs. Weighted tracks expose the different contribution
+limits rather than implying every component matters equally.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                               |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| Cinematic imagery or a new palette          | Outside the owner's direction and the contrast-checked design system. |
+| Make only the gauge larger                  | Still makes the verdict and cash loss secondary.                      |
+| Equal-length tracks or minimum visible fill | Misrepresents weights or gives zero-point components apparent credit. |
+| Infer the verdict from component totals     | Would bypass backend risk ceilings.                                   |
+
+---
+
+### D-038 · Measure extraction on full, traceable listing prose
+
+**Chosen.** Add 38 verbatim Ontario descriptions: 22 from the approved database
+archive and 16 fresh successful scrapes, out of 21 attempted URLs. Five pages
+yielded no usable description and were excluded. Every new case carries its
+source URL, address, scrape timestamp, acquisition method and description hash.
+Keep the original 58 cases (51 synthetic, seven real-derived excerpts) intact.
+The dataset now has 96 cases and 653 assertions.
+
+Manually label the 15 regex flags, leaving current-tenancy labels unset in two
+ambiguous descriptions. Widen only evidenced phrase variants for parking,
+utilities, pets, tenancy, basement suites and renovation. Remove the bare
+dated-renovation pattern: a renovation in 2014 is not evidence of a recent
+renovation. Qualified language such as "fully renovated" remains supported.
+Add negation and older-renovation counterexamples. No flag severity changes.
+
+**Why.** Before these fixes the expanded aggregate still scored 97.1%, masking
+19 errors. On the fully labeled real positives, precision was 30/31 (96.8%) and
+recall 30/48 (62.5%). Both are now 48/48 with no false positives on this corpus.
+Enforce separate 95% real precision and recall gates plus exact preservation of
+the original cases. These are development-corpus results, not held-out accuracy.
+The prior "10/22 recall" was a listing activation count, not labeled flag recall.
+
+**Alternatives considered**
+
+| Option                                                  | Why not                                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Add more synthetic prose                                | Does not test vocabulary the rule author did not choose.                        |
+| Use aggregate accuracy alone                            | Negative labels concealed real missed flags.                                    |
+| Treat ambiguous historical tenancy as current occupancy | Would invent a present fact.                                                    |
+| Claim 100% real-world extraction                        | Rules were tuned on this corpus; broader and held-out coverage is still needed. |
+
+**Handoff correction.** The Haiku extractor exists and is invoked by the analysis
+router. Its broader semantic recall has not been established by this regex suite.
+
+---
+
+### D-039 · Live verification exposes display assumptions and duplicated tax
+
+**Chosen.** Preserve unknown year as the display model's zero sentinel. The
+investor maintenance display then uses the backend's 1% unknown-year assumption
+and explicitly labels it. Address entry does not collect parking, so show
+"— parking · not provided" instead of a claimed zero. For live investor reports,
+cash invested is down payment plus the API closing-cost total: that total already
+includes land transfer tax. Show the remaining costs separately from LTT.
+
+**Why.** The live report hid the invented build year while still using it to
+understate displayed maintenance at 0.5%. It also counted $11,073 of tax twice:
+cash to close was $170,526 instead of $159,453. These are display corrections;
+the backend reference remains 8 / hard pass and −$2,723.68/month.
+
+**Alternatives considered**
+
+| Option                                                   | Why not                                                        |
+| -------------------------------------------------------- | -------------------------------------------------------------- |
+| Hide the build year but keep an estimated age internally | The invented age still changes displayed costs.                |
+| Assume address-entry parking is zero                     | The form never asked for it.                                   |
+| Add LTT to closingCostsTotal                             | The backend already includes it, so this double counts tax.    |
+| Change backend scoring to match the old display          | Would make correct underwriting conform to a presentation bug. |
+
+**Verification and limits.** The owner approved four fresh shared-database
+verification reports, one per mode, plus reading archived descriptions. All four
+completed and kept distinct listing IDs and correct share-link properties after
+subsequent creations. No production deployment or merge was authorized.
+Vercel's environment-variable list confirms VITE_API_URL is assigned to both
+Production and Preview. Automatic approval review blocked opening its secret
+value; coverage is verified, the endpoint value is not.
+
+The live AI narrative also proposed a roughly $300,000 target price without a
+provided calculated target. Treat that as an unresolved narrative-grounding
+issue before release, not a verified negotiation recommendation. Personal-buyer
+maintenance defaults and demo closing-cost conventions need a separate parity
+review; do not infer that every mode's financial presentation is validated here.
+
+---
+
+### D-040 · A live personal report stays unscored until pricing is sourced
+
+**Chosen.** Live personal reports always pause their aggregate Home Score until
+verified Ontario fair-market-value data exists. Schools and SunScout still render
+in their own sourced sections; the paused score card shows only validated risk
+points. A photo-less address entry uses `ListingVisual`'s real map and caption,
+and missing parking says it was not provided. Tenant asking rent likewise shows
+an em dash plus the reason when the address workflow supplied none. Utility and
+insurance notes identify estimates without claiming a heating system, provider,
+or housing type the listing did not establish.
+
+**Why.** The live Buttermill personal report awarded 18/25 pricing points from an
+FMV band mechanically centered on asking, then displayed 83 / “Make an offer.” It
+also rendered four empty photo frames and “+ 28 more.” Those outputs looked
+authoritative while being derived from missing data. School data does not make
+the asking price fair, and a zero rent or parking count is not the same as an
+unknown value.
+
+**Alternatives considered**
+
+| Option                                                       | Why not                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------ |
+| Enable Home Score when either schools or FMV exists          | Schools cannot validate the pricing component.         |
+| Show known component points beside fabricated pricing points | The resulting total still flatters an unverified deal. |
+| Keep labelled photo placeholders in live reports             | Labels and a “more” count imply photos exist.          |
+| Render `$0/mo` or `None` for absent inputs                   | Those are factual claims, not empty states.            |
+
+---
+
+### D-041 · Mobile report grids may shrink below their contents
+
+**Chosen.** Mobile one-column helpers use `minmax(0, 1fr)` and set direct grid
+children to `min-width: 0`. The investor expense breakdown becomes one column
+below 900px, and personal-report action rows wrap. The personal demographic strip
+uses the same collapse helper.
+
+**Why.** At a 375px viewport the document was 385px wide in investor/landlord
+mode and 520px wide in personal mode. DOM bounds traced the first overflow to
+the two-column expense rows and the larger one to a fixed four-column statistics
+strip plus button rows. After these changes, measured document and viewport
+width are both 365px (the browser reserves 10px for its scrollbar).
+
+**Alternatives considered**
+
+| Option                               | Why not                                                           |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| Hide horizontal overflow on the page | Clips content and leaves the broken layout in place.              |
+| Shorten labels until they fit        | Content changes would only mask the fixed-width grid.             |
+| Add another JavaScript width check   | CSS owns layout and avoids the feedback loop documented in D-035. |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

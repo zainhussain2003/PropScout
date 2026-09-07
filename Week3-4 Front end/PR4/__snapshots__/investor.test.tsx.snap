@@ -513,12 +513,12 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
         class="mono"
         style="font-size: 11px; color: var(--muted);"
       >
-        On $160,053 invested
+        On $159,453 invested
       </div>
       <div
         style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
       >
-        What your own money earns in year one. For every $100 of the $160,053 you put in, you get back less than you put in.
+        What your own money earns in year one. For every $100 of the $159,453 you put in, you get back less than you put in.
       </div>
     </div>
     <div
@@ -727,6 +727,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
       </span>
     </div>
     <div
+      class="expense-breakdown-grid"
       style="display: grid; grid-template-columns: 1fr 1fr; gap: 0px;"
     >
       <div

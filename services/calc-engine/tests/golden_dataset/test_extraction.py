@@ -6,6 +6,7 @@ Add new cases to golden_cases.json as more listing types are encountered.
 """
 
 import json
+import hashlib
 import os
 import sys
 
@@ -18,7 +19,7 @@ GOLDEN_CASES_PATH = os.path.join(os.path.dirname(__file__), "golden_cases.json")
 
 
 def load_golden_cases() -> list[dict]:
-    with open(GOLDEN_CASES_PATH) as f:
+    with open(GOLDEN_CASES_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -90,3 +91,52 @@ def test_case_ids_are_unique() -> None:
     ids = [case["id"] for case in load_golden_cases()]
     duplicates = sorted({i for i in ids if ids.count(i) > 1})
     assert not duplicates, f"Duplicate golden case ids: {duplicates}"
+
+
+def test_synthetic_and_real_derived_regressions_stay_exact() -> None:
+    """Wider patterns must not sacrifice any assertion in the original 58 cases."""
+    for case in load_golden_cases():
+        if case.get("source_kind") == "real_full_description":
+            continue
+        actual = {flag.flag_id for flag in extract_regex_flags(case["description"])}
+        for flag, expected in case["expected_flags"].items():
+            assert (flag in actual) == expected, f"{case['id']}: {flag}"
+
+
+def test_real_description_precision_and_recall() -> None:
+    """Unmentioned flags cannot swamp missed positives in the aggregate gate."""
+    true_positive = false_positive = false_negative = 0
+    for case in load_golden_cases():
+        if case.get("source_kind") != "real_full_description":
+            continue
+        actual = {flag.flag_id for flag in extract_regex_flags(case["description"])}
+        for flag, expected in case["expected_flags"].items():
+            true_positive += int(expected and flag in actual)
+            false_positive += int(not expected and flag in actual)
+            false_negative += int(expected and flag not in actual)
+    assert true_positive + false_negative > 0, "Real corpus has no positive labels"
+    precision = true_positive / max(1, true_positive + false_positive)
+    recall = true_positive / (true_positive + false_negative)
+    assert precision >= 0.95, f"Real precision {precision:.1%} below 95%"
+    assert recall >= 0.95, f"Real recall {recall:.1%} below 95%"
+
+
+def test_real_descriptions_have_traceable_unmodified_sources() -> None:
+    """Full cases retain their source, acquisition date, and original prose hash."""
+    real = [
+        c
+        for c in load_golden_cases()
+        if c.get("source_kind") == "real_full_description"
+    ]
+    assert real, "No full real descriptions in golden corpus"
+    urls = [case["source_url"] for case in real]
+    assert len(urls) == len(set(urls)), "Duplicate listings inflate corpus size"
+    for case in real:
+        assert case["source_url"].startswith("https://www.realtor.ca/real-estate/")
+        assert "Ontario" in case["source_address"]
+        assert case["scraped_at"]
+        assert case["acquisition"] in {"database_archive", "fresh_scrape"}
+        assert (
+            hashlib.sha256(case["description"].encode("utf-8")).hexdigest()
+            == case["description_sha256"]
+        )

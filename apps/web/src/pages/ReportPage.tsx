@@ -88,10 +88,8 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
   const price = listing.price ?? 0
   const annualTaxes = listing.annualTaxes ?? 0
   const condoFeeMonthly = listing.condoFeeMonthly ?? 0
-  // Internal fallback only (maintenance-rate display buckets); the hero hides
-  // the "Built" fact when the listing didn't carry a year (a fabricated
-  // "Built 2016" rendered live 2026-07-02).
-  const yearBuilt = listing.yearBuilt ?? new Date().getFullYear() - 10
+  // Zero is the display model's unknown-year sentinel, not an estimated age.
+  const yearBuilt = listing.yearBuilt ?? 0
   const isToronto =
     listing.city.toLowerCase().includes('toronto') ||
     listing.postalCode.toUpperCase().startsWith('M')
@@ -117,7 +115,7 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     beds: String(listing.beds),
     baths: String(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking: String(listing.parkingSpots),
+    parking: listing.url ? String(listing.parkingSpots) : '—',
     yearBuilt,
     rentControl: yearBuilt <= 2018,
     price,
@@ -389,8 +387,7 @@ function CashToCloseSection({
   financing: FinancingInputs
 }): JSX.Element {
   const lttResult = computeLTT(listing.price, financing.isToronto)
-  const total =
-    metrics.downPayment + metrics.lttProvincial + metrics.lttMunicipal + metrics.closingCostsTotal
+  const total = metrics.totalCashInvested
 
   return (
     <section className="container tr-section" data-section="04">
@@ -434,7 +431,10 @@ function CashToCloseSection({
               ...(metrics.lttMunicipal > 0
                 ? [{ label: 'Toronto municipal LTT', value: metrics.lttMunicipal }]
                 : []),
-              { label: 'Closing costs (est.)', value: metrics.closingCostsTotal },
+              {
+                label: 'Other closing costs (est.)',
+                value: metrics.closingCostsTotal - metrics.lttProvincial - metrics.lttMunicipal,
+              },
             ] as Array<{ label: string; value: number }>
           ).map((row) => (
             <div

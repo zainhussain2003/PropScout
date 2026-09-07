@@ -351,8 +351,10 @@ function TenantPropertyHero({
                 Asking
               </span>
               <span className="serif tabular" style={{ fontSize: 34, lineHeight: 1 }}>
-                {fmtCAD(listing.asking)}
-                <span style={{ fontSize: 14, color: 'var(--muted)' }}>/mo</span>
+                {listing.asking > 0 ? fmtCAD(listing.asking) : '—'}
+                <span style={{ fontSize: 14, color: 'var(--muted)' }}>
+                  {listing.asking > 0 ? '/mo' : ' · asking rent not provided'}
+                </span>
               </span>
             </div>
 

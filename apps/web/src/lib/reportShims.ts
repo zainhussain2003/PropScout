@@ -146,8 +146,9 @@ export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): P
   const price = listing.price ?? 0
   const sqft = listing.sqft ?? 0
 
-  const parking =
-    listing.parkingSpots > 0
+  const parking = !listing.url
+    ? '— parking · not provided'
+    : listing.parkingSpots > 0
       ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
       : 'None'
 

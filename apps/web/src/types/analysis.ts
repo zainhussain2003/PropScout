@@ -304,6 +304,15 @@ export interface DealScoreData {
   deductions: number // total risk-flag deductions (capped at 15)
 }
 
+/** Presentation of a component on the common weighted-points scale. */
+export interface ScoreBarData {
+  label: string
+  value: number | null
+  max: number
+  trackPercent: number
+  fillPercent: number
+}
+
 /** Pin marker for the MiniMap component. */
 export interface MapPin {
   lat: number

@@ -132,7 +132,7 @@ export function InvestmentMetricsSection({
     [
       'Maintenance reserve',
       metrics.expenses.maintenance,
-      `${fmtPct(metrics.expenses.maintenance / listing.price, 2)} of value`,
+      `${fmtPct(metrics.expenses.maintenance / listing.price, 2)} of value${listing.yearBuiltKnown === false ? ' · assumed; build year unknown' : ''}`,
     ],
     ['Vacancy allowance (5%)', metrics.expenses.vacancy, 'of gross rent'],
     [
@@ -235,7 +235,10 @@ export function InvestmentMetricsSection({
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+          <div
+            className="expense-breakdown-grid"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}
+          >
             {expenseRows.map(([label, value, note], i) => (
               <div
                 key={label}

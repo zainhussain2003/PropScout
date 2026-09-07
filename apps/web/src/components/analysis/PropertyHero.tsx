@@ -17,6 +17,7 @@ import { ListingVisual } from './ListingVisual'
 import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
+import { scoreBreakdownBars } from '../../lib/scoreBreakdown'
 
 interface PropertyHeroProps {
   listing: ListingData
@@ -191,6 +192,7 @@ export function PropertyHero({
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <Icon name="key" size={14} />
                 {listing.parking} parking
+                {listing.parking === '—' && ' · not provided'}
               </span>
               {listing.yearBuiltKnown !== false && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -214,195 +216,110 @@ export function PropertyHero({
           )}
         </div>
 
-        {/* RIGHT — sticky score card (order: -1 on mobile to appear above photo grid) */}
-        <div
-          className="card col report-hero-score"
-          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        <aside
+          className="card report-hero-score scorecard"
+          aria-label="Investment verdict"
+          style={{ '--score-tone': verdictColor } as React.CSSProperties}
         >
-          {/* Gauge — capped at 84px on mobile */}
-          {/* showVerdict is deliberately off: the same verdict label is
-              rendered directly below the gauge, so the in-ring pill was a
-              duplicate — and a clipped one for long labels. */}
-          <div className="col" style={{ alignItems: 'center', gap: 8 }}>
-            <DealScore
-              score={score.displayTotal}
-              max={100}
-              tone={score.tone}
-              size={isMobile ? 'sm' : 'lg'}
-              label="Deal score / 100"
-              verdictLabel={score.label}
-              animate
-            />
-          </div>
-
-          {/* Verdict label + tagline */}
-          <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
-            <div
-              className="mono"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: verdictColor,
-              }}
-            >
-              {score.label}
+          <div className="scorecard-heading">
+            <div className="scorecard-call">
+              <span className="mono scorecard-eyebrow">The investment verdict</span>
+              <h2 className="serif scorecard-verdict">{score.label}</h2>
+              <p className="scorecard-tagline">{score.tagline}</p>
             </div>
-            <div className="serif" style={{ fontSize: 20, lineHeight: 1.2, textWrap: 'balance' }}>
-              {score.tagline}
+            <div className="scorecard-gauge">
+              <DealScore
+                score={score.displayTotal}
+                max={100}
+                tone={score.tone}
+                size={isMobile ? 'sm' : 'md'}
+                animate
+              />
+              <span className="mono scorecard-caption">Score / 100</span>
             </div>
           </div>
 
-          <div className="divider" style={{ borderTop: '1px solid var(--line)' }} />
-
-          {/* Score breakdown bars */}
-          <div className="col" style={{ gap: 10 }}>
-            <div
-              className="mono"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--muted)',
-              }}
+          <div className="scorecard-cashflow">
+            <span className="scorecard-eyebrow mono">Monthly cash flow</span>
+            <strong
+              className="mono tabular scorecard-cashflow-value"
+              style={{ color: cashFlowMonthly >= 0 ? 'var(--pass)' : 'var(--fail)' }}
             >
-              Score breakdown
-            </div>
-            {(
-              [
-                ['Cap rate', score.breakdown.capRate, score.breakdown.componentMaxes.capRate],
-                ['Cash flow', score.breakdown.cashFlow, score.breakdown.componentMaxes.cashFlow],
-                [
-                  'CoC return',
-                  score.breakdown.cashOnCash,
-                  score.breakdown.componentMaxes.cashOnCash,
-                ],
-                ['DSCR', score.breakdown.dscr, score.breakdown.componentMaxes.dscr],
-                ['Demand', score.breakdown.demand, score.breakdown.componentMaxes.demand],
-              ] as Array<[string, number, number]>
-            ).map(([lbl, v, max]) => (
-              <div key={lbl} className="col" style={{ gap: 4 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: 12,
-                  }}
-                >
-                  <span style={{ color: 'var(--ink-2)' }}>{lbl}</span>
-                  <span className="mono tabular" style={{ color: 'var(--muted)' }}>
-                    {v} / {max}
+              {Number.isFinite(cashFlowMonthly) ? fmtMoney(cashFlowMonthly) : '—'}
+              <span className="scorecard-caption"> /mo</span>
+            </strong>
+            <p className="scorecard-caption">
+              {Number.isFinite(cashFlowMonthly)
+                ? 'After operating costs and mortgage, with the assumptions below.'
+                : 'Cash flow is unavailable because the analysis did not return a valid value.'}
+            </p>
+          </div>
+
+          <div className="scorecard-breakdown">
+            <h3 className="mono scorecard-eyebrow">Score breakdown</h3>
+            <p className="scorecard-caption">Points earned · longer tracks carry more weight</p>
+            {scoreBreakdownBars(score.breakdown).map((bar) => (
+              <div key={bar.label} className="scorecard-factor">
+                <div className="scorecard-row">
+                  <span>{bar.label}</span>
+                  <span className="mono tabular">
+                    {bar.value ?? '—'} / {bar.max}
                   </span>
                 </div>
                 <div
-                  style={{
-                    height: 3,
-                    borderRadius: 999,
-                    background: 'var(--line)',
-                  }}
+                  className="scorecard-track"
+                  style={{ width: `${bar.trackPercent}%` }}
+                  role={bar.value === null ? undefined : 'meter'}
+                  aria-label={bar.label}
+                  aria-valuemin={bar.value === null ? undefined : 0}
+                  aria-valuemax={bar.value === null ? undefined : bar.max}
+                  aria-valuenow={bar.value ?? undefined}
+                  aria-valuetext={
+                    bar.value === null ? undefined : `${bar.value} of ${bar.max} points`
+                  }
                 >
-                  <div
-                    style={{
-                      width: `${max > 0 ? (v / max) * 100 : 0}%`,
-                      height: '100%',
-                      borderRadius: 999,
-                      background:
-                        v / max > 0.6
-                          ? 'var(--pass)'
-                          : v / max > 0.2
-                            ? 'var(--caution)'
-                            : 'var(--fail)',
-                    }}
-                  />
+                  <div className="scorecard-fill" style={{ width: `${bar.fillPercent}%` }} />
                 </div>
+                {bar.value === null && (
+                  <p className="scorecard-caption">
+                    Component points unavailable from the analysis.
+                  </p>
+                )}
               </div>
             ))}
             {score.deductions > 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 12,
-                  marginTop: 4,
-                }}
-              >
-                <span style={{ color: 'var(--ink-2)' }}>Risk deductions</span>
-                <span className="mono tabular" style={{ color: 'var(--fail)' }}>
-                  −{score.deductions}
-                </span>
+              <div className="scorecard-row">
+                <span>Risk deductions</span>
+                <span className="mono tabular scorecard-penalty">−{score.deductions}</span>
               </div>
             )}
+            <p className="scorecard-caption">
+              Components use a 95-point scale. The score above is shown out of 100; risk limits can
+              lower the final verdict.
+            </p>
           </div>
 
-          <div className="divider" style={{ borderTop: '1px solid var(--line)' }} />
-
-          {/* Key metrics */}
-          <div className="col" style={{ gap: 12 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-              }}
-            >
-              <span
-                className="mono"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted)',
-                }}
-              >
-                {listing.price > 0 ? 'Asking' : 'Asking rent'}
-              </span>
-              <span className="serif tabular" style={{ fontSize: 32, lineHeight: 1 }}>
-                {/* For-rent listings carry no sale price — showing "$0" as the
-                    asking figure is a data lie (live 2026-07-02). */}
-                {listing.price > 0 ? (
-                  fmtMoney(listing.price)
-                ) : (
-                  <>
-                    {fmtMoney(listing.rentEstimate)}
-                    <span style={{ fontSize: 16, color: 'var(--muted)' }}>/mo</span>
-                  </>
-                )}
-              </span>
+          <dl className="scorecard-facts">
+            <div className="scorecard-row">
+              <dt>{listing.price > 0 ? 'Asking' : 'Asking rent'}</dt>
+              <dd className="mono tabular">
+                {listing.price > 0
+                  ? fmtMoney(listing.price)
+                  : `${fmtMoney(listing.rentEstimate)}/mo`}
+              </dd>
             </div>
-            {[
-              {
-                label: 'Cash flow',
-                value: `${fmtMoney(cashFlowMonthly)}/mo`,
-                color: cashFlowMonthly >= 0 ? 'var(--pass)' : 'var(--fail)',
-              },
-              {
-                label: 'Cap rate',
-                value: fmtPct(capRate),
-                color: 'var(--ink)',
-              },
-              {
-                label: 'DSCR',
-                value: `${dscr.toFixed(2)}×`,
-                color: 'var(--ink)',
-              },
-            ].map((row) => (
-              <div
-                key={row.label}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 13,
-                  color: 'var(--ink-2)',
-                }}
-              >
-                <span>{row.label}</span>
-                <span className="mono tabular" style={{ fontWeight: 600, color: row.color }}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+            <div className="scorecard-row">
+              <dt>Cap rate</dt>
+              <dd className="mono tabular">{Number.isFinite(capRate) ? fmtPct(capRate) : '—'}</dd>
+            </div>
+            <div className="scorecard-row">
+              <dt>DSCR</dt>
+              <dd className="mono tabular">
+                {Number.isFinite(dscr) ? `${dscr.toFixed(2)}×` : '—'}
+              </dd>
+            </div>
+          </dl>
+        </aside>
       </div>
     </section>
   )

@@ -307,8 +307,8 @@ export function enrichMetrics(
 ): ComputedInvestorMetrics {
   const grossRentAnnual = listing.rentEstimate * 12
   const principal = listing.price * (1 - financing.downPaymentPct)
-  const totalCashInvested =
-    metrics.downPayment + metrics.lttProvincial + metrics.lttMunicipal + metrics.closingCostsTotal
+  // API closingCostsTotal already includes provincial and municipal LTT.
+  const totalCashInvested = metrics.downPayment + metrics.closingCostsTotal
 
   const ltt = computeLTT(listing.price, financing.isToronto)
   const osfi = computeOSFI(
@@ -410,7 +410,7 @@ export function computeDemoMetrics(
     amortizationYears: financing.amortizationYears,
     mortgageRate: financing.mortgageRate,
     breakEvenRent,
-    closingCostsTotal,
+    closingCostsTotal: closingCostsTotal + lttResult.provincial + lttResult.municipal,
     lttProvincial: lttResult.provincial,
     lttMunicipal: lttResult.municipal,
     hasSanityWarnings: false,

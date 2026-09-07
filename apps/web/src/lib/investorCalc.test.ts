@@ -7,7 +7,18 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { fmtMoney, fmtPct } from './investorCalc'
+import { computeExpenses, fmtMoney, fmtPct } from './investorCalc'
+
+describe('unknown build year maintenance', () => {
+  it('uses the backend middle bracket without assuming a recent build', () => {
+    const unknown = computeExpenses(729900, 3326, 761, 29700, 0, false)
+    const recent = computeExpenses(729900, 3326, 761, 29700, 2016, false)
+    const older = computeExpenses(729900, 3326, 761, 29700, 1970, false)
+    expect(unknown.maintenance).toBe(7299)
+    expect(unknown.maintenance).toBeGreaterThan(recent.maintenance)
+    expect(unknown.maintenance).toBeLessThan(older.maintenance)
+  })
+})
 
 describe('fmtMoney', () => {
   it('formats a positive amount', () => {

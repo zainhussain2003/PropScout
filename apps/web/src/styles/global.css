@@ -880,7 +880,13 @@ body::-webkit-scrollbar-thumb {
    sideways instead. This matches .report-hero so the page collapses as one. */
 @media (max-width: 900px) {
   .grid-1col-mobile {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .grid-1col-mobile > * {
+    min-width: 0;
+  }
+  .mobile-action-row {
+    flex-wrap: wrap;
   }
   /* Puts the last child (score card column) above content on mobile */
   .hero-score-first > *:last-child {
@@ -1004,6 +1010,148 @@ body::-webkit-scrollbar-thumb {
 }
 
 @media (max-width: 900px) {
+  .expense-breakdown-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .expense-breakdown-grid > div {
+    min-width: 0;
+    padding-inline: 0 !important;
+    border-left: none !important;
+  }
+
+  .expense-breakdown-grid > div:not(:last-child) {
+    border-bottom: 1px solid var(--line) !important;
+  }
+}
+
+/* The verdict is the report's headline; bars preserve component weights. */
+.scorecard {
+  min-width: 0;
+  padding: var(--scorecard-pad);
+  position: sticky;
+  top: var(--scorecard-top);
+  border-top: var(--scorecard-rule) solid var(--score-tone);
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.scorecard-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.scorecard-call {
+  flex: 1;
+  min-width: 0;
+}
+.scorecard-eyebrow {
+  font-size: var(--scorecard-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.scorecard-verdict {
+  font-size: var(--scorecard-headline);
+  line-height: 1.05;
+  color: var(--score-tone);
+  margin: var(--space-3) 0;
+  overflow-wrap: anywhere;
+}
+.scorecard-tagline {
+  font-size: var(--scorecard-body);
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+.scorecard-gauge {
+  flex-shrink: 0;
+  text-align: center;
+}
+.scorecard-gauge .serif {
+  font-family: 'Geist Mono', monospace;
+}
+.scorecard-caption {
+  font-size: var(--scorecard-caption);
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+.scorecard-cashflow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+.scorecard-cashflow-value {
+  font-size: var(--scorecard-value);
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.scorecard-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.scorecard-breakdown h3 {
+  margin: 0;
+}
+.scorecard-factor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.scorecard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--scorecard-body);
+  color: var(--ink-2);
+}
+.scorecard-row .mono {
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.scorecard-track {
+  height: var(--scorecard-track);
+  border-radius: var(--radius-sm);
+  background: var(--line);
+  overflow: hidden;
+}
+.scorecard-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width var(--dur) var(--ease);
+}
+.scorecard-row .scorecard-penalty {
+  color: var(--fail);
+}
+.scorecard-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.scorecard-facts dd {
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scorecard-fill,
+  .scorecard-gauge circle {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 900px) {
   .report-hero {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1011,6 +1159,9 @@ body::-webkit-scrollbar-thumb {
      the photo. */
   .report-hero > .report-hero-score {
     order: -1;
+  }
+  .scorecard {
+    position: static;
   }
 }
 

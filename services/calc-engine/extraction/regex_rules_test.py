@@ -14,6 +14,7 @@ Three buckets:
 """
 
 from .regex_rules import extract_regex_flags
+import pytest
 
 
 def _fired(text: str) -> set[str]:
@@ -154,3 +155,56 @@ def test_new_severe_floors_dont_false_positive() -> None:
     assert "illegal_unit_risk" not in _fired(
         "Conforming to all by-laws; a legal duplex."
     )
+
+
+@pytest.mark.parametrize(
+    "text,flag",
+    [
+        ("Tenant responsible for 40% utilities.", "utilities_extra"),
+        (
+            "Tenant is responsible for 30% of gas and water utilities.",
+            "utilities_extra",
+        ),
+        ("Tenant shares 50% of utilities with Main floor tenant", "utilities_extra"),
+        ("Tenant pays heating, hydro, water/sewer.", "utilities_extra"),
+        ("Basic utilities included (water, heat, AC, hydro).", "utilities_included"),
+        ("The maintenance fees coverall utilities!", "utilities_included"),
+        (
+            "Also includes an exclusive parking space, extremely rare.",
+            "parking_included",
+        ),
+        ("Includes 2 Parking Spaces, 1 EV-Equipped And Locker!", "parking_included"),
+        ("A freshly renovated kitchen.", "recently_renovated"),
+        ("Responsible long-term tenants are willing to stay or vacate.", "tenanted"),
+    ],
+)
+def test_observed_listing_variants(text: str, flag: str) -> None:
+    """Real observed phrases retain matched evidence, not inferred prose."""
+    match = next(f for f in extract_regex_flags(text) if f.flag_id == flag)
+    assert match.evidence in text
+    assert 60 <= match.confidence <= 100
+
+
+@pytest.mark.parametrize(
+    "text,flag",
+    [
+        ("Tenant is not responsible for utilities.", "utilities_extra"),
+        ("Tenant pays only internet and cable.", "utilities_extra"),
+        ("Tenant references required. All utilities included.", "utilities_extra"),
+        ("Parking may be available at an extra cost.", "parking_included"),
+        ("No driveway parking space is included.", "parking_included"),
+        ("No pet-friendly units available.", "pets_allowed"),
+        (
+            "Apartment 1 was renovated in 2014 and apartment 2 in 2019.",
+            "recently_renovated",
+        ),
+        ("Renovated in 1998.", "recently_renovated"),
+        (
+            "The unfinished basement could become a self-contained suite.",
+            "basement_unit",
+        ),
+    ],
+)
+def test_observed_variants_do_not_overreach(text: str, flag: str) -> None:
+    """Synthetic counterexamples constrain negation, optional costs, and old work."""
+    assert flag not in _fired(text)

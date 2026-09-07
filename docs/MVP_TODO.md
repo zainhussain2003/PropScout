@@ -474,9 +474,9 @@ All tasks reference spec Section 19.
 - [x] Override triggers instant deal score recalculation (no page reload)
 - [x] Override state saved to analysis record (GET/POST/DELETE verified end to end)
 - [ ] All 7 risk flag types rendering correctly in report UI
-- [x] **Golden dataset — 51 labelled cases, all 15 flags with positive AND negative coverage** (synthetic, not scraped — see D-032)
-- [x] Pytest regression test suite written for golden dataset (framework in place, 1 test passing)
-- [x] Accuracy at or above 95% — regex pipeline now at 100% (78/78 assertions); Haiku layer still pending
+- [x] **Golden dataset — 96 cases / 653 assertions:** 51 synthetic, 7 real-derived excerpts, 38 verbatim full Ontario descriptions with provenance (see D-038)
+- [x] Pytest regression suite gates the original cases exactly and real-description precision + recall separately at 95%+
+- [x] Regex development corpus at 100% (653/653 assertions; 48/48 real positives, no real false positives). Haiku is implemented; its semantic recall needs a separate evaluation.
 
 ### SunScout
 
@@ -559,7 +559,7 @@ All tasks reference spec Section 19.
 - [ ] Test all tier gates (free limits, PDF gate, portfolio gate)
 - [ ] Test shareable links (generate, view without login, expiry)
 - [ ] Test PDF generation for all 4 report types
-- [ ] Run golden dataset regression suite — must pass 95%+ before launch
+- [x] Run golden dataset regression suite — 100% on 96-case development corpus (2026-09-07)
 - [ ] Mobile test: scorecard and AI narrative on iOS and Android
 
 ### Deploy

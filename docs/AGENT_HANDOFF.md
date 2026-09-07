@@ -3,6 +3,25 @@
 Written 2026-09-06. Give this to whichever agent picks the project up next.
 It is the state of play, the rules, the traps, and the work queue.
 
+> **Update — 2026-09-07.** Queue items 1 and 2 are implemented locally: the
+> investment verdict now leads a weighted score card, and the golden dataset is
+> 96 cases / 653 assertions, including 38 verbatim full Ontario descriptions.
+> The regex development corpus passes 100%, including 48/48 real positives with
+> no real false positives. Haiku extraction already exists and is called by the
+> analysis router; its semantic recall still needs a separate evaluation.
+>
+> Live shared-database verification created four owner-approved Buttermill
+> reports, one per mode. They retain distinct listing IDs and correct share-link
+> properties. Investor and landlord remain 8 / hard pass at −$2,723.68/month.
+> The run also fixed unknown-year maintenance display, missing parking and rent
+> states, personal-report photo/score fabrication, duplicated LTT in cash to
+> close, and the remaining 375px overflow.
+>
+> Vercel confirms `VITE_API_URL` is scoped to both Preview and Production.
+> Automatic approval review blocked revealing its secret value, so the endpoint
+> itself remains unverified. The branch changes are not yet merged to `master`;
+> production approval is still required. See D-037 through D-041.
+
 ---
 
 ## 1. What this is
@@ -37,12 +56,12 @@ sentence governs every judgement below.
 - **Local stack:** web `:5173`, API `:3001`, calc engine `:8000`.
 - **`.env`** has 24 keys and is gitignored. `REPLIERS_SAMPLE_MODE=true`.
 
-### Test gates — all currently green
+### Test gates — all green on the 2026-09-07 working tree
 
 ```
-npm test --workspace=apps/web        # 899 passed, 72 files
+npm test --workspace=apps/web        # 913 passed, 73 files
 npm test --workspace=apps/api        # 222 passed, 2 skipped
-python -m pytest services/calc-engine/ -q   # 376 passed
+python -m pytest services/calc-engine/ -q   # 398 passed
 python -m pytest services/scrapers/ -q      # 180 passed
 npm run typecheck --workspace=apps/web
 npm run typecheck --workspace=apps/api

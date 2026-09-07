@@ -69,15 +69,15 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
     {
       k: 'Insurance',
       v: monthly.insurance,
-      note: 'detached / semi estimate',
+      note: '0.35% of value · confirm quote',
     },
   ]
 
   const utilitiesSubRows: CostLine[] = [
-    { k: 'Hydro', v: monthly.utilities.hydro, note: '11¢/kWh · avg consumption', indent: true },
-    { k: 'Gas', v: monthly.utilities.gas, note: 'forced-air heating', indent: true },
-    { k: 'Water', v: monthly.utilities.water, note: 'metered · municipal', indent: true },
-    { k: 'Internet', v: monthly.utilities.internet, note: '1 Gbps · Rogers / Bell', indent: true },
+    { k: 'Hydro', v: monthly.utilities.hydro, note: 'size-based estimate · confirm', indent: true },
+    { k: 'Gas', v: monthly.utilities.gas, note: 'size-based estimate · confirm', indent: true },
+    { k: 'Water', v: monthly.utilities.water, note: 'estimate · confirm', indent: true },
+    { k: 'Internet', v: monthly.utilities.internet, note: 'estimate · confirm', indent: true },
   ]
 
   const bottomLines: CostLine[] = [

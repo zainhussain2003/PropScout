@@ -256,8 +256,8 @@ function CashToCloseSection({
   lttComponent,
 }: CashToCloseSectionProps): JSX.Element {
   const legalFees = 1500
-  const titleInsurance = 350
-  const homeinspection = 650
+  const titleInsurance = 300
+  const homeinspection = 600
   const miscellaneous = closingCostsTotal - lttTotal - legalFees - titleInsurance - homeinspection
   const adjustedMisc = Math.max(0, miscellaneous)
   const computedTotal =

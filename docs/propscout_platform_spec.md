@@ -215,6 +215,13 @@ Address, asking price, key tags (property type, beds/baths, sqft, parking, condo
 
 **2. Deal scorecard**
 
+The investment hero leads with the backend verdict and monthly cash flow. Its
+five component bars share one points scale, so their track lengths reflect the
+25/25/20/15/10 weights. Zero points render with zero fill and invalid values as
+an em dash. The UI explains that components total 95 points, while the stored
+display score is normalized to 100 and may be limited by risk gates. The client
+never derives a new verdict from the bars.
+
 | Metric              | Pass          | Caution     | Fail       |
 | ------------------- | ------------- | ----------- | ---------- |
 | Cap rate            | 5%+           | 3–4.99%     | Under 3%   |
@@ -1872,7 +1879,7 @@ def test_extraction_accuracy(case):
         )
 ```
 
-**Accuracy target:** 95% or above across all golden dataset cases before MVP ships. Re-run the full suite whenever the extraction prompt changes, the Haiku model version changes, or new flag types are added.
+**Accuracy target:** 95% or above across all golden dataset cases before MVP ships. Re-run the full suite whenever the extraction prompt changes, the Haiku model version changes, or new flag types are added. The suite separately gates real-description precision and recall at 95%, because aggregate assertion accuracy can conceal missed positive flags. As of 2026-09-07 it contains 96 cases and 653 assertions: 51 synthetic cases, seven real-derived excerpts, and 38 verbatim full Ontario listing descriptions with URLs, scrape timestamps, acquisition methods, and content hashes. This is a development corpus, not a held-out accuracy claim.
 
 **Building the golden dataset:** Search Realtor.ca and Zillow.ca for listings with known issues — glass-door dens marketed as bedrooms, basement units with creative descriptions, missing parking. Save the raw description and manually label the correct flags. Aim for at least 10 examples of each flag type, including negative examples (descriptions that should NOT trigger the flag).
 

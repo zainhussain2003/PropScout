@@ -29,7 +29,8 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     (
         "tenanted",
         re.compile(
-            r"\b(tenanted|tenant in place|currently rented|existing tenant)\b",
+            r"\b(tenanted|tenant in place|currently rented|existing tenant"
+            r"|tenants? are willing to stay or vacate)\b",
             re.IGNORECASE,
         ),
         92,
@@ -46,7 +47,8 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     (
         "basement_unit",
         re.compile(
-            r"\b(basement (unit|suite|apartment)|in-law suite|secondary suite)\b",
+            r"\b(basement (unit|suite|apartment)|in-law suite|secondary suite"
+            r"|walk-out basement[^.]{0,160}\.\s*This self-contained suite)\b",
             re.IGNORECASE,
         ),
         88,
@@ -63,7 +65,10 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
         # negative.
         re.compile(
             r"\b(parking included|includes parking|one parking|1 parking|underground parking"
-            r"|(one|1|a)\s+(dedicated|assigned|owned|designated)\s+parking\s+(space|spot))\b",
+            r"|(one|1|a)\s+(dedicated|assigned|owned|designated)\s+parking\s+(space|spot)"
+            r"|includes?\s+(an?\s+exclusive|\d+)\s+parking\s+(spaces?|spots?)"
+            r"|(?<!no )driveway parking space"
+            r"|ample parking for multiple vehicles)\b",
             re.IGNORECASE,
         ),
         85,
@@ -81,7 +86,7 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
         # pets_allowed, and the tenant report could show a listing as pet
         # friendly when the description said the opposite. Caught by gc-019.
         re.compile(
-            r"(?<!\bno )(?<!\bnot )\b(pets (welcome|allowed|ok|permitted)|pet friendly)\b",
+            r"(?<!\bno )(?<!\bnot )\b(pets (welcome|allowed|ok|permitted)|pet[ -]friendly)\b",
             re.IGNORECASE,
         ),
         88,
@@ -98,8 +103,8 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
         # changes the monthly cost — "Condo fee includes water and building
         # insurance" (golden case gc-001) must stay negative.
         re.compile(
-            r"\b(all utilities included|heat and hydro included|utilities incl"
-            r"|fees?\s+includes?\s+[^.]{0,40}?(hydro|heat|all utilities))\b",
+            r"\b((all|basic) utilities included|heat and hydro included|utilities incl"
+            r"|fees?\s+(includes?|covers?)\s*[^.]{0,40}?(hydro|heat|all utilities))\b",
             re.IGNORECASE,
         ),
         90,
@@ -107,7 +112,10 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     (
         "utilities_extra",
         re.compile(
-            r"\b(heat extra|hydro extra|utilities extra|tenant pays utilities)\b",
+            r"\b(heat extra|hydro extra|utilities extra|tenant pays utilities"
+            r"|tenants?\s+(?:(?:is|are)\s+)?"
+            r"(?:pays?|responsible\s+for|shares?)\s*:?"
+            r"[^.!;\n]{0,70}?\b(?:utilities|hydro|heating|natural gas))\b",
             re.IGNORECASE,
         ),
         90,
@@ -132,9 +140,9 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
         # A qualifier is required. Bare "renovated" would fire on "renovated in
         # 1998", which is not a selling point and not what this flag means.
         re.compile(
-            r"\b((newly|recently|fully|completely|professionally|extensively|just)\s+"
+            r"\b((newly|recently|fully|completely|professionally|extensively|freshly|just)\s+"
             r"renovated|recently updated|gut renovation|extensive renovations"
-            r"|renovated in (19|20)\d\d"
+            r"|extensively updated in recent years"
             r"|brand new (kitchen|bath|floors))\b",
             re.IGNORECASE,
         ),

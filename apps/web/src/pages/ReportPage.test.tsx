@@ -288,6 +288,17 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(growOp.compareDocumentPosition(verify) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('keeps an undisclosed tenant asking rent unknown', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...ANALYSIS, mode: 'tenant', riskFlags: [] },
+      listing: { ...LISTING, listingType: 'for-rent', rentMonthly: null },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByText(/asking rent not provided/i)).toBeInTheDocument()
+    expect(screen.queryByText('$0/mo')).not.toBeInTheDocument()
+  })
+
   it('feeds real risk flags into the HomeScore risk component (standard red → 5/10)', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: {
@@ -312,6 +323,26 @@ describe('ReportPage — risk-flag overrides', () => {
     // (10 → 5), not the hardcoded no-flags baseline.
     expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
     expect(await screen.findByText('5 / 10')).toBeInTheDocument()
+  })
+
+  it('does not unlock an invented buyer score or photo count when schools arrive', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...PERSONAL_ANALYSIS,
+        schools: { elementary: [], middle: [], high: [], catchmentNote: 'Not verified' },
+        comparableSalesAreSample: true,
+      },
+      listing: { ...SALE_LISTING, url: '', photos: [] },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
+    expect(screen.getByText(/Verified pricing data pending/)).toBeInTheDocument()
+    expect(screen.queryByText('18 / 25')).not.toBeInTheDocument()
+    expect(screen.queryByText(/28 more/)).not.toBeInTheDocument()
+    expect(screen.getByText(/No listing photos/)).toBeInTheDocument()
+    expect(screen.getByText(/— parking · not provided/)).toBeInTheDocument()
+    expect(screen.queryByText('Make an offer')).not.toBeInTheDocument()
   })
 
   it('passes the analysis coordinates into the real MiniMap (live map, not the placeholder)', async () => {
@@ -352,9 +383,11 @@ describe('ReportPage — risk-flag overrides', () => {
     listOverrides.mockResolvedValue([])
     renderReport()
 
-    // sunScore 85 → ≥80 bracket → full 15/15 light points, not the 4/15 that
-    // the old hardcoded lightScore=0 produced.
-    expect(await screen.findByText('15 / 15')).toBeInTheDocument()
+    // The overall score stays paused until verified FMV is available, while
+    // the sourced SunScout result remains visible in its own section.
+    expect(await screen.findByText(/Excellent · 85\/100/)).toBeInTheDocument()
+    expect(screen.getByText(/Overall score paused/i)).toBeInTheDocument()
+    expect(screen.queryByText('15 / 15')).not.toBeInTheDocument()
   })
 
   it('light component stays at the honest 4/15 floor when sun data is unavailable', async () => {
@@ -365,7 +398,9 @@ describe('ReportPage — risk-flag overrides', () => {
     listOverrides.mockResolvedValue([])
     renderReport()
 
-    expect(await screen.findByText('4 / 15')).toBeInTheDocument()
+    expect(await screen.findByText(/Overall score paused/i)).toBeInTheDocument()
+    expect(screen.queryByText('4 / 15')).not.toBeInTheDocument()
+    expect(screen.getByText(/Solar path analysis/)).toBeInTheDocument()
   })
 
   it('recomputes the OSFI verdict live when household income changes', async () => {
@@ -442,6 +477,24 @@ describe('ReportPage — for-rent landlord hero honesty', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getMapboxToken.mockReturnValue(null)
+  })
+
+  it('keeps missing address-entry facts unknown and labels the maintenance assumption', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: { ...SALE_LISTING, url: '', yearBuilt: null, parkingSpots: 0 },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByText(/assumed; build year unknown/)).toHaveTextContent('1.00%')
+    expect(screen.getByText(/— parking · not provided/)).toBeInTheDocument()
+    expect(screen.queryByText(/Built \d{4}/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^0 parking$/)).not.toBeInTheDocument()
+    // The API's $13,473 closing total already includes $11,073 provincial LTT.
+    expect(screen.getAllByText('$159,453').length).toBeGreaterThan(0)
+    expect(screen.queryByText('$170,526')).not.toBeInTheDocument()
+    expect(screen.getByText('Other closing costs (est.)')).toBeInTheDocument()
+    expect(screen.getByText('$2,400')).toBeInTheDocument()
   })
 
   it('shows asking RENT (not $0), hides the fabricated build year, and does not duplicate units', async () => {

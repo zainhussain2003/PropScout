@@ -93,6 +93,24 @@
   --gutter: clamp(20px, 4vw, 56px);
   --sect: clamp(72px, 9vw, 140px); /* section top/bottom spacing (Harbour) */
   --pad-y: var(--sect); /* repo alias — pre-existing name */
+
+  /* Report verdict card — spacing and type stay consistent across themes. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --scorecard-pad: clamp(20px, 2.5vw, 32px);
+  --scorecard-top: 84px;
+  --scorecard-headline: clamp(36px, 3.4vw, 48px);
+  --scorecard-value: clamp(26px, 2.6vw, 34px);
+  --scorecard-label: 11px;
+  --scorecard-caption: 12px;
+  --scorecard-body: 14px;
+  --scorecard-rule: 4px;
+  --scorecard-track: 8px;
 }
 
 /* ── Dark mode — measured AA contrast ──────────────────────── */
