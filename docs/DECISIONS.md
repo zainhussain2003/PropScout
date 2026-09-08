@@ -1583,6 +1583,38 @@ the ring prevents long labels from colliding with the number at every gauge size
 
 ---
 
+### D-045 · Allow scoped Vercel Previews and preserve report error truth
+
+**Chosen.** The API CORS allowlist keeps the configured canonical frontend and
+also accepts HTTPS origins belonging to PropScout deployments under the owner's
+Vercel project namespace. The saved-report client returns `null` only for API
+404/410 responses; network and unexpected server failures produce a separate
+temporary-unavailable state.
+
+**Why.** The corrected Preview API URL still could not load a known report even
+though the same endpoint returned it directly. Response headers proved that the
+API always emitted the production origin, so the browser rejected Preview
+requests. The client then swallowed that network error and falsely said the
+report had expired or never existed. Both behaviours prevented honest
+pre-merge end-to-end verification and misrepresented a service outage as data
+loss.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Set `FRONTEND_URL` to the current Preview   | Breaks browser access, redirects, and PDF rendering for `propscout.ca`.                 |
+| Allow every `*.vercel.app` origin           | Grants credentialed CORS access to unrelated Vercel projects.                           |
+| Add only the current branch alias           | The next branch or immutable deployment URL would fail again.                           |
+| Keep returning `null` for every fetch error | Tells users their report is gone when the service or browser connection is unavailable. |
+
+**Limit.** The CORS change takes effect only after the API branch is deployed.
+The Vercel frontend variable was corrected and its Preview rebuilt, but Preview
+cannot complete a browser E2E run against production API until this backend
+change ships.
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

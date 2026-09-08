@@ -224,6 +224,36 @@ function NotFoundState(): JSX.Element {
   )
 }
 
+function LoadFailedState(): JSX.Element {
+  return (
+    <div
+      style={{
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 20,
+        textAlign: 'center',
+        padding: '0 24px',
+      }}
+    >
+      <div className="col" style={{ gap: 8, maxWidth: 420 }}>
+        <h3 className="serif" style={{ fontSize: 24 }}>
+          Report temporarily unavailable
+        </h3>
+        <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+          The report service could not be reached. Your report may still exist — try again in a
+          moment.
+        </p>
+      </div>
+      <button className="btn btn-primary" onClick={() => window.location.reload()}>
+        Try again
+      </button>
+    </div>
+  )
+}
+
 // ── Rental comps section ──────────────────────────────────────────────────────
 
 interface RentalCompsSectionProps {
@@ -986,6 +1016,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [dark, setDark] = useState(false)
@@ -996,15 +1027,17 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       setLoading(false)
       return
     }
-    void getAnalysisByToken(token).then((result) => {
-      if (result == null) {
-        setNotFound(true)
-      } else {
-        setAnalysis(result.analysis)
-        setListing(result.listing)
-      }
-      setLoading(false)
-    })
+    void getAnalysisByToken(token)
+      .then((result) => {
+        if (result == null) {
+          setNotFound(true)
+        } else {
+          setAnalysis(result.analysis)
+          setListing(result.listing)
+        }
+      })
+      .catch(() => setLoadFailed(true))
+      .finally(() => setLoading(false))
   }, [token])
 
   const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
@@ -1093,7 +1126,13 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         </div>
       )}
 
-      {!loading && !notFound && analysis && listing && (
+      {!loading && loadFailed && (
+        <div className="container" style={{ paddingTop: 64, paddingBottom: 64 }}>
+          <LoadFailedState />
+        </div>
+      )}
+
+      {!loading && !notFound && !loadFailed && analysis && listing && (
         <>
           {(mode === 'investor' || mode === 'landlord') && (
             <InvestorReportContent

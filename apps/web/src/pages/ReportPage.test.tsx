@@ -197,6 +197,25 @@ describe('ReportPage — risk-flag overrides', () => {
     removeOverride.mockResolvedValue(undefined)
   })
 
+  it('shows a missing-report message only when the API confirms absence', async () => {
+    getAnalysisByToken.mockResolvedValue(null)
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    expect(await screen.findByText('Report not found')).toBeInTheDocument()
+    expect(screen.queryByText('Report temporarily unavailable')).not.toBeInTheDocument()
+  })
+
+  it('does not claim a saved report is missing during a network failure', async () => {
+    getAnalysisByToken.mockRejectedValue(new Error('network unavailable'))
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    expect(await screen.findByText('Report temporarily unavailable')).toBeInTheDocument()
+    expect(screen.getByText(/report may still exist/i)).toBeInTheDocument()
+    expect(screen.queryByText('Report not found')).not.toBeInTheDocument()
+  })
+
   it('renders a Dismiss button on a risk flag for a live token', async () => {
     listOverrides.mockResolvedValue([])
     renderReport()

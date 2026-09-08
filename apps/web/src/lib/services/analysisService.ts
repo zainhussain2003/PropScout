@@ -349,11 +349,21 @@ export async function getAnalysisByToken(token: string): Promise<GetAnalysisResu
   try {
     response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`)
   } catch {
-    return null
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach the analysis service — check your connection and try again.',
+      0
+    )
   }
 
-  if (response.status === 404) return null
-  if (!response.ok) return null
+  if (response.status === 404 || response.status === 410) return null
+  if (!response.ok) {
+    throw new ApiRequestError(
+      'FETCH_FAILED',
+      'Could not load this report — please try again in a moment.',
+      response.status
+    )
+  }
 
   const result = (await response.json()) as GetAnalysisResult
   result.analysis = withCleanNarrative(result.analysis)

@@ -17,14 +17,17 @@ It is the state of play, the rules, the traps, and the work queue.
 > states, personal-report photo/score fabrication, duplicated LTT in cash to
 > close, and the remaining 375px overflow.
 >
-> Vercel confirms `VITE_API_URL` is scoped to both Preview and Production.
-> Automatic approval review blocked revealing its secret value, so the endpoint
-> itself remains unverified. The branch changes are not yet merged to `master`;
-> production approval is still required. See D-037 through D-044.
+> Vercel confirms `VITE_API_URL` is scoped to both Preview and Production. With
+> owner approval it was rotated, without exposing the old write-only value, to
+> the documented healthy Railway API and the branch Preview was rebuilt. That
+> exposed a second blocker: API CORS admitted only `propscout.ca`, and the client
+> mislabeled the resulting network failure as “Report not found.” D-045 fixes
+> both on this branch. The API change is not live until merge/deployment;
+> production approval is still required.
 > A follow-up commit after the first Preview closes the live narrative blocker:
 > Sonnet verdict generation has now been removed. Verdict prose is deterministic,
 > and the landing/report score rings use one full clockwise treatment (D-043 and
-> D-044). Re-run CI and use the newest Preview before merging.
+> D-045). Re-run CI and use the newest Preview after the API deploy before merging.
 
 ---
 
@@ -51,10 +54,11 @@ sentence governs every judgement below.
 
 ## 3. Where things stand
 
-- **Branch:** `feat/address-input-and-mobile`, 17 commits ahead of `master`.
+- **Branch:** `feat/address-input-and-mobile`, 18 commits ahead of `master` after
+  the pending CORS/error-truth commit.
   Open PR **#21**. Everything is pushed.
 - **Production:** `propscout.ca` is live on Vercel but runs `master` — none of
-  the last 17 commits are deployed.
+  the last 18 commits are deployed.
 - **Supabase project:** `dvlmkecrpoelqlzhwebg` ("PropScout"). One project serves
   both local dev and production. There is no staging database.
 - **Local stack:** web `:5173`, API `:3001`, calc engine `:8000`.
@@ -63,8 +67,8 @@ sentence governs every judgement below.
 ### Test gates — all green on the 2026-09-08 working tree
 
 ```
-npm test --workspace=apps/web        # 917 passed, 73 files
-npm test --workspace=apps/api        # 222 passed, 2 skipped
+npm test --workspace=apps/web        # 923 passed, 73 files
+npm test --workspace=apps/api        # 229 passed, 2 skipped
 python -m pytest services/calc-engine/ -q   # 396 passed, 2 skipped
 python -m pytest services/scrapers/ -q      # 180 passed
 npm run typecheck --workspace=apps/web
@@ -188,10 +192,12 @@ evaluation (D-037 through D-041).
 address entry, real SunScout obstruction, the comps radius fallback, the
 extraction fixes, and the UI work.
 
-Vercel confirms **`VITE_API_URL` is scoped to Preview and Production**. Its
-masked value still has not been verified because automatic approval review
-blocked revealing the secret. It defaults to `http://localhost:3001`, so verify
-the endpoint through a deployed analysis before merging.
+Vercel confirms **`VITE_API_URL` is scoped to Preview and Production**. With
+owner approval it was rotated to the documented Railway API and the Preview was
+rebuilt without exposing the old write-only value. The API itself was healthy,
+but its single-origin CORS setting rejected the branch Preview; D-045 fixes that
+on this branch. Deploy the API change, then verify a saved report and a fresh
+four-mode run before merging.
 
 ### 4. Smaller, well-defined
 

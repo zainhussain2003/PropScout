@@ -16,6 +16,7 @@ import {
   scrapeUrl,
   triggerAnalysis,
   fetchReport,
+  getAnalysisByToken,
   ApiRequestError,
 } from './analysisService'
 import type { PropertyInput, FinancingInput, RentalInput } from '../../types/api'
@@ -470,6 +471,36 @@ describe('fetchReport', () => {
       expect(apiErr.code).toBe('NETWORK_ERROR')
       expect(apiErr.status).toBe(0)
       return true
+    })
+  })
+})
+
+describe('getAnalysisByToken', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('returns null only when the API confirms the report is missing', async () => {
+    mockFetchError(404, { code: 'NOT_FOUND', message: 'Analysis not found.' })
+    await expect(getAnalysisByToken('missing-token')).resolves.toBeNull()
+  })
+
+  it('keeps an expired report distinct from a service outage', async () => {
+    mockFetchError(410, { code: 'EXPIRED', message: 'This analysis has expired.' })
+    await expect(getAnalysisByToken('expired-token')).resolves.toBeNull()
+  })
+
+  it('throws NETWORK_ERROR when the report service cannot be reached', async () => {
+    mockFetchCrash()
+    await expect(getAnalysisByToken('saved-token')).rejects.toSatisfy((err: unknown) => {
+      return err instanceof ApiRequestError && err.code === 'NETWORK_ERROR' && err.status === 0
+    })
+  })
+
+  it('throws FETCH_FAILED for an unexpected API response', async () => {
+    mockFetchError(503, { code: 'UNAVAILABLE' })
+    await expect(getAnalysisByToken('saved-token')).rejects.toSatisfy((err: unknown) => {
+      return err instanceof ApiRequestError && err.code === 'FETCH_FAILED' && err.status === 503
     })
   })
 })

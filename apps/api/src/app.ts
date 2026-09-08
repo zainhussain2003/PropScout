@@ -7,6 +7,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
+import { corsOrigins } from './corsOrigins'
 
 const fastify = Fastify({
   logger: true,
@@ -16,7 +17,7 @@ async function main(): Promise<void> {
   // ── Plugins ────────────────────────────────────────────────────────────────
 
   await fastify.register(cors, {
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    origin: corsOrigins(process.env.FRONTEND_URL ?? 'http://localhost:5173'),
     credentials: true,
   })
 
