@@ -13,6 +13,10 @@ It is the state of play, the rules, the traps, and the work queue.
 > Live shared-database verification created four owner-approved Buttermill
 > reports, one per mode. They retain distinct listing IDs and correct share-link
 > properties. Investor and landlord remain 8 / hard pass at −$2,723.68/month.
+> A second owner-approved four-mode run created four fresh reports after the
+> deterministic-verdict change. Re-running each existing token produced an
+> identical narrative hash in every mode, with no extra report rows; all four
+> stayed at 8 / hard pass and −$2,723.68/month.
 > The run also fixed unknown-year maintenance display, missing parking and rent
 > states, personal-report photo/score fabrication, duplicated LTT in cash to
 > close, and the remaining 375px overflow.
@@ -54,11 +58,11 @@ sentence governs every judgement below.
 
 ## 3. Where things stand
 
-- **Branch:** `feat/address-input-and-mobile`, 18 commits ahead of `master` after
-  the pending CORS/error-truth commit.
+- **Branch:** `feat/address-input-and-mobile`, 19 commits ahead of `master` after
+  the pending live-verification documentation commit.
   Open PR **#21**. Everything is pushed.
 - **Production:** `propscout.ca` is live on Vercel but runs `master` — none of
-  the last 18 commits are deployed.
+  the last 19 commits are deployed.
 - **Supabase project:** `dvlmkecrpoelqlzhwebg` ("PropScout"). One project serves
   both local dev and production. There is no staging database.
 - **Local stack:** web `:5173`, API `:3001`, calc engine `:8000`.

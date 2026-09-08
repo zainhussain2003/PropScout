@@ -1543,6 +1543,13 @@ runs or model revisions. PropScout's verdict is decision support: two checks of
 the same inputs must not offer different advice. Deterministic branches also
 make missing evidence and negotiation limits testable instead of prompt wishes.
 
+**Live verification.** Four fresh Buttermill reports, one per mode, were run
+twice through the real local API/calc/shared-Supabase stack. Each second pass
+retained its listing ID, score, verdict, and byte-identical SHA-256 narrative
+hash. All four stayed at 8 / hard pass and −$2,723.68 monthly cash flow; the
+tenant and personal prose explicitly withheld conclusions that lacked asking
+rent or local comparable-sale evidence.
+
 **Alternatives considered**
 
 | Option                                      | Why not                                                                                             |
