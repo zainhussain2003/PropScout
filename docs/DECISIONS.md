@@ -1500,6 +1500,9 @@ width are both 365px (the browser reserves 10px for its scrollbar).
 
 ### D-042 · Reject AI narratives with unprovided dollar claims
 
+> **Superseded by D-043.** This boundary protected the brief Sonnet narrative
+> path. Verdict prose is now deterministic and no longer calls Sonnet.
+
 **Chosen.** Narrative prompts forbid calculated dollar amounts, and the service
 post-validates every currency claim against the numeric fields supplied to the
 model. It compares exact rounded dollar values while accepting commas, spacing,
@@ -1524,6 +1527,59 @@ fabricated money safe; a deterministic output boundary can.
 **Limit.** This boundary does not prove that non-currency prose or percentages
 are grounded. Add typed source fields and validators when a real failure exposes
 those classes; do not claim general narrative factuality from this guard.
+
+---
+
+### D-043 · Generate verdict prose deterministically in the backend
+
+**Chosen.** `generateNarrative` is now a fixed backend formatter over validated
+structured inputs. Each report mode has explicit branches for known and missing
+evidence. It makes no model call, ignores subscription tier when choosing words,
+and produces byte-for-byte identical prose for identical inputs. Claude Haiku
+remains confined to structured listing-description flag extraction.
+
+**Why.** Even a language model called with temperature zero can vary between
+runs or model revisions. PropScout's verdict is decision support: two checks of
+the same inputs must not offer different advice. Deterministic branches also
+make missing evidence and negotiation limits testable instead of prompt wishes.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                             |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Keep Sonnet at temperature zero             | Temperature zero reduces randomness but does not guarantee identical output.                        |
+| Cache the first model response per listing  | Freezes an opaque response and can serve stale prose after calculations or evidence change.         |
+| Seed the prompt and validate dollar claims  | Still depends on model behaviour and only catches selected error classes after generation.          |
+| Generate once and reuse across report modes | Investors, personal buyers, tenants, and landlords need different decisions from the same property. |
+
+**Limit.** Identical prose requires identical structured inputs. A later rate,
+comparable, or verified-risk update can correctly change both metrics and text.
+
+---
+
+### D-044 · Use full clockwise score rings and code-rendered landing previews
+
+**Chosen.** Every numeric score uses a full circular track that starts at twelve
+o'clock and fills clockwise. Verdict pills sit outside the ring. The landing
+mode cards now render responsive HTML previews instead of cropped WebP report
+screenshots; chips live in normal document flow, and the SunScout summary uses
+shrinkable grid columns with a one-column phone layout. Tenant checklist and
+rent-alert actions also stack at the phone breakpoint so their controls cannot
+widen the document.
+
+**Why.** The 270-degree demo gauge looked incomplete and did not match the live
+report gauge. Cropped screenshots baked overlapping headers into the marketing
+page and could not reflow when the card width changed. Moving the verdict out of
+the ring prevents long labels from colliding with the number at every gauge size.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                        |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Keep the 270-degree speedometer arc    | The owner prefers the clock treatment, and the two styles made scores look unrelated.          |
+| Re-crop the existing WebP screenshots  | A fixed image can reproduce the same overlap at another width and cannot respond to text size. |
+| Patch each screenshot with new artwork | Maintains two visual implementations and lets marketing previews drift from product UI again.  |
+| Put verdict text inside the ring       | Long verdicts compete with the score and label, especially at the 84px and 120px sizes.        |
 
 ---
 

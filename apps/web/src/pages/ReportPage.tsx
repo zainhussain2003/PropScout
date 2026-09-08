@@ -734,7 +734,7 @@ function TenantReportContent({
       {analysis.narrative && (
         <div className="container" style={{ marginBottom: 32 }}>
           <AIVerdictBlock
-            eyebrow="Scout AI · tenant verdict"
+            eyebrow="PropScout · tenant verdict"
             headline={<>{firstSentence(analysis.narrative)}.</>}
             sub={<>{analysis.narrative.split('. ').slice(1).join('. ')}</>}
           />
@@ -835,7 +835,7 @@ function InvestorReportContent({
   mode?: 'investor' | 'landlord'
 }): JSX.Element {
   const { openUpgradeModal } = usePaywall()
-  const verdictEyebrow = `Scout AI · ${mode} verdict`
+  const verdictEyebrow = `PropScout · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
 
   // Financing is LIVE: the sliders drive every metric on the page (cash flow,

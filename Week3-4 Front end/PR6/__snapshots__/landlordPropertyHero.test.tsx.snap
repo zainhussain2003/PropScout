@@ -1256,6 +1256,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
               <circle
                 cx="90"
                 cy="90"
+                data-score-ring="clock"
                 fill="none"
                 r="83"
                 stroke="var(--fail)"

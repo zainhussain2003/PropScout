@@ -1,5 +1,5 @@
 /**
- * DealScore — radial SVG gauge displaying the 0–95 deal score.
+ * DealScore — full clock-style SVG ring displaying a score.
  *
  * Props:
  *   score        — 0–95 (clamped automatically)
@@ -118,6 +118,7 @@ export function DealScore({
           />
           {/* Progress arc */}
           <circle
+            data-score-ring="clock"
             cx={cx}
             cy={cy}
             r={R}
@@ -134,7 +135,8 @@ export function DealScore({
           />
         </svg>
 
-        {/* Numeric score + optional label + optional verdict pill (all inside the ring) */}
+        {/* Numeric score + optional label. The verdict sits below the ring so
+            neither long labels nor small gauges can overlap the number. */}
         <div
           style={{
             position: 'absolute',
@@ -173,31 +175,26 @@ export function DealScore({
               {label}
             </span>
           )}
-          {showVerdict && (
-            <span
-              style={{
-                marginTop: 6,
-                fontSize: 11,
-                fontWeight: 500,
-                color,
-                padding: '3px 10px',
-                borderRadius: 999,
-                border: `1px solid ${color}`,
-                background: `color-mix(in oklab, ${color} 8%, transparent)`,
-                // No nowrap: the pill sits inside the ring, so a long verdict
-                // ("Overpriced — push hard") was clipped mid-word by the gauge
-                // container. Wrapping is the lesser evil; callers that render
-                // the same label below the gauge should not set showVerdict.
-                maxWidth: '100%',
-                textAlign: 'center',
-                lineHeight: 1.3,
-              }}
-            >
-              {verdictLabel ?? verdictLabelForScore(clamped)}
-            </span>
-          )}
         </div>
       </div>
+      {showVerdict && (
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            color,
+            padding: '3px 10px',
+            borderRadius: 999,
+            border: `1px solid ${color}`,
+            background: `color-mix(in oklab, ${color} 8%, transparent)`,
+            maxWidth: px,
+            textAlign: 'center',
+            lineHeight: 1.3,
+          }}
+        >
+          {verdictLabel ?? verdictLabelForScore(clamped)}
+        </span>
+      )}
     </div>
   )
 }

@@ -3,7 +3,7 @@
  *
  * 12 sections rendered in order per spec Section 8:
  *   TenantPropertyHero  — photo grid + chips + address + sticky score / target card
- *   TenantVerdictHero   — full-bleed AI verdict block
+ *   TenantVerdictHero   — full-bleed deterministic verdict block
  *   §01  Rent positioning       — RentalCompsBar + metric tiles
  *   §02  Listing accuracy       — FlagDeepRow list
  *   §03  Listed vs Reality      — ListedVsRealitySection (hidden when zero flags)
@@ -537,7 +537,7 @@ function ListingAccuracySection({ flags = CHARLES_FLAGS }: { flags?: TenantFlag[
       </div>
 
       <p style={{ marginTop: 24, fontSize: 13, color: 'var(--muted)', maxWidth: 720 }}>
-        Scanned with Scout AI · 100% of listing description checked against 7 rule patterns (fake
+        Structured listing scan · 100% of listing description checked against 7 rule patterns (fake
         bedrooms, basement units, parking ambiguity, utilities, pets, smoking, broker-style hedges).
         Override any flag from within the report.
       </p>
@@ -1035,8 +1035,10 @@ function ConfirmChecklist({ items }: { items: TenantChecklistItem[] }): JSX.Elem
         </div>
 
         <div
+          className="tenant-checklist-actions"
           style={{
             display: 'flex',
+            flexWrap: 'wrap',
             gap: 12,
             marginTop: 22,
             paddingTop: 22,
@@ -1138,12 +1140,17 @@ function ConversionBlock(): JSX.Element {
             We'll watch this listing for 30 days and email you the moment the price changes or it
             gets relisted. Free, no account needed.
           </p>
-          <form style={{ display: 'flex', gap: 8 }} onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="tenant-rent-alert-form"
+            style={{ display: 'flex', gap: 8 }}
+            onSubmit={(e) => e.preventDefault()}
+          >
             <input
               type="email"
               placeholder="you@example.com"
               style={{
                 flex: 1,
+                minWidth: 0,
                 padding: '12px 14px',
                 background: 'color-mix(in oklab, var(--bg) 8%, transparent)',
                 border: '1px solid color-mix(in oklab, var(--bg) 16%, transparent)',
@@ -1281,7 +1288,7 @@ export function TenantReport({
         mapCenter={realAnalysis?.coordinates ?? null}
       />
 
-      {/* AI verdict */}
+      {/* Evidence-based verdict */}
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         {tier === 'free' ? (
           <TruncatedVerdict
@@ -1290,12 +1297,12 @@ export function TenantReport({
                 ? realAnalysis.narrative.split('. ')[0] + '.'
                 : TENANT_FIRST_PARA
             }
-            eyebrow="Scout AI · tenant verdict"
+            eyebrow="PropScout · tenant verdict"
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
           <AIVerdictBlock
-            eyebrow="Scout AI · tenant verdict"
+            eyebrow="PropScout · tenant verdict"
             headline={
               realAnalysis?.narrative ? (
                 realAnalysis.narrative.split('. ')[0] + '.'

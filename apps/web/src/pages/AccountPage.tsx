@@ -690,7 +690,7 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
             </span>
             <h3 className="serif">Save unlimited analyses on Investor Pro.</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 540 }}>
-              Plus full 3-paragraph AI verdicts, financing sliders, branded PDF export, and the
+              Plus full evidence-based verdicts, financing sliders, branded PDF export, and the
               portfolio tracker.
             </p>
           </div>
@@ -870,8 +870,8 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
               }}
             >
               {isFree
-                ? 'Three sale-listing analyses per month + unlimited tenant reports. Headlines on AI verdicts; no PDF.'
-                : 'Unlimited analyses · full 3-paragraph AI verdicts · financing sliders · PDF export · portfolio tracker.'}
+                ? 'Three sale-listing analyses per month + unlimited tenant reports. Verdict summaries; no PDF.'
+                : 'Unlimited analyses · full evidence-based verdicts · financing sliders · PDF export · portfolio tracker.'}
             </span>
           </div>
           <div className="col" style={{ alignItems: 'flex-end', gap: 10 }}>

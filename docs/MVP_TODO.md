@@ -253,7 +253,7 @@ Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth 
 - [x] `<ProBadge tier>` — inline Pro marker with lock icon
 - [x] `<UpgradeCard headline sub ctaLabel dark>` — upgrade pitch card
 - [x] `<LockedSection headline sub mockContent height>` — blurred content + upgrade overlay
-- [x] `<TruncatedVerdict firstParagraph>` — AI verdict paragraph 2 blurred + inline upgrade strip
+- [x] `<TruncatedVerdict firstParagraph>` — deterministic verdict remainder blurred + inline upgrade strip
 - [x] `<LockedButton label icon onClick>` — lock-icon button opening upgrade modal
 - [x] `<UpgradeModal open onClose feature>` — 5 feature-specific variants
 - [x] `<HardLimitGate onClose monthlyLimit used resetsIn>` — full-screen monthly limit blocker
@@ -347,7 +347,7 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Modal → bottom-sheet on mobile (slides up with drag handle)
 - [x] Two-column reports collapse to single-column
 - [x] Sticky bottom action bar (Save/Share/PDF)
-- [x] AI verdict headline-only on mobile with "Read full verdict" expand
+- [x] Verdict headline-only on mobile with "Read full verdict" expand
 - [x] Score card moves above content on mobile (gauge shrinks to ~84px)
 
 > Accessibility: footer .chip contrast fixed (WCAG AA).
@@ -366,7 +366,7 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Mapbox geocoding service — `apps/api/src/services/mapboxService.ts`, returns lat/lng or null
 - [x] Walk Score service — `apps/api/src/services/walkScoreService.ts`, returns WalkScoreResult or null
 - [x] `extractListingFlags` — Claude Haiku step in anthropicService.ts, description in → structured flags out
-- [x] Claude narrative — `generateNarrative` in anthropicService.ts, free (1 para) and pro (2–3 para) tiers
+- [x] Deterministic verdict — `generateNarrative` in anthropicService.ts, identical inputs produce identical prose
 - [x] `POST /analysis` expanded to full orchestrator — 9-step pipeline, writes complete analysis on finish
 - [x] `GET /analysis/:token` — returns pending/processing status or full analysis, 404/410 on miss/expiry
 - [x] `analysisService.ts` — scrapeUrl, triggerAnalysis, fetchReport implemented with real API calls
@@ -498,19 +498,17 @@ All tasks reference spec Section 19.
 
 ---
 
-## Week 6–7 — AI narratives and PDF
+## Week 6–7 — Verdict narratives and PDF
 
-### Claude Sonnet narratives
+### Deterministic verdict narratives
 
-- [x] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
-- [x] Report A / D investment prompt — Pro tier (3 paragraphs, 150–280 words)
-- [x] Report B personal prompt — free tier
-- [x] Report B personal prompt — Pro tier
-- [x] Report C tenant prompt — free tier
-- [x] Report C tenant prompt — Pro tier
-- [x] Output validation: word count, banned phrases, dollar figure requirement
-- [x] Regenerate once on validation failure, log and show fallback on second failure
-- [ ] Calibrate against gold-standard examples in spec Section 12 (manual QA step at launch)
+- [x] Report A investor formatter with known/missing evidence branches
+- [x] Report B personal-buyer formatter with known/missing evidence branches
+- [x] Report C tenant formatter with supported-median negotiation logic
+- [x] Report D landlord formatter with rent-positioning language
+- [x] Exact-repeat tests across identical inputs and subscription tiers
+- [x] Sonnet removed from the verdict path; Haiku remains isolated to structured flags
+- [ ] Calibrate deterministic wording against owner feedback after live use
 
 ### PDF export
 
@@ -538,7 +536,7 @@ All tasks reference spec Section 19.
 - [ ] Free tier: PDF button locked with upgrade prompt
 - [ ] Free tier: SunScout building obstruction locked (Phase 2 — show placeholder)
 - [ ] Free tier: portfolio tracker locked
-- [ ] Free tier: AI narrative capped at 1 paragraph
+- [ ] Free tier: written verdict capped at 1 paragraph
 - [ ] Pro tier: all above unlocked
 - [ ] Shareable link generation (UUID token stored in `analyses.share_token`)
 - [ ] Shareable link viewer (no login, shows full report, 30-day expiry)
@@ -560,7 +558,7 @@ All tasks reference spec Section 19.
 - [ ] Test shareable links (generate, view without login, expiry)
 - [ ] Test PDF generation for all 4 report types
 - [x] Run golden dataset regression suite — 100% on 96-case development corpus (2026-09-07)
-- [ ] Mobile test: scorecard and AI narrative on iOS and Android
+- [ ] Mobile test: scorecard and written verdict on iOS and Android
 
 ### Deploy
 

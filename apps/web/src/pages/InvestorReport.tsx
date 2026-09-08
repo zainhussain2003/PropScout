@@ -5,7 +5,7 @@
  *            Default: Vaughan (hard pass).
  *
  * Sections rendered in order:
- *   PropertyHero + AIVerdictBlock (above numbered sections)
+ *   PropertyHero + deterministic verdict block (above numbered sections)
  *   §01  Investment metrics       → InvestmentMetricsSection
  *   §02  Financing scenarios      → FinancingSliders
  *   §03  Rental comps             → RentalCompsBar
@@ -649,7 +649,7 @@ function ErrorState({ message, onRetry }: ErrorStateProps): JSX.Element {
   )
 }
 
-// ── AI narrative helpers ───────────────────────────────────────────────────────
+// ── Written verdict helpers ───────────────────────────────────────────────────
 
 /** Returns a plain-text first paragraph for TruncatedVerdict (free tier). */
 function buildNarrativeFirstParaStr(listing: ListingData, dealLabel: string): string {
@@ -792,7 +792,7 @@ export function InvestorReport({
 
         {!loading && !error && metrics && dealScore && (
           <>
-            {/* ── Hero + AI verdict ──────────────────────────────────── */}
+            {/* ── Hero + evidence-based verdict ──────────────────────── */}
             <PropertyHero
               listing={listing}
               score={dealScore}
@@ -814,7 +814,7 @@ export function InvestorReport({
                 />
               ) : (
                 <AIVerdictBlock
-                  eyebrow="Scout AI · investor verdict"
+                  eyebrow="PropScout · investor verdict"
                   headline={buildNarrativeHeadline(listing, dealScore.label)}
                   sub={
                     realAnalysis?.narrative ??

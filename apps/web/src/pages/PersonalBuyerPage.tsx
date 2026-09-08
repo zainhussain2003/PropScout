@@ -6,7 +6,7 @@
  *
  * Sections:
  *   PropertyHero        — photo grid + home score gauge + asking / true monthly cost
- *   VerdictHero         — dark AI verdict card
+ *   VerdictHero         — dark deterministic verdict card
  *   §01  True monthly cost       → PBTrueCostSection
  *   §02  Fair market value       → PBFMVSection
  *   §03  Comparable sales        → PBSalesSection
@@ -392,7 +392,7 @@ function PersonalPropertyHero({
 
 interface PersonalVerdictHeroProps {
   monthly: PersonalMonthlyCost
-  /** Real AI narrative — when provided replaces the demo verdict text. */
+  /** Real deterministic narrative — when provided replaces the demo verdict text. */
   narrative?: string | null
   /** Live report — provenance strip must only claim sources we have. */
   isReal?: boolean
@@ -423,7 +423,7 @@ function PersonalVerdictHero({
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         <TruncatedVerdict
           firstParagraph={narrative ? narrative.split('. ')[0] + '.' : PB_FIRST_PARA}
-          eyebrow="Scout AI · home buyer verdict"
+          eyebrow="PropScout · home buyer verdict"
           onUnlock={() => openUpgradeModal('verdict')}
         />
       </section>
@@ -475,7 +475,7 @@ function PersonalVerdictHero({
               textTransform: 'uppercase',
             }}
           >
-            Scout AI · home buyer verdict
+            PropScout · home buyer verdict
           </span>
           <span style={{ flex: 1 }} />
           <span
@@ -486,7 +486,7 @@ function PersonalVerdictHero({
               color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
-            claude · sonnet 4.6
+            validated inputs
           </span>
         </div>
 

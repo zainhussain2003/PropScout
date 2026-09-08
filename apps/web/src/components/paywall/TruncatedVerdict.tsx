@@ -1,5 +1,5 @@
 /**
- * TruncatedVerdict — AI verdict with first paragraph fully visible,
+ * TruncatedVerdict — deterministic verdict with its first section visible,
  * second paragraph blurred and faded out, and an inline upgrade strip.
  * Rendered on a dark (ink) background card.
  *
@@ -10,7 +10,7 @@ import { ProBadge } from './ProBadge'
 import { Icon } from '../shared/Icon'
 
 interface TruncatedVerdictProps {
-  /** The first paragraph of the AI verdict — shown in full. */
+  /** The first section of the verdict — shown in full. */
   firstParagraph: string
   /**
    * The real second paragraph of this property's verdict, blurred as a teaser.
@@ -24,7 +24,7 @@ interface TruncatedVerdictProps {
   blurredParagraph?: string
   /** Called when the user clicks "Unlock full verdict" — typically opens UpgradeModal. */
   onUnlock?: () => void
-  /** Mode-specific eyebrow, e.g. "Scout AI · tenant verdict". */
+  /** Mode-specific eyebrow, e.g. "PropScout · tenant verdict". */
   eyebrow?: string
 }
 
@@ -32,7 +32,7 @@ export function TruncatedVerdict({
   firstParagraph,
   blurredParagraph,
   onUnlock,
-  eyebrow = 'Scout AI · investor verdict',
+  eyebrow = 'PropScout · investor verdict',
 }: TruncatedVerdictProps): JSX.Element {
   return (
     <div
@@ -139,7 +139,7 @@ export function TruncatedVerdict({
         <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
           <ProBadge />
           <span style={{ fontSize: 14, color: 'color-mix(in oklab, var(--bg) 85%, transparent)' }}>
-            Read the full 3-paragraph verdict with specific dollar gaps and a precise next step.
+            Read the full evidence-based verdict with its supporting metrics and next step.
           </span>
         </div>
         <button className="btn btn-accent" style={{ padding: '10px 16px' }} onClick={onUnlock}>

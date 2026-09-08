@@ -20,10 +20,11 @@ It is the state of play, the rules, the traps, and the work queue.
 > Vercel confirms `VITE_API_URL` is scoped to both Preview and Production.
 > Automatic approval review blocked revealing its secret value, so the endpoint
 > itself remains unverified. The branch changes are not yet merged to `master`;
-> production approval is still required. See D-037 through D-042.
+> production approval is still required. See D-037 through D-044.
 > A follow-up commit after the first Preview closes the live narrative blocker:
-> dollar claims are now rejected unless they exactly match a supplied metric
-> (D-042). Re-run CI and use the newest Preview before merging.
+> Sonnet verdict generation has now been removed. Verdict prose is deterministic,
+> and the landing/report score rings use one full clockwise treatment (D-043 and
+> D-044). Re-run CI and use the newest Preview before merging.
 
 ---
 
@@ -50,21 +51,21 @@ sentence governs every judgement below.
 
 ## 3. Where things stand
 
-- **Branch:** `feat/address-input-and-mobile`, 16 commits ahead of `master`.
+- **Branch:** `feat/address-input-and-mobile`, 17 commits ahead of `master`.
   Open PR **#21**. Everything is pushed.
 - **Production:** `propscout.ca` is live on Vercel but runs `master` — none of
-  the last 16 commits are deployed.
+  the last 17 commits are deployed.
 - **Supabase project:** `dvlmkecrpoelqlzhwebg` ("PropScout"). One project serves
   both local dev and production. There is no staging database.
 - **Local stack:** web `:5173`, API `:3001`, calc engine `:8000`.
 - **`.env`** has 24 keys and is gitignored. `REPLIERS_SAMPLE_MODE=true`.
 
-### Test gates — all green on the 2026-09-07 working tree
+### Test gates — all green on the 2026-09-08 working tree
 
 ```
-npm test --workspace=apps/web        # 913 passed, 73 files
-npm test --workspace=apps/api        # 226 passed, 2 skipped
-python -m pytest services/calc-engine/ -q   # 398 passed
+npm test --workspace=apps/web        # 917 passed, 73 files
+npm test --workspace=apps/api        # 222 passed, 2 skipped
+python -m pytest services/calc-engine/ -q   # 396 passed, 2 skipped
 python -m pytest services/scrapers/ -q      # 180 passed
 npm run typecheck --workspace=apps/web
 npm run typecheck --workspace=apps/api
@@ -154,58 +155,48 @@ Every one of these was hit here.
 
 Ordered by value. Numbers 1–3 are the ones that matter most.
 
-### 1. Give the report its own visual identity (highest value, not started)
+### 1. Give the report its own visual identity (completed)
 
-The report is what people pay for and it currently looks like a competent
-analytics dashboard, not a document with a point of view. The owner's words:
-_"modern and appealing to use"_, explicitly **not** cinematic.
+The investment hero now makes the verdict the headline, gives the score a
+stronger full-circle clock treatment, and shows the breakdown as weighted bars.
+The owner's requested direction remains _"modern and appealing to use"_,
+explicitly **not** cinematic.
 
 Foundation is already in (D-036): a three-level elevation scale, motion tokens
 (`--ease`, `--dur-fast`, `--dur`, `--dur-slow`), softer radii, and a
 `ReportSectionRail` that maps the document in the left margin.
 
-The obvious next target is the **score card in the report hero** — nine rows of
-small grey text around a gauge that is underplayed for what is meant to be the
-product's signature element. Make the verdict the hero: confident scale on the
-score, the verdict as a real headline, the breakdown as weighted bars rather
-than hairlines.
+Landing-page score examples use the same clockwise treatment. Static report
+screenshots were replaced with responsive HTML previews so labels and chips no
+longer overlap when the viewport changes (D-044).
 
 Constraints: keep the PR10 palette (it is contrast-checked — see the divergence
 table in `DESIGN_README.md`), keep Instrument Serif / Geist / Geist Mono in
 their assigned roles, no emoji, tokens only.
 
-### 2. Grow the golden dataset with real listing descriptions
+### 2. Grow the golden dataset with real listing descriptions (completed)
 
-`golden_cases.json` has 58 cases and 85 assertions and passes at 100%, with
-every flag covered both positively and negatively. **But 51 of those cases are
-synthetic** — written to read like listings, and labelled as such.
-
-Measured on the 22 **real** descriptions in the `listings` table, recall is
-**10/22** (D-033). That number is the honest one. Real prose says "Fully
-Renovated", "Professionally renovated in May 2025", "Maintenance Fees Include
-Hydro" — variants the rules originally missed entirely.
-
-Do this: run the scraper to collect real Ontario descriptions at volume, label
-them by what a careful human would conclude, add them as cases, and widen the
-patterns against what you find. **Always re-check the synthetic set stays at
-100%** — that is what proves a wider pattern has not started over-matching.
-
-The extraction pipeline's **Claude Haiku layer is still unimplemented**; only
-the regex tier runs. That is the larger half of §19.
+`golden_cases.json` now has 96 cases / 653 assertions, including 38 traceable,
+verbatim Ontario listing descriptions. The regex corpus passes 100%, including
+48/48 real positives with no real false positives. Haiku remains isolated to
+structured risk-flag extraction and its semantic recall still needs a separate
+evaluation (D-037 through D-041).
 
 ### 3. Deploy this branch
 
-`propscout.ca` runs `master` and is 16 commits behind. Merging #21 ships
+`propscout.ca` runs `master` and is 17 commits behind. Merging #21 ships
 address entry, real SunScout obstruction, the comps radius fallback, the
 extraction fixes, and the UI work.
 
-Before merging, confirm **`VITE_API_URL` is set for Vercel Preview and
-Production**. It defaults to `http://localhost:3001`, so a deployed page with
-that unset renders the UI but cannot run a report. This was never verified.
+Vercel confirms **`VITE_API_URL` is scoped to Preview and Production**. Its
+masked value still has not been verified because automatic approval review
+blocked revealing the secret. It defaults to `http://localhost:3001`, so verify
+the endpoint through a deployed analysis before merging.
 
 ### 4. Smaller, well-defined
 
-- **~10px of horizontal overflow at 375px** remains, from `StickyActionBar`.
+- **375px overflow is fixed** across the landing page and all four saved-report
+  modes; DOM width scans are exact at 375px and 1280px.
 - **Nightly scraper cron on Railway** — `railway.json` is written, never
   deployed or confirmed running. The data is fresh, so something is running;
   verify what.

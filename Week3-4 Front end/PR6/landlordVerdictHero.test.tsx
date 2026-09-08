@@ -121,14 +121,14 @@ describe('LandlordVerdictHero', () => {
     expect(screen.getByText(/\$113/)).toBeInTheDocument()
   })
 
-  it('renders the "Scout AI · landlord verdict" eyebrow label', () => {
+  it('renders the PropScout landlord verdict eyebrow label', () => {
     renderHero()
-    expect(screen.getByText(/scout ai · landlord verdict/i)).toBeInTheDocument()
+    expect(screen.getByText(/PropScout · landlord verdict/i)).toBeInTheDocument()
   })
 
-  it('renders the model attribution "claude · sonnet 4.6"', () => {
+  it('identifies the verdict as based on validated inputs', () => {
     renderHero()
-    expect(screen.getByText('claude · sonnet 4.6')).toBeInTheDocument()
+    expect(screen.getByText('validated inputs')).toBeInTheDocument()
   })
 
   it('renders the cap rate in the source attribution strip', () => {

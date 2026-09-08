@@ -40,4 +40,19 @@ describe('DealScore — verdict label matches the calc-engine brackets', () => {
     )
     expect(screen.getByText('Marginal')).toBeInTheDocument()
   })
+
+  it('uses a full clock-style ring that starts at twelve o’clock', () => {
+    const { container } = render(<DealScore score={58} max={100} animate={false} />)
+    const progress = container.querySelector('[data-score-ring="clock"]')
+    expect(progress).toHaveAttribute('transform', expect.stringContaining('rotate(-90'))
+    expect(progress).toHaveAttribute('stroke-dasharray')
+  })
+
+  it('keeps the verdict outside the ring so it cannot overlap the score label', () => {
+    const { container } = render(
+      <DealScore score={8} showVerdict verdictLabel="Hard pass" animate={false} />
+    )
+    const ring = container.querySelector('svg')?.parentElement
+    expect(ring).not.toContainElement(screen.getByText('Hard pass'))
+  })
 })

@@ -487,9 +487,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         }
       }
 
-      // Step 8 — generate narrative (never throws)
+      // Step 8 — assemble deterministic verdict prose from validated inputs.
       // The Python calc engine returns flag_id (not id) and no label; resolve
-      // human-readable labels here for both the narrative + the UI payload.
+      // human-readable labels here for both the verdict + the UI payload.
       const resolvedFlags = pyData.risk_flags.map((f) => {
         const id = String(f.flag_id ?? f.id ?? '')
         return {
@@ -534,6 +534,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         askingRent: listing.rentMonthly ?? undefined,
         rentLow: rentalForCalc.low,
         rentHigh: rentalForCalc.high,
+        walkScore: walkScore?.walk ?? null,
+        transitScore: walkScore?.transit ?? null,
       }
 
       const narrative = await generateNarrative(narrativeInput)

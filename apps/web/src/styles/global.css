@@ -894,6 +894,22 @@ body::-webkit-scrollbar-thumb {
   }
 }
 
+@media (max-width: 600px) {
+  .tenant-checklist-actions,
+  .tenant-rent-alert-form {
+    flex-direction: column;
+  }
+
+  .tenant-checklist-actions .btn,
+  .tenant-rent-alert-form .btn {
+    width: 100%;
+  }
+
+  .sun-score-summary {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 @media (max-width: 480px) {
   .grid-2col-mobile {
     grid-template-columns: 1fr 1fr !important;

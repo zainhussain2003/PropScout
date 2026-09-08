@@ -118,7 +118,7 @@ export function HardLimitGate({
             <span className="tabular" style={{ color: 'var(--bg)' }}>
               {resetsIn}
             </span>
-            . Or unlock unlimited reports, full AI verdicts, financing sliders, and PDF export with
+            . Or unlock unlimited reports, full verdicts, financing sliders, and PDF export with
             Investor Pro — for less than your average lunch.
           </p>
 

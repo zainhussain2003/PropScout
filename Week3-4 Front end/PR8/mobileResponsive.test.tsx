@@ -55,7 +55,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(1280)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -67,7 +67,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -79,7 +79,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -95,7 +95,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -108,7 +108,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -125,7 +125,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     const { rerender } = render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="First headline"
         sub="First sub paragraph."
       />
@@ -137,7 +137,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     // Change headline — expanded state must reset
     rerender(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Different headline"
         sub="Different sub paragraph."
       />

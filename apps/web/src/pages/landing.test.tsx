@@ -177,6 +177,17 @@ describe('LandingPage', () => {
     expect(screen.getByText(/common questions/i)).toBeInTheDocument()
   })
 
+  it('uses deterministic-verdict copy and does not advertise an AI-written verdict', () => {
+    const { container } = renderLanding()
+    expect(container).toHaveTextContent(/deterministic written verdict/i)
+    expect(container).not.toHaveTextContent(/Scout AI|Sonnet|AI verdict/i)
+  })
+
+  it('renders score previews as full clock-style rings', () => {
+    const { container } = renderLanding()
+    expect(container.querySelectorAll('[data-score-ring="clock"]').length).toBeGreaterThanOrEqual(4)
+  })
+
   it('expands an FAQ item on click', () => {
     renderLanding()
     // Find the FAQ button by its visible serif text; the button also has an Icon child

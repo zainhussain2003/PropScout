@@ -12,7 +12,7 @@
  *
  * Sections:
  *   LandlordPropertyHero      — photo grid + ownership strip + sticky score
- *   LandlordVerdictHero       — dark AI verdict card
+ *   LandlordVerdictHero       — dark deterministic verdict card
  *   §01  Rent positioning     → LandlordRentPositioningSection (rent slider)
  *   §02  Investment metrics   → InvestmentMetricsSection (reused investor)
  *   §03  Financing scenarios  → FinancingSliders (reused investor)
@@ -435,7 +435,7 @@ export function LandlordPage({
                 ? realAnalysis.narrative.split('. ')[0] + '.'
                 : `You're above the building median, and ${property.ownership.daysOnMarket} days on market is telling you exactly what the tenants think of it.`
             }
-            eyebrow="Scout AI · landlord verdict"
+            eyebrow="PropScout · landlord verdict"
             onUnlock={() => openUpgradeModal('verdict')}
           />
         </section>

@@ -251,18 +251,18 @@ describe('AIVerdictBlock', () => {
   it('renders the eyebrow text', () => {
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
     )
-    expect(screen.getByText(/Scout AI · investor verdict/i)).toBeInTheDocument()
+    expect(screen.getByText(/PropScout · investor verdict/i)).toBeInTheDocument()
   })
 
   it('renders the headline', () => {
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
@@ -273,7 +273,7 @@ describe('AIVerdictBlock', () => {
   it('renders the sub paragraph', () => {
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
@@ -303,15 +303,15 @@ describe('AIVerdictBlock', () => {
     expect(watermark).toBeInTheDocument()
   })
 
-  it('model tag "claude · sonnet 4.6" is always rendered', () => {
+  it('identifies the verdict as based on validated inputs', () => {
     render(<AIVerdictBlock eyebrow="eyebrow" headline="headline" sub="sub" />)
-    expect(screen.getByText('claude · sonnet 4.6')).toBeInTheDocument()
+    expect(screen.getByText('validated inputs')).toBeInTheDocument()
   })
 
   it('matches snapshot', () => {
     const { container } = render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />

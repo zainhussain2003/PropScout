@@ -25,7 +25,7 @@ export function StripeWelcomePage(): JSX.Element {
         tone="pass"
         eyebrow="Welcome to Investor Pro"
         headline="You're a Pro now."
-        body="Full AI verdicts, PDF export, portfolio tracker, and SunScout 3D are all unlocked. Go find your next deal."
+        body="Full evidence-based verdicts, PDF export, portfolio tracker, and SunScout 3D are all unlocked. Go find your next deal."
         primary={{ label: 'Start analyzing', onClick: () => navigate('/') }}
         secondary={{ label: 'View my plan', onClick: () => navigate('/account?view=plan') }}
       />

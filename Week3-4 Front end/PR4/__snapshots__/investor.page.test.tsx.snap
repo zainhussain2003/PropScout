@@ -1900,6 +1900,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                       <circle
                         cx="60"
                         cy="60"
+                        data-score-ring="clock"
                         fill="none"
                         r="55.5"
                         stroke="var(--fail)"
@@ -2255,7 +2256,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="mono"
               style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;"
             >
-              Scout AI · investor verdict
+              PropScout · investor verdict
             </span>
             <span
               style="flex: 1 1 0%;"
@@ -2264,7 +2265,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="mono"
               style="font-size: 10px; letter-spacing: 0.12em; color: color-mix(in oklab, var(--bg) 40%, transparent);"
             >
-              claude · sonnet 4.6
+              validated inputs
             </span>
           </div>
           <div

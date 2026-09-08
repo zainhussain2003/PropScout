@@ -1,9 +1,9 @@
 /**
- * AIVerdictBlock — dark full-bleed AI verdict card.
+ * AIVerdictBlock — dark full-bleed deterministic verdict card.
  *
  * Features:
  *   - Dark ink background with ScoutMark SVG watermark at 6–8% opacity
- *   - Live dot + "Scout AI · investor verdict" eyebrow
+ *   - Status dot + mode-specific verdict eyebrow
  *   - Large Instrument Serif headline (with inline accents via JSX)
  *   - Serif sub-paragraph at reduced opacity
  *   - compact=true: reduced padding, smaller type
@@ -65,7 +65,7 @@ export function AIVerdictBlock({
         <ScoutMark size={520} color="var(--accent)" />
       </div>
 
-      {/* Eyebrow — live dot + label + model tag */}
+      {/* Eyebrow — status dot + label + deterministic-source tag */}
       <div
         className="row gap-8"
         style={{
@@ -110,7 +110,7 @@ export function AIVerdictBlock({
             color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
           }}
         >
-          claude · sonnet 4.6
+          validated inputs
         </span>
       </div>
 

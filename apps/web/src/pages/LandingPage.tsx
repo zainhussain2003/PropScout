@@ -9,7 +9,7 @@
  *   + ModeModal (shown after URL submit)
  *
  * The ReportShowcase contains static mini-visualisations of analysis
- * components (DealScore, RentalCompsBar, AIVerdictBlock, RiskRow).
+ * components (DealScore, RentalCompsBar, VerdictBlock, RiskRow).
  * These are display-only helpers for the landing demo; the real
  * interactive components live in apps/web/src/components/analysis/
  * and will be built in PR 4.
@@ -74,11 +74,7 @@ interface ShowcaseDealScoreProps {
 function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps): JSX.Element {
   const r = (size / 2) * 0.78
   const circ = 2 * Math.PI * r
-  const arc = circ * 0.75 // 270° arc
-  const gap = circ - arc
-  const filled = arc * (score / 100)
-  const dash = filled
-  const dashOffset = arc - filled
+  const filled = circ * (Math.max(0, Math.min(100, score)) / 100)
 
   // Unified on the DEAL_SCORE verdict brackets (matches the report gauge + labels).
   const stroke =
@@ -99,22 +95,22 @@ function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps):
           fill="none"
           stroke="var(--line)"
           strokeWidth={size * 0.065}
-          strokeDasharray={`${arc} ${gap}`}
+          strokeDasharray={circ}
           strokeLinecap="round"
-          style={{ transform: 'rotate(135deg)', transformOrigin: '50% 50%' }}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
         />
         {/* Fill */}
         <circle
+          data-score-ring="clock"
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
           stroke={stroke}
           strokeWidth={size * 0.065}
-          strokeDasharray={`${dash} ${circ - dash}`}
-          strokeDashoffset={dashOffset}
+          strokeDasharray={`${filled} ${circ - filled}`}
           strokeLinecap="round"
-          style={{ transform: 'rotate(135deg)', transformOrigin: '50% 50%' }}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
         />
       </svg>
       {/* Score number */}
@@ -301,12 +297,12 @@ function ShowcaseRentDistribution({ mid, ask }: ShowcaseRentDistributionProps): 
   )
 }
 
-interface ShowcaseAIVerdictBlockProps {
+interface ShowcaseVerdictBlockProps {
   addr: string
   headline: ReactNode
   sub: ReactNode
 }
-function ShowcaseAIVerdictBlock({ addr, headline, sub }: ShowcaseAIVerdictBlockProps): JSX.Element {
+function ShowcaseVerdictBlock({ addr, headline, sub }: ShowcaseVerdictBlockProps): JSX.Element {
   return (
     <div
       style={{
@@ -341,7 +337,7 @@ function ShowcaseAIVerdictBlock({ addr, headline, sub }: ShowcaseAIVerdictBlockP
             marginBottom: 8,
           }}
         >
-          Scout AI · {addr}
+          PropScout verdict · {addr}
         </span>
         <p
           style={{
@@ -620,7 +616,7 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
     ['Heat, water included · Hydro & parking extra', progress > 45],
     ['Pulling 12 rental comps in this building & FSA', progress > 65],
     ['Checking listing accuracy · scanning description', progress > 85],
-    ['Generating Scout AI verdict', progress > 95],
+    ['Building evidence-based verdict', progress > 95],
   ] as [string, boolean][]
 
   return (
@@ -1279,7 +1275,7 @@ function ReportShowcase(): JSX.Element {
         >
           {/* Left column */}
           <div className="col" style={{ gap: 22 }}>
-            <ShowcaseAIVerdictBlock
+            <ShowcaseVerdictBlock
               addr="Unit 3705 · 28 Charles St E, Toronto ON"
               headline={
                 <>
@@ -1662,12 +1658,158 @@ function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
   )
 }
 
+function ModePreview({ who, large = false }: { who: string; large?: boolean }): JSX.Element {
+  const shell: React.CSSProperties = {
+    height: '100%',
+    minHeight: large ? 300 : 180,
+    padding: 16,
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--line)',
+    background: 'var(--bg-elev)',
+    overflow: 'hidden',
+  }
+
+  if (who === 'Tenant') {
+    return (
+      <div style={shell} role="img" aria-label="Tenant report preview with a supported rent target">
+        <div className="col" style={{ gap: 14, height: '100%' }}>
+          <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
+            <Chip>For rent</Chip>
+            <Chip accent>Free forever</Chip>
+          </div>
+          <div>
+            <div
+              className="mono"
+              style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
+            >
+              YOUR SUPPORTED RANGE
+            </div>
+            <div className="serif tabular" style={{ fontSize: large ? 42 : 28, lineHeight: 1.1 }}>
+              $1,950–$2,000<span style={{ fontSize: 13, color: 'var(--muted)' }}>/mo</span>
+            </div>
+          </div>
+          <div className="divider" />
+          {[
+            ['Comparable rentals', '36'],
+            ['Days on market', '22 days'],
+            ['Documented concern', 'Glass-door den'],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="row"
+              style={{ justifyContent: 'space-between', gap: 12, fontSize: 12 }}
+            >
+              <span style={{ color: 'var(--ink-2)' }}>{label}</span>
+              <span className="mono" style={{ textAlign: 'right' }}>
+                {value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (who === 'Personal buyer') {
+    return (
+      <div style={shell} role="img" aria-label="Personal buyer report monthly cost preview">
+        <div className="col gap-8">
+          <Chip>For sale</Chip>
+          <div
+            className="mono"
+            style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
+          >
+            TRUE MONTHLY COST
+          </div>
+          {[
+            ['Mortgage', '$3,460'],
+            ['Property tax', '$357'],
+            ['Condo fee', '$0'],
+            ['Insurance', '$215'],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="row"
+              style={{ justifyContent: 'space-between', fontSize: 11 }}
+            >
+              <span style={{ color: 'var(--ink-2)' }}>{label}</span>
+              <span className="mono">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (who === 'Investor') {
+    return (
+      <div
+        style={shell}
+        role="img"
+        aria-label="Investor report clock-style deal score of 8 out of 100"
+      >
+        <div className="col" style={{ alignItems: 'center', gap: 4 }}>
+          <div className="row" style={{ width: '100%' }}>
+            <Chip>For sale</Chip>
+          </div>
+          <ShowcaseDealScore score={8} size={104} label="Deal score / 100" />
+          <VerdictPill tone="fail" label="Hard pass" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={shell} role="img" aria-label="Landlord report rent positioning preview">
+      <div className="col gap-12">
+        <Chip>For rent</Chip>
+        <div>
+          <div
+            className="mono"
+            style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
+          >
+            ASKING RENT
+          </div>
+          <div className="serif tabular" style={{ fontSize: 28 }}>
+            $3,400<span style={{ fontSize: 12, color: 'var(--muted)' }}>/mo</span>
+          </div>
+        </div>
+        <div
+          style={{ position: 'relative', height: 6, borderRadius: 999, background: 'var(--line)' }}
+        >
+          <div
+            style={{ width: '68%', height: '100%', borderRadius: 999, background: 'var(--accent)' }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: '68%',
+              top: -4,
+              width: 14,
+              height: 14,
+              borderRadius: 999,
+              background: 'var(--ink)',
+              transform: 'translateX(-50%)',
+            }}
+          />
+        </div>
+        <div
+          className="row mono"
+          style={{ justifyContent: 'space-between', fontSize: 9, color: 'var(--muted)' }}
+        >
+          <span>P25 · $2,850</span>
+          <span>Median · $3,100</span>
+          <span>P75 · $3,350</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ReportsSection(): JSX.Element {
   const modes = [
     {
       who: 'Tenant',
-      img: '/marketing/mode-tenant',
-      imgAlt: 'Tenant report — negotiation target of $1,950–2,000/mo with leverage factors',
       tag: 'For rent',
       title: "I'm looking at a rental",
       copy: "Free, no login. Flags fake bedrooms, basement units, missing parking, and overpriced asks. Tells you exactly where to negotiate to — and saves you the deposit on a unit that wasn't what it said it was.",
@@ -1680,8 +1822,6 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Personal buyer',
-      img: '/marketing/mode-personal',
-      imgAlt: 'Personal buyer report — true monthly cost breakdown totalling $6,057/mo',
       tag: 'For sale',
       title: "I'm buying a home to live in",
       copy: 'True monthly cost of ownership, comparable sales, walk/transit, school catchments. The home you can live in, not just close on.',
@@ -1693,8 +1833,6 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Investor',
-      img: '/marketing/mode-investor',
-      imgAlt: 'Investor report — deal score gauge reading 8/100, hard pass',
       tag: 'For sale',
       title: "I'm running it as a rental",
       copy: 'Cap rate, cash flow, DSCR, OSFI stress test, Ontario LTT, and our 0–100 deal score — modelled for Canadian rules, not bolted on.',
@@ -1707,8 +1845,6 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Landlord',
-      img: '/marketing/mode-landlord',
-      imgAlt: 'Landlord report — rent positioning slider against building comps',
       tag: 'For rent',
       title: "I'm pricing out my own unit",
       copy: 'Test whether your listed rent pencils against the building, the FSA, and the trend line — before you sign a year-long lease at the wrong number.',
@@ -1743,35 +1879,8 @@ function ReportsSection(): JSX.Element {
               className="grid-1col-mobile"
               style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 0 }}
             >
-              <div style={{ padding: 14, position: 'relative' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    minHeight: 300,
-                    overflow: 'hidden',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--line)',
-                    background: 'var(--accent-soft)',
-                  }}
-                >
-                  <img
-                    src={`${tenantMode.img}.webp`}
-                    srcSet={`${tenantMode.img}.webp 1x, ${tenantMode.img}@2x.webp 2x`}
-                    alt={tenantMode.imgAlt}
-                    loading="lazy"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'block',
-                      objectFit: 'cover',
-                      objectPosition: '50% 12%',
-                    }}
-                  />
-                </div>
-                <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
-                  <Chip>{tenantMode.tag}</Chip>
-                  <Chip accent>Free forever</Chip>
-                </div>
+              <div style={{ padding: 14 }}>
+                <ModePreview who={tenantMode.who} large />
               </div>
 
               <div
@@ -1815,35 +1924,8 @@ function ReportsSection(): JSX.Element {
                 className="card"
                 style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
               >
-                {/* Real product screenshot (PR10 part 4a) — a slight top-crop
-                    reads as a peek into the report. */}
-                <div style={{ padding: '14px 14px 0', position: 'relative' }}>
-                  <div
-                    style={{
-                      height: 180,
-                      overflow: 'hidden',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--line)',
-                      background: 'var(--accent-soft)',
-                    }}
-                  >
-                    <img
-                      src={`${m.img}.webp`}
-                      srcSet={`${m.img}.webp 1x, ${m.img}@2x.webp 2x`}
-                      alt={m.imgAlt}
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        display: 'block',
-                        objectFit: 'cover',
-                        objectPosition: '50% 12%',
-                        height: '100%',
-                      }}
-                    />
-                  </div>
-                  <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
-                    <Chip>{m.tag}</Chip>
-                  </div>
+                <div style={{ padding: '14px 14px 0' }}>
+                  <ModePreview who={m.who} />
                 </div>
 
                 <div className="col gap-16" style={{ padding: '24px 24px 26px' }}>
@@ -1896,7 +1978,7 @@ function HowSection(): JSX.Element {
     {
       n: '03',
       t: 'Read the verdict',
-      d: 'Numbers, comps, risk flags, schools, sun path, and a written verdict from Scout AI. Under sixty seconds, every time.',
+      d: 'Numbers, comps, risk flags, schools, sun path, and a deterministic written verdict. Under sixty seconds, every time.',
     },
   ]
 
@@ -2217,8 +2299,17 @@ function SunScoutSection(): JSX.Element {
 
         <div className="col gap-16">
           {/* Light score gauge */}
-          <div className="card row gap-24" style={{ padding: 24, alignItems: 'center' }}>
-            <div className="col gap-8" style={{ alignItems: 'center' }}>
+          <div
+            className="card sun-score-summary"
+            style={{
+              padding: 24,
+              display: 'grid',
+              gridTemplateColumns: 'minmax(130px, 0.7fr) minmax(0, 1fr)',
+              gap: 16,
+              alignItems: 'center',
+            }}
+          >
+            <div className="col gap-8" style={{ alignItems: 'center', minWidth: 0 }}>
               <ShowcaseDealScore score={84} size={130} label="" />
               <div
                 className="mono"
@@ -2227,12 +2318,14 @@ function SunScoutSection(): JSX.Element {
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
                   color: 'var(--muted)',
+                  textAlign: 'center',
+                  overflowWrap: 'anywhere',
                 }}
               >
                 Light score / 100
               </div>
             </div>
-            <div className="col gap-12" style={{ flex: 1 }}>
+            <div className="col gap-12" style={{ minWidth: 0 }}>
               <div
                 className="mono"
                 style={{
@@ -2244,7 +2337,14 @@ function SunScoutSection(): JSX.Element {
               >
                 Annual direct sun · weighted
               </div>
-              <div className="serif tabular" style={{ fontSize: 36, lineHeight: 1 }}>
+              <div
+                className="serif tabular"
+                style={{
+                  fontSize: 'clamp(28px, 3.2vw, 36px)',
+                  lineHeight: 1,
+                  overflowWrap: 'anywhere',
+                }}
+              >
                 1,512 <span style={{ color: 'var(--muted)', fontSize: 16 }}> hrs / yr</span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
@@ -2321,7 +2421,7 @@ function PricingSection(): JSX.Element {
         '3 sale-listing reports / month',
         'Unlimited tenant reports',
         'Full rental comps, confidence shown',
-        'AI verdict · 1 paragraph',
+        'Verdict summary',
         'Save your last 10 analyses',
       ],
     },
@@ -2334,7 +2434,7 @@ function PricingSection(): JSX.Element {
       featured: true,
       features: [
         'Unlimited reports, all four modes',
-        'Full 3-paragraph AI verdicts',
+        'Full evidence-based verdicts',
         'Financing sliders · OSFI, 35% down, conservative',
         'SunScout with building obstruction',
         'Portfolio tracker · up to 10 properties',
@@ -2577,8 +2677,8 @@ function FAQSection(): JSX.Element {
       a: 'A nightly scrape of Rentals.ca, Kijiji, and PadMapper. We dedupe, geocode, and timestamp every record. The time-series database accumulates from day one — after six months, it exists nowhere else in Canada.',
     },
     {
-      q: 'How accurate is the AI verdict?',
-      a: 'It writes the verdict from validated structured data only — never from free-text. Numbers come from our calc engine and comps DB, then Sonnet writes the prose. We never feed raw listing descriptions into the prompt.',
+      q: 'How is the verdict produced?',
+      a: 'The backend assembles the verdict deterministically from validated calculations, comparable data, and structured risk flags. The same inputs produce the same prose every time. Raw listing marketing text never directly changes a score or verdict.',
     },
     {
       q: 'Can I export to PDF?',
