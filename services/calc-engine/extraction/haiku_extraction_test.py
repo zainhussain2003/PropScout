@@ -15,7 +15,6 @@ from extraction.haiku_extraction import (
     extract_flags_with_haiku,
 )
 
-
 # ── Unit tests — pure helpers ─────────────────────────────────────────────────
 
 
@@ -43,12 +42,12 @@ class TestStripMarkdown:
         assert _strip_markdown(raw) == raw
 
     def test_strips_json_fence(self) -> None:
-        raw = "```json\n{\"key\": \"value\"}\n```"
+        raw = '```json\n{"key": "value"}\n```'
         result = _strip_markdown(raw)
         assert result == '{"key": "value"}'
 
     def test_strips_plain_fence(self) -> None:
-        raw = "```\n{\"key\": \"value\"}\n```"
+        raw = '```\n{"key": "value"}\n```'
         result = _strip_markdown(raw)
         assert result == '{"key": "value"}'
 
@@ -101,14 +100,26 @@ class TestExtractFlagsWithHaiku:
 
     @pytest.mark.asyncio
     async def test_high_confidence_basement_flag(self) -> None:
-        response_json = _minimal_haiku_response({
-            "is_basement_unit": {"value": True, "confidence": 92, "evidence": "finished lower level"},
-            "basement_unit": {"value": True, "confidence": 90, "evidence": "basement suite"},
-        })
+        response_json = _minimal_haiku_response(
+            {
+                "is_basement_unit": {
+                    "value": True,
+                    "confidence": 92,
+                    "evidence": "finished lower level",
+                },
+                "basement_unit": {
+                    "value": True,
+                    "confidence": 90,
+                    "evidence": "basement suite",
+                },
+            }
+        )
         mock_client = _make_mock_client(response_json)
 
         with patch("extraction.haiku_extraction._get_client", return_value=mock_client):
-            result = await extract_flags_with_haiku("Finished lower level — basement suite.")
+            result = await extract_flags_with_haiku(
+                "Finished lower level — basement suite."
+            )
 
         basement = result["is_basement_unit"]
         assert isinstance(basement, dict)
@@ -118,13 +129,21 @@ class TestExtractFlagsWithHaiku:
 
     @pytest.mark.asyncio
     async def test_pets_allowed_flag(self) -> None:
-        response_json = _minimal_haiku_response({
-            "pets_allowed": {"value": True, "confidence": 95, "evidence": "pets welcome"},
-        })
+        response_json = _minimal_haiku_response(
+            {
+                "pets_allowed": {
+                    "value": True,
+                    "confidence": 95,
+                    "evidence": "pets welcome",
+                },
+            }
+        )
         mock_client = _make_mock_client(response_json)
 
         with patch("extraction.haiku_extraction._get_client", return_value=mock_client):
-            result = await extract_flags_with_haiku("Pets welcome in this bright condo.")
+            result = await extract_flags_with_haiku(
+                "Pets welcome in this bright condo."
+            )
 
         pets = result["pets_allowed"]
         assert isinstance(pets, dict)
@@ -160,9 +179,15 @@ class TestExtractFlagsWithHaiku:
 
     @pytest.mark.asyncio
     async def test_markdown_fenced_response_parsed(self) -> None:
-        inner = _minimal_haiku_response({
-            "renovation_needed": {"value": True, "confidence": 88, "evidence": "sold as-is"},
-        })
+        inner = _minimal_haiku_response(
+            {
+                "renovation_needed": {
+                    "value": True,
+                    "confidence": 88,
+                    "evidence": "sold as-is",
+                },
+            }
+        )
         fenced = f"```json\n{inner}\n```"
         mock_client = _make_mock_client(fenced)
 
@@ -198,9 +223,15 @@ class TestExtractFlagsWithHaiku:
     @pytest.mark.asyncio
     async def test_partial_response_normalised(self) -> None:
         """If Haiku returns fewer flags than expected, missing ones default to false."""
-        partial = json.dumps({
-            "is_basement_unit": {"value": True, "confidence": 85, "evidence": "lower level"},
-        })
+        partial = json.dumps(
+            {
+                "is_basement_unit": {
+                    "value": True,
+                    "confidence": 85,
+                    "evidence": "lower level",
+                },
+            }
+        )
         mock_client = _make_mock_client(partial)
 
         with patch("extraction.haiku_extraction._get_client", return_value=mock_client):
@@ -244,11 +275,25 @@ class TestExtractFlagsWithHaiku:
     @pytest.mark.asyncio
     async def test_multiple_flags_detected(self) -> None:
         """All flags in a rich description are extracted correctly."""
-        response_json = _minimal_haiku_response({
-            "pets_allowed": {"value": True, "confidence": 95, "evidence": "pets welcome"},
-            "parking_included": {"value": True, "confidence": 90, "evidence": "underground parking"},
-            "utilities_included": {"value": True, "confidence": 92, "evidence": "all utilities included"},
-        })
+        response_json = _minimal_haiku_response(
+            {
+                "pets_allowed": {
+                    "value": True,
+                    "confidence": 95,
+                    "evidence": "pets welcome",
+                },
+                "parking_included": {
+                    "value": True,
+                    "confidence": 90,
+                    "evidence": "underground parking",
+                },
+                "utilities_included": {
+                    "value": True,
+                    "confidence": 92,
+                    "evidence": "all utilities included",
+                },
+            }
+        )
         mock_client = _make_mock_client(response_json)
 
         description = (

@@ -14,8 +14,13 @@ These instructions apply to Codex and any automated coding agent working in this
 
 - Only the assigned builder may write to its worktree.
 - A reviewer is read-only and reviews the exact candidate commit, not a summary.
-- Never edit `.agent-loop/`, `scripts/agent-loop/`, `docs/agent-loop/schemas/`, or
-  `docs/agent-loop/prompts/` from an automated feature task.
+- Never edit `.agent-loop/`, `scripts/agent-loop/`, `docs/agent-loop/schemas/`,
+  `docs/agent-loop/prompts/`, `.github/workflows/`, `AGENTS.md`, `CLAUDE.md`, dependency
+  manifests (`package.json`, `package-lock.json`, `requirements.txt`), `conftest.py`, or the
+  lint-staged/husky configuration from an automated feature task. The full list is
+  `protectedPaths` in `.agent-loop/config.json`; a candidate touching any of them is rejected.
+- The unattended builder is Codex. The Claude builder runs only when a human starts it with
+  `--acknowledge-unsandboxed-claude-builder` (see `docs/agent-loop/POLICY.md`).
 - Never push, merge, deploy, apply a migration, touch production data, or change credentials.
 - Do not commit. The coordinator stages explicit paths and creates the candidate commit.
 - Do not weaken, skip, delete, or rewrite a failing test to obtain a pass unless the task

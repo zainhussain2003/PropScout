@@ -1318,7 +1318,17 @@ propscout/
 │           └── mapbox_service.py      # Geocoding, non-fatal on failure
 │
 ├── scripts/                           # One-off data loaders and builders (not part of a service)
-│   ├── agent-loop/                    # Local Claude/Codex coordinator and its unit tests
+│   ├── agent-loop/                    # Local Claude/Codex coordinator — `npm run agent:*`
+│   │   ├── cli.mjs                    # init / run / status / approve / reject / doctor
+│   │   ├── lib/
+│   │   │   ├── agents.mjs             # codex / claude / fake-agent invocations
+│   │   │   ├── bootstrap.mjs          # npm ci + per-worktree Python venv before round 1
+│   │   │   ├── citations.mjs          # Resolve review citations at the candidate SHA
+│   │   │   ├── gates.mjs              # Deadline-bounded gate runner with stdout/stderr logs
+│   │   │   ├── process.mjs            # spawnSync wrapper (no shell; resolves npm .cmd shims on Windows)
+│   │   │   ├── schema.mjs             # JSON Schema subset validator for reviews
+│   │   │   └── claims.mjs, git.mjs, policy.mjs  # claim records, git helpers, path policy
+│   │   └── test/                      # node --test — e2e.test.mjs drives a full loop with fake agents
 │   ├── _build_fsa_stats.py            # StatsCan 2021 FSA profile → fsa_stats.csv (median income)
 │   ├── _build_fsa_growth.py           # 2016+2021 FSA populations → pop_growth_5y (the 2021 profile
 │   │                                  # leaves that characteristic blank — see docs/DECISIONS.md D-010)

@@ -5,7 +5,7 @@ MVP covers Ontario only.
 
 # Ontario FSA prefixes — first letter of postal code
 # K, L, M, N, P = Ontario
-ONTARIO_FSA_PREFIXES: frozenset[str] = frozenset({'K', 'L', 'M', 'N', 'P'})
+ONTARIO_FSA_PREFIXES: frozenset[str] = frozenset({"K", "L", "M", "N", "P"})
 
 
 def is_ontario_postal_code(postal_code: str) -> bool:
@@ -18,24 +18,24 @@ def is_ontario_postal_code(postal_code: str) -> bool:
     Returns:
         True if the FSA prefix is one of K, L, M, N, P.
     """
-    fsa = postal_code.strip().upper()[0] if postal_code.strip() else ''
+    fsa = postal_code.strip().upper()[0] if postal_code.strip() else ""
     return fsa in ONTARIO_FSA_PREFIXES
 
 
 # Ontario Land Transfer Tax brackets (provincial)
 # Source: ontario.ca — updated May 2026
 ONTARIO_LTT_BRACKETS: list[tuple[float, float]] = [
-    (55_000,      0.005),
-    (250_000,     0.010),
-    (400_000,     0.015),
-    (2_000_000,   0.020),
-    (float('inf'), 0.025),
+    (55_000, 0.005),
+    (250_000, 0.010),
+    (400_000, 0.015),
+    (2_000_000, 0.020),
+    (float("inf"), 0.025),
 ]
 
 # Toronto Municipal Land Transfer Tax brackets (applies on top of provincial)
 TORONTO_MLTT_BRACKETS: list[tuple[float, float]] = [
-    (55_000,      0.005),
-    (400_000,     0.010),
-    (2_000_000,   0.020),
-    (float('inf'), 0.025),
+    (55_000, 0.005),
+    (400_000, 0.010),
+    (2_000_000, 0.020),
+    (float("inf"), 0.025),
 ]

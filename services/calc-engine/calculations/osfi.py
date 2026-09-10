@@ -23,7 +23,9 @@ def calculate_stress_test_payment(
         Monthly payment at the qualifying rate.
     """
     qualifying_rate = calculate_osfi_stress_rate(contract_rate)
-    return calculate_monthly_payment(mortgage_amount, qualifying_rate, amortization_years)
+    return calculate_monthly_payment(
+        mortgage_amount, qualifying_rate, amortization_years
+    )
 
 
 def passes_stress_test(
@@ -56,18 +58,22 @@ def passes_stress_test(
     Returns:
         Dict with pass/fail status and ratio values.
     """
-    stress_payment = calculate_stress_test_payment(mortgage_amount, contract_rate, amortization_years)
+    stress_payment = calculate_stress_test_payment(
+        mortgage_amount, contract_rate, amortization_years
+    )
     monthly_income = annual_income / 12
     monthly_tax = annual_property_tax / 12
     condo_gds_portion = condo_fee_monthly * 0.5  # CMHC: 50% of condo fee in GDS
 
-    gds = (stress_payment + monthly_tax + monthly_heating + condo_gds_portion) / monthly_income
+    gds = (
+        stress_payment + monthly_tax + monthly_heating + condo_gds_portion
+    ) / monthly_income
     tds = gds + (other_monthly_debts / monthly_income)
 
     return {
-        'passes': gds <= gds_limit and tds <= tds_limit,
-        'gds': round(gds, 4),
-        'tds': round(tds, 4),
-        'qualifying_rate': calculate_osfi_stress_rate(contract_rate),
-        'stress_payment_monthly': stress_payment,
+        "passes": gds <= gds_limit and tds <= tds_limit,
+        "gds": round(gds, 4),
+        "tds": round(tds, 4),
+        "qualifying_rate": calculate_osfi_stress_rate(contract_rate),
+        "stress_payment_monthly": stress_payment,
     }

@@ -1,7 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
+  "defaultBuilder": "codex",
   "maxRounds": 6,
   "maxMinutes": 180,
+  "turnMinutes": 45,
   "branchPrefix": "agent",
   "worktreeRoot": ".propscout-agent-worktrees",
   "runtimeRoot": ".propscout-agent-runtime",
@@ -12,7 +14,17 @@
     "docs/agent-loop/schemas/",
     ".github/workflows/",
     "AGENTS.md",
-    "CLAUDE.md"
+    "CLAUDE.md",
+    "package.json",
+    "package-lock.json",
+    "apps/web/package.json",
+    "apps/api/package.json",
+    ".lintstagedrc.cjs",
+    ".husky/",
+    "services/calc-engine/conftest.py",
+    "services/scrapers/conftest.py",
+    "services/calc-engine/requirements.txt",
+    "services/scrapers/requirements.txt"
   ],
   "humanGatePaths": [
     ".env",
@@ -22,7 +34,48 @@
     "vercel.json",
     "services/scrapers/railway.json"
   ],
-  "forbiddenPathFragments": ["node_modules/", ".git/", ".vercel/", "dist/", "__pycache__/"],
+  "forbiddenPathFragments": [
+    "node_modules/",
+    ".git/",
+    ".vercel/",
+    "dist/",
+    "__pycache__/",
+    ".venv/"
+  ],
+  "bootstrap": {
+    "steps": [
+      {
+        "name": "npm ci",
+        "command": "npm",
+        "args": ["ci", "--no-audit", "--no-fund"],
+        "timeoutMs": 900000
+      },
+      {
+        "name": "python venv",
+        "command": "python",
+        "args": ["-m", "venv", ".venv"],
+        "timeoutMs": 300000
+      },
+      {
+        "name": "pip calc-engine",
+        "command": "python",
+        "args": ["-m", "pip", "install", "--quiet", "-r", "services/calc-engine/requirements.txt"],
+        "timeoutMs": 900000
+      },
+      {
+        "name": "pip scrapers",
+        "command": "python",
+        "args": ["-m", "pip", "install", "--quiet", "-r", "services/scrapers/requirements.txt"],
+        "timeoutMs": 900000
+      },
+      {
+        "name": "pip lint tools",
+        "command": "python",
+        "args": ["-m", "pip", "install", "--quiet", "black", "flake8"],
+        "timeoutMs": 300000
+      }
+    ]
+  },
   "gates": [
     {
       "name": "web typecheck",
@@ -34,16 +87,28 @@
       "command": "npm",
       "args": ["run", "typecheck", "--workspace=apps/api"]
     },
+    { "name": "web lint", "command": "npm", "args": ["run", "lint", "--workspace=apps/web"] },
+    { "name": "api lint", "command": "npm", "args": ["run", "lint", "--workspace=apps/api"] },
     {
-      "name": "web tests",
-      "command": "npm",
-      "args": ["test", "--workspace=apps/web"]
+      "name": "python format",
+      "command": "python",
+      "args": [
+        "-m",
+        "black",
+        "--check",
+        "--quiet",
+        "services/calc-engine",
+        "services/scrapers",
+        "scripts"
+      ]
     },
     {
-      "name": "api tests",
-      "command": "npm",
-      "args": ["test", "--workspace=apps/api"]
+      "name": "python lint",
+      "command": "python",
+      "args": ["-m", "flake8", "services/calc-engine", "services/scrapers", "scripts"]
     },
+    { "name": "web tests", "command": "npm", "args": ["test", "--workspace=apps/web"] },
+    { "name": "api tests", "command": "npm", "args": ["test", "--workspace=apps/api"] },
     {
       "name": "calc engine",
       "command": "python",
@@ -53,16 +118,6 @@
       "name": "scrapers",
       "command": "python",
       "args": ["-m", "pytest", "services/scrapers/", "-q"]
-    },
-    {
-      "name": "web lint",
-      "command": "npm",
-      "args": ["run", "lint", "--workspace=apps/web"]
-    },
-    {
-      "name": "api lint",
-      "command": "npm",
-      "args": ["run", "lint", "--workspace=apps/api"]
     }
   ]
 }
