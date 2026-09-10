@@ -69,3 +69,10 @@ As of 2026-09-08, the complete web suite passes **939 tests across 73 files**.
 Web typecheck, lint, and `git diff --check` also pass. Run the repository's six
 test gates and the live end-to-end sequence in `AGENT_HANDOFF.md` after any
 implementation work derived from this audit.
+
+## Review trail
+
+- [Independent review](../audit-review/TENANT_REPORT_AUDIT.review.md)
+- [Counter-review reconciliation](../audit-review/COUNTER_REVIEW_RECONCILIATION.md)
+- **Retained additions:** treat full honesty credit under missing/failed/incomplete description evidence as P1; publish the 25/20/20/20/15 component weights; show what share of monthly outlay is estimated; add Ontario rent-control status and evidence.
+- **Open owner decision:** whether tenant reports remain free and unmetered.

@@ -159,3 +159,10 @@ The conservative run separates them: 90 Sherman stays Strong buy; 16 Beaucourt a
 - Exact financing terms and lender treatment of rental income.
 
 Until those are supplied, the scores are screening results based on seller-published data, not completed underwriting.
+
+## Review trail
+
+- [Independent review](../audit-review/HAMILTON_CURRENT_LISTING_CALIBRATION.review.md)
+- [Counter-review reconciliation](../audit-review/COUNTER_REVIEW_RECONCILIATION.md)
+- **Retained conclusion:** current-listing evidence supports testing score separation, but seller-published assumptions do not justify loosening bad-deal guardrails.
+- **Calibration prerequisite:** expense rows, NOI and scenario settings must reconcile before score weights are recalibrated.

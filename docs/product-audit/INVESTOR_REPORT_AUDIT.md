@@ -85,3 +85,11 @@ As of 2026-09-08, the complete web suite passes **939 tests across 73 files**.
 Web typecheck, lint, and `git diff --check` also pass. Run the repository's six
 test gates and the live end-to-end sequence in `AGENT_HANDOFF.md` after any
 implementation work derived from this audit.
+
+## Review trail
+
+- [Independent review](../audit-review/INVESTOR_REPORT_AUDIT.review.md)
+- [Counter-review reconciliation](../audit-review/COUNTER_REVIEW_RECONCILIATION.md)
+- **Accepted P1:** a frontend scenario can include an 8% management fee in the displayed $22,020.50 expense total while the saved $7,139.50 NOI and dependent metrics remain based on the $19,860.50 no-management expense case.
+- **Scope:** the Python calculation engine is coherent for one management setting; the divergence occurs between saved backend metrics and frontend scenario enrichment.
+- **Reference identity:** this document uses Unit 2501, $589,000, approximately `-$2,000/month`; it is not the Unit 5702 release fixture.

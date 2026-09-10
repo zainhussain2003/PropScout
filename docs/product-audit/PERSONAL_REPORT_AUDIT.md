@@ -76,3 +76,10 @@ As of 2026-09-08, the complete web suite passes **939 tests across 73 files**.
 Web typecheck, lint, and `git diff --check` also pass. Run the repository's six
 test gates and the live end-to-end sequence in `AGENT_HANDOFF.md` after any
 implementation work derived from this audit.
+
+## Review trail
+
+- [Independent review](../audit-review/PERSONAL_REPORT_AUDIT.review.md)
+- [Counter-review reconciliation](../audit-review/COUNTER_REVIEW_RECONCILIATION.md)
+- **Retained additions:** the silent-scan 10/10 risk component is a P1 evidence defect; approximately $1,145 of the $4,722 “true monthly cost” is modelled; disambiguate Unit 2501 from the Unit 5702 release fixture; do not recommend sharing with an agent while recipients can mutate dismissals.
+- **Resolved correction:** unknown property type does not flip on one record; URL and address paths instead coerce the same unknown differently.

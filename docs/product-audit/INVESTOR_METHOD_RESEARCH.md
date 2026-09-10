@@ -451,3 +451,10 @@ Before implementation, the next proposal should incorporate these revisions:
 - segment vacancy assumptions by property type and verify every market assumption before it affects a verdict.
 
 No code change or final product decision is authorized by this feedback section.
+
+## Review trail
+
+- [Independent review](../audit-review/INVESTOR_METHOD_RESEARCH.review.md)
+- [Counter-review reconciliation](../audit-review/COUNTER_REVIEW_RECONCILIATION.md)
+- **Retained conclusions:** appreciation must remain outside the income score; decorrelate cap rate and leveraged measures without erasing leverage; label 0% nominal appreciation as a stress case; add rent growth, renewal-rate and cumulative-shortfall sensitivity before relying on ten-year examples.
+- **Regression hazard:** management inclusion defaults are asymmetric across calculation helpers even though current router calls pass the value consistently.
