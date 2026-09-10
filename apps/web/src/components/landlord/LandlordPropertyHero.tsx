@@ -241,8 +241,11 @@ export function LandlordPropertyHero({
           </div>
         </div>
 
-        {/* RIGHT — sticky landlord score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
+        {/* RIGHT — sticky beside photos; static once the hero becomes one column. */}
+        <div
+          className="card col report-side-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        >
           {/* DealScore gauge */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
             <DealScore

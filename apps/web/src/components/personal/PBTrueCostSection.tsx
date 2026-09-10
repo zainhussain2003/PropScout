@@ -59,7 +59,10 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
     {
       k: 'Property tax',
       v: monthly.tax,
-      note: `${fmtMoney(property.annualTaxes)}/yr`,
+      note:
+        property.annualTaxes > 0
+          ? `${fmtMoney(property.annualTaxes)}/yr · ${property.annualTaxesKnown === false ? 'city-rate estimate; verify' : 'as listed'}`
+          : '— · not available',
     },
     {
       k: 'Condo fee',

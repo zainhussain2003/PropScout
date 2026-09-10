@@ -117,9 +117,32 @@ const ONTARIO_LTT_BRACKETS = [
   { upTo: Infinity, rate: 0.025 },
 ] as const
 
+const TORONTO_MLTT_BRACKETS = [
+  { upTo: 55000, rate: 0.005 },
+  { upTo: 400000, rate: 0.01 },
+  { upTo: 2000000, rate: 0.02 },
+  { upTo: Infinity, rate: 0.025 },
+] as const
+
+function taxForBrackets(
+  price: number,
+  brackets: ReadonlyArray<{ upTo: number; rate: number }>
+): number {
+  let tax = 0
+  let previous = 0
+  for (const bracket of brackets) {
+    const taxable = Math.min(price, bracket.upTo) - previous
+    if (taxable <= 0) break
+    tax += taxable * bracket.rate
+    previous = bracket.upTo
+    if (price <= bracket.upTo) break
+  }
+  return tax
+}
+
 /**
  * Computes Ontario LTT bracket table.
- * isToronto=true stacks a matching municipal LTT on top of provincial.
+ * isToronto=true adds Toronto's separate municipal bracket schedule.
  */
 export function computeLTT(price: number, isToronto: boolean): LTTResult {
   let remaining = price
@@ -148,7 +171,7 @@ export function computeLTT(price: number, isToronto: boolean): LTTResult {
     }
   }
 
-  const municipal = isToronto ? provincial : 0
+  const municipal = isToronto ? taxForBrackets(price, TORONTO_MLTT_BRACKETS) : 0
   return { rows, provincial, municipal, total: provincial + municipal }
 }
 

@@ -210,6 +210,30 @@ describe('POST / — analysis orchestrator', () => {
     expect(sentBody.cmhc_vacancy_rate).toBe(getVacancyRateByCity('Vaughan'))
   })
 
+  it('recognizes Toronto neighbourhood suffixes for MLTT and tax estimation', async () => {
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      city: 'Toronto (Yonge-Eglinton)',
+      price: 1_995_000,
+      // Protect saved rows created before zero-tax placeholders were rejected.
+      annualTaxes: 0,
+    })
+
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      property_data: { annual_taxes: number; is_toronto: boolean }
+    }
+    expect(sentBody.property_data.annual_taxes).toBe(14_264)
+    expect(sentBody.property_data.is_toronto).toBe(true)
+  })
+
   // ── Test 1c ────────────────────────────────────────────────────────────────
 
   it('forwards the user-dismissed flag IDs to the calc engine payload', async () => {

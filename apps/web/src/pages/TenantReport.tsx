@@ -78,6 +78,7 @@ import {
   shimToTenantSpecRows,
   shimToTenantCostLines,
   shimToTenantAmenities,
+  shimToTenantChecklist,
   shimToTenantNegotiation,
   shimToListedVsReality,
 } from '../lib/reportShims'
@@ -249,8 +250,11 @@ function TenantPropertyHero({
           </div>
         </div>
 
-        {/* RIGHT — sticky score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
+        {/* RIGHT — sticky beside photos; static once the hero becomes one column. */}
+        <div
+          className="card col report-side-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        >
           {listing.scoreSuppressed ? (
             // The tenant score is currently the investment deal score, which
             // craters to a misleading "Hard pass" when there are no comparable
@@ -850,7 +854,7 @@ function UnitDetailsSection({
           <div className="col" style={{ gap: 2 }}>
             <span style={{ fontSize: 15, fontWeight: 500 }}>Show all unit and building specs</span>
             <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Floor, sqft, ceilings, windows, building stats, and more
+              Listing-supplied unit and building facts
             </span>
           </div>
           <span style={{ color: 'var(--muted)' }} aria-hidden="true">
@@ -1092,13 +1096,13 @@ function ConversionBlock(): JSX.Element {
             Wondering if you should <em>buy</em> instead of rent?
           </h3>
           <p style={{ fontSize: 15, color: 'var(--ink-2)' }}>
-            Run the same address as a personal purchase and we'll show you what the monthly carry
-            would actually be, what the unit is worth based on recent sales, and how schools and
-            walkability shake out.
+            A personal-buy report can compare ownership costs, schools, and walkability. Verified
+            Ontario comparable sales are still required before PropScout can state what this unit is
+            worth.
           </p>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-primary">
-              Open personal-buy report <Icon name="arrow" size={13} />
+            <button className="btn btn-primary" disabled>
+              Personal-buy comparison coming soon
             </button>
           </div>
         </div>
@@ -1137,34 +1141,8 @@ function ConversionBlock(): JSX.Element {
             Get notified if this rent <em style={{ color: 'var(--accent)' }}>drops</em>.
           </h3>
           <p style={{ fontSize: 15, color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
-            We'll watch this listing for 30 days and email you the moment the price changes or it
-            gets relisted. Free, no account needed.
+            Rent-drop alerts are not connected yet. No monitoring has started for this listing.
           </p>
-          <form
-            className="tenant-rent-alert-form"
-            style={{ display: 'flex', gap: 8 }}
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="you@example.com"
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: '12px 14px',
-                background: 'color-mix(in oklab, var(--bg) 8%, transparent)',
-                border: '1px solid color-mix(in oklab, var(--bg) 16%, transparent)',
-                borderRadius: 12,
-                color: 'var(--bg)',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                outline: 'none',
-              }}
-            />
-            <button className="btn btn-accent" style={{ padding: '12px 18px' }}>
-              Notify me
-            </button>
-          </form>
           <span
             className="mono"
             style={{
@@ -1174,7 +1152,7 @@ function ConversionBlock(): JSX.Element {
               color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
-            Unsubscribe anytime · no marketing
+            Coming soon
           </span>
         </div>
       </div>
@@ -1192,22 +1170,18 @@ function SectionPlaceholder({
   topic,
   question,
   note = DEFAULT_EMPTY_NOTE,
+  verdict = 'Not enough detail',
 }: {
   n: string
   topic: string
   question: JSX.Element
   /** User-facing explanation of why the section is empty (no dev/sprint copy). */
   note?: string
+  verdict?: string
 }): JSX.Element {
   return (
-    <section className="container tr-section">
-      <SectionHead
-        n={n}
-        topic={topic}
-        question={question}
-        verdict="Not enough detail"
-        tone="caution"
-      />
+    <section className="container tr-section" data-section={n}>
+      <SectionHead n={n} topic={topic} question={question} verdict={verdict} tone="caution" />
       <div className="card" style={{ padding: 32 }}>
         <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
           {note}
@@ -1397,8 +1371,12 @@ export function TenantReport({
                     marginTop: 16,
                   }}
                 >
-                  Based on {comps.compCount} comparable rental
-                  {comps.compCount !== 1 ? 's' : ''} · {comps.confidence} confidence
+                  {comps.compCount} recent asking-rent record
+                  {comps.compCount !== 1 ? 's' : ''} · Rentals.ca, Kijiji &amp; PadMapper ·{' '}
+                  {comps.radiusKm != null
+                    ? `within ${comps.radiusKm} km; postal-area comps unavailable`
+                    : 'same first-three postal area'}{' '}
+                  · {comps.confidence} confidence
                 </p>
               </div>
             </section>
@@ -1445,6 +1423,7 @@ export function TenantReport({
           <SectionPlaceholder
             n="02"
             topic="Listing accuracy"
+            verdict="No supported flags"
             question={
               <>
                 Is the listing <em>honest</em>?
@@ -1471,12 +1450,13 @@ export function TenantReport({
             <SectionPlaceholder
               n="03"
               topic="Listed vs reality"
+              verdict="Viewing required"
               question={
                 <>
                   Does the listing <em>match</em> the unit?
                 </>
               }
-              note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, the second bedroom's window, and what's actually included against what's advertised."
+              note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, bedroom windows and doors, and what's actually included against what's advertised."
             />
           )
         })()
@@ -1506,6 +1486,7 @@ export function TenantReport({
           const strong = neg.targetHigh > 0 || realAnalysis!.riskFlags.length > 1
           return (
             <NegotiationSection
+              askingRent={realListing!.rentMonthly ?? 0}
               targetLow={neg.targetLow}
               targetHigh={neg.targetHigh}
               leverageFactors={neg.leverageFactors}
@@ -1518,6 +1499,7 @@ export function TenantReport({
         })()
       ) : (
         <NegotiationSection
+          askingRent={CHARLES_LISTING.asking}
           targetLow={CHARLES_LISTING.targetLow}
           targetHigh={CHARLES_LISTING.targetHigh}
           leverageFactors={CHARLES_LEVERAGE_FACTORS}
@@ -1583,8 +1565,8 @@ export function TenantReport({
           isReal
             ? (realAnalysis!.nearbyDistances ?? []).map((d) => ({
                 k: d.label,
-                v: d.distanceKm.toFixed(1),
-                unit: `km · ${d.driveMin} min drive`,
+                v: d.distanceKm < 0.05 ? '<0.1' : d.distanceKm.toFixed(1),
+                unit: 'km straight-line',
                 tone: (d.distanceKm <= 1.5 ? 'pass' : 'caution') as 'pass' | 'caution',
               }))
             : CHARLES_DISTANCES
@@ -1622,6 +1604,7 @@ export function TenantReport({
       {/* §09 SunScout — live data when present, demo fixture on the demo route */}
       <SunScoutPanel
         sunScout={realAnalysis ? (realAnalysis.sunScout ?? null) : CHARLES_SUNSCOUT}
+        token={realAnalysis?.token ?? null}
         sectionNumber="09"
         question={
           <>
@@ -1649,7 +1632,11 @@ export function TenantReport({
           <div className="card" style={{ padding: 32 }}>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
               Individual comparable rentals aren&apos;t mapped for this listing yet. The market rent
-              range in §01 is drawn from the nightly rental comps for this postal code.
+              range in §01 uses recent asking-rent records scraped nightly from Rentals.ca, Kijiji,
+              and PadMapper
+              {realAnalysis?.rentalComps?.radiusKm != null
+                ? ` within ${realAnalysis.rentalComps.radiusKm} km because this postal area had too few records.`
+                : ' in the same first-three-character postal area.'}
             </p>
           </div>
         </section>
@@ -1669,7 +1656,9 @@ export function TenantReport({
       )}
 
       {/* §12 Confirm before signing */}
-      <ConfirmChecklist items={CHARLES_CHECKLIST} />
+      <ConfirmChecklist
+        items={isReal ? shimToTenantChecklist(realListing!, realAnalysis!) : CHARLES_CHECKLIST}
+      />
 
       {/* Conversion block */}
       <ConversionBlock />

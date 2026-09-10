@@ -307,6 +307,25 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(growOp.compareDocumentPosition(verify) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('uses and labels the backend tax estimate when a sale listing publishes no usable tax', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...PERSONAL_ANALYSIS,
+        metrics: {
+          ...INVESTOR_ANALYSIS.metrics!,
+          annualTaxesUsed: 5218,
+          annualTaxesEstimated: true,
+        },
+      },
+      listing: { ...SALE_LISTING, annualTaxes: null },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    expect(await screen.findByText('$5,218/yr · city-rate estimate; verify')).toBeInTheDocument()
+    expect(screen.queryByText('$0/yr')).not.toBeInTheDocument()
+  })
+
   it('keeps an undisclosed tenant asking rent unknown', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: { ...ANALYSIS, mode: 'tenant', riskFlags: [] },
@@ -351,7 +370,12 @@ describe('ReportPage — risk-flag overrides', () => {
         schools: { elementary: [], middle: [], high: [], catchmentNote: 'Not verified' },
         comparableSalesAreSample: true,
       },
-      listing: { ...SALE_LISTING, url: '', photos: [] },
+      listing: {
+        ...SALE_LISTING,
+        url: 'https://www.realtor.ca/real-estate/30180258/example',
+        parkingSpots: 0,
+        photos: [],
+      },
     })
     listOverrides.mockResolvedValue([])
     renderReport()
@@ -464,6 +488,19 @@ describe('ReportPage — live tenant schools', () => {
     getMapboxToken.mockReturnValue(null)
   })
 
+  it('keeps empty listing-audit sections addressable by the report rail', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...ANALYSIS, riskFlags: [] },
+      listing: LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    await screen.findByText('No supported flags')
+    expect(document.querySelector('[data-section="02"]')).toBeInTheDocument()
+    expect(document.querySelector('[data-section="03"]')).toBeInTheDocument()
+  })
+
   it('renders the real nearest schools when analysis.schools is present', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: { ...ANALYSIS, schools: SCHOOLS },
@@ -474,7 +511,35 @@ describe('ReportPage — live tenant schools', () => {
 
     expect(await screen.findByText('Jesse Ketchum Jr & Sr PS')).toBeInTheDocument()
     // Distance-derived walk estimate (0.6 km × 12 min/km)
-    expect(screen.getByText(/7 min/)).toBeInTheDocument()
+    expect(screen.getByText(/~7 min walk/)).toBeInTheDocument()
+    expect(screen.getByText(/drawn from available EQAO results/i)).toBeInTheDocument()
+    expect(screen.getByText(/attendance boundaries are not verified/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Fraser Institute/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Highlighted/)).not.toBeInTheDocument()
+    expect(screen.getByText(/rather than a pedestrian route/i)).toBeInTheDocument()
+  })
+
+  it('lets a saved tenant report replace the assumed SunScout facade direction', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...ANALYSIS,
+        sunScout: {
+          annualPeakSunHours: 1400,
+          summerDailyHours: 8.4,
+          winterDailyHours: 3.1,
+          seasonalGrid: { Dec: 3.1, Mar: 5.5, Jun: 8.4, Sep: 6.2 },
+          monthlyHours: [3.1, 4, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3],
+          sunScore: 85,
+          verdict: 'excellent',
+        },
+      },
+      listing: LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+
+    expect(await screen.findByLabelText(/Primary facade faces/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Assumes south-facing primary facade/i)).not.toBeInTheDocument()
   })
 
   it('shows no schools section when the table has no data yet', async () => {
@@ -498,10 +563,15 @@ describe('ReportPage — for-rent landlord hero honesty', () => {
     getMapboxToken.mockReturnValue(null)
   })
 
-  it('keeps missing address-entry facts unknown and labels the maintenance assumption', async () => {
+  it('keeps missing scraped listing facts unknown and labels the maintenance assumption', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: INVESTOR_ANALYSIS,
-      listing: { ...SALE_LISTING, url: '', yearBuilt: null, parkingSpots: 0 },
+      listing: {
+        ...SALE_LISTING,
+        url: 'https://www.realtor.ca/real-estate/30180258/example',
+        yearBuilt: null,
+        parkingSpots: 0,
+      },
     })
     listOverrides.mockResolvedValue([])
     renderReport()

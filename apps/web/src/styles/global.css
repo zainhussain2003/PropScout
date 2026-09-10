@@ -483,7 +483,6 @@ footer a:hover {
 
 .comp-marker:hover .comp-marker-tip {
   opacity: 1 !important;
-  transform: translateX(-50%) translateY(-2px);
 }
 
 /* ── Hero input ──────────────────────────────────────────────── */
@@ -892,6 +891,19 @@ body::-webkit-scrollbar-thumb {
   .hero-score-first > *:last-child {
     order: -1;
   }
+  /* Inline desktop stickiness must be cancelled when the two-column hero
+     collapses. Otherwise the score card stays pinned while the photo column,
+     now below it, scrolls behind the card. */
+  .grid-1col-mobile > .report-side-score {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .tenant-schools-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
 
 @media (max-width: 600px) {
@@ -907,6 +919,19 @@ body::-webkit-scrollbar-thumb {
 
   .sun-score-summary {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Four metric tiles fit at tablet widths, but their labels and values have a
+   larger min-content width than a 640px report card can provide. Collapse this
+   one grid earlier instead of allowing the final column to widen the page. */
+.investment-metrics-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .investment-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 

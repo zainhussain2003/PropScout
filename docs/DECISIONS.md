@@ -1622,6 +1622,386 @@ change ships.
 
 ---
 
+### D-046 · Use one full-width listing-type bar in every mode preview
+
+**Chosen.** Each landing-page report preview starts with the same 30px,
+full-width listing-type bar. The three compact previews use one fixed 194px
+canvas, and the small investor clock splits “Deal score” and “/ 100” across two
+centered lines inside a 92px ring.
+
+**Why.** Inline chips produced three different apparent header widths and made
+the cards look unrelated. The investor's longer one-line score label exceeded
+the usable width inside the dial, while its taller content made that preview a
+different height from its neighbours.
+
+**Alternatives considered**
+
+| Option                                | Why not                                                                 |
+| ------------------------------------- | ----------------------------------------------------------------------- |
+| Give each chip the same fixed width   | A fixed chip still reads as a tag rather than a consistent card header. |
+| Make only the investor preview taller | Preserves the uneven row the owner identified.                          |
+| Shrink the label onto one line        | The text becomes too small before it fits comfortably inside the ring.  |
+| Move `/ 100` outside the dial         | Separates the scale from the score it explains.                         |
+
+---
+
+### D-047 · Derive live tenant advice only from listing-specific evidence
+
+**Chosen.** Live tenant checklists use the scraped listing and its fired risk
+flags. A bedroom-window question appears only when the analysis found an
+unverified-bedroom, glass-door-bedroom, or no-exterior-window flag. Negotiation
+targets start at the observed comparable-range low rather than three percent
+below it. A scraped parking-space count remains “confirm” until the listing data
+proves it is included in rent. SunScout describes low sky openness even when
+modeled direct-sun loss rounds to zero, and it states that buildings with unknown
+heights were omitted. Annual savings use the asking rent minus each end of the
+target range, so the negotiation and monthly-cost sections agree.
+
+**Why.** The real one-bedroom Yonge Street run inherited a demo-only “second
+room” question. It also proposed $1,900 when the lowest observed comparable was
+$1,959, and called the skyline effectively open beside a 14% openness reading.
+Each statement went beyond or contradicted the available evidence.
+
+**Alternatives considered**
+
+| Option                                               | Why not                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| Keep one generic demo checklist for every report     | It introduces room and amenity claims that may not apply to the listing. |
+| Keep a 3% below-range negotiation anchor             | No observed comparable supports that number.                             |
+| Treat a nonzero parking-space count as included      | The scrape proves the count, not whether the landlord charges extra.     |
+| Calculate savings from the width of the target range | That does not measure savings from the rent the tenant was asked to pay. |
+| Describe obstruction only from lost direct-sun hours | A zero rounded loss can coexist with a heavily obstructed sky dome.      |
+| Treat buildings without recorded heights as low-rise | Their heights are unknown, so the report cannot make that claim.         |
+
+---
+
+### D-048 · Preserve explicit tenant facts and label modeled proximity honestly
+
+**Chosen.** Strict deterministic phrases such as “Includes Parking and Locker”
+now confirm those amenities in a live tenant report, while utilities and other
+lease terms stay unknown. Nearby amenities show straight-line distance without
+inventing drive time. Saved tenant reports pass their analysis token to
+SunScout so the user can replace its south-facing default with the real facade
+direction. School copy names only the EQAO data that is present and states that
+attendance boundaries are not verified. Empty listing sections distinguish “No
+supported flags” from “Viewing required.” Unsourced light-demand marketing and
+inactive rent-alert and personal-buy controls are removed or labeled unavailable.
+
+**Why.** The Yonge Street listing explicitly includes parking and a locker, but
+the report discarded both claims. Its location section converted straight-line
+distance into a supposed drive time using a fixed 30 km/h speed. Its school
+footer claimed Fraser rankings and highlighted catchments even though every
+Fraser value was null and boundaries are not ingested. SunScout exposed its
+direction control in other saved report modes but omitted it from the tenant
+page. The conversion area also promised monitoring and local valuation actions
+that had no working handler or Ontario sales source.
+
+**Alternatives considered**
+
+| Option                                                 | Why not                                                                     |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Treat any parking or locker mention as included        | A mention does not prove that the amenity is part of the monthly rent.      |
+| Keep the fixed-speed drive-time estimate               | It ignores the road network and traffic while presenting a precise minute.  |
+| Keep Fraser and catchment copy as future-facing UI     | It describes data the current report does not contain.                      |
+| Leave SunScout permanently on the south-facing default | The actual facade is knowable by the user and materially changes the model. |
+| Give both empty sections “Not enough detail”           | The two states have different causes and different next actions.            |
+| Keep inactive forms as visual previews                 | Users can reasonably believe a submitted email started real monitoring.     |
+
+---
+
+### D-049 · Keep side-score stickiness only while the hero is side by side
+
+**Chosen.** Tenant, personal-buyer, and landlord side-score cards remain sticky
+above 900px, where they occupy a separate column beside the property visual. At
+the existing 900px one-column breakpoint, their position becomes static and the
+top offset is cleared. The score can still be ordered before the photos on
+smaller screens, but it scrolls away as ordinary content.
+
+**Why.** Inline sticky positioning survived the responsive grid collapse. Once
+the photo column moved underneath the score, the full score card stayed pinned
+for the height of that photo column, making the images visibly travel behind it.
+The sticky relationship is useful only while the two columns are actually side
+by side.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------------ |
+| Remove sticky positioning at every width         | The desktop side-by-side card can remain visible without covering media. |
+| Raise the score card's background or z-index     | This hides the symptom while preserving the obstructive scroll behavior. |
+| Move photos above the score on all small screens | It changes the established score-first reading order unnecessarily.      |
+| Use JavaScript to toggle position on resize      | CSS already owns the grid breakpoint and cannot drift out of sync.       |
+
+---
+
+### D-050 · Collapse the schools grid on phone widths
+
+**Chosen.** The tenant schools section keeps three columns above 640px and
+collapses to one column at and below 640px.
+
+**Why.** Its fixed three-column grid relied on each track's minimum content
+width. At 375px, the third column began beyond the viewport and widened the page
+by 84px. One full-width column keeps school names, board labels, distance, and
+quality readable without horizontal scrolling.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
+| Force three narrower columns at every width | School names and the card footer would become too narrow to read.         |
+| Hide horizontal overflow on the whole page  | A global mask could conceal unrelated responsive defects elsewhere.       |
+| Use a horizontally scrolling school row     | Core report content should read in the document's normal vertical scroll. |
+
+---
+
+### D-051 · Align rent-marker tooltips inward at the chart edges
+
+**Chosen.** The rental-comps marker keeps its centred tooltip through the middle
+60% of the range. Within the outer 20% on either side, the tooltip aligns inward
+from the marker and moves its pointer to match.
+
+**Why.** On the live Yonge Street report, the asking rent sat near the high end
+of the comp range. Its visually hidden tooltip still extended past the 375px
+viewport and widened the whole document by six pixels. Edge-aware positioning
+keeps the tooltip available on hover and keyboard focus without creating
+horizontal page movement.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| Hide horizontal overflow on the whole page       | It masks future responsive defects and can clip legitimate focused UI. |
+| Remove the marker tooltip on phones              | Touch and keyboard users would lose the exact asking-rent explanation. |
+| Make every tooltip left- or right-aligned        | Middle markers read most clearly when the label remains centred.       |
+| Shorten the tooltip text until it happens to fit | Copy length is not a reliable layout constraint across viewports.      |
+
+---
+
+### D-052 · Preserve empty report sections and disclose rent-comp provenance
+
+**Chosen.** Empty tenant sections keep the same `data-section` identifier as
+populated sections so the report rail and audit tools can still reach them.
+The rent-positioning and market-evidence sections name Rentals.ca, Kijiji, and
+PadMapper as nightly asking-rent sources and state whether the result came from
+the first three postal characters or a widened radius search.
+
+**Why.** Missing evidence is part of PropScout's conclusion and should remain a
+first-class section rather than disappear from navigation. The live report also
+showed a precise comp median and count without telling the reader whether those
+records were sample data, sold leases, or current asking rents. Provenance and
+geographic scope are necessary to judge how much confidence to place in the
+range.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| Omit identifiers from empty states           | Navigation then skips the sections where the report admits missing proof. |
+| Describe the source only as “market data”    | It does not let a reader distinguish asking rents from completed leases.  |
+| Always claim the comps are from the same FSA | The API widens to a radius when the FSA has no usable records.            |
+| Call the feeds comparable leases             | The records are scraped listing asks, not verified signed lease amounts.  |
+
+---
+
+### D-053 · Treat zero listing tax as unknown and canonicalize municipality names
+
+**Chosen.** A scraped annual-property-tax value counts as known only when it is
+greater than zero. A `$0` Realtor.ca value is stored as unknown, and the analysis
+uses the existing conservative city-rate estimate. Realtor.ca city labels with a
+parenthesized neighbourhood, such as `Toronto (Yonge-Eglinton)`, are reduced to
+their municipality for tax rates, CMHC vacancy data, and Toronto municipal land
+transfer tax. The analysis route also recognizes the suffixed form so reports
+already saved under it remain correct when recalculated.
+
+**Why.** The live Hillsdale listing published `$0` tax and called its city
+`Toronto (Yonge-Eglinton)`. Accepting both literally removed all property tax
+from operating expenses and all Toronto MLTT from closing costs. Each error made
+the investment look better than the available evidence supports.
+
+**Alternatives considered**
+
+| Option                                                   | Why not                                                                    |
+| -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Accept `$0` whenever Realtor.ca publishes it             | A zero placeholder does not establish a legal tax exemption.               |
+| Leave tax unknown in the calculation                     | The calc engine requires a value and zero would understate carrying costs. |
+| Use the Ontario default rate for suffixed Toronto labels | A municipality-specific rate is already available and more accurate.       |
+| Fix only newly scraped city names                        | Existing saved listings with the suffix would still omit Toronto MLTT.     |
+
+---
+
+### D-054 · Persist effective tax provenance and use Toronto's actual MLTT brackets
+
+**Chosen.** Completed analyses persist the annual property tax used by the
+calculator and whether it was estimated. Personal and investor reports use that
+same value for their itemized costs, label estimates for verification, and keep
+older reports compatible when the fields are absent. The web calculator now
+uses Toronto's municipal LTT brackets independently from Ontario's provincial
+brackets.
+
+**Why.** After the backend correctly replaced Hillsdale's `$0` placeholder with
+a city-rate estimate, the personal page still printed `$0/yr` and the investor
+expense rows omitted tax because both recalculated from the raw listing. The
+Toronto cash-to-close card also claimed `$72,750` in total LTT while its own
+provincial and municipal rows summed to `$72,000`; the schedules diverge between
+`$55,000` and `$400,000` and cannot be modeled by simply doubling provincial
+tax.
+
+**Alternatives considered**
+
+| Option                                        | Why not                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------- |
+| Let each page estimate tax independently      | Rates and provenance could drift from the backend calculation.                  |
+| Replace the raw listing tax with the estimate | It would present an inferred value as a scraped listing fact.                   |
+| Hide tax whenever the listing omits it        | Monthly totals would still need a value and could silently disagree.            |
+| Model Toronto MLTT as equal to provincial LTT | The bracket schedules differ and produced contradictory totals on this listing. |
+
+---
+
+### D-055 · Keep displayed units and Toronto-tax copy aligned with the calculation
+
+**Chosen.** Personal-school footers describe EQAO composites as values out of
+100, matching the cards and stored data. The Toronto financing control says it
+adds municipal LTT using Toronto's bracket schedule. The saved investor report
+uses the persisted effective tax and its provenance rather than a separate
+raw-listing mapper.
+
+**Why.** The Hillsdale audit showed 90.0/100 school cards followed by “out of
+10,” and an MLTT control claiming municipal tax doubled the provincial amount
+after the calculator was corrected to the actual municipal schedule. A second
+investor mapper also kept rendering an unknown tax as zero after the shared
+mapper had been fixed.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                            |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| Convert stored EQAO composites to a 0–10 display | Every card and score calculation already uses the 0–100 composite. |
+| Keep “doubles provincial” as shorthand           | It is numerically false wherever the two bracket schedules differ. |
+| Maintain separate tax logic in both mappers      | The paths had already drifted and produced contradictory reports.  |
+
+---
+
+### D-056 · Show school distance as measured and let financing presets wrap
+
+**Chosen.** Real personal-buyer school cards show the stored straight-line
+distance and label it “straight-line.” They omit drive time until a routing
+source supplies one. Financing preset buttons wrap onto another line when the
+available card width is too small.
+
+**Why.** The personal report converted school distance to a precise “1 min
+drive” using a fixed two-minutes-per-kilometre multiplier even though no route
+was queried. At a 310px app viewport, the four financing presets also widened
+the document by 36px and caused horizontal scrolling.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                |
+| -------------------------------------------- | ---------------------------------------------------------------------- |
+| Keep the drive time with an “approx.” prefix | A fixed multiplier still ignores streets, crossings, and traffic.      |
+| Hide school distance entirely                | The straight-line distance is real and useful when clearly identified. |
+| Clip or horizontally scroll the preset row   | The buttons fit cleanly when normal flex wrapping is enabled.          |
+
+---
+
+### D-057 · Collapse investment metric tiles before their content overflows
+
+**Chosen.** The investment metric grid switches from four columns to two below
+701px, and every tile may shrink within its grid track. The personal-buyer
+checklist follows section 07 as section 08 now that the unused comparable-sales
+map is not rendered.
+
+**Why.** A six-viewport audit found that the DSCR and break-even tiles widened a
+640px page to 647px while every other tested sale-report width fit. The same
+audit exposed a visible section-number jump from 07 to 09 on the personal
+report. Both defects came from desktop assumptions that no longer matched the
+rendered report.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| Hide horizontal overflow on the report     | It would conceal clipped values and future responsive defects.           |
+| Shrink the metric labels and values        | The report would become harder to read while still depending on content. |
+| Collapse every two-column utility at 700px | Only the investment metric grid failed at that width.                    |
+| Keep section 09 as a placeholder for a map | A reader should not see a missing section number for absent content.     |
+
+---
+
+### D-058 · Keep provider sample sales out of local market claims
+
+**Chosen.** When Repliers returns its Tacoma sample coverage, the investor card
+is titled “Provider sample sales,” its count says “provider sample sales,” and
+the empty appreciation card states that no local series is connected. Investor
+and personal reports name Teranet, Statistics Canada, or a trend period only
+when the corresponding value actually came from that source; an empty value
+instead says that no source or result is connected.
+
+**Why.** The Hillsdale report correctly warned that the Tacoma rows were sample
+data while the same card called them “verified sales” under “What sold nearby.”
+The adjacent all-dash card also attributed nonexistent values to Teranet and
+public MLS. Those labels could make a reader treat demo coverage as Toronto
+evidence despite the warning.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                              |
+| ------------------------------------------- | -------------------------------------------------------------------- |
+| Keep the local headings beside the warning  | Contradictory labels make the provenance warning easy to misread.    |
+| Hide the Tacoma rows                        | They remain useful for exercising the UI when plainly identified.    |
+| Fill appreciation from the two Tacoma sales | Two unrelated sales cannot establish a Toronto appreciation series.  |
+| Always show the Teranet attribution         | A source should be named only when the displayed value came from it. |
+
+---
+
+### D-059 · Remove inert promises and decorative placeholder metrics
+
+**Chosen.** The STR preview states that revenue figures are unavailable and no
+longer renders a blurred metric grid or an inactive notification button. The
+personal report removes inactive agent-email and referral buttons, describes
+the missing integrations, and gives its investment action a working route back
+to the analyzer. An empty investor risk scan is amber and says only that no risk
+language was found in the listing description.
+
+**Why.** The live sale audit found controls that promised email, referral, and
+notification actions but had no handlers or connected service. It also found a
+green “No red flags” result based only on description parsing. Interface
+decoration and reassuring copy must not imply data or capabilities that the
+product does not have.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| Leave the controls enabled for visual polish | A working-looking control is a product claim, even before a backend exists. |
+| Disable the same buttons without explanation | It would still leave the reader guessing why the action cannot run.         |
+| Keep blank blurred STR tiles                 | Decorative metrics imply a modeled result where no source is connected.     |
+| Treat an empty wording scan as a pass        | Listing copy cannot clear inspection, title, flood, or building risks.      |
+
+---
+
+### D-060 · Treat zero parking as unknown until the source proves absence
+
+**Chosen.** Every report mapper renders `parkingSpots <= 0` as
+“— parking · not provided.” A positive count is still shown normally. The
+upstream schema should eventually carry explicit parking provenance so a
+verified zero can be distinguished from a missing value.
+
+**Why.** The live Buttermill sale returned zero in the normalized field without
+evidence that the listing said there was no parking. The personal report turned
+that ambiguous default into the factual claim “None.” The current API shape does
+not expose a `parkingKnown` flag, so zero cannot safely support that claim.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                     |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| Continue treating zero as no parking       | The normalized default does not prove the listing explicitly reported zero. |
+| Infer parking from the building or address | That would fabricate a listing fact from a plausible association.           |
+| Hide the parking field                     | The reader should see that this due-diligence item is still unresolved.     |
+| Add `parkingKnown` in this UI fix          | Correct long term, but it requires scraper, API, and stored-schema changes. |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

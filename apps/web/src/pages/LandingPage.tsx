@@ -135,16 +135,45 @@ function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps):
           <span
             className="mono"
             style={{
-              fontSize: 9,
-              letterSpacing: '0.1em',
+              width: '68%',
+              fontSize: size <= 110 ? 7 : 9,
+              lineHeight: 1.15,
+              letterSpacing: size <= 110 ? '0.06em' : '0.1em',
               textTransform: 'uppercase',
+              textAlign: 'center',
               color: 'var(--muted)',
             }}
           >
-            {label}
+            <span style={{ display: 'block' }}>{label.replace(/\s*\/\s*100$/i, '')}</span>
+            {/\/\s*100$/i.test(label) && <span style={{ display: 'block' }}>/ 100</span>}
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+function PreviewListingType({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <div
+      data-listing-type-bar
+      className="mono"
+      style={{
+        width: '100%',
+        minHeight: 30,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 12px',
+        border: '1px solid var(--line)',
+        borderRadius: 'var(--radius-pill)',
+        background: 'var(--surface-2)',
+        color: 'var(--ink-2)',
+        fontSize: 10,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+      }}
+    >
+      {children}
     </div>
   )
 }
@@ -1660,8 +1689,7 @@ function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
 
 function ModePreview({ who, large = false }: { who: string; large?: boolean }): JSX.Element {
   const shell: React.CSSProperties = {
-    height: '100%',
-    minHeight: large ? 300 : 180,
+    height: large ? 300 : 194,
     padding: 16,
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--line)',
@@ -1673,10 +1701,7 @@ function ModePreview({ who, large = false }: { who: string; large?: boolean }): 
     return (
       <div style={shell} role="img" aria-label="Tenant report preview with a supported rent target">
         <div className="col" style={{ gap: 14, height: '100%' }}>
-          <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
-            <Chip>For rent</Chip>
-            <Chip accent>Free forever</Chip>
-          </div>
+          <PreviewListingType>For rent · Free forever</PreviewListingType>
           <div>
             <div
               className="mono"
@@ -1714,7 +1739,7 @@ function ModePreview({ who, large = false }: { who: string; large?: boolean }): 
     return (
       <div style={shell} role="img" aria-label="Personal buyer report monthly cost preview">
         <div className="col gap-8">
-          <Chip>For sale</Chip>
+          <PreviewListingType>For sale</PreviewListingType>
           <div
             className="mono"
             style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
@@ -1749,10 +1774,8 @@ function ModePreview({ who, large = false }: { who: string; large?: boolean }): 
         aria-label="Investor report clock-style deal score of 8 out of 100"
       >
         <div className="col" style={{ alignItems: 'center', gap: 4 }}>
-          <div className="row" style={{ width: '100%' }}>
-            <Chip>For sale</Chip>
-          </div>
-          <ShowcaseDealScore score={8} size={104} label="Deal score / 100" />
+          <PreviewListingType>For sale</PreviewListingType>
+          <ShowcaseDealScore score={8} size={92} label="Deal score / 100" />
           <VerdictPill tone="fail" label="Hard pass" />
         </div>
       </div>
@@ -1762,7 +1785,7 @@ function ModePreview({ who, large = false }: { who: string; large?: boolean }): 
   return (
     <div style={shell} role="img" aria-label="Landlord report rent positioning preview">
       <div className="col gap-12">
-        <Chip>For rent</Chip>
+        <PreviewListingType>For rent</PreviewListingType>
         <div>
           <div
             className="mono"

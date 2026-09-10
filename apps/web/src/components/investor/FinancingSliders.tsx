@@ -79,7 +79,7 @@ export function FinancingSliders({
         </div>
 
         {/* Preset buttons */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {PRESETS.map((p) => (
             <button
               key={p.label}
@@ -185,7 +185,7 @@ export function FinancingSliders({
             label="Toronto LTT stacking"
             value={financing.isToronto}
             onChange={(v) => set({ isToronto: v })}
-            hint="Doubles provincial LTT for City of Toronto"
+            hint="Adds Toronto municipal LTT using the city's bracket schedule"
           />
         </div>
 

@@ -212,6 +212,7 @@ export function TenantSchoolsSection({
       />
 
       <div
+        className="tenant-schools-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
@@ -232,10 +233,10 @@ export function TenantSchoolsSection({
           maxWidth: 720,
         }}
       >
-        Quality is a tenant-friendly summary — Above / Average / Below — drawn from EQAO and Fraser
-        Institute. <span style={{ color: 'var(--accent)' }}>Highlighted</span> = this address sits
-        inside the school's attendance boundary. Boards with no nearby school for a level are
-        skipped.
+        Quality is a tenant-friendly Above / Average / Below summary drawn from available EQAO
+        results. Schools are ranked by straight-line distance; attendance boundaries are not
+        verified. Approximate walk times use that distance rather than a pedestrian route. Confirm
+        catchment with the school board. Boards with no nearby school for a level are skipped.
       </p>
     </section>
   )

@@ -36,6 +36,7 @@ export interface PersonalProperty {
   priceChange: { abs: number; direction: 'up' | 'down' | null }
   // Carrying-cost inputs
   annualTaxes: number
+  annualTaxesKnown?: boolean
   condoFeeMonthly: number
   utilityEstMonthly: PersonalUtilities
   insuranceMonthlyEst: number
@@ -54,7 +55,8 @@ export interface PersonalSchool {
   /** e.g. 'HDSB · public', 'HCDSB · catholic' */
   board: string
   distance: string
-  driveTime: string
+  /** Present only when a real route/travel-time source supplied it. */
+  driveTime?: string
   eqao: number | null // EQAO composite 0–100 (% meeting standard); null when not loaded for this school
   fraser: number | null // 0–100 percentile · null when Fraser hasn't loaded for this school
   inCatchment: boolean

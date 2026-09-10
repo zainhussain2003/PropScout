@@ -46,12 +46,12 @@ const SCHOOLS: SchoolsResult = {
 }
 
 describe('shimToPersonalSchools', () => {
-  it('maps distance, drive estimate, and scores; never claims catchment', () => {
+  it('maps straight-line distance and scores without inventing drive time or catchment', () => {
     const result = shimToPersonalSchools(SCHOOLS)
     const elem = result.elementary[0]!
     expect(elem.name).toBe('Jesse Ketchum Jr & Sr PS')
     expect(elem.distance).toBe('0.6 km')
-    expect(elem.driveTime).toBe('1 min') // 0.6 km × 2 min/km, floor 1
+    expect(elem.driveTime).toBeUndefined()
     expect(elem.eqao).toBe(82)
     expect(elem.fraser).toBe(74)
     expect(elem.inCatchment).toBe(false)
@@ -72,7 +72,7 @@ describe('shimToTenantSchools', () => {
 
   it('estimates walk time from distance and never claims catchment', () => {
     const result = shimToTenantSchools(SCHOOLS)
-    expect(result.elementary[0]!.walk).toBe('7 min') // 0.6 km × 12 min/km
+    expect(result.elementary[0]!.walk).toBe('~7 min walk') // 0.6 km × 12 min/km estimate
     expect(result.high[0]!.distance).toBe('3.4 km')
     expect(result.elementary[0]!.inCatchment).toBe(false)
   })

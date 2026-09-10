@@ -86,7 +86,9 @@ function buildChips(listing: Listing): string[] {
 function toListingData(listing: Listing, analysis: Analysis): ListingData {
   const [addressLine1, addressLine2] = splitAddress(listing.address, listing.city, listing.province)
   const price = listing.price ?? 0
-  const annualTaxes = listing.annualTaxes ?? 0
+  const listedAnnualTaxes =
+    listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
+  const annualTaxes = listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0
   const condoFeeMonthly = listing.condoFeeMonthly ?? 0
   // Zero is the display model's unknown-year sentinel, not an estimated age.
   const yearBuilt = listing.yearBuilt ?? 0
@@ -115,11 +117,12 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     beds: String(listing.beds),
     baths: String(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking: listing.url ? String(listing.parkingSpots) : '—',
+    parking: listing.parkingSpots > 0 ? String(listing.parkingSpots) : '—',
     yearBuilt,
     rentControl: yearBuilt <= 2018,
     price,
     annualTaxes,
+    annualTaxesKnown: listedAnnualTaxes != null,
     condoFeeMonthly,
     // Comps mid when available; otherwise the listing's own asking rent —
     // the hero once rendered "Asking rent $0/mo" on a $2,650 rental because
@@ -351,13 +354,13 @@ function RiskFlagsSection({
       ? 'fail'
       : redFlags.length === 1 || amberFlags.length > 0
         ? 'caution'
-        : 'pass'
+        : 'caution'
   const verdictLabel =
     redFlags.length > 0
       ? `${redFlags.length} red · ${amberFlags.length} amber`
       : amberFlags.length > 0
         ? `${amberFlags.length} amber flag${amberFlags.length > 1 ? 's' : ''}`
-        : 'No red flags'
+        : 'No wording flags'
 
   return (
     <section className="container tr-section" data-section="06">
@@ -381,11 +384,14 @@ function RiskFlagsSection({
               display: 'flex',
               gap: 12,
               alignItems: 'center',
-              color: 'var(--pass)',
+              color: 'var(--caution)',
             }}
           >
-            <Icon name="check" size={16} />
-            <span style={{ fontSize: 14 }}>No risk flags detected in this listing.</span>
+            <Icon name="flag" size={16} />
+            <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+              No risk language was found in the listing description. This wording scan is not an
+              inspection or a clean bill of health.
+            </span>
           </div>
         ) : (
           listing.riskFlags.map((f) => (

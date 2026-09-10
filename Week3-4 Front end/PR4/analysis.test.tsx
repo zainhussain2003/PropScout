@@ -216,6 +216,14 @@ describe('RentalCompsBar', () => {
     expect(screen.getByText('$2,900/mo')).toBeInTheDocument()
   })
 
+  it('insets edge tooltips so hidden labels cannot widen phone layouts', () => {
+    const { rerender } = render(<RentalCompsBar low={2000} mid={2200} high={2400} ask={2600} />)
+    expect(screen.getByText('$2,600/mo').parentElement).toHaveAttribute('data-alignment', 'right')
+
+    rerender(<RentalCompsBar low={2000} mid={2200} high={2400} ask={1800} />)
+    expect(screen.getByText('$1,800/mo').parentElement).toHaveAttribute('data-alignment', 'left')
+  })
+
   it('renders the market-context strip only when context is provided', () => {
     const { rerender } = render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
     expect(screen.queryByText('12-mo trend')).not.toBeInTheDocument()

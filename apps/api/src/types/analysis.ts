@@ -49,6 +49,10 @@ export interface InvestmentMetrics {
   closingCostsTotal: number
   lttProvincial: number
   lttMunicipal: number
+  /** Annual property tax supplied to the calculator. */
+  annualTaxesUsed?: number
+  /** True when annualTaxesUsed is a conservative city-rate estimate. */
+  annualTaxesEstimated?: boolean
   hasSanityWarnings: boolean
 }
 

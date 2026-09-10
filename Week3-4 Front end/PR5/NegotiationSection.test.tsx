@@ -32,6 +32,7 @@ beforeEach(() => {
 function renderSection() {
   return render(
     <NegotiationSection
+      askingRent={2150}
       targetLow={1950}
       targetHigh={2000}
       leverageFactors={CHARLES_LEVERAGE_FACTORS}
@@ -112,7 +113,7 @@ describe('NegotiationSection', () => {
 
   it('renders the annual savings estimate', () => {
     renderSection()
-    // annualSavingsLow = (2000 - 1950) * 12 = 600; annualSavingsHigh = 1200
-    expect(screen.getByText(/\$600–1,200/)).toBeInTheDocument()
+    // Savings use the asking rent against both ends of the supported target range.
+    expect(screen.getByText(/\$1,800–2,400/)).toBeInTheDocument()
   })
 })

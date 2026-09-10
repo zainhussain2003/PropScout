@@ -463,7 +463,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         </div>
       </div>
       <div
-        class="card col"
+        class="card col report-side-score"
         style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
       >
         <div
@@ -1003,7 +1003,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              $4,280/yr
+              $4,280/yr · as listed
             </span>
           </div>
           <span
@@ -2309,8 +2309,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               0.6 km
                · 
-              2 min
-               drive
+              2 min drive
             </span>
             <span>
               Top 20%
@@ -2410,8 +2409,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               1.2 km
                · 
-              4 min
-               drive
+              4 min drive
             </span>
             <span>
               Above avg
@@ -2511,8 +2509,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               1.8 km
                · 
-              5 min
-               drive
+              5 min drive
             </span>
             <span>
               Above avg
@@ -2629,8 +2626,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               0.6 km
                · 
-              2 min
-               drive
+              2 min drive
             </span>
             <span>
               Top 20%
@@ -2730,8 +2726,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               2.4 km
                · 
-              7 min
-               drive
+              7 min drive
             </span>
             <span>
               Above avg
@@ -2848,8 +2843,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               1.4 km
                · 
-              4 min
-               drive
+              4 min drive
             </span>
             <span
               class="tabular"
@@ -2952,8 +2946,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               3.2 km
                · 
-              8 min
-               drive
+              8 min drive
             </span>
             <span
               class="tabular"
@@ -3056,8 +3049,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               4.1 km
                · 
-              10 min
-               drive
+              10 min drive
             </span>
             <span
               class="tabular"
@@ -3072,7 +3064,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
     <p
       style="margin-top: 24px; font-size: 13px; color: var(--muted); max-width: 720px;"
     >
-      EQAO scores (out of 10) are 2024 results from the Ontario Education Quality and Accountability Office. Fraser percentile is from the Fraser Institute's 2025 school report card. Catchment boundaries pulled live from board GIS data.
+      EQAO scores (out of 100) are 2024 results from the Ontario Education Quality and Accountability Office. Fraser percentile is from the Fraser Institute's 2025 school report card. Catchment boundaries pulled live from board GIS data.
        
       <span
         style="color: var(--accent);"
@@ -4247,7 +4239,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
-      data-section-n="09"
+      data-section-n="08"
       data-section-topic="Before you bid"
     >
       <div
@@ -4262,7 +4254,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             style="color: var(--accent);"
           >
             § 
-            09
+            08
           </span>
           <span
             style="margin-left: 12px; color: var(--muted);"
@@ -4466,22 +4458,12 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           />
            Export checklist as PDF
         </button>
-        <button
-          class="btn btn-ghost"
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
         >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="13"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.6"
-            viewBox="0 0 24 24"
-            width="13"
-          />
-           Email to my agent
-        </button>
+          Agent email delivery is not connected yet.
+        </span>
       </div>
     </div>
   </section>
@@ -4515,7 +4497,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         <p
           style="font-size: 15px; color: var(--ink-2);"
         >
-          Re-run this same listing as an investment and we'll show you the cap rate, the cash flow, the OSFI position, and the 20-year equity build. Free with your account.
+          Return to the analyzer and choose Investment to calculate cap rate, cash flow, the OSFI position, and the 20-year equity build for this listing.
         </p>
         <div
           class="row gap-12 mobile-action-row"
@@ -4523,7 +4505,9 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           <button
             class="btn btn-primary"
           >
-            Open investment report 
+            <span>
+              Analyze as an investment
+            </span>
             <svg
               aria-hidden="true"
               fill="none"
@@ -4563,36 +4547,14 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         <p
           style="font-size: 15px; color: color-mix(in oklab, var(--bg) 70%, transparent);"
         >
-          We'll send this report to a verified 
-          Burlington
-           agent who knows the area. No obligation — they reach out only if you reply.
+          PropScout does not have a verified Burlington agent-referral service connected yet. Share the report link directly with an agent you trust.
         </p>
-        <div
-          class="row gap-12 mobile-action-row"
+        <span
+          class="mono"
+          style="font-size: 11px; color: color-mix(in oklab, var(--bg) 55%, transparent);"
         >
-          <button
-            class="btn btn-accent"
-          >
-            Send to an agent 
-            <svg
-              aria-hidden="true"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.6"
-              viewBox="0 0 24 24"
-              width="13"
-            />
-          </button>
-          <button
-            class="btn"
-            style="background: transparent; color: var(--bg); border: 1px solid color-mix(in oklab, var(--bg) 25%, transparent);"
-          >
-            How this works
-          </button>
-        </div>
+          Agent referrals unavailable
+        </span>
       </div>
     </div>
   </section>

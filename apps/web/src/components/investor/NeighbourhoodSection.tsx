@@ -7,8 +7,8 @@
  *   - Comparable recent sales table
  *   - Appreciation card (5yr / 10yr)
  *
- * Data sourced from Walk Score API + Stats Canada + MLS comps.
- * Placeholder values from demo data until integrations are live.
+ * Data sourced from Walk Score, Statistics Canada, and the configured sales
+ * provider. Provider sample sales are explicitly separated from local data.
  */
 
 import type { NeighbourhoodData, ListingData } from '../../types/analysis'
@@ -205,11 +205,11 @@ export function NeighbourhoodSection({
                 Comparable recent sales
               </span>
               <h3 className="serif" style={{ fontSize: 22 }}>
-                What sold nearby.
+                {compsAreSample ? 'Provider sample sales.' : 'What sold nearby.'}
               </h3>
             </div>
             <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-              {n.comps.length} verified sales
+              {`${n.comps.length} ${compsAreSample ? 'provider sample sales' : 'recorded local sales'}`}
             </span>
           </div>
 
@@ -347,8 +347,9 @@ export function NeighbourhoodSection({
               lineHeight: 1.55,
             }}
           >
-            Numbers from Teranet HPI · public MLS · adjusted for inflation. Past appreciation is not
-            a guarantee of future returns.
+            {hasAppreciation
+              ? 'Appreciation series from Teranet HPI, adjusted for inflation. Past appreciation is not a guarantee of future returns.'
+              : 'No local appreciation series is connected for this address. We do not infer one from provider sample sales.'}
           </p>
         </div>
       </div>

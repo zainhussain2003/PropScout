@@ -127,7 +127,11 @@ export function InvestmentMetricsSection({
 
   // Expense rows: [label, value, note]
   const expenseRows: Array<[string, number, string]> = [
-    ['Property taxes', metrics.expenses.taxes, 'as listed'],
+    [
+      'Property taxes',
+      metrics.expenses.taxes,
+      listing.annualTaxesKnown === false ? 'city-rate estimate · verify' : 'as listed',
+    ],
     ['Insurance (0.35%)', metrics.expenses.insurance, 'of value'],
     [
       'Maintenance reserve',
@@ -176,7 +180,7 @@ export function InvestmentMetricsSection({
 
       {/* 8-tile grid — 4-col desktop, 2-col mobile */}
       <div
-        className="grid-2col-mobile"
+        className="grid-2col-mobile investment-metrics-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',

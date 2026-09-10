@@ -55,8 +55,12 @@ export const DEFAULT_PROPERTY_TAX_RATE = 0.011
  */
 export function estimateAnnualTaxes(price: number | null, city: string | null | undefined): number {
   if (!price || price <= 0) return 0
-  const rate = city
-    ? (ONTARIO_PROPERTY_TAX_RATES[city.trim().toLowerCase()] ?? DEFAULT_PROPERTY_TAX_RATE)
+  const municipality = city
+    ?.trim()
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*$/, '')
+  const rate = municipality
+    ? (ONTARIO_PROPERTY_TAX_RATES[municipality] ?? DEFAULT_PROPERTY_TAX_RATE)
     : DEFAULT_PROPERTY_TAX_RATE
   return Math.round(price * rate)
 }

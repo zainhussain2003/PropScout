@@ -71,6 +71,10 @@ export interface InvestmentMetrics {
   closingCostsTotal: number
   lttProvincial: number
   lttMunicipal: number // Toronto only
+  /** Effective annual tax used by the backend; optional on older saved reports. */
+  annualTaxesUsed?: number
+  /** Whether annualTaxesUsed came from the city-rate fallback. */
+  annualTaxesEstimated?: boolean
 
   // Sanity
   hasSanityWarnings: boolean
@@ -239,7 +243,7 @@ export interface FinancingInputs {
   mortgageRate: number // e.g. 0.0479 for 4.79%
   amortizationYears: number // e.g. 25
   includeManagementFee: boolean
-  isToronto: boolean // Toronto LTT stacking (doubles provincial)
+  isToronto: boolean // adds Toronto municipal LTT using its own brackets
   appreciationRate: number // e.g. 0.03 for 3% — equity projections only
   assumedIncome: number // household income for OSFI GDS calc, default 125000
 }
@@ -359,6 +363,8 @@ export interface ListingData {
   rentControl: boolean
   price: number
   annualTaxes: number
+  /** False when annualTaxes is a conservative estimate rather than a listing fact. */
+  annualTaxesKnown?: boolean
   condoFeeMonthly: number
   rentEstimate: number // mid rent estimate from comps
   rentLow: number

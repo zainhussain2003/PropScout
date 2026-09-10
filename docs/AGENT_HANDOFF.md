@@ -21,6 +21,17 @@ It is the state of play, the rules, the traps, and the work queue.
 > states, personal-report photo/score fabrication, duplicated LTT in cash to
 > close, and the remaining 375px overflow.
 >
+> **Update — 2026-09-08.** A live Realtor.ca audit of 706–1 Hillsdale Avenue W
+> added honest tax estimation/provenance, Toronto municipality normalization,
+> the correct municipal LTT brackets, straight-line school-distance labels,
+> provider-sample sales labeling, and responsive fixes through the 900/901px
+> sticky boundary. The investor result is 8 / hard pass at −$11,161.16/month;
+> the personal score is paused because no verified local sold comps exist.
+> Repeated analyses produced identical structured-result hashes and narratives.
+> A fresh four-mode Buttermill run again retained four distinct tokens and the
+> 8 / hard-pass, −$2,723.68/month known-good result. These changes are local and
+> still need review, commit, API deployment, and owner-approved merge.
+>
 > Vercel confirms `VITE_API_URL` is scoped to both Preview and Production. With
 > owner approval it was rotated, without exposing the old write-only value, to
 > the documented healthy Railway API and the branch Preview was rebuilt. That
@@ -58,9 +69,8 @@ sentence governs every judgement below.
 
 ## 3. Where things stand
 
-- **Branch:** `feat/address-input-and-mobile`, 19 commits ahead of `master` after
-  the pending live-verification documentation commit.
-  Open PR **#21**. Everything is pushed.
+- **Branch:** `feat/address-input-and-mobile`, 19 commits ahead of `master`.
+  Open PR **#21**. The audit changes described above are still uncommitted.
 - **Production:** `propscout.ca` is live on Vercel but runs `master` — none of
   the last 19 commits are deployed.
 - **Supabase project:** `dvlmkecrpoelqlzhwebg` ("PropScout"). One project serves
@@ -71,9 +81,9 @@ sentence governs every judgement below.
 ### Test gates — all green on the 2026-09-08 working tree
 
 ```
-npm test --workspace=apps/web        # 923 passed, 73 files
-npm test --workspace=apps/api        # 229 passed, 2 skipped
-python -m pytest services/calc-engine/ -q   # 396 passed, 2 skipped
+npm test --workspace=apps/web        # 939 passed, 73 files
+npm test --workspace=apps/api        # 232 passed, 2 skipped
+python -m pytest services/calc-engine/ -q   # 397 passed, 2 skipped
 python -m pytest services/scrapers/ -q      # 180 passed
 npm run typecheck --workspace=apps/web
 npm run typecheck --workspace=apps/api

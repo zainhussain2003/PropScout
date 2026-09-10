@@ -1224,7 +1224,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
       </div>
     </div>
     <div
-      class="card col"
+      class="card col report-side-score"
       style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
     >
       <div

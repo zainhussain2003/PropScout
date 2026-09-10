@@ -298,7 +298,7 @@ export function SunScoutPanel({
 
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
             {sunScoutData.annualPeakSunHours.toFixed(0)} estimated annual peak sun hours (primary
-            window). Bright units rent 8–14% faster than comparable dim units.
+            window). This is a geometry-based light estimate, not a prediction of rental demand.
           </p>
 
           {sunScoutData.obstructionAssessed === true && (
@@ -334,22 +334,30 @@ export function SunScoutPanel({
                     of direct sun off this unit each year — the figures above already have that
                     deducted.
                   </>
-                ) : (
+                ) : typeof sunScoutData.obstructionOpenness === 'number' &&
+                  sunScoutData.obstructionOpenness < 0.8 ? (
                   <>
-                    Nothing nearby meaningfully blocks this unit — the surrounding buildings were
-                    checked and the sky is effectively open.
-                  </>
-                )}
-                {typeof sunScoutData.obstructionOpenness === 'number' && (
-                  <>
-                    {' '}
-                    Sky openness{' '}
-                    <span className="mono">
-                      {Math.round(sunScoutData.obstructionOpenness * 100)}%
-                    </span>
+                    The direct-sun model did not deduct measurable annual hours, but surrounding
+                    geometry leaves only{' '}
+                    <strong style={{ color: 'var(--ink)' }}>
+                      {Math.round(sunScoutData.obstructionOpenness * 100)}% of the sky dome open
+                    </strong>
                     .
                   </>
+                ) : (
+                  <>No measurable direct-sun loss from nearby buildings was found in the model.</>
                 )}
+                {typeof sunScoutData.obstructionOpenness === 'number' &&
+                  sunScoutData.obstructionOpenness >= 0.8 && (
+                    <>
+                      {' '}
+                      Sky openness{' '}
+                      <span className="mono">
+                        {Math.round(sunScoutData.obstructionOpenness * 100)}%
+                      </span>
+                      .
+                    </>
+                  )}
               </p>
               {typeof sunScoutData.obstructionBuildingsUnknown === 'number' &&
                 sunScoutData.obstructionBuildingsUnknown > 0 && (
@@ -364,8 +372,8 @@ export function SunScoutPanel({
                     Based on {sunScoutData.obstructionBuildingsUsed ?? 0} nearby building
                     {(sunScoutData.obstructionBuildingsUsed ?? 0) === 1 ? '' : 's'} with a known
                     height. {sunScoutData.obstructionBuildingsUnknown} more had no height on record
-                    and were left out rather than guessed — mostly low-rise, but it means this is a
-                    floor, not a ceiling, on how much shade there is.
+                    and were left out rather than guessed. This means the calculated shade is a
+                    floor, not a ceiling.
                   </p>
                 )}
             </div>

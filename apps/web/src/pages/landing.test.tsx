@@ -188,6 +188,24 @@ describe('LandingPage', () => {
     expect(container.querySelectorAll('[data-score-ring="clock"]').length).toBeGreaterThanOrEqual(4)
   })
 
+  it('uses one full-width listing-type bar across all four report previews', () => {
+    const { container } = renderLanding()
+    const bars = container.querySelectorAll('[data-listing-type-bar]')
+    expect(bars).toHaveLength(4)
+    bars.forEach((bar) => {
+      expect(bar).toHaveStyle({ width: '100%', minHeight: '30px' })
+    })
+  })
+
+  it('wraps the compact deal-score denominator inside the clock dial', () => {
+    renderLanding()
+    const investorPreview = screen.getByRole('img', {
+      name: /investor report clock-style deal score/i,
+    })
+    expect(investorPreview).toHaveTextContent(/deal score/i)
+    expect(investorPreview).toHaveTextContent('/ 100')
+  })
+
   it('expands an FAQ item on click', () => {
     renderLanding()
     // Find the FAQ button by its visible serif text; the button also has an Icon child

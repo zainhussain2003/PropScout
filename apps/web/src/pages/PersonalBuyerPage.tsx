@@ -197,8 +197,11 @@ function PersonalPropertyHero({
           </div>
         </div>
 
-        {/* RIGHT — sticky home-score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
+        {/* RIGHT — sticky beside photos; static once the hero becomes one column. */}
+        <div
+          className="card col report-side-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        >
           {scoreSuppressed ? (
             // Inputs are mostly placeholder (FMV pinned to asking, schools/light
             // pending) — an aggregate number would imply confidence we don't have.
@@ -699,14 +702,14 @@ function SchoolsSection({ isReal, realSchools, catchmentNote }: SchoolsSectionPr
           >
             {isReal ? (
               <>
-                EQAO scores (out of 10) are from the Ontario Education Quality and Accountability
+                EQAO scores (out of 100) are from the Ontario Education Quality and Accountability
                 Office; Fraser percentile from the Fraser Institute school report card.{' '}
                 {catchmentNote ??
                   'Nearest schools by straight-line distance — attendance boundaries are not verified.'}
               </>
             ) : (
               <>
-                EQAO scores (out of 10) are 2024 results from the Ontario Education Quality and
+                EQAO scores (out of 100) are 2024 results from the Ontario Education Quality and
                 Accountability Office. Fraser percentile is from the Fraser Institute&apos;s 2025
                 school report card. Catchment boundaries pulled live from board GIS data.{' '}
                 <span style={{ color: 'var(--accent)' }}>Highlighted</span> = this property is
@@ -888,22 +891,22 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
             [
               'Median household income',
               neigh.avgIncome > 0 ? fmtMoney(neigh.avgIncome) : '—',
-              'StatsCan 2021',
+              neigh.avgIncome > 0 ? 'StatsCan 2021' : 'No StatsCan result',
             ],
             [
               '5-year population growth',
               neigh.popGrowth5y !== 0 ? fmtPct(neigh.popGrowth5y, 1) : '—',
-              'StatsCan',
+              neigh.popGrowth5y !== 0 ? 'StatsCan' : 'No StatsCan result',
             ],
             [
               'Price per sqft trend',
               neigh.ppsqftTrend !== 'N/A' ? neigh.ppsqftTrend : '—',
-              'last 12 months',
+              neigh.ppsqftTrend !== 'N/A' ? 'last 12 months' : 'No source connected',
             ],
             [
               '5-year price appreciation',
               neigh.appreciation5y !== 0 ? '+' + fmtPct(neigh.appreciation5y, 1) : '—',
-              'Teranet HPI',
+              neigh.appreciation5y !== 0 ? 'Teranet HPI' : 'No source connected',
             ],
           ] as [string, string, string][]
         ).map(([k, v, sub]) => (
@@ -1254,7 +1257,7 @@ function ChecklistSection(): JSX.Element {
   return (
     <section className="container tr-section">
       <SectionHead
-        n="09"
+        n="08"
         topic="Before you bid"
         question={
           <>
@@ -1344,9 +1347,9 @@ function ChecklistSection(): JSX.Element {
               <Icon name="doc" size={13} /> Export checklist as PDF
             </button>
           )}
-          <button className="btn btn-ghost">
-            <Icon name="link" size={13} /> Email to my agent
-          </button>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+            Agent email delivery is not connected yet.
+          </span>
         </div>
       </div>
     </section>
@@ -1394,12 +1397,13 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
             What if you ever <em>rented it out</em>?
           </h3>
           <p style={{ fontSize: 15, color: 'var(--ink-2)' }}>
-            Re-run this same listing as an investment and we'll show you the cap rate, the cash
-            flow, the OSFI position, and the 20-year equity build. Free with your account.
+            Return to the analyzer and choose Investment to calculate cap rate, cash flow, the OSFI
+            position, and the 20-year equity build for this listing.
           </p>
           <div className="row gap-12 mobile-action-row">
-            <button className="btn btn-primary">
-              Open investment report <Icon name="arrow" size={13} />
+            <button className="btn btn-primary" onClick={() => window.location.assign('/')}>
+              <span>Analyze as an investment</span>
+              <Icon name="arrow" size={13} />
             </button>
           </div>
         </div>
@@ -1439,24 +1443,14 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
             Want a <em style={{ color: 'var(--accent)' }}>second opinion</em> from a local agent?
           </h3>
           <p style={{ fontSize: 15, color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
-            We'll send this report to a verified {city} agent who knows the area. No obligation —
-            they reach out only if you reply.
+            {`PropScout does not have a verified ${city} agent-referral service connected yet. Share the report link directly with an agent you trust.`}
           </p>
-          <div className="row gap-12 mobile-action-row">
-            <button className="btn btn-accent">
-              Send to an agent <Icon name="arrow" size={13} />
-            </button>
-            <button
-              className="btn"
-              style={{
-                background: 'transparent',
-                color: 'var(--bg)',
-                border: '1px solid color-mix(in oklab, var(--bg) 25%, transparent)',
-              }}
-            >
-              How this works
-            </button>
-          </div>
+          <span
+            className="mono"
+            style={{ fontSize: 11, color: 'color-mix(in oklab, var(--bg) 55%, transparent)' }}
+          >
+            Agent referrals unavailable
+          </span>
         </div>
       </div>
     </section>

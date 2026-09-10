@@ -168,7 +168,11 @@ export function toSunScout(py: PySunScout | null | undefined): Analysis['sunScou
   }
 }
 
-function toMetrics(py: PyInvestmentMetrics): InvestmentMetrics {
+function toMetrics(
+  py: PyInvestmentMetrics,
+  annualTaxesUsed: number,
+  annualTaxesEstimated: boolean
+): InvestmentMetrics {
   return {
     cashFlowMonthly: py.cash_flow_monthly,
     cashFlowAnnual: py.cash_flow_annual,
@@ -186,6 +190,8 @@ function toMetrics(py: PyInvestmentMetrics): InvestmentMetrics {
     closingCostsTotal: py.closing_costs_total,
     lttProvincial: py.ltt_provincial,
     lttMunicipal: py.ltt_municipal,
+    annualTaxesUsed,
+    annualTaxesEstimated,
     hasSanityWarnings: py.has_sanity_warnings,
   }
 }
@@ -332,7 +338,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           rentMonthly: listing.rentMonthly ?? DEFAULT_RENT_MONTHLY,
           city: listing.city,
           propertyType: listing.propertyType,
-          annualTaxes: listing.annualTaxes,
+          annualTaxes:
+            listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null,
           condoFeeMonthly: listing.condoFeeMonthly,
         })
 
@@ -340,7 +347,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // find the actual value. Defaulting to 0 understated carrying costs
       // by $400–800/mo on a typical Ontario property.
       const annualTaxesForCalc =
-        listing.annualTaxes ?? estimateAnnualTaxes(estimatedPrice, listing.city)
+        listing.annualTaxes != null && listing.annualTaxes > 0
+          ? listing.annualTaxes
+          : estimateAnnualTaxes(estimatedPrice, listing.city)
 
       // Real per-city CMHC vacancy rate — feeds both the deal score's demand
       // component (calc engine) and the narrative, so they stay consistent.
@@ -372,7 +381,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           sqft: listing.sqft,
           year_built: listing.yearBuilt,
           property_type: listing.propertyType,
-          is_toronto: listing.city === 'Toronto',
+          is_toronto: /^toronto(?:\s|\(|$)/i.test(listing.city.trim()),
           lat: coords?.lat ?? null,
           lng: coords?.lng ?? null,
         },
@@ -546,7 +555,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         token,
         mode,
         createdAt: new Date().toISOString(),
-        metrics: toMetrics(pyData.metrics),
+        metrics: toMetrics(
+          pyData.metrics,
+          annualTaxesForCalc,
+          listing.annualTaxes == null || listing.annualTaxes <= 0
+        ),
         dealScore: toDealScore(pyData.deal_score),
         rentalComps: comps
           ? {

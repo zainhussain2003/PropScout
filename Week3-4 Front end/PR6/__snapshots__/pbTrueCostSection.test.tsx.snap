@@ -96,7 +96,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            $4,280/yr
+            $4,280/yr · as listed
           </span>
         </div>
         <span
