@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "maxRounds": 6,
+  "maxMinutes": 180,
+  "branchPrefix": "agent",
+  "worktreeRoot": ".propscout-agent-worktrees",
+  "runtimeRoot": ".propscout-agent-runtime",
+  "protectedPaths": [
+    ".agent-loop/",
+    "scripts/agent-loop/",
+    "docs/agent-loop/prompts/",
+    "docs/agent-loop/schemas/",
+    ".github/workflows/",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "humanGatePaths": [
+    ".env",
+    ".env.",
+    "supabase/migrations/",
+    "railway.json",
+    "vercel.json",
+    "services/scrapers/railway.json"
+  ],
+  "forbiddenPathFragments": ["node_modules/", ".git/", ".vercel/", "dist/", "__pycache__/"],
+  "gates": [
+    {
+      "name": "web typecheck",
+      "command": "npm",
+      "args": ["run", "typecheck", "--workspace=apps/web"]
+    },
+    {
+      "name": "api typecheck",
+      "command": "npm",
+      "args": ["run", "typecheck", "--workspace=apps/api"]
+    },
+    {
+      "name": "web tests",
+      "command": "npm",
+      "args": ["test", "--workspace=apps/web"]
+    },
+    {
+      "name": "api tests",
+      "command": "npm",
+      "args": ["test", "--workspace=apps/api"]
+    },
+    {
+      "name": "calc engine",
+      "command": "python",
+      "args": ["-m", "pytest", "services/calc-engine/", "-q"]
+    },
+    {
+      "name": "scrapers",
+      "command": "python",
+      "args": ["-m", "pytest", "services/scrapers/", "-q"]
+    },
+    {
+      "name": "web lint",
+      "command": "npm",
+      "args": ["run", "lint", "--workspace=apps/web"]
+    },
+    {
+      "name": "api lint",
+      "command": "npm",
+      "args": ["run", "lint", "--workspace=apps/api"]
+    }
+  ]
+}

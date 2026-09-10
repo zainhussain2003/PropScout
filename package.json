@@ -13,6 +13,16 @@
     "test": "npm test --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "npm run lint --workspaces",
+    "agent:doctor": "node scripts/agent-loop/cli.mjs doctor",
+    "agent:init": "node scripts/agent-loop/cli.mjs init",
+    "agent:run": "node scripts/agent-loop/cli.mjs run",
+    "agent:status": "node scripts/agent-loop/cli.mjs status",
+    "agent:approve": "node scripts/agent-loop/cli.mjs approve",
+    "agent:reject": "node scripts/agent-loop/cli.mjs reject",
+    "agent:gates": "node scripts/agent-loop/cli.mjs gates",
+    "agent:lint-claims": "node scripts/agent-loop/cli.mjs lint-claims",
+    "agent:report": "node scripts/agent-loop/cli.mjs report",
+    "agent:test": "node --test scripts/agent-loop/test/*.test.mjs",
     "prepare": "husky || true"
   },
   "engines": {
