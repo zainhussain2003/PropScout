@@ -105,7 +105,12 @@ function mapPropertyType(raw: string, buildingType?: string | null): PropertyTyp
 function extractCity(address: string): string {
   // Realtor.ca format: "Street, City, Province PostalCode"
   const parts = address.split(',')
-  if (parts.length >= 3) return parts[parts.length - 2].trim()
+  if (parts.length >= 3) {
+    // Realtor.ca commonly appends the neighbourhood in parentheses, for
+    // example "Toronto (Yonge-Eglinton)". Downstream tax, vacancy, and MLTT
+    // lookups require the municipality itself.
+    return parts[parts.length - 2].trim().replace(/\s*\([^)]*\)\s*$/, '')
+  }
   if (parts.length === 2) return parts[0].trim()
   return ''
 }
@@ -219,7 +224,9 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
 
       const missingFields: string[] = []
       if (scraped.sqft == null) missingFields.push('sqft')
-      if (!scraped.taxes_known) missingFields.push('annual_taxes')
+      const hasUsableAnnualTaxes =
+        scraped.taxes_known && scraped.annual_taxes != null && scraped.annual_taxes > 0
+      if (!hasUsableAnnualTaxes) missingFields.push('annual_taxes')
       if (!scraped.year_built_known) missingFields.push('year_built')
       if (listingType === 'for-rent' && rentMonthly === null) missingFields.push('rent_monthly')
       const scraperFailed = missingFields.length > 0
@@ -242,7 +249,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
         parkingSpots: scraped.parking_spaces ?? 0,
         condoFeeMonthly: scraped.condo_fee_monthly,
         condoFeeKnown: scraped.condo_fee_known,
-        annualTaxes: scraped.annual_taxes,
+        annualTaxes: hasUsableAnnualTaxes ? scraped.annual_taxes : null,
         description: scraped.listing_description,
         photos: scraped.photo_urls,
         scrapedAt: new Date().toISOString(),

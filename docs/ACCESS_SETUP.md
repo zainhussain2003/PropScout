@@ -229,14 +229,14 @@ reports.
 
 ## Quick reference — every credential the app reads
 
-| Variable                                           | Status             | Needed for                        |
-| -------------------------------------------------- | ------------------ | --------------------------------- |
-| `SUPABASE_URL` / `_ANON_KEY` / `_SERVICE_ROLE_KEY` | ✅ working         | Everything                        |
-| `ANTHROPIC_API_KEY`                                | ✅ working         | Haiku extraction, Sonnet verdicts |
-| `MAPBOX_TOKEN` / `VITE_MAPBOX_TOKEN`               | ✅ working         | Geocoding, maps                   |
-| `WALKSCORE_API_KEY`                                | ✅ working         | Walk + Transit score              |
-| `SCRAPER_API_KEY`                                  | ✅ working         | Realtor.ca listing scrape         |
-| `GOOGLE_PLACES_KEY`                                | 🔴 denies          | §3 above                          |
-| `STRIPE_*` (6 vars)                                | 🟡 empty / missing | §1 above                          |
-| Comparable-sales provider                          | 🔴 undecided       | §2 above                          |
-| `RESEND_API_KEY`                                   | ⚪ 401             | Local agent tooling only          |
+| Variable                                           | Status             | Needed for                            |
+| -------------------------------------------------- | ------------------ | ------------------------------------- |
+| `SUPABASE_URL` / `_ANON_KEY` / `_SERVICE_ROLE_KEY` | ✅ working         | Everything                            |
+| `ANTHROPIC_API_KEY`                                | ✅ working         | Haiku structured-flag extraction only |
+| `MAPBOX_TOKEN` / `VITE_MAPBOX_TOKEN`               | ✅ working         | Geocoding, maps                       |
+| `WALKSCORE_API_KEY`                                | ✅ working         | Walk + Transit score                  |
+| `SCRAPER_API_KEY`                                  | ✅ working         | Realtor.ca listing scrape             |
+| `GOOGLE_PLACES_KEY`                                | 🔴 denies          | §3 above                              |
+| `STRIPE_*` (6 vars)                                | 🟡 empty / missing | §1 above                              |
+| Comparable-sales provider                          | 🔴 undecided       | §2 above                              |
+| `RESEND_API_KEY`                                   | ⚪ 401             | Local agent tooling only              |

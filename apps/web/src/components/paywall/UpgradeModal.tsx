@@ -30,18 +30,18 @@ const FEATURE_COPY: Record<FeatureKey, FeatureCopy> = {
     sub: 'SunScout 3D models neighbouring buildings and shows you light by hour.',
   },
   verdict: {
-    headline: 'Read the full AI verdict.',
+    headline: 'Read the full verdict.',
     sub: 'The second paragraph is where Scout gets specific — comparable rents, flag explanations, negotiation leverage.',
   },
   generic: {
     headline: 'Unlock Investor Pro.',
-    sub: 'Full AI verdicts, PDF export, portfolio tracker, SunScout 3D — everything.',
+    sub: 'Full evidence-based verdicts, PDF export, portfolio tracker, SunScout 3D — everything.',
   },
 }
 
 const PRO_FEATURES = [
   'Unlimited analyses — all four report types',
-  'Full 3-paragraph AI verdicts with dollar gaps',
+  'Full evidence-based verdicts with supporting metrics',
   'Financing sliders · OSFI · 35% down · conservative',
   'SunScout with building obstruction (Mapbox 3D)',
   'Branded PDF export · shareable links',

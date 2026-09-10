@@ -117,6 +117,14 @@ class SunScoutOutput(BaseModel):
     ]  # 12 values, index 0 = Jan, index 11 = Dec (bedroom_main window)
     sun_score: float
     verdict: str
+    # ── Obstruction (spec §17 Phase 2) ────────────────────────────────────────
+    # None when surroundings were not assessed. False vs None matters: "we looked
+    # and nothing blocks it" is a different claim from "we did not look".
+    obstruction_assessed: bool = False
+    obstruction_openness: float | None = None
+    obstruction_buildings_used: int | None = None
+    obstruction_buildings_unknown: int | None = None
+    hours_lost_to_buildings: float | None = None
 
 
 class SunScoutRequest(BaseModel):
@@ -129,6 +137,16 @@ class SunScoutRequest(BaseModel):
         ge=0,
         le=360,
         description="Primary facade bearing in degrees; 180 = south (the pipeline default)",
+    )
+    floor: int | None = Field(
+        default=None,
+        ge=1,
+        le=100,
+        description=(
+            "Unit storey. Refines the building-obstruction estimate — a 30th-floor "
+            "unit clears most of what shades the ground floor. Omitted means ground "
+            "level, which understates sun for a high unit rather than overstating it."
+        ),
     )
 
 

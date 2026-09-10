@@ -3,7 +3,7 @@
  *
  * 12 sections rendered in order per spec Section 8:
  *   TenantPropertyHero  — photo grid + chips + address + sticky score / target card
- *   TenantVerdictHero   — full-bleed AI verdict block
+ *   TenantVerdictHero   — full-bleed deterministic verdict block
  *   §01  Rent positioning       — RentalCompsBar + metric tiles
  *   §02  Listing accuracy       — FlagDeepRow list
  *   §03  Listed vs Reality      — ListedVsRealitySection (hidden when zero flags)
@@ -38,6 +38,7 @@ import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { Metric } from '../components/analysis/Metric'
 import { AIVerdictBlock } from '../components/analysis/AIVerdictBlock'
 import { MiniMap } from '../components/analysis/MiniMap'
+import { ListingVisual } from '../components/analysis/ListingVisual'
 import { FlagDeepRow } from '../components/tenant/FlagDeepRow'
 import { ListedVsRealitySection } from '../components/tenant/ListedVsRealitySection'
 import { WhatsIncludedSection } from '../components/tenant/WhatsIncludedSection'
@@ -77,6 +78,7 @@ import {
   shimToTenantSpecRows,
   shimToTenantCostLines,
   shimToTenantAmenities,
+  shimToTenantChecklist,
   shimToTenantNegotiation,
   shimToListedVsReality,
 } from '../lib/reportShims'
@@ -96,6 +98,8 @@ interface TenantPropertyHeroProps {
   listing?: TenantListingData
   /** Pro PDF download handler (usePdfExport) — no-op on the demo route. */
   onPDF?: () => void
+  /** Subject coordinates — renders the real map when the listing has no photos. */
+  mapCenter?: { lat: number; lng: number } | null
 }
 
 function TenantPropertyHero({
@@ -103,6 +107,7 @@ function TenantPropertyHero({
   onBack,
   listing: listingProp,
   onPDF,
+  mapCenter = null,
 }: TenantPropertyHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const listing = listingProp ?? CHARLES_LISTING
@@ -182,69 +187,15 @@ function TenantPropertyHero({
       >
         {/* LEFT — photos + chips + address */}
         <div className="col" style={{ gap: 28 }}>
-          {/* Photo grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, height: 360 }}>
-            {/* Hero photo */}
-            <div
-              className={listing.photoUrls?.[0] ? undefined : 'photo-ph'}
-              style={{ borderRadius: 18, height: '100%', overflow: 'hidden' }}
-            >
-              {listing.photoUrls?.[0] ? (
-                <img
-                  src={listing.photoUrls[0]}
-                  alt={`Exterior of ${listing.addressLine1}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <span>unit · skyline view</span>
-              )}
-            </div>
-
-            {/* Thumbnail stack */}
-            <div className="col" style={{ gap: 8 }}>
-              {(['living', 'kitchen', 'bedroom'] as const).map((label, idx) => (
-                <div
-                  key={label}
-                  className={listing.photoUrls?.[idx + 1] ? undefined : 'photo-ph'}
-                  style={{
-                    borderRadius: 14,
-                    flex: 1,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {listing.photoUrls?.[idx + 1] ? (
-                    <img
-                      src={listing.photoUrls[idx + 1]}
-                      alt={label}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span>{label}</span>
-                  )}
-                  {idx === 2 && (
-                    <div
-                      className="mono"
-                      style={{
-                        position: 'absolute',
-                        right: 10,
-                        bottom: 10,
-                        fontSize: 10,
-                        letterSpacing: '0.1em',
-                        padding: '3px 8px',
-                        background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-                        borderRadius: 999,
-                        color: 'var(--ink)',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      + 18 more
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Photos when the listing has them, the property on a map when it
+              does not. The old grid rendered four grey frames and a hardcoded
+              "+ 18 more" badge even for a listing with zero photos. */}
+          <ListingVisual
+            photoUrls={listing.photoUrls}
+            address={`${listing.addressLine1}, ${listing.addressLine2}`}
+            center={mapCenter}
+            propertyType="unit"
+          />
 
           {/* Chips + address + quick facts */}
           <div className="col" style={{ gap: 18 }}>
@@ -299,8 +250,11 @@ function TenantPropertyHero({
           </div>
         </div>
 
-        {/* RIGHT — sticky score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
+        {/* RIGHT — sticky beside photos; static once the hero becomes one column. */}
+        <div
+          className="card col report-side-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        >
           {listing.scoreSuppressed ? (
             // The tenant score is currently the investment deal score, which
             // craters to a misleading "Hard pass" when there are no comparable
@@ -351,7 +305,6 @@ function TenantPropertyHero({
                   label="Tenant score / 100"
                   tone={listing.scoreTone}
                   verdictLabel={listing.verdictLabel}
-                  showVerdict
                   animate
                 />
               </div>
@@ -402,8 +355,10 @@ function TenantPropertyHero({
                 Asking
               </span>
               <span className="serif tabular" style={{ fontSize: 34, lineHeight: 1 }}>
-                {fmtCAD(listing.asking)}
-                <span style={{ fontSize: 14, color: 'var(--muted)' }}>/mo</span>
+                {listing.asking > 0 ? fmtCAD(listing.asking) : '—'}
+                <span style={{ fontSize: 14, color: 'var(--muted)' }}>
+                  {listing.asking > 0 ? '/mo' : ' · asking rent not provided'}
+                </span>
               </span>
             </div>
 
@@ -586,7 +541,7 @@ function ListingAccuracySection({ flags = CHARLES_FLAGS }: { flags?: TenantFlag[
       </div>
 
       <p style={{ marginTop: 24, fontSize: 13, color: 'var(--muted)', maxWidth: 720 }}>
-        Scanned with Scout AI · 100% of listing description checked against 7 rule patterns (fake
+        Structured listing scan · 100% of listing description checked against 7 rule patterns (fake
         bedrooms, basement units, parking ambiguity, utilities, pets, smoking, broker-style hedges).
         Override any flag from within the report.
       </p>
@@ -899,7 +854,7 @@ function UnitDetailsSection({
           <div className="col" style={{ gap: 2 }}>
             <span style={{ fontSize: 15, fontWeight: 500 }}>Show all unit and building specs</span>
             <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Floor, sqft, ceilings, windows, building stats, and more
+              Listing-supplied unit and building facts
             </span>
           </div>
           <span style={{ color: 'var(--muted)' }} aria-hidden="true">
@@ -1084,8 +1039,10 @@ function ConfirmChecklist({ items }: { items: TenantChecklistItem[] }): JSX.Elem
         </div>
 
         <div
+          className="tenant-checklist-actions"
           style={{
             display: 'flex',
+            flexWrap: 'wrap',
             gap: 12,
             marginTop: 22,
             paddingTop: 22,
@@ -1139,13 +1096,13 @@ function ConversionBlock(): JSX.Element {
             Wondering if you should <em>buy</em> instead of rent?
           </h3>
           <p style={{ fontSize: 15, color: 'var(--ink-2)' }}>
-            Run the same address as a personal purchase and we'll show you what the monthly carry
-            would actually be, what the unit is worth based on recent sales, and how schools and
-            walkability shake out.
+            A personal-buy report can compare ownership costs, schools, and walkability. Verified
+            Ontario comparable sales are still required before PropScout can state what this unit is
+            worth.
           </p>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-primary">
-              Open personal-buy report <Icon name="arrow" size={13} />
+            <button className="btn btn-primary" disabled>
+              Personal-buy comparison coming soon
             </button>
           </div>
         </div>
@@ -1184,29 +1141,8 @@ function ConversionBlock(): JSX.Element {
             Get notified if this rent <em style={{ color: 'var(--accent)' }}>drops</em>.
           </h3>
           <p style={{ fontSize: 15, color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
-            We'll watch this listing for 30 days and email you the moment the price changes or it
-            gets relisted. Free, no account needed.
+            Rent-drop alerts are not connected yet. No monitoring has started for this listing.
           </p>
-          <form style={{ display: 'flex', gap: 8 }} onSubmit={(e) => e.preventDefault()}>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              style={{
-                flex: 1,
-                padding: '12px 14px',
-                background: 'color-mix(in oklab, var(--bg) 8%, transparent)',
-                border: '1px solid color-mix(in oklab, var(--bg) 16%, transparent)',
-                borderRadius: 12,
-                color: 'var(--bg)',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                outline: 'none',
-              }}
-            />
-            <button className="btn btn-accent" style={{ padding: '12px 18px' }}>
-              Notify me
-            </button>
-          </form>
           <span
             className="mono"
             style={{
@@ -1216,7 +1152,7 @@ function ConversionBlock(): JSX.Element {
               color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
-            Unsubscribe anytime · no marketing
+            Coming soon
           </span>
         </div>
       </div>
@@ -1234,22 +1170,18 @@ function SectionPlaceholder({
   topic,
   question,
   note = DEFAULT_EMPTY_NOTE,
+  verdict = 'Not enough detail',
 }: {
   n: string
   topic: string
   question: JSX.Element
   /** User-facing explanation of why the section is empty (no dev/sprint copy). */
   note?: string
+  verdict?: string
 }): JSX.Element {
   return (
-    <section className="container tr-section">
-      <SectionHead
-        n={n}
-        topic={topic}
-        question={question}
-        verdict="Not enough detail"
-        tone="caution"
-      />
+    <section className="container tr-section" data-section={n}>
+      <SectionHead n={n} topic={topic} question={question} verdict={verdict} tone="caution" />
       <div className="card" style={{ padding: 32 }}>
         <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
           {note}
@@ -1327,9 +1259,10 @@ export function TenantReport({
         onBack={() => window.history.back()}
         listing={tenantListing}
         onPDF={pdf.exportPdf}
+        mapCenter={realAnalysis?.coordinates ?? null}
       />
 
-      {/* AI verdict */}
+      {/* Evidence-based verdict */}
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         {tier === 'free' ? (
           <TruncatedVerdict
@@ -1338,12 +1271,12 @@ export function TenantReport({
                 ? realAnalysis.narrative.split('. ')[0] + '.'
                 : TENANT_FIRST_PARA
             }
-            eyebrow="Scout AI · tenant verdict"
+            eyebrow="PropScout · tenant verdict"
             onUnlock={() => openUpgradeModal('verdict')}
           />
         ) : (
           <AIVerdictBlock
-            eyebrow="Scout AI · tenant verdict"
+            eyebrow="PropScout · tenant verdict"
             headline={
               realAnalysis?.narrative ? (
                 realAnalysis.narrative.split('. ')[0] + '.'
@@ -1438,8 +1371,12 @@ export function TenantReport({
                     marginTop: 16,
                   }}
                 >
-                  Based on {comps.compCount} comparable rental
-                  {comps.compCount !== 1 ? 's' : ''} · {comps.confidence} confidence
+                  {comps.compCount} recent asking-rent record
+                  {comps.compCount !== 1 ? 's' : ''} · Rentals.ca, Kijiji &amp; PadMapper ·{' '}
+                  {comps.radiusKm != null
+                    ? `within ${comps.radiusKm} km; postal-area comps unavailable`
+                    : 'same first-three postal area'}{' '}
+                  · {comps.confidence} confidence
                 </p>
               </div>
             </section>
@@ -1486,6 +1423,7 @@ export function TenantReport({
           <SectionPlaceholder
             n="02"
             topic="Listing accuracy"
+            verdict="No supported flags"
             question={
               <>
                 Is the listing <em>honest</em>?
@@ -1512,12 +1450,13 @@ export function TenantReport({
             <SectionPlaceholder
               n="03"
               topic="Listed vs reality"
+              verdict="Viewing required"
               question={
                 <>
                   Does the listing <em>match</em> the unit?
                 </>
               }
-              note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, the second bedroom's window, and what's actually included against what's advertised."
+              note="Comparing the listing's claims against the real unit needs a viewing — book one and check the room sizes, bedroom windows and doors, and what's actually included against what's advertised."
             />
           )
         })()
@@ -1547,6 +1486,7 @@ export function TenantReport({
           const strong = neg.targetHigh > 0 || realAnalysis!.riskFlags.length > 1
           return (
             <NegotiationSection
+              askingRent={realListing!.rentMonthly ?? 0}
               targetLow={neg.targetLow}
               targetHigh={neg.targetHigh}
               leverageFactors={neg.leverageFactors}
@@ -1559,6 +1499,7 @@ export function TenantReport({
         })()
       ) : (
         <NegotiationSection
+          askingRent={CHARLES_LISTING.asking}
           targetLow={CHARLES_LISTING.targetLow}
           targetHigh={CHARLES_LISTING.targetHigh}
           leverageFactors={CHARLES_LEVERAGE_FACTORS}
@@ -1624,8 +1565,8 @@ export function TenantReport({
           isReal
             ? (realAnalysis!.nearbyDistances ?? []).map((d) => ({
                 k: d.label,
-                v: d.distanceKm.toFixed(1),
-                unit: `km · ${d.driveMin} min drive`,
+                v: d.distanceKm < 0.05 ? '<0.1' : d.distanceKm.toFixed(1),
+                unit: 'km straight-line',
                 tone: (d.distanceKm <= 1.5 ? 'pass' : 'caution') as 'pass' | 'caution',
               }))
             : CHARLES_DISTANCES
@@ -1663,6 +1604,7 @@ export function TenantReport({
       {/* §09 SunScout — live data when present, demo fixture on the demo route */}
       <SunScoutPanel
         sunScout={realAnalysis ? (realAnalysis.sunScout ?? null) : CHARLES_SUNSCOUT}
+        token={realAnalysis?.token ?? null}
         sectionNumber="09"
         question={
           <>
@@ -1690,7 +1632,11 @@ export function TenantReport({
           <div className="card" style={{ padding: 32 }}>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
               Individual comparable rentals aren&apos;t mapped for this listing yet. The market rent
-              range in §01 is drawn from the nightly rental comps for this postal code.
+              range in §01 uses recent asking-rent records scraped nightly from Rentals.ca, Kijiji,
+              and PadMapper
+              {realAnalysis?.rentalComps?.radiusKm != null
+                ? ` within ${realAnalysis.rentalComps.radiusKm} km because this postal area had too few records.`
+                : ' in the same first-three-character postal area.'}
             </p>
           </div>
         </section>
@@ -1710,7 +1656,9 @@ export function TenantReport({
       )}
 
       {/* §12 Confirm before signing */}
-      <ConfirmChecklist items={CHARLES_CHECKLIST} />
+      <ConfirmChecklist
+        items={isReal ? shimToTenantChecklist(realListing!, realAnalysis!) : CHARLES_CHECKLIST}
+      />
 
       {/* Conversion block */}
       <ConversionBlock />

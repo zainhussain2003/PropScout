@@ -1,5 +1,5 @@
 /**
- * LandlordVerdictHero — dark AI verdict card for the Landlord report.
+ * LandlordVerdictHero — dark deterministic verdict card for the Landlord report.
  *
  * Full-bleed dark card with ScoutMark watermark. Headline calls out the
  * rent positioning gap and days on market. Body gives actionable drop
@@ -90,7 +90,7 @@ export function LandlordVerdictHero({
               textTransform: 'uppercase',
             }}
           >
-            Scout AI · landlord verdict
+            PropScout · landlord verdict
           </span>
           <span style={{ flex: 1 }} />
           <span
@@ -101,7 +101,7 @@ export function LandlordVerdictHero({
               color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
-            claude · sonnet 4.6
+            validated inputs
           </span>
         </div>
 

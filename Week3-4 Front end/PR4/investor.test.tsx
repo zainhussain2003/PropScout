@@ -249,10 +249,11 @@ describe('LTTTable', () => {
     expect(screen.getByText('Provincial + municipal')).toBeInTheDocument()
   })
 
-  it('Toronto total LTT is double the provincial for same price', () => {
+  it('Toronto total LTT uses the separate municipal bracket schedule', () => {
     const torontoLTT = computeLTT(729900, true)
-    expect(torontoLTT.total).toBe(torontoLTT.provincial * 2)
-    expect(torontoLTT.total).toBe(VAUGHAN_LTT.provincial * 2)
+    expect(torontoLTT.provincial).toBe(11073)
+    expect(torontoLTT.municipal).toBe(10323)
+    expect(torontoLTT.total).toBe(21396)
   })
 
   it('Hamilton $449,000 total LTT is computed correctly', () => {
@@ -481,6 +482,25 @@ describe('NeighbourhoodSection', () => {
     expect(screen.getByText('Unit 2802 · 5 Buttermill Ave')).toBeInTheDocument()
   })
 
+  it('does not present provider sample sales or missing appreciation as local evidence', () => {
+    render(
+      <NeighbourhoodSection
+        listing={VAUGHAN_LISTING}
+        neighbourhood={{
+          ...VAUGHAN_NEIGHBOURHOOD,
+          appreciation5y: 0,
+          appreciation10y: 0,
+        }}
+        compsAreSample
+      />
+    )
+    expect(screen.getByText('Provider sample sales.')).toBeInTheDocument()
+    expect(screen.getByText('3 provider sample sales')).toBeInTheDocument()
+    expect(screen.queryByText(/recorded local sales/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/No local appreciation series is connected/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Appreciation series from Teranet/i)).not.toBeInTheDocument()
+  })
+
   it('shows the 5-year appreciation in the dark card', () => {
     render(<NeighbourhoodSection listing={VAUGHAN_LISTING} neighbourhood={VAUGHAN_NEIGHBOURHOOD} />)
     // appreciation5y=0.276 → fmtPct(0.276, 1) = '27.6%' → displayed as '+27.6%'
@@ -543,9 +563,12 @@ describe('STRPlaceholderSection', () => {
     expect(screen.getByText(/Hamilton currently allows short-term rentals/i)).toBeInTheDocument()
   })
 
-  it('renders "Notify me when STR ships" button', () => {
+  it('does not promise STR figures or notifications before their sources exist', () => {
     render(<STRPlaceholderSection listing={VAUGHAN_LISTING} />)
-    expect(screen.getByRole('button', { name: /notify me when STR ships/i })).toBeInTheDocument()
+    expect(
+      screen.getByText(/No STR revenue figures are available until the AirDNA source is connected/i)
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /notify me/i })).not.toBeInTheDocument()
   })
 
   it('has no axe accessibility violations', async () => {

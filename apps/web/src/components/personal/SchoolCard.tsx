@@ -187,7 +187,7 @@ export function SchoolCard({ school }: SchoolCardProps): JSX.Element {
         style={{ justifyContent: 'space-between', fontSize: 12, color: 'var(--muted)' }}
       >
         <span>
-          {school.distance} · {school.driveTime} drive
+          {school.distance} · {school.driveTime ? `${school.driveTime} drive` : 'straight-line'}
         </span>
         {school.gradRate !== undefined ? (
           <span className="tabular">{Math.round(school.gradRate * 100)}% grad rate</span>

@@ -84,6 +84,48 @@ describe('POST /scrape', () => {
     expect(mockCreatePendingAnalysis).toHaveBeenCalledWith('mock-listing-id', expect.any(String))
   })
 
+  it('normalizes a Realtor.ca neighbourhood suffix to the municipality', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          ...ONTARIO_FIXTURE,
+          address: '706 - 1 Hillsdale Avenue W, Toronto (Yonge-Eglinton), Ontario M4S0E5',
+        },
+        200
+      )
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    const body = res.json() as { listing: { city: string } }
+    expect(body.listing.city).toBe('Toronto')
+  })
+
+  it('treats a published zero tax as unknown instead of a free carrying cost', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, annual_taxes: 0, taxes_known: true }, 200)
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+
+    const body = res.json() as {
+      listing: { annualTaxes: number | null }
+      scraperFailed: boolean
+      missingFields: string[]
+    }
+    expect(body.listing.annualTaxes).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('annual_taxes')
+  })
+
   it('Non-Ontario address → returns PROVINCE_NOT_SUPPORTED with province BC, saveListing never called', async () => {
     mockFetch.mockResolvedValueOnce(makeFetchResponse(BC_FIXTURE, 200))
 

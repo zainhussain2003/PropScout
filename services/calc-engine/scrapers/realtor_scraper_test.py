@@ -201,6 +201,11 @@ def test_detail_taxes_generic_label():
     assert out.annual_taxes == 2696 and out.taxes_known is True
 
 
+def test_detail_zero_tax_placeholder_left_unknown():
+    out = _parse_rendered_fields(_detail("Annual Property Taxes", "$0.00(CAD)"))
+    assert out.annual_taxes is None and out.taxes_known is False
+
+
 def test_detail_condo_fee_parsed():
     out = _parse_rendered_fields(_detail("Maintenance Fees", "$761.00 Monthly"))
     assert out.condo_fee_monthly == 761 and out.condo_fee_known is True

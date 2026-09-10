@@ -38,6 +38,7 @@ export const PB_PROPERTY: PersonalProperty = {
   priceChange: { abs: 0, direction: null },
 
   annualTaxes: 4280,
+  annualTaxesKnown: true,
   condoFeeMonthly: 0,
   utilityEstMonthly: { hydro: 145, gas: 110, water: 65, internet: 65 },
   insuranceMonthlyEst: 215,

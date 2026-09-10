@@ -1,6 +1,6 @@
 # PropScout — MVP Testing Guide
 
-Last updated: May 2026
+Last updated: September 2026
 Reference spec: `propscout_platform_spec.md`
 Build tasks: `MVP_TODO.md`
 
@@ -132,7 +132,7 @@ Expected outputs (verify each):
 
 - Monthly mortgage payment: ~$3,340
 - Total monthly expenses: ~$4,733
-- Monthly cash flow: approximately −$1,833
+- Monthly cash flow: approximately −$2,724
 - Annual cash flow: approximately −$21,996
 - NOI: approximately $18,082
 - Cap rate: approximately 2.5%
@@ -444,51 +444,45 @@ Note: aim for at least 10 examples of each flag type, including negative example
 
 ---
 
-## Week 6–7 — AI narratives and PDF
+## Week 6–7 — Verdict narratives and PDF
 
-### AI narratives
+### Deterministic verdict narratives
 
-**✋ Test 37 — Free tier narrative length**
+**✋ Test 37 — Free tier verdict summary**
 
 1. Run an analysis as a free tier user
-2. Verify the AI narrative section shows 1 paragraph only
-3. Count the words — should be between 60 and 120
-4. Verify there are no bullet points or numbered lists in the output
-5. Verify at least one dollar figure appears in the text
+2. Verify the verdict section shows the first deterministic decision sentence
+3. Verify any unknown evidence says why it is unavailable
+4. Verify no dollar figure appears unless it is present in the structured inputs
 
-**✋ Test 38 — Pro tier narrative length**
+**✋ Test 38 — Pro tier full verdict**
 
 1. Run an analysis as a Pro tier user (set tier manually in Supabase for testing)
-2. Verify the AI narrative shows the full narrative (2–3 paragraphs depending on report type)
-3. Count the words — should be between 150 and 320
-4. Same formatting checks: no bullets, no lists, at least one dollar figure
+2. Verify the full deterministic verdict is visible
+3. Repeat the same analysis and verify the verdict text matches exactly
+4. Verify changing only the subscription tier does not change the stored text
 
-**✋ Test 39 — Narrative quality check (manual)**
-This cannot be automated — you have to read it.
+**✋ Test 39 — Verdict quality check (manual)**
 
-Run the analysis on Unit 5702, 5 Buttermill Ave. Read the Pro tier narrative.
-Compare it against the gold-standard example in spec Section 12.
+Run the analysis on Unit 5702, 5 Buttermill Ave. Read the full verdict.
 
 Ask yourself:
 
-- Does it open with the single most important fact? (The condo fee)
-- Does it use specific dollar amounts, not just percentages?
-- Does it give a concrete next step in the final paragraph?
-- Is it written in second person ("you")?
-- Is it direct — does it say the deal is bad if the deal is bad?
+- Does it say hard pass for the known-good score of 8?
+- Does it state the negative monthly cash flow without softening it?
+- Does it avoid inventing a purchase price or negotiation target?
+- Does it identify missing evidence explicitly?
 
-Pass: all yes. Fail: any no — tune the prompt and re-run.
+Pass: all yes. Fail: any no — fix the deterministic branch and its test.
 
-**✋ Test 40 — Narrative fallback**
+**✋ Test 40 — Claude isolation**
 
-1. Temporarily break the Claude API key (set it to an invalid value)
-2. Run an analysis
-3. Verify the report still loads — the narrative section shows the fallback message
-4. Verify the rest of the report (scorecard, metrics, comps) is completely unaffected
-5. Restore the API key and verify narratives return to normal
+1. Mock the Anthropic client and run `generateNarrative` in every mode
+2. Verify the client is never called
+3. Verify listing-description extraction still uses Haiku only when that separate path runs
 
-**✋ Test 41 — All four narrative types**
-Run one analysis in each of the four report modes and verify a narrative generates successfully:
+**✋ Test 41 — All four verdict types**
+Run one analysis in each report mode and verify deterministic prose renders successfully:
 
 - Report A: investment purchase
 - Report B: personal purchase (check school summary appears in the narrative input)
@@ -546,7 +540,7 @@ Cannot be tested until Stripe is set up in Week 7–8. At that stage: log in as 
 3. Complete Stripe checkout using the test card: 4242 4242 4242 4242, any future date, any CVC
 4. Verify you are redirected back to PropScout
 5. Verify `tier` in Supabase `users` table has updated to `pro`
-6. Verify Pro features are now accessible (PDF button, full AI narrative)
+6. Verify Pro features are now accessible (PDF button, full written verdict)
 
 **✋ Test 49 — Stripe webhook (subscription cancelled)**
 
@@ -592,9 +586,9 @@ Use Unit 5702, 5 Buttermill Ave, Vaughan ($729,900 condo)
 2. Select Investment
 3. Verify scraper pulls correct data (price, taxes, condo fee, beds)
 4. Verify deal score is in the 5–15 range
-5. Verify cash flow is approximately −$1,833/mo
+5. Verify cash flow is approximately −$2,724/mo
 6. Verify condo fee flag fires (red)
-7. Verify AI narrative mentions the condo fee as the primary issue
+7. Verify the deterministic verdict mentions the condo fee as the primary issue
 8. Export PDF — verify all 8 pages render correctly
 9. Generate shareable link — verify it opens without login
    Total time from URL paste to report: should be under 30 seconds
@@ -606,7 +600,7 @@ Use a real detached house listing in Ontario (find one on Realtor.ca)
 2. Verify the monthly ownership cost section shows mortgage + taxes + insurance + maintenance
 3. Verify at least 3 schools appear with EQAO scores and Fraser rankings
 4. Verify SunScout section appears with a score
-5. Verify the AI narrative reads as a personal buyer verdict (not investment language)
+5. Verify the written verdict reads as a personal buyer verdict (not investment language)
 6. Export PDF — verify 6 pages
 
 **✋ Test 55 — Full Report C end-to-end**
@@ -618,7 +612,7 @@ Use Unit 3705, 5 Buttermill Ave, Vaughan ($2,150/mo rental listing)
 4. Verify rent positioning shows $2,150 as above building range
 5. Verify negotiation target appears (~$1,950–2,000)
 6. Verify SunScout light score appears
-7. Verify the AI narrative says do not sign at asking
+7. Verify the written verdict says do not sign at asking
 8. Verify the conversion prompt appears at the very bottom
 9. Verify the confirm-before-signing checklist is present with at least 2 items
 
@@ -664,7 +658,7 @@ Use any active rental listing on Kijiji or Rentals.ca in Ontario
 2. Verify you are prompted for the property value / purchase price
 3. Enter a realistic purchase price and verify the investment metrics calculate
 4. Verify rental comps appear alongside the listed rent
-5. Verify the AI narrative gives a landlord-focused verdict
+5. Verify the written verdict gives a landlord-focused verdict
 
 ### Property type coverage tests
 
@@ -720,8 +714,8 @@ Open propscout.ca on your phone browser (not a desktop browser with responsive m
 2. Verify the URL input bar is usable on mobile (no keyboard overlap issues)
 3. Verify the mode selection modal is tappable with a finger (buttons large enough)
 4. Verify the deal scorecard is readable without horizontal scrolling
-5. Verify the AI narrative section is readable
-6. Minimum acceptable: scorecard and AI narrative are clean. Everything else can be imperfect at MVP.
+5. Verify the written verdict section is readable
+6. Minimum acceptable: scorecard and written verdict are clean. Everything else can be imperfect at MVP.
 
 ### Performance tests
 
@@ -729,7 +723,7 @@ Open propscout.ca on your phone browser (not a desktop browser with responsive m
 
 1. Time a full analysis from URL paste to report rendered for a Toronto condo
 2. Target: under 30 seconds total
-3. If over 30 seconds, identify the bottleneck (scraper? comps query? AI narrative?)
+3. If over 30 seconds, identify the bottleneck (scraper? comps query? analysis assembly?)
 4. A rural property with few comps may take longer — verify it completes within 60 seconds
 
 **✋ Test 64 — Concurrent users (basic)**
@@ -775,9 +769,22 @@ Run these immediately before going live:
 
 **✋ Golden dataset final run**
 
-- [ ] Run the full extraction pipeline regression suite one final time
-- [ ] Confirm 95%+ accuracy before going live
-- [ ] Document the final accuracy score and date in this file
+- [x] Run the full extraction pipeline regression suite one final time
+- [x] Confirm 95%+ accuracy before going live
+- [x] 2026-09-07: 96-case development corpus passed 653/653 assertions; real full-description precision and recall both 48/48. This is not held-out accuracy.
+
+**🔗 Report truthfulness and score-card verification — 2026-09-07**
+
+- [x] Investor/landlord hero uses the backend 8 / hard-pass verdict and shows −$2,724/month before the weighted 25/25/20/15/10 component bars.
+- [x] Address-entry reports show a map and explicit no-photo caption; no photo frames or “+ N more” badge.
+- [x] Unknown build year uses the 1% middle maintenance assumption and labels why; address-entry parking renders as not provided.
+- [x] Cash to close counts the API closing-cost total once: $145,980 down + $13,473 including LTT = $159,453.
+- [x] Personal live report keeps the overall score paused until Ontario FMV exists, even when schools and SunScout are present.
+- [x] Tenant live report renders an em dash and reason when asking rent is absent.
+- [x] Verdict prose makes no Sonnet call; identical structured inputs return byte-for-byte identical text across repeated runs and subscription tiers.
+- [x] Full-circle score rings start at twelve o'clock and fill clockwise; verdict pills render outside the ring.
+- [x] Landing report previews use responsive HTML instead of cropped screenshots, and their chips remain in normal document flow.
+- [x] Report widths tested at 1280px and 375px; document width equals viewport width at 375px.
 
 ---
 
@@ -803,4 +810,4 @@ Every time Realtor.ca or Zillow.ca changes their page structure:
 
 ---
 
-_PropScout · Testing Guide · May 2026 · Update this file as new features are added_
+_PropScout · Testing Guide · September 2026 · Update this file as new features are added_

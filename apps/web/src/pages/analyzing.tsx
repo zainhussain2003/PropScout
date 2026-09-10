@@ -32,7 +32,7 @@ const STEPS = [
   'Detected building and neighbourhood data',
   'Scanning listing description for flags',
   'Running investment calculations',
-  'Generating Scout AI verdict',
+  'Building evidence-based verdict',
   'Assembling your report',
 ] as const
 

@@ -31,7 +31,7 @@ const VAUGHAN_PRICE = 729900
 const VAUGHAN_DOWN_PAYMENT = 145980 // price × 0.20
 const VAUGHAN_PRINCIPAL = 583920 // price × 0.80
 const VAUGHAN_LTT_PROVINCIAL = 11073 // computeLTT(729900, false).provincial
-const VAUGHAN_CLOSING_COSTS = 3000
+const VAUGHAN_CLOSING_COSTS = 2400
 
 /** Hamilton (146 East 19th St) — good deal calibration property */
 const HAMILTON_DOWN_PAYMENT = 89800 // 449000 × 0.20
@@ -114,7 +114,7 @@ export const mockVaughanAnalysis: Analysis = {
     amortizationYears: 25,
     mortgageRate: 0.0479,
     breakEvenRent: 4585,
-    closingCostsTotal: VAUGHAN_CLOSING_COSTS,
+    closingCostsTotal: VAUGHAN_CLOSING_COSTS + VAUGHAN_LTT_PROVINCIAL,
     lttProvincial: VAUGHAN_LTT_PROVINCIAL,
     lttMunicipal: 0,
     hasSanityWarnings: false,

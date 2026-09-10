@@ -6,7 +6,7 @@
  *
  * Sections:
  *   PropertyHero        — photo grid + home score gauge + asking / true monthly cost
- *   VerdictHero         — dark AI verdict card
+ *   VerdictHero         — dark deterministic verdict card
  *   §01  True monthly cost       → PBTrueCostSection
  *   §02  Fair market value       → PBFMVSection
  *   §03  Comparable sales        → PBSalesSection
@@ -45,6 +45,7 @@ import { SectionHead } from '../components/shared/SectionHead'
 import { Icon } from '../components/shared/Icon'
 import { Chip } from '../components/shared/Chip'
 import { ScoutMark } from '../components/shared/ScoutMark'
+import { ListingVisual } from '../components/analysis/ListingVisual'
 import { DealScore } from '../components/analysis/DealScore'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { PBTrueCostSection } from '../components/personal/PBTrueCostSection'
@@ -53,6 +54,7 @@ import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
 import { SchoolColumn } from '../components/personal/SchoolColumn'
 import { fmtMoney, fmtPct } from '../lib/investorCalc'
+import { toPersonalComps } from '../lib/comparableSales'
 import type {
   HomeScore,
   PersonalMonthlyCost,
@@ -69,52 +71,6 @@ const STATIC_LIGHT_SCORE = 76
 // ── Empty schools — used when isReal to give 0 pts without fixture data ────────
 const EMPTY_SCHOOLS: PersonalSchools = { elementary: [], middle: [], high: [] }
 
-// ── RealPhoto — img with fallback to placeholder on CDN hotlink block ──────────
-
-interface RealPhotoProps {
-  url: string
-  style: React.CSSProperties
-  extra?: string
-}
-
-function RealPhoto({ url, style, extra }: RealPhotoProps): JSX.Element {
-  const [failed, setFailed] = useState(false)
-
-  if (failed) {
-    return <div className="photo-ph" style={style} />
-  }
-
-  return (
-    <div style={{ ...style, position: 'relative', overflow: 'hidden', background: 'var(--line)' }}>
-      <img
-        src={url}
-        alt=""
-        onError={() => setFailed(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
-      {extra && (
-        <div
-          className="mono"
-          style={{
-            position: 'absolute',
-            right: 10,
-            bottom: 10,
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            padding: '3px 8px',
-            background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-            borderRadius: 999,
-            color: 'var(--ink)',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          {extra}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Personal property hero ────────────────────────────────────────────────────
 
 interface PersonalHeroProps {
@@ -122,6 +78,7 @@ interface PersonalHeroProps {
   score: HomeScore
   monthly: PersonalMonthlyCost
   photoUrls?: string[]
+  mapCenter?: { lat: number; lng: number } | null
   /** When true, the numeric Home score is hidden (inputs mostly placeholder). */
   scoreSuppressed?: boolean
 }
@@ -131,6 +88,7 @@ function PersonalPropertyHero({
   score,
   monthly,
   photoUrls,
+  mapCenter,
   scoreSuppressed = false,
 }: PersonalHeroProps): JSX.Element {
   const verdictColor =
@@ -182,70 +140,12 @@ function PersonalPropertyHero({
       >
         {/* LEFT — photos + chips + address + meta */}
         <div className="col" style={{ gap: 28 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, height: 360 }}>
-            {photoUrls && photoUrls.length > 0 ? (
-              <>
-                {/* Realtor.ca CDN may block hotlink requests from localhost.
-                    onError falls back to placeholder silently. */}
-                <RealPhoto url={photoUrls[0]} style={{ borderRadius: 18, height: '100%' }} />
-                <div className="col" style={{ gap: 8 }}>
-                  {[1, 2, 3].map((i) =>
-                    photoUrls[i] ? (
-                      <RealPhoto
-                        key={i}
-                        url={photoUrls[i]}
-                        style={{ borderRadius: 14, flex: 1 }}
-                        extra={
-                          i === 3 && photoUrls.length > 4
-                            ? `+ ${photoUrls.length - 4} more`
-                            : undefined
-                        }
-                      />
-                    ) : (
-                      <div key={i} className="photo-ph" style={{ borderRadius: 14, flex: 1 }} />
-                    )
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="photo-ph" style={{ borderRadius: 18, height: '100%' }}>
-                  <span>front · curb view</span>
-                </div>
-                <div className="col" style={{ gap: 8 }}>
-                  <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
-                    <span>living room</span>
-                  </div>
-                  <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
-                    <span>kitchen</span>
-                  </div>
-                  <div
-                    className="photo-ph"
-                    style={{ borderRadius: 14, flex: 1, position: 'relative' }}
-                  >
-                    <span>backyard</span>
-                    <div
-                      className="mono"
-                      style={{
-                        position: 'absolute',
-                        right: 10,
-                        bottom: 10,
-                        fontSize: 10,
-                        letterSpacing: '0.1em',
-                        padding: '3px 8px',
-                        background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-                        borderRadius: 999,
-                        color: 'var(--ink)',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      + 28 more
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <ListingVisual
+            photoUrls={photoUrls}
+            address={`${property.addressLine1}, ${property.addressLine2}`}
+            propertyType={property.propertyType}
+            center={mapCenter}
+          />
 
           <div className="col" style={{ gap: 18 }}>
             <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
@@ -297,8 +197,11 @@ function PersonalPropertyHero({
           </div>
         </div>
 
-        {/* RIGHT — sticky home-score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
+        {/* RIGHT — sticky beside photos; static once the hero becomes one column. */}
+        <div
+          className="card col report-side-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        >
           {scoreSuppressed ? (
             // Inputs are mostly placeholder (FMV pinned to asking, schools/light
             // pending) — an aggregate number would imply confidence we don't have.
@@ -324,10 +227,10 @@ function PersonalPropertyHero({
                 Overall score paused
               </div>
               <div className="serif" style={{ fontSize: 19, lineHeight: 1.25 }}>
-                Pricing &amp; schools data pending
+                — · Verified pricing data pending
               </div>
               <p style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 280 }}>
-                We don&apos;t yet have comparable-sales or school data for this address, so a single
+                We don&apos;t yet have a verified fair market value for this address, so a single
                 home score would overstate what we know. The sections below show what we can verify
                 — cost, location, and risk flags.
               </p>
@@ -448,37 +351,39 @@ function PersonalPropertyHero({
                 ['Lot value-add', score.components.lotPts, 15],
                 ['Risk', score.components.riskPts, 10],
               ] as [string, number, number][]
-            ).map(([lbl, v, max]) => (
-              <div key={lbl} className="col" style={{ gap: 4 }}>
-                <div className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
-                  <span style={{ color: 'var(--ink-2)' }}>{lbl}</span>
-                  <span className="mono tabular" style={{ color: 'var(--muted)' }}>
-                    {v} / {max}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    height: 3,
-                    borderRadius: 999,
-                    background: 'var(--line)',
-                  }}
-                >
+            )
+              .filter(([label]) => !scoreSuppressed || label === 'Risk')
+              .map(([lbl, v, max]) => (
+                <div key={lbl} className="col" style={{ gap: 4 }}>
+                  <div className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--ink-2)' }}>{lbl}</span>
+                    <span className="mono tabular" style={{ color: 'var(--muted)' }}>
+                      {v} / {max}
+                    </span>
+                  </div>
                   <div
                     style={{
-                      width: `${(v / max) * 100}%`,
-                      height: '100%',
+                      height: 3,
                       borderRadius: 999,
-                      background:
-                        v / max > 0.65
-                          ? 'var(--pass)'
-                          : v / max > 0.35
-                            ? 'var(--caution)'
-                            : 'var(--fail)',
+                      background: 'var(--line)',
                     }}
-                  />
+                  >
+                    <div
+                      style={{
+                        width: `${(v / max) * 100}%`,
+                        height: '100%',
+                        borderRadius: 999,
+                        background:
+                          v / max > 0.65
+                            ? 'var(--pass)'
+                            : v / max > 0.35
+                              ? 'var(--caution)'
+                              : 'var(--fail)',
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>
@@ -490,7 +395,7 @@ function PersonalPropertyHero({
 
 interface PersonalVerdictHeroProps {
   monthly: PersonalMonthlyCost
-  /** Real AI narrative — when provided replaces the demo verdict text. */
+  /** Real deterministic narrative — when provided replaces the demo verdict text. */
   narrative?: string | null
   /** Live report — provenance strip must only claim sources we have. */
   isReal?: boolean
@@ -521,7 +426,7 @@ function PersonalVerdictHero({
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         <TruncatedVerdict
           firstParagraph={narrative ? narrative.split('. ')[0] + '.' : PB_FIRST_PARA}
-          eyebrow="Scout AI · home buyer verdict"
+          eyebrow="PropScout · home buyer verdict"
           onUnlock={() => openUpgradeModal('verdict')}
         />
       </section>
@@ -573,7 +478,7 @@ function PersonalVerdictHero({
               textTransform: 'uppercase',
             }}
           >
-            Scout AI · home buyer verdict
+            PropScout · home buyer verdict
           </span>
           <span style={{ flex: 1 }} />
           <span
@@ -584,7 +489,7 @@ function PersonalVerdictHero({
               color: 'color-mix(in oklab, var(--bg) 40%, transparent)',
             }}
           >
-            claude · sonnet 4.6
+            validated inputs
           </span>
         </div>
 
@@ -797,14 +702,14 @@ function SchoolsSection({ isReal, realSchools, catchmentNote }: SchoolsSectionPr
           >
             {isReal ? (
               <>
-                EQAO scores (out of 10) are from the Ontario Education Quality and Accountability
+                EQAO scores (out of 100) are from the Ontario Education Quality and Accountability
                 Office; Fraser percentile from the Fraser Institute school report card.{' '}
                 {catchmentNote ??
                   'Nearest schools by straight-line distance — attendance boundaries are not verified.'}
               </>
             ) : (
               <>
-                EQAO scores (out of 10) are 2024 results from the Ontario Education Quality and
+                EQAO scores (out of 100) are 2024 results from the Ontario Education Quality and
                 Accountability Office. Fraser percentile is from the Fraser Institute&apos;s 2025
                 school report card. Catchment boundaries pulled live from board GIS data.{' '}
                 <span style={{ color: 'var(--accent)' }}>Highlighted</span> = this property is
@@ -973,6 +878,7 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
 
       {/* Demographic + appreciation strip */}
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -985,22 +891,22 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
             [
               'Median household income',
               neigh.avgIncome > 0 ? fmtMoney(neigh.avgIncome) : '—',
-              'StatsCan 2021',
+              neigh.avgIncome > 0 ? 'StatsCan 2021' : 'No StatsCan result',
             ],
             [
               '5-year population growth',
               neigh.popGrowth5y !== 0 ? fmtPct(neigh.popGrowth5y, 1) : '—',
-              'StatsCan',
+              neigh.popGrowth5y !== 0 ? 'StatsCan' : 'No StatsCan result',
             ],
             [
               'Price per sqft trend',
               neigh.ppsqftTrend !== 'N/A' ? neigh.ppsqftTrend : '—',
-              'last 12 months',
+              neigh.ppsqftTrend !== 'N/A' ? 'last 12 months' : 'No source connected',
             ],
             [
               '5-year price appreciation',
               neigh.appreciation5y !== 0 ? '+' + fmtPct(neigh.appreciation5y, 1) : '—',
-              'Teranet HPI',
+              neigh.appreciation5y !== 0 ? 'Teranet HPI' : 'No source connected',
             ],
           ] as [string, string, string][]
         ).map(([k, v, sub]) => (
@@ -1351,7 +1257,7 @@ function ChecklistSection(): JSX.Element {
   return (
     <section className="container tr-section">
       <SectionHead
-        n="09"
+        n="08"
         topic="Before you bid"
         question={
           <>
@@ -1423,7 +1329,7 @@ function ChecklistSection(): JSX.Element {
         </div>
 
         <div
-          className="row gap-12"
+          className="row gap-12 mobile-action-row"
           style={{
             marginTop: 22,
             paddingTop: 22,
@@ -1441,9 +1347,9 @@ function ChecklistSection(): JSX.Element {
               <Icon name="doc" size={13} /> Export checklist as PDF
             </button>
           )}
-          <button className="btn btn-ghost">
-            <Icon name="link" size={13} /> Email to my agent
-          </button>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+            Agent email delivery is not connected yet.
+          </span>
         </div>
       </div>
     </section>
@@ -1491,12 +1397,13 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
             What if you ever <em>rented it out</em>?
           </h3>
           <p style={{ fontSize: 15, color: 'var(--ink-2)' }}>
-            Re-run this same listing as an investment and we'll show you the cap rate, the cash
-            flow, the OSFI position, and the 20-year equity build. Free with your account.
+            Return to the analyzer and choose Investment to calculate cap rate, cash flow, the OSFI
+            position, and the 20-year equity build for this listing.
           </p>
-          <div className="row gap-12">
-            <button className="btn btn-primary">
-              Open investment report <Icon name="arrow" size={13} />
+          <div className="row gap-12 mobile-action-row">
+            <button className="btn btn-primary" onClick={() => window.location.assign('/')}>
+              <span>Analyze as an investment</span>
+              <Icon name="arrow" size={13} />
             </button>
           </div>
         </div>
@@ -1536,24 +1443,14 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
             Want a <em style={{ color: 'var(--accent)' }}>second opinion</em> from a local agent?
           </h3>
           <p style={{ fontSize: 15, color: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
-            We'll send this report to a verified {city} agent who knows the area. No obligation —
-            they reach out only if you reply.
+            {`PropScout does not have a verified ${city} agent-referral service connected yet. Share the report link directly with an agent you trust.`}
           </p>
-          <div className="row gap-12">
-            <button className="btn btn-accent">
-              Send to an agent <Icon name="arrow" size={13} />
-            </button>
-            <button
-              className="btn"
-              style={{
-                background: 'transparent',
-                color: 'var(--bg)',
-                border: '1px solid color-mix(in oklab, var(--bg) 25%, transparent)',
-              }}
-            >
-              How this works
-            </button>
-          </div>
+          <span
+            className="mono"
+            style={{ fontSize: 11, color: 'color-mix(in oklab, var(--bg) 55%, transparent)' }}
+          >
+            Agent referrals unavailable
+          </span>
         </div>
       </div>
     </section>
@@ -1608,8 +1505,8 @@ export function PersonalBuyerPage({
 
   // Real schools from the schools table (null until the EQAO/Fraser CSV is
   // loaded). When present they feed both the §04 section and the HomeScore
-  // schools component — and they are the documented re-enable trigger for the
-  // numeric gauge ("FMV or schools has a real source"). Light is REAL when the
+  // schools component. The live aggregate stays paused until verified FMV is
+  // available too; schools alone cannot validate pricing. Light is REAL when the
   // analysis carries pvlib sun output; otherwise 0 (honest floor), never a fixture.
   const realSchools = isReal && realAnalysis!.schools ? realAnalysis!.schools : null
   const personalSchools = useMemo(
@@ -1623,6 +1520,14 @@ export function PersonalBuyerPage({
   // gauge is suppressed while isReal, but the risk breakdown bar stays visible —
   // a red flag must read as a real deduction, not the no-flags baseline.
   const flagsForScore = isReal ? realAnalysis!.riskFlags : undefined
+
+  // §03 Comparable sales. Fixtures are demo-only; a live report renders the
+  // sales the analysis actually returned, or the honest empty state when the
+  // provider has no coverage for this area.
+  const liveComps = useMemo(
+    () => (isReal ? toPersonalComps(realAnalysis!.comparableSales ?? []) : []),
+    [isReal, realAnalysis]
+  )
 
   const score = useMemo(
     () => computeHomeScore(property, schoolsForScore, neighbourhood, lightScore, flagsForScore),
@@ -1658,7 +1563,8 @@ export function PersonalBuyerPage({
         property={property}
         score={score}
         monthly={monthly}
-        scoreSuppressed={isReal && personalSchools == null}
+        scoreSuppressed={isReal}
+        mapCenter={realAnalysis?.coordinates}
         photoUrls={
           isReal ? (realListing!.photos.length > 0 ? realListing!.photos : undefined) : undefined
         }
@@ -1694,7 +1600,12 @@ export function PersonalBuyerPage({
         medianPPSqft={isReal ? undefined : 538}
         isEstimated={isReal}
       />
-      <PBSalesSection comps={PB_COMPS} isSampleData={isReal} />
+      <PBSalesSection
+        comps={PB_COMPS}
+        isSampleData={isReal}
+        liveComps={liveComps}
+        liveCompsAreSample={realAnalysis?.comparableSalesAreSample ?? false}
+      />
       <SchoolsSection
         isReal={isReal}
         realSchools={personalSchools}

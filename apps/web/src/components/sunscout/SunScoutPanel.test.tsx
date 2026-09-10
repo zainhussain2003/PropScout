@@ -79,4 +79,23 @@ describe('SunScoutPanel — facade direction input', () => {
     })
     expect(screen.getByText(/Excellent · 85\/100/i)).toBeInTheDocument()
   })
+
+  it('does not call a low-openness skyline effectively open when direct-sun loss rounds to zero', () => {
+    render(
+      <SunScoutPanel
+        sunScout={{
+          ...SOUTH,
+          obstructionAssessed: true,
+          obstructionOpenness: 0.14,
+          obstructionBuildingsUsed: 17,
+          obstructionBuildingsUnknown: 13,
+          hoursLostToBuildings: 0,
+        }}
+      />
+    )
+
+    expect(screen.getByText(/14% of the sky dome open/i)).toBeInTheDocument()
+    expect(screen.queryByText(/effectively open/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/calculated shade is a floor, not a ceiling/i)).toBeInTheDocument()
+  })
 })

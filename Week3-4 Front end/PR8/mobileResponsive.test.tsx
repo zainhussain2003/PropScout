@@ -26,6 +26,8 @@ import { InvestorReport } from '../../apps/web/src/pages/InvestorReport'
 import { TenantReport } from '../../apps/web/src/pages/TenantReport'
 import { PersonalBuyerPage } from '../../apps/web/src/pages/PersonalBuyerPage'
 import { LandlordPage } from '../../apps/web/src/pages/LandlordPage'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 // ── Viewport helper ───────────────────────────────────────────────────────────
 
@@ -55,7 +57,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(1280)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -67,7 +69,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -79,7 +81,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -95,7 +97,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -108,7 +110,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="This property fails on multiple fundamentals."
       />
@@ -125,7 +127,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     setViewportWidth(375)
     const { rerender } = render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="First headline"
         sub="First sub paragraph."
       />
@@ -137,7 +139,7 @@ describe('AIVerdictBlock — mobile collapse', () => {
     // Change headline — expanded state must reset
     rerender(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Different headline"
         sub="Different sub paragraph."
       />
@@ -201,7 +203,7 @@ describe('ModeModal — bottom-sheet at mobile', () => {
 // ── Mobile layout classes on report pages ─────────────────────────────────────
 
 describe('Mobile layout classes on report pages', () => {
-  it('TenantReport: hero-score-first class present in DOM', () => {
+  it('TenantReport: collapsed hero score carries the responsive static-position hook', () => {
     setViewportWidth(375)
     const { container } = render(
       <MemoryRouter>
@@ -209,9 +211,10 @@ describe('Mobile layout classes on report pages', () => {
       </MemoryRouter>
     )
     expect(container.querySelector('.hero-score-first')).toBeInTheDocument()
+    expect(container.querySelector('.hero-score-first > .report-side-score')).toBeInTheDocument()
   })
 
-  it('PersonalBuyerPage: hero-score-first class present in DOM', () => {
+  it('PersonalBuyerPage: collapsed hero score carries the responsive static-position hook', () => {
     setViewportWidth(375)
     const { container } = render(
       <MemoryRouter>
@@ -219,6 +222,33 @@ describe('Mobile layout classes on report pages', () => {
       </MemoryRouter>
     )
     expect(container.querySelector('.hero-score-first')).toBeInTheDocument()
+    expect(container.querySelector('.hero-score-first > .report-side-score')).toBeInTheDocument()
+  })
+
+  it('LandlordPage: side score carries the responsive static-position hook', () => {
+    setViewportWidth(375)
+    const { container } = render(
+      <MemoryRouter>
+        <LandlordPage tier="free" />
+      </MemoryRouter>
+    )
+    expect(container.querySelector('.grid-1col-mobile > .report-side-score')).toBeInTheDocument()
+  })
+
+  it('the one-column breakpoint overrides inline sticky positioning and its top offset', () => {
+    const css = readFileSync(resolve(__dirname, '../../apps/web/src/styles/global.css'), 'utf8')
+    const mobileBlock = css.match(
+      /@media \(max-width: 900px\) \{[\s\S]*?\.grid-1col-mobile > \.report-side-score \{([\s\S]*?)\}/
+    )
+    expect(mobileBlock?.[1]).toMatch(/position:\s*static\s*!important/)
+    expect(mobileBlock?.[1]).toMatch(/top:\s*auto\s*!important/)
+  })
+
+  it('collapses the tenant schools grid before its three columns overflow phones', () => {
+    const css = readFileSync(resolve(__dirname, '../../apps/web/src/styles/global.css'), 'utf8')
+    expect(css).toMatch(
+      /@media \(max-width: 640px\) \{[\s\S]*?\.tenant-schools-grid \{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)\s*!important/
+    )
   })
 
   it('InvestorReport: report-page-mobile-padding class on outermost wrapper', () => {

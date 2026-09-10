@@ -17,7 +17,20 @@ interface PBTrueCostSectionProps {
   monthly: PersonalMonthlyCost
 }
 
-function maintenanceNote(yearBuilt: number): string {
+/**
+ * Describe the maintenance reserve rate and the build era it came from.
+ *
+ * `yearBuilt` is 0 when the listing did not state one — address-entered
+ * listings never do. That used to fall through to the last branch and print
+ * "pre-1980 build", asserting an age we do not know about a building that may
+ * be brand new. The 1.5% rate is kept for the unknown case because it is the
+ * conservative choice, but the note says why rather than inventing an era.
+ *
+ * @param yearBuilt - year of construction, or 0 when unknown
+ * @returns the reserve rate with the reason for it
+ */
+export function maintenanceNote(yearBuilt: number): string {
+  if (yearBuilt <= 0) return '1.5% of value / yr · build year unknown'
   if (yearBuilt >= 2010) return '0.5% of value / yr · 2010+ build'
   if (yearBuilt >= 1980) return '1.0% of value / yr · 1980-era build'
   return '1.5% of value / yr · pre-1980 build'
@@ -46,7 +59,10 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
     {
       k: 'Property tax',
       v: monthly.tax,
-      note: `${fmtMoney(property.annualTaxes)}/yr`,
+      note:
+        property.annualTaxes > 0
+          ? `${fmtMoney(property.annualTaxes)}/yr · ${property.annualTaxesKnown === false ? 'city-rate estimate; verify' : 'as listed'}`
+          : '— · not available',
     },
     {
       k: 'Condo fee',
@@ -56,15 +72,15 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
     {
       k: 'Insurance',
       v: monthly.insurance,
-      note: 'detached / semi estimate',
+      note: '0.35% of value · confirm quote',
     },
   ]
 
   const utilitiesSubRows: CostLine[] = [
-    { k: 'Hydro', v: monthly.utilities.hydro, note: '11¢/kWh · avg consumption', indent: true },
-    { k: 'Gas', v: monthly.utilities.gas, note: 'forced-air heating', indent: true },
-    { k: 'Water', v: monthly.utilities.water, note: 'metered · municipal', indent: true },
-    { k: 'Internet', v: monthly.utilities.internet, note: '1 Gbps · Rogers / Bell', indent: true },
+    { k: 'Hydro', v: monthly.utilities.hydro, note: 'size-based estimate · confirm', indent: true },
+    { k: 'Gas', v: monthly.utilities.gas, note: 'size-based estimate · confirm', indent: true },
+    { k: 'Water', v: monthly.utilities.water, note: 'estimate · confirm', indent: true },
+    { k: 'Internet', v: monthly.utilities.internet, note: 'estimate · confirm', indent: true },
   ]
 
   const bottomLines: CostLine[] = [
@@ -100,6 +116,7 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
       />
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.3fr 1fr',

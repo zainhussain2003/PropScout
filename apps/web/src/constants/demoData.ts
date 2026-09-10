@@ -203,14 +203,14 @@ export const VAUGHAN_STABLE_METRICS = {
   noi: 10730,
   capRate: 0.0147,
   grm: 20.97,
-  closingCostsTotal: 3000,
+  closingCostsTotal: 2400,
 } as const
 
 export const HAMILTON_STABLE_METRICS = {
   noi: 25144,
   capRate: 0.056,
   grm: 10.4,
-  closingCostsTotal: 3000,
+  closingCostsTotal: 2400,
 } as const
 
 export const VAUGHAN_DEAL_SCORE: DealScore = {

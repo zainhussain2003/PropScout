@@ -22,6 +22,7 @@ import type {
   TenantCostLine,
   TenantAmenity,
   TenantLeverageRow,
+  TenantChecklistItem,
   SchoolBoard,
   SchoolQuality,
 } from '../types/analysis'
@@ -141,15 +142,18 @@ function buildPersonalChips(listing: Listing): string[] {
  * @param _analysis - reserved for when dealScore or riskFlags feed
  *   into the personal report score (Week 4-5). Unused for MVP.
  */
-export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): PersonalProperty {
+export function shimToPersonalProperty(listing: Listing, analysis: Analysis): PersonalProperty {
   const { line1 } = parseAddress(listing.address)
   const price = listing.price ?? 0
   const sqft = listing.sqft ?? 0
+  const listedAnnualTaxes =
+    listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
+  const effectiveAnnualTaxes = listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0
 
   const parking =
     listing.parkingSpots > 0
       ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
-      : 'None'
+      : '— parking · not provided'
 
   // Sqft-scaled utility estimates — more accurate than flat rates for varied property sizes
   const sqftBasis = sqft > 0 ? sqft : PROPERTY_COST_ESTIMATES.SQFT_FALLBACK
@@ -172,7 +176,8 @@ export function shimToPersonalProperty(listing: Listing, _analysis: Analysis): P
     price,
     daysOnMarket: 0, // not scraped — "Listed N days ago" strip hidden when 0
     priceChange: { abs: 0, direction: null },
-    annualTaxes: listing.annualTaxes ?? 0,
+    annualTaxes: effectiveAnnualTaxes,
+    annualTaxesKnown: listedAnnualTaxes != null,
     condoFeeMonthly: listing.condoFeeMonthly ?? 0,
     utilityEstMonthly: {
       hydro,
@@ -242,6 +247,8 @@ export function shimToPersonalNeighbourhood(analysis: Analysis): PersonalNeighbo
  */
 export function shimToListingData(listing: Listing, analysis: Analysis): ListingData {
   const { line1, line2 } = parseAddress(listing.address)
+  const listedAnnualTaxes =
+    listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
 
   return {
     id: listing.id,
@@ -257,11 +264,12 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
     parking:
       listing.parkingSpots > 0
         ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
-        : 'None',
+        : '— parking · not provided',
     yearBuilt: listing.yearBuilt ?? 0,
     rentControl: true, // conservative Ontario default
     price: listing.price ?? 0,
-    annualTaxes: listing.annualTaxes ?? 0,
+    annualTaxes: listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0,
+    annualTaxesKnown: listedAnnualTaxes != null,
     condoFeeMonthly: listing.condoFeeMonthly ?? 0,
     rentEstimate: analysis.rentalComps?.mid ?? 0,
     rentLow: analysis.rentalComps?.low ?? 0,
@@ -341,7 +349,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     verdictLabel = ts.verdictLabel
   }
   const targetHigh = comps?.mid ?? 0
-  const targetLow = comps ? Math.round(comps.low * 0.97) : 0
+  const targetLow = comps?.low ?? 0
 
   return {
     id: listing.id,
@@ -382,6 +390,20 @@ function tenantUtilityEstimates(listing: Listing): {
     gas: Math.round(sqftBasis * PROPERTY_COST_ESTIMATES.GAS_PER_SQFT),
     water: PROPERTY_COST_ESTIMATES.WATER_MONTHLY,
     internet: PROPERTY_COST_ESTIMATES.INTERNET_MONTHLY,
+  }
+}
+
+/** Strict, deterministic claims from the listing prose. These only accept
+ * explicit "included" wording; a mere mention of parking or a locker is not
+ * enough to turn an unknown lease term into a confirmed amenity. */
+function tenantIncludedClaims(listing: Listing): { parking: boolean; locker: boolean } {
+  const description = listing.description ?? ''
+  return {
+    parking: /\b(?:includes?\s+parking|parking\s+(?:is\s+)?included)\b/i.test(description),
+    locker:
+      /\b(?:includes?(?:\s+parking)?\s+(?:and\s+)?locker|locker\s+(?:is\s+)?included)\b/i.test(
+        description
+      ),
   }
 }
 
@@ -431,8 +453,9 @@ export function shimToTenantSpecRows(listing: Listing): {
 export function shimToTenantCostLines(listing: Listing, analysis: Analysis): TenantCostLine[] {
   const rent = listing.rentMonthly ?? 0
   const comps = analysis.rentalComps
-  const rentTarget = comps ? Math.round(comps.low * 0.97) : rent
+  const rentTarget = comps?.low ?? rent
   const u = tenantUtilityEstimates(listing)
+  const included = tenantIncludedClaims(listing)
   return [
     { k: 'Rent', asking: rent, target: rentTarget, included: false },
     {
@@ -468,8 +491,10 @@ export function shimToTenantCostLines(listing: Listing, analysis: Analysis): Ten
           k: 'Parking',
           asking: 0,
           target: 0,
-          included: true,
-          note: `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''} — confirm if extra`,
+          included: included.parking ? true : 'maybe',
+          note: included.parking
+            ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''} — listing says included`
+            : `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''} — confirm if extra`,
         }
       : { k: 'Parking', asking: 0, target: 0, included: 'maybe', note: 'not listed — confirm' },
   ]
@@ -482,13 +507,14 @@ export function shimToTenantCostLines(listing: Listing, analysis: Analysis): Ten
  */
 export function shimToTenantAmenities(listing: Listing): TenantAmenity[] {
   const u = tenantUtilityEstimates(listing)
-  return [
+  const included = tenantIncludedClaims(listing)
+  const amenities: TenantAmenity[] = [
     {
       label: 'Parking',
-      status: listing.parkingSpots > 0 ? 'incl' : 'unclear',
+      status: included.parking ? 'incl' : 'unclear',
       note:
         listing.parkingSpots > 0
-          ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''}`
+          ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''}${included.parking ? ' · listing says included' : ''}`
           : 'not listed — confirm',
     },
     { label: 'Heat / gas', status: 'unclear', note: 'confirm with landlord' },
@@ -498,6 +524,10 @@ export function shimToTenantAmenities(listing: Listing): TenantAmenity[] {
     { label: 'Air conditioning', status: 'unclear', note: 'central vs wall unit — confirm' },
     { label: 'Laundry', status: 'unclear', note: 'in-unit vs shared — confirm' },
   ]
+  if (included.locker) {
+    amenities.splice(1, 0, { label: 'Locker', status: 'incl', note: 'listing says included' })
+  }
+  return amenities
 }
 
 /**
@@ -521,7 +551,7 @@ export function shimToTenantNegotiation(
   const asking = listing.rentMonthly ?? 0
   const comps = analysis.rentalComps
   const targetHigh = comps?.mid ?? 0
-  const targetLow = comps ? Math.round(comps.low * 0.97) : 0
+  const targetLow = comps?.low ?? 0
   const flags = analysis.riskFlags ?? []
 
   const leverageFactors: TenantLeverageRow[] = []
@@ -576,6 +606,51 @@ export function shimToTenantNegotiation(
 }
 
 /**
+ * Build a viewing checklist from fields the live listing actually contains.
+ * Bedroom-specific wording appears only when the extractor found a bedroom
+ * caveat; the report must never imply that an ordinary one-bedroom has a
+ * second room. The remaining questions cover lease facts the scrape cannot
+ * prove and therefore need written confirmation.
+ */
+export function shimToTenantChecklist(listing: Listing, analysis: Analysis): TenantChecklistItem[] {
+  const bedroomFlagIds = new Set(['unverified_bedroom', 'glass_door_bedroom', 'no_exterior_window'])
+  const hasBedroomCaveat = analysis.riskFlags.some((flag) => bedroomFlagIds.has(flag.id))
+  const included = tenantIncludedClaims(listing)
+
+  const items: TenantChecklistItem[] = []
+  if (hasBedroomCaveat) {
+    items.push({
+      label: 'Does every advertised bedroom have an exterior window and a solid door?',
+      critical: true,
+    })
+  }
+
+  items.push(
+    {
+      label: included.parking
+        ? `Are the parking stall${included.locker ? ' and locker' : ''} identifiers written into the lease?`
+        : listing.parkingSpots > 0
+          ? `Is the listed parking space${listing.parkingSpots === 1 ? '' : 's'} included in the monthly rent?`
+          : 'Is parking available, and what would it cost each month?',
+      critical: true,
+    },
+    {
+      label: 'Which utilities are included, and what are the typical monthly costs?',
+      critical: true,
+    },
+    { label: 'Is laundry in-unit, shared, or coin-operated?', critical: false },
+    { label: 'Are there pet restrictions in the lease or condominium rules?', critical: false },
+    { label: 'What is the initial lease term, and what happens after it ends?', critical: true },
+    {
+      label: 'Will every agreed repair and included item be written into the lease?',
+      critical: true,
+    }
+  )
+
+  return items
+}
+
+/**
  * Maps a real Listing + Analysis to the LandlordProperty shape used by
  * LandlordPage and its sub-components.
  *
@@ -588,7 +663,7 @@ export function shimToLandlordProperty(listing: Listing, analysis: Analysis): La
   const parking =
     listing.parkingSpots > 0
       ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
-      : 'None'
+      : '— parking · not provided'
 
   return {
     id: listing.id,
@@ -641,8 +716,6 @@ export function shimToLandlordProperty(listing: Listing, analysis: Analysis): La
 
 /** 12 min per km — average walking pace used for the tenant walk estimate. */
 const WALK_MIN_PER_KM = 12
-/** ~2 min per km city driving — used for the personal drive-time estimate. */
-const DRIVE_MIN_PER_KM = 2
 
 function classifyBoard(board: string | null): SchoolBoard {
   const b = (board ?? '').toLowerCase()
@@ -671,7 +744,9 @@ function toPersonalSchool(school: NearbySchool): PersonalSchool {
     name: school.name,
     board: school.board ?? '—',
     distance: `${school.distanceKm.toFixed(1)} km`,
-    driveTime: `${Math.max(1, Math.round(school.distanceKm * DRIVE_MIN_PER_KM))} min`,
+    // The schools table stores straight-line distance only. Do not turn that
+    // into a precise drive time without a routing source.
+    driveTime: undefined,
     // Keep null when EQAO hasn't loaded for this school (French boards, alternative
     // schools, tiny cohorts) so the card shows "No EQAO score" rather than a red 0.
     eqao: school.eqaoScore,
@@ -703,7 +778,7 @@ function toTenantSchool(school: NearbySchool): TenantSchool {
     grades: '—',
     eqao: school.eqaoScore,
     distance: `${school.distanceKm.toFixed(1)} km`,
-    walk: `${Math.max(1, Math.round(school.distanceKm * WALK_MIN_PER_KM))} min`,
+    walk: `~${Math.max(1, Math.round(school.distanceKm * WALK_MIN_PER_KM))} min walk`,
     quality: qualityFor(school),
     // Attendance boundaries are NOT ingested — never claim catchment.
     inCatchment: false,

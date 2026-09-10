@@ -27,6 +27,7 @@ import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
+import { ReportSectionRail } from '../components/shared/ReportSectionRail'
 import { Icon } from '../components/shared/Icon'
 import { SectionHead } from '../components/shared/SectionHead'
 import { PropertyHero } from '../components/analysis/PropertyHero'
@@ -85,12 +86,12 @@ function buildChips(listing: Listing): string[] {
 function toListingData(listing: Listing, analysis: Analysis): ListingData {
   const [addressLine1, addressLine2] = splitAddress(listing.address, listing.city, listing.province)
   const price = listing.price ?? 0
-  const annualTaxes = listing.annualTaxes ?? 0
+  const listedAnnualTaxes =
+    listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
+  const annualTaxes = listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0
   const condoFeeMonthly = listing.condoFeeMonthly ?? 0
-  // Internal fallback only (maintenance-rate display buckets); the hero hides
-  // the "Built" fact when the listing didn't carry a year (a fabricated
-  // "Built 2016" rendered live 2026-07-02).
-  const yearBuilt = listing.yearBuilt ?? new Date().getFullYear() - 10
+  // Zero is the display model's unknown-year sentinel, not an estimated age.
+  const yearBuilt = listing.yearBuilt ?? 0
   const isToronto =
     listing.city.toLowerCase().includes('toronto') ||
     listing.postalCode.toUpperCase().startsWith('M')
@@ -116,11 +117,12 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     beds: String(listing.beds),
     baths: String(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking: String(listing.parkingSpots),
+    parking: listing.parkingSpots > 0 ? String(listing.parkingSpots) : '—',
     yearBuilt,
     rentControl: yearBuilt <= 2018,
     price,
     annualTaxes,
+    annualTaxesKnown: listedAnnualTaxes != null,
     condoFeeMonthly,
     // Comps mid when available; otherwise the listing's own asking rent —
     // the hero once rendered "Asking rent $0/mo" on a $2,650 rental because
@@ -225,6 +227,36 @@ function NotFoundState(): JSX.Element {
   )
 }
 
+function LoadFailedState(): JSX.Element {
+  return (
+    <div
+      style={{
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 20,
+        textAlign: 'center',
+        padding: '0 24px',
+      }}
+    >
+      <div className="col" style={{ gap: 8, maxWidth: 420 }}>
+        <h3 className="serif" style={{ fontSize: 24 }}>
+          Report temporarily unavailable
+        </h3>
+        <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+          The report service could not be reached. Your report may still exist — try again in a
+          moment.
+        </p>
+      </div>
+      <button className="btn btn-primary" onClick={() => window.location.reload()}>
+        Try again
+      </button>
+    </div>
+  )
+}
+
 // ── Rental comps section ──────────────────────────────────────────────────────
 
 interface RentalCompsSectionProps {
@@ -237,6 +269,7 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
   if (!comps || comps.compCount === 0) return null
 
   const { low, mid, high, compCount, confidence } = comps
+  const radiusKm = comps.radiusKm ?? null
 
   return (
     <section className="container tr-section" data-section="03">
@@ -273,6 +306,10 @@ function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX
             }}
           >
             Market rent range · {compCount} comparable rentals
+            {/* Disclosed, not hidden: when this FSA had no comps the search
+                widened by radius, and comps from a few km away can sit in a
+                different rental market. */}
+            {radiusKm !== null && ` · within ${radiusKm}km, not this postal area`}
           </span>
           <span
             className="mono"
@@ -317,13 +354,13 @@ function RiskFlagsSection({
       ? 'fail'
       : redFlags.length === 1 || amberFlags.length > 0
         ? 'caution'
-        : 'pass'
+        : 'caution'
   const verdictLabel =
     redFlags.length > 0
       ? `${redFlags.length} red · ${amberFlags.length} amber`
       : amberFlags.length > 0
         ? `${amberFlags.length} amber flag${amberFlags.length > 1 ? 's' : ''}`
-        : 'No red flags'
+        : 'No wording flags'
 
   return (
     <section className="container tr-section" data-section="06">
@@ -347,11 +384,14 @@ function RiskFlagsSection({
               display: 'flex',
               gap: 12,
               alignItems: 'center',
-              color: 'var(--pass)',
+              color: 'var(--caution)',
             }}
           >
-            <Icon name="check" size={16} />
-            <span style={{ fontSize: 14 }}>No risk flags detected in this listing.</span>
+            <Icon name="flag" size={16} />
+            <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+              No risk language was found in the listing description. This wording scan is not an
+              inspection or a clean bill of health.
+            </span>
           </div>
         ) : (
           listing.riskFlags.map((f) => (
@@ -383,8 +423,7 @@ function CashToCloseSection({
   financing: FinancingInputs
 }): JSX.Element {
   const lttResult = computeLTT(listing.price, financing.isToronto)
-  const total =
-    metrics.downPayment + metrics.lttProvincial + metrics.lttMunicipal + metrics.closingCostsTotal
+  const total = metrics.totalCashInvested
 
   return (
     <section className="container tr-section" data-section="04">
@@ -428,7 +467,10 @@ function CashToCloseSection({
               ...(metrics.lttMunicipal > 0
                 ? [{ label: 'Toronto municipal LTT', value: metrics.lttMunicipal }]
                 : []),
-              { label: 'Closing costs (est.)', value: metrics.closingCostsTotal },
+              {
+                label: 'Other closing costs (est.)',
+                value: metrics.closingCostsTotal - metrics.lttProvincial - metrics.lttMunicipal,
+              },
             ] as Array<{ label: string; value: number }>
           ).map((row) => (
             <div
@@ -728,7 +770,7 @@ function TenantReportContent({
       {analysis.narrative && (
         <div className="container" style={{ marginBottom: 32 }}>
           <AIVerdictBlock
-            eyebrow="Scout AI · tenant verdict"
+            eyebrow="PropScout · tenant verdict"
             headline={<>{firstSentence(analysis.narrative)}.</>}
             sub={<>{analysis.narrative.split('. ').slice(1).join('. ')}</>}
           />
@@ -829,7 +871,7 @@ function InvestorReportContent({
   mode?: 'investor' | 'landlord'
 }): JSX.Element {
   const { openUpgradeModal } = usePaywall()
-  const verdictEyebrow = `Scout AI · ${mode} verdict`
+  const verdictEyebrow = `PropScout · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
 
   // Financing is LIVE: the sliders drive every metric on the page (cash flow,
@@ -980,6 +1022,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [dark, setDark] = useState(false)
@@ -990,15 +1033,17 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       setLoading(false)
       return
     }
-    void getAnalysisByToken(token).then((result) => {
-      if (result == null) {
-        setNotFound(true)
-      } else {
-        setAnalysis(result.analysis)
-        setListing(result.listing)
-      }
-      setLoading(false)
-    })
+    void getAnalysisByToken(token)
+      .then((result) => {
+        if (result == null) {
+          setNotFound(true)
+        } else {
+          setAnalysis(result.analysis)
+          setListing(result.listing)
+        }
+      })
+      .catch(() => setLoadFailed(true))
+      .finally(() => setLoading(false))
   }, [token])
 
   const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
@@ -1087,7 +1132,13 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         </div>
       )}
 
-      {!loading && !notFound && analysis && listing && (
+      {!loading && loadFailed && (
+        <div className="container" style={{ paddingTop: 64, paddingBottom: 64 }}>
+          <LoadFailedState />
+        </div>
+      )}
+
+      {!loading && !notFound && !loadFailed && analysis && listing && (
         <>
           {(mode === 'investor' || mode === 'landlord') && (
             <InvestorReportContent
@@ -1164,6 +1215,10 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
           </div>
         </>
       )}
+
+      {/* Desktop-only map of the document; renders nothing until the report's
+          sections exist, and nothing at all on narrow screens. */}
+      <ReportSectionRail scanKey={analysis?.token ?? null} />
 
       <StickyActionBar
         onShare={() => void navigator.clipboard.writeText(window.location.href)}

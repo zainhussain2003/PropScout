@@ -25,7 +25,8 @@ function db(): DbClient {
 
 interface ListingRow {
   id: string
-  source_url: string
+  /** NULL when the listing came from a typed address rather than a scraped page. */
+  source_url: string | null
   source: string
   listing_type: string
   address: string
@@ -80,7 +81,11 @@ function listingToRow(
   source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
 ): Omit<ListingRow, 'id' | 'scraped_at'> {
   return {
-    source_url: listing.url,
+    // NULL, not '', when the listing came from a person rather than a page.
+    // source_url is UNIQUE: every empty string competes for one row, so '' made
+    // address-entered listings overwrite each other. Postgres treats NULLs as
+    // distinct. See migration 20260906_listings_source_url_nullable.sql.
+    source_url: listing.url === '' ? null : listing.url,
     source,
     listing_type: listing.listingType === 'for-sale' ? 'for_sale' : 'for_rent',
     address: listing.address,
@@ -112,7 +117,9 @@ function listingToRow(
 function rowToListing(row: ListingRow): Listing {
   return {
     id: row.id,
-    url: row.source_url,
+    // Listing.url is '' for address-entered listings — the domain type's way of
+    // saying "no source page", matching what POST /address/start writes.
+    url: row.source_url ?? '',
     listingType: row.listing_type === 'for_sale' ? 'for-sale' : 'for-rent',
     address: row.address,
     city: row.city ?? '',
@@ -357,17 +364,33 @@ export async function getAnalysisByToken(
  * Percentiles: 25th (low), 50th (mid), 75th (high).
  * Confidence: 8+ → high, 3–7 → medium, 1–2 → low, 0 → null.
  *
+ * ## Geographic fallback
+ *
+ * The fallbacks above widen time and bed count but never location, so an FSA
+ * with no scraped rows returned nothing even when comps sat a few streets away.
+ * Vaughan's L4K (the Metropolitan Centre — a dense condo corridor) had zero
+ * rows while 86 comps lay within 5km of it, so every report there fell back to
+ * the gross-yield proxy and said "no comps for this area".
+ *
+ * When `coords` are supplied and the FSA search comes up empty, this searches
+ * outward by radius instead. Comps from the surrounding area are weaker
+ * evidence than same-FSA ones, so `radiusKm` is returned for the report to
+ * disclose, and confidence is capped rather than reported as if local.
+ *
  * Returns null if 0 comps found after all fallback attempts.
  */
 export async function fetchRentalComps(
   postalCode: string,
-  beds: number | null
+  beds: number | null,
+  coords?: { lat: number; lng: number } | null
 ): Promise<{
   low: number
   mid: number
   high: number
   compCount: number
   confidence: 'low' | 'medium' | 'high'
+  /** Search radius used, in km. Null when the comps are from the same FSA. */
+  radiusKm: number | null
 } | null> {
   const fsa = postalCode.trim().toUpperCase().slice(0, 3)
   const now = new Date()
@@ -430,11 +453,115 @@ export async function fetchRentalComps(
         confidence = 'low'
       }
 
-      return { low, mid, high, compCount, confidence }
+      return { low, mid, high, compCount, confidence, radiusKm: null }
     }
   }
 
-  // 0 comps found after all fallbacks
+  // Nothing in this FSA — widen the search geographically before giving up.
+  return coords != null ? fetchRentalCompsByRadius(coords, beds) : null
+}
+
+/**
+ * Widest radius searched before giving up, in km.
+ *
+ * 5km keeps comps inside the same rental sub-market in the GTA; 10km is a last
+ * resort that crosses municipal boundaries, which is why it is reported and
+ * confidence-capped rather than presented as a local figure.
+ */
+const COMP_RADII_KM = [5, 10] as const
+
+/** Degrees of latitude per km — constant. Longitude is scaled by cos(lat). */
+const KM_PER_DEG_LAT = 111.2
+
+/**
+ * Find rental comps within a radius of a point, when the FSA has none.
+ *
+ * A bounding box does the filtering in Postgres (indexed lat/lng columns), then
+ * haversine trims the box corners to a true circle. Doing it this way avoids a
+ * PostGIS dependency and a stored procedure for what is a fallback path.
+ *
+ * @param coords - subject property location
+ * @param beds - bedroom count to match, or null for any
+ * @returns comp statistics with the radius used, or null when nothing is near
+ */
+async function fetchRentalCompsByRadius(
+  coords: { lat: number; lng: number },
+  beds: number | null
+): Promise<{
+  low: number
+  mid: number
+  high: number
+  compCount: number
+  confidence: 'low' | 'medium' | 'high'
+  radiusKm: number
+} | null> {
+  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
+
+  for (const radiusKm of COMP_RADII_KM) {
+    const dLat = radiusKm / KM_PER_DEG_LAT
+    // Longitude degrees shrink toward the poles; without the cosine the box is
+    // far too wide in southern Ontario and pulls in comps well beyond the radius.
+    const dLng = radiusKm / (KM_PER_DEG_LAT * Math.cos((coords.lat * Math.PI) / 180))
+
+    let query = db()
+      .from('rental_listings')
+      .select('rent_monthly, lat, lng')
+      .gte('scraped_at', cutoff)
+      .gte('lat', coords.lat - dLat)
+      .lte('lat', coords.lat + dLat)
+      .gte('lng', coords.lng - dLng)
+      .lte('lng', coords.lng + dLng)
+
+    if (beds != null) {
+      query = query.gte('beds', beds - 1).lte('beds', beds + 1)
+    }
+
+    const { data, error } = await query
+
+    if (error != null) {
+      console.error('[supabaseService] fetchRentalCompsByRadius: query error', error)
+      return null
+    }
+
+    const rows = (data ?? []) as Array<{
+      rent_monthly: number
+      lat: number | null
+      lng: number | null
+    }>
+
+    const rents = rows
+      .filter(
+        (r) =>
+          r.lat != null &&
+          r.lng != null &&
+          haversineKm(coords.lat, coords.lng, r.lat, r.lng) <= radiusKm
+      )
+      .map((r) => r.rent_monthly)
+      .filter((v) => v > 0)
+
+    if (rents.length < 3) continue
+
+    const cleaned = removeOutliers(rents)
+    if (cleaned.length === 0) continue
+
+    const sorted = [...cleaned].sort((a, b) => a - b)
+
+    // Confidence is capped: these are not this FSA's comps. Calling a 10km
+    // sample "high confidence" would present a Mississauga average as a
+    // Vaughan one, which is exactly the kind of confident-and-wrong number the
+    // empty state existed to prevent.
+    const confidence: 'low' | 'medium' = radiusKm <= 5 ? 'medium' : 'low'
+
+    return {
+      low: Math.round(percentile(sorted, 25)),
+      mid: Math.round(percentile(sorted, 50)),
+      high: Math.round(percentile(sorted, 75)),
+      compCount: cleaned.length,
+      confidence,
+      radiusKm,
+    }
+  }
+
   return null
 }
 
@@ -706,11 +833,24 @@ export async function saveListing(
   source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
 ): Promise<string> {
   const payload = listingToRow(listing as Listing, source)
-  const { data, error } = await db()
-    .from('listings')
-    .upsert(payload, { onConflict: 'source_url' })
-    .select('id')
-    .single()
+
+  // Upserting on source_url deduplicates re-analyses of the same listing page,
+  // which is the whole point — for scraped listings.
+  //
+  // Listings entered by address have no source URL. They were all written with
+  // source_url = '', so every one of them collided on that single row: each new
+  // address overwrote the previous listing, and share tokens issued earlier
+  // silently repointed at a stranger's property. Two people analysing two
+  // addresses would see each other's.
+  //
+  // Without a URL there is nothing to deduplicate against, so insert instead.
+  const hasSourceUrl = payload.source_url !== '' && payload.source_url != null
+
+  const query = hasSourceUrl
+    ? db().from('listings').upsert(payload, { onConflict: 'source_url' })
+    : db().from('listings').insert(payload)
+
+  const { data, error } = await query.select('id').single()
 
   if (error != null || data == null) {
     throw new Error(`saveListing failed: ${error?.message ?? 'no data returned'}`)

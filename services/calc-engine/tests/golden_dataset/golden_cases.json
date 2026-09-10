@@ -7,7 +7,8 @@
       "parking_included": true,
       "utilities_included": false
     },
-    "notes": "Calibration case — tenant in place + parking"
+    "notes": "Calibration case — tenant in place + parking",
+    "source_kind": "synthetic"
   },
   {
     "id": "gc-002",
@@ -18,7 +19,8 @@
       "recently_renovated": true,
       "tenanted": false
     },
-    "notes": "Multi-flag case"
+    "notes": "Multi-flag case",
+    "source_kind": "synthetic"
   },
   {
     "id": "gc-003",
@@ -27,6 +29,1585 @@
       "needs_work": true,
       "str_history": true
     },
-    "notes": "Fixer-upper + STR flag"
+    "notes": "Fixer-upper + STR flag",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-004",
+    "description": "Bright 1-bedroom in Liberty Village with tenant in place until June 2027. Buyer must assume the existing lease.",
+    "expected_flags": {
+      "tenanted": true
+    },
+    "notes": "'tenant in place' phrasing",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-005",
+    "description": "Spacious 3-bed semi in Oshawa, currently rented to AAA tenants paying $3,100/mo.",
+    "expected_flags": {
+      "tenanted": true
+    },
+    "notes": "'currently rented' phrasing",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-006",
+    "description": "Move-in ready detached in Barrie. Vacant possession on closing. Owner occupied since 2015.",
+    "expected_flags": {
+      "tenanted": false
+    },
+    "notes": "Negative — vacant, must not fire tenanted",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-007",
+    "description": "Well-kept bungalow in Peterborough. Sellers are downsizing; possession is flexible.",
+    "expected_flags": {
+      "tenanted": false
+    },
+    "notes": "Negative — no tenancy language at all",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-008",
+    "description": "Turnkey Muskoka-style chalet, operated as an Airbnb for the past three seasons with strong occupancy.",
+    "expected_flags": {
+      "str_history": true
+    },
+    "notes": "Airbnb keyword",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-009",
+    "description": "Downtown loft. VRBO and vacation rental income history available on request.",
+    "expected_flags": {
+      "str_history": true
+    },
+    "notes": "VRBO / vacation rental",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-010",
+    "description": "Quiet family building in Etobicoke. Board does not permit rentals under one year.",
+    "expected_flags": {
+      "str_history": false
+    },
+    "notes": "Negative — long-term-only building",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-011",
+    "description": "Detached in Brampton with a finished basement apartment, separate entrance, and second kitchen.",
+    "expected_flags": {
+      "basement_unit": true
+    },
+    "notes": "Basement apartment",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-012",
+    "description": "Raised bungalow featuring an in-law suite on the lower level, ideal for extended family.",
+    "expected_flags": {
+      "basement_unit": true
+    },
+    "notes": "In-law suite",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-013",
+    "description": "Legal secondary suite registered with the City of Kitchener.",
+    "expected_flags": {
+      "basement_unit": true
+    },
+    "notes": "Secondary suite",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-014",
+    "description": "Two-storey with an unfinished basement offering excellent storage and workshop space.",
+    "expected_flags": {
+      "basement_unit": false
+    },
+    "notes": "Negative — unfinished basement is not a unit",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-015",
+    "description": "Corner unit with one parking and a locker included in the purchase price.",
+    "expected_flags": {
+      "parking_included": true
+    },
+    "notes": "'one parking'",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-016",
+    "description": "Sun-filled suite at Yonge & Eglinton. Underground parking included.",
+    "expected_flags": {
+      "parking_included": true
+    },
+    "notes": "Underground parking",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-017",
+    "description": "Studio in the Distillery District. Parking may be rented from the property manager at $180 monthly.",
+    "expected_flags": {
+      "parking_included": false
+    },
+    "notes": "Negative — parking is rented separately, not included",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-018",
+    "description": "Efficient junior one-bedroom. This suite has no parking space; street permit available from the city.",
+    "expected_flags": {
+      "parking_included": false
+    },
+    "notes": "Negative — explicitly without parking",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-019",
+    "description": "Bright two-bedroom in Hamilton. Sorry, no pets permitted in this building.",
+    "expected_flags": {
+      "no_pets": true,
+      "pets_allowed": false
+    },
+    "notes": "no_pets fires, pets_allowed must not",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-020",
+    "description": "Pet friendly building with a dog run on the podium level.",
+    "expected_flags": {
+      "pets_allowed": true,
+      "no_pets": false
+    },
+    "notes": "pets_allowed fires, no_pets must not",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-021",
+    "description": "Cats and dogs welcome. Pets allowed with no weight restriction.",
+    "expected_flags": {
+      "pets_allowed": true,
+      "no_pets": false
+    },
+    "notes": "Explicit pets allowed",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-022",
+    "description": "Renovated townhouse in Guelph close to the university and transit.",
+    "expected_flags": {
+      "no_pets": false,
+      "pets_allowed": false
+    },
+    "notes": "Negative — silent on pets",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-023",
+    "description": "Lease includes all utilities included plus internet — a true all-in monthly cost.",
+    "expected_flags": {
+      "utilities_included": true,
+      "utilities_extra": false
+    },
+    "notes": "All utilities included",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-024",
+    "description": "Heat and hydro included in the maintenance fee; tenant pays internet only.",
+    "expected_flags": {
+      "utilities_included": true
+    },
+    "notes": "Heat and hydro included",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-025",
+    "description": "Hydro extra. Tenant pays utilities and tenant insurance.",
+    "expected_flags": {
+      "utilities_extra": true,
+      "utilities_included": false
+    },
+    "notes": "Utilities extra",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-026",
+    "description": "Condo fee covers building insurance and common elements.",
+    "expected_flags": {
+      "utilities_included": false,
+      "utilities_extra": false
+    },
+    "notes": "Negative — fee described, utilities unstated",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-027",
+    "description": "Estate sale, sold as-is where-is. Property needs work throughout.",
+    "expected_flags": {
+      "needs_work": true,
+      "recently_renovated": false
+    },
+    "notes": "As-is estate sale",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-028",
+    "description": "Handyman special on a 50-foot lot. Bring your contractor.",
+    "expected_flags": {
+      "needs_work": true
+    },
+    "notes": "Handyman special",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-029",
+    "description": "Fixer-upper with solid structure; needs updating in kitchen and baths.",
+    "expected_flags": {
+      "needs_work": true
+    },
+    "notes": "Fixer-upper + needs updating",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-030",
+    "description": "Brand new kitchen, newly renovated bathrooms, and refinished hardwood throughout.",
+    "expected_flags": {
+      "recently_renovated": true,
+      "needs_work": false
+    },
+    "notes": "Renovated, not needing work",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-031",
+    "description": "Recently updated with a gut renovation completed in 2025.",
+    "expected_flags": {
+      "recently_renovated": true
+    },
+    "notes": "Gut renovation",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-032",
+    "description": "Original owner home, lovingly maintained and in excellent condition.",
+    "expected_flags": {
+      "needs_work": false,
+      "recently_renovated": false
+    },
+    "notes": "Negative — neither",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-033",
+    "description": "Former grow-op, fully remediated in 2024 with documentation available.",
+    "expected_flags": {
+      "grow_op_history": true
+    },
+    "notes": "Grow-op disclosed",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-034",
+    "description": "Property was previously used for cannabis cultivation. Buyer to satisfy themselves.",
+    "expected_flags": {
+      "grow_op_history": true
+    },
+    "notes": "Cannabis cultivation",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-035",
+    "description": "Sun-filled family home backing onto a ravine with mature gardens.",
+    "expected_flags": {
+      "grow_op_history": false
+    },
+    "notes": "Negative — clean listing",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-036",
+    "description": "Buyer to note the property sits within a designated flood plain; conservation authority approval required.",
+    "expected_flags": {
+      "flooding_history": true
+    },
+    "notes": "Flood plain",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-037",
+    "description": "Lower level was affected by a flooded basement in 2023; waterproofing has since been installed.",
+    "expected_flags": {
+      "flooding_history": true
+    },
+    "notes": "Flooded basement",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-038",
+    "description": "Waterfront cottage with 100 feet of clean shoreline and a dry boathouse.",
+    "expected_flags": {
+      "flooding_history": false
+    },
+    "notes": "Negative — water nearby but no flood claim",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-039",
+    "description": "Third unit was added without a permit; buyer to verify legality with the municipality.",
+    "expected_flags": {
+      "illegal_unit_risk": true
+    },
+    "notes": "Unpermitted addition",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-040",
+    "description": "Legal non-conforming duplex use predating current zoning.",
+    "expected_flags": {
+      "illegal_unit_risk": true
+    },
+    "notes": "Non-conforming",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-041",
+    "description": "Basement apartment is unpermitted and does not meet fire code separation.",
+    "expected_flags": {
+      "illegal_unit_risk": true,
+      "basement_unit": true
+    },
+    "notes": "Both basement and illegal risk",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-042",
+    "description": "Fully permitted 2023 addition with final building inspection passed.",
+    "expected_flags": {
+      "illegal_unit_risk": false
+    },
+    "notes": "Negative — permitted work",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-043",
+    "description": "Note: a special assessment has been approved for garage membrane replacement.",
+    "expected_flags": {
+      "special_assessment_risk": true
+    },
+    "notes": "Special assessment",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-044",
+    "description": "Recent reserve fund study identified a shortfall; fee increase anticipated.",
+    "expected_flags": {
+      "special_assessment_risk": true
+    },
+    "notes": "Reserve fund shortfall",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-045",
+    "description": "Status certificate shows a fully funded reserve and no planned capital work.",
+    "expected_flags": {
+      "special_assessment_risk": false
+    },
+    "notes": "Negative — healthy reserve",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-046",
+    "description": "Seller makes no representations or warranties as to the condition of the property.",
+    "expected_flags": {
+      "verify_history": true
+    },
+    "notes": "No representations clause",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-047",
+    "description": "Remediation completed by a licensed contractor; restoration documents on file.",
+    "expected_flags": {
+      "verify_history": true
+    },
+    "notes": "Remediation / restoration",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-048",
+    "description": "Immaculate two-bedroom with south exposure and unobstructed lake views.",
+    "expected_flags": {
+      "verify_history": false
+    },
+    "notes": "Negative — clean listing",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-049",
+    "description": "Investor alert: legal basement suite currently rented at $1,900/mo, one parking included, hydro extra. Non-conforming third unit in the rear — buyer to verify.",
+    "expected_flags": {
+      "basement_unit": true,
+      "tenanted": true,
+      "parking_included": true,
+      "utilities_extra": true,
+      "illegal_unit_risk": true
+    },
+    "notes": "Dense multi-flag investor listing",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-050",
+    "description": "Renovated Leslieville semi, brand new kitchen, pet friendly street, vacant possession on closing.",
+    "expected_flags": {
+      "recently_renovated": true,
+      "pets_allowed": true,
+      "tenanted": false,
+      "needs_work": false
+    },
+    "notes": "Renovated + pets + vacant",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-051",
+    "description": "Short-term rental permitted. All utilities included in the monthly fee. Underground parking included. Sold as-is.",
+    "expected_flags": {
+      "str_history": true,
+      "utilities_included": true,
+      "parking_included": true,
+      "needs_work": true
+    },
+    "notes": "Four positives at once",
+    "source_kind": "synthetic"
+  },
+  {
+    "id": "gc-052",
+    "description": "Welcome To This Stunning Fully Renovated Two-Bedroom Condo Offering 970 Sqft Of Bright, Functional Living Space.",
+    "expected_flags": {
+      "recently_renovated": true
+    },
+    "notes": "REAL phrasing (scraped Realtor.ca) — 'Fully Renovated' missed the original pattern",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-053",
+    "description": "Completely Renovated In 2023, This Move-In-Ready Home Showcases Quality Finishes Throughout.",
+    "expected_flags": {
+      "recently_renovated": true
+    },
+    "notes": "REAL phrasing — 'Completely Renovated In <year>' missed the original pattern",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-054",
+    "description": "Professionally renovated in May 2025, this 1 bed+den unit brings elevated living with thoughtful upgrades throughout.",
+    "expected_flags": {
+      "recently_renovated": true
+    },
+    "notes": "REAL phrasing — 'Professionally renovated' missed the original pattern",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-055",
+    "description": "Maintenance Fees Include Hydro And Cable For Added Convenience. Well-Managed Building Featuring 24-Hour Concierge.",
+    "expected_flags": {
+      "utilities_included": true
+    },
+    "notes": "REAL phrasing — 'Maintenance Fees Include Hydro' missed the original pattern",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-056",
+    "description": "Offering Outstanding Value, The Maintenance Fee Includes All Utilities And Cable TV.",
+    "expected_flags": {
+      "utilities_included": true
+    },
+    "notes": "REAL phrasing — fee-includes-all-utilities form",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-057",
+    "description": "Complete with one dedicated parking space, this move-in-ready home offers convenience and comfort.",
+    "expected_flags": {
+      "parking_included": true
+    },
+    "notes": "REAL phrasing — 'one dedicated parking space' missed the original pattern",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-058",
+    "description": "Central downtown living steps to transit. Parking could be rented from neighbour easily.",
+    "expected_flags": {
+      "parking_included": false
+    },
+    "notes": "REAL phrasing — negative guard: parking rented from a neighbour is NOT included",
+    "source_kind": "real_derived_excerpt"
+  },
+  {
+    "id": "gc-059",
+    "description": "Perched high above prestigious Yorkville, Suite 5702 at 11 Yorkville offers refined luxury living with breathtaking, unobstructed views of the city skyline, lake, and CN Tower. Floor-to-ceiling windows and soaring ceilings fill the space with natural lightf, creating an elegant, airy atmosphere.The designer kitchen features integrated Miele appliances, a wine fridge, and a striking waterfall island-perfect for entertaining. The open-concept living and dining area flows to a private balcony, ideal for enjoying spectacular sunsets. A versatile den provides space for a home office or retreat.The spa-inspired bathroom offers a serene, hotel-like experience with premium finishes.Residents enjoy world-class amenities including a 24-hour concierge, indoor/outdoor infinity pool, fitness centre, spa, yoga studio, wine lounge, theatre, and rooftop terrace.Steps to Yorkville's finest dining, luxury shopping, TTC, ROM, and U of T. Also includes an exclusive parking space, extremely rare.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29976309/5702-11-yorkville-avenue-toronto-annex",
+    "source_address": "5702 - 11 YORKVILLE AVENUE, Toronto (Annex), Ontario M4W0B7",
+    "scraped_at": "2026-07-02T02:26:22.035828+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "115b6e83e29625e55f818c6508f1f354a98acb3998cfaba800184439e4d4e060",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-060",
+    "description": "Welcome To This Stunning Fully Renovated Two-Bedroom Condo Offering 970 Sqft Of Bright, Functional Living Space In An Exceptional Transit-Oriented Location. Completely Renovated In 2023, This Move-In-Ready Home Showcases Quality Finishes Throughout, Including New Hardwood Flooring, A Modern Open-Concept Kitchen, Quartz Countertop, Stainless Steel Appliances (2023), Updated Fixtures, And Thoughtfully Designed Living Spaces Perfect For Both Everyday Living And Entertaining.The Spacious And Sun-Filled Layout Features Two Generous Bedrooms, Each Enhanced With Custom Closet Organizers, A Convenient In-Suite Laundry Room, And An Abundance Of Storage. Enjoy Beautiful East-Facing Open Views That Fill The Unit With Natural Light Throughout The Morning And Day.Offering Outstanding Value, The Maintenance Fee Includes All Utilities And Cable TV, Making Ownership Simple And Predictable. Located Just Steps From The Subway Station And Bus Stop, This Home Provides Unmatched Convenience For Commuters, Professionals, Families, And Investors Alike. With Its Extensive Renovations, Functional Layout, Large Principal Rooms, And Prime Transit Access, This Is A Rare Opportunity To Own A Turnkey Home That Truly Has It All.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": true,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29976213/701-1-four-winds-drive-toronto-york-university-heights",
+    "source_address": "701 - 1 FOUR WINDS DRIVE, Toronto (York University Heights), Ontario M3J2T1",
+    "scraped_at": "2026-07-02T02:27:23.037441+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "4296e2aa0dcf91d8cee4b7972ba5d0069128921743a1531a0f42524d80e9b7eb",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-061",
+    "description": "Set on a prime corner lot in Hamilton's coveted Crown Point, 487 Dunsmure Road is a 3-bed, 1+1-bath home full of character and smart comfort. Beautifully styled interiors blend original charm with modern updates, while an efficient heat pump keeps energy costs low year-round. An open living and dining room anchors everyday life-easy for morning coffee and made for unwinding in the evening-while warm sconce lighting throughout sets the mood from room to room. Three comfortable bedrooms offer restful retreats at day's end. The corner setting delivers a generous side garden with room to entertain, garden, or unwind. With an exceptionally high Walk Score, you're steps from Gage Park, Ottawa Street's shops and cafes, top schools, and transit in one of Hamilton's most walkable, family-friendly neighbourhoods. Move-in ready and rare to market. Welcome home.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29975911/487-dunsmure-road-hamilton",
+    "source_address": "487 DUNSMURE Road, Hamilton, Ontario L8H1G8",
+    "scraped_at": "2026-07-02T02:28:12.476394+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "beab8bb21ea2d5c81dbb76af1b4af6a36c082316fab2bfba7ba438155d1e70cb",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-062",
+    "description": "Dreaming of homeownership but looking for ways to make your mortgage more affordable? Welcome to 5 Rowanwood St. This is your opportunity to purchase a home with room to grow, build equity, and create future income potential.  Step inside to discover a open-concept main floor featuring a bright living area, convenient main floor laundry, a powder room, and a functional layout designed for everyday living. Upstairs offers three bedrooms, including an oversized primary bedroom, with the flexibility to suit your lifestyle and future needs.  The unfinished basement features a separate entrance, providing an incredible opportunity for the next owner to finish the space and create additional living space, a private suite for family, or explore future rental possibilities.  Outside, enjoy a private backyard ready to be transformed into your own outdoor retreat. Located just a 2-minute walk to public transit, this home is also close to schools, parks, shopping, and commuter routes, including the upcoming Confederation GO Station, making it an excellent location for commuters and long-term growth.  Whether you're a first-time buyer looking to offset your future housing costs, a buyer wanting space for extended family, or someone looking to build equity through thoughtful improvements, this property offers incredible potential to make it your own.  Opportunities like this don't come around often. Photos were taken prior to tenancy and have been virtually staged to show the full potential of this home.",
+    "expected_flags": {
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29975912/5-rowanwood-street-hamilton",
+    "source_address": "5 ROWANWOOD Street, Hamilton, Ontario L8L7H1",
+    "scraped_at": "2026-07-02T02:29:03.673087+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "14cc6f3827463929c61c5512f8d1e19a759caef67b4898dc9b36c2428fb18807",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts. Historical photo references do not establish current tenancy; tenanted not scored."
+  },
+  {
+    "id": "gc-063",
+    "description": "Central Downtown Living! Just Steps To Subway And TTC Transit, And A Short Walk To TMU And George Brown. Bright 2+Den Layout With A Functional Den That Can Easily Be Used As A Bedroom. Enjoy Stunning City Sunset Views Through Large Windows. Walk-In Closet Provides Plenty Of Storage Space. Maintenance Fees Include Hydro And Cable For Added Convenience. Well-Managed Building Featuring 24-Hour Concierge And Visitor Parking. Close To Eaton Centre, St. Lawrence Market, Hospitals, Restaurants And More. Perfect For Students And Professionals Seeking A Vibrant Urban Lifestyle. Parking could be rented from neighbour easily.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": true,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29976466/413-117-gerrard-street-toronto-church-yonge-corridor",
+    "source_address": "413 - 117 GERRARD STREET, Toronto (Church-Yonge Corridor), Ontario M5B2L4",
+    "scraped_at": "2026-07-02T02:29:31.209409+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "7114adf493f0449e1a5211dc1af950aada8a8bdcc50b26a5ba44dfdbbfcae9d5",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-064",
+    "description": "For Lease  Spacious 3-Bedroom Apartment in the Heart of Mimico Village. Welcome to 6 Mimico Avenue, offering the perfect blend of quiet residential living and urban convenience. Just a couple of houses off Lake Shore Boulevard, this home is nestled in a peaceful setting while being steps from parks, schools, and vibrant lakeside amenities ideal for families or professionals. This bright and fully independent second-floor apartment features private access from both Mimico Avenue and Primrose Avenue, and includes one dedicated parking space. With three generously sized bedrooms and two modern ensuite washrooms, the unit offers a rare combination of space, comfort, and privacy. Natural light floods the apartment through large windows and two skylights-- one in a bedroom and another in a bathroom--creating a warm and inviting atmosphere throughout. Key Features: a) 3 spacious bedrooms b) 2-modern ensuite bathrooms c) Bright living space with large windows and skylights d) Private access from two streets (Mimico & Primrose) e) 1 car parking included f) Separate hydro meter (tenant to set up own account) g) Tenant responsible for 50% of natural gas and water utilities; Prime Location: Ideally located just steps from TTC transit with quick access to downtown Toronto. Walk to Mimico Waterfront Park, Humber Bay Park, and scenic lakeside trails. Enjoy the convenience of nearby shops, restaurants, cafes, and grocery stores, all within walking distance. Don't miss this exceptional opportunity to live in a vibrant, lakeside community with every amenity at your doorstep. A MUST SEE.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29976483/2-floor-6-mimico-avenue-e-toronto-mimico",
+    "source_address": "2-FLOOR - 6 MIMICO AVENUE E, Toronto (Mimico), Ontario M8V1R1",
+    "scraped_at": "2026-07-02T02:30:52.066422+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "d5e9a77c1bfd1d9227e39f7e53bef21cf0339af7b4d87fac766276d1c0a6711d",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-065",
+    "description": "Client RemarksUnrivaled Expression of Luxury South of Lakeshore. Lake Escape. Modern Charm In Lakeview Waterfront Community Epitomizing Elegance & Comfort. About 300 Yards From Lake Ontario & Marine. 4 Bdr, 6 Wrs+Loft. Apr. 5,000 Sq.Ft. of Total Area Smart Home: Connected to the Internet and managed by mobile devices: Video Surveillance System, Home Security Systems, Home Heating/Cooling System, Lighting System, Coffee Machine, Washer & Dry. One Of The Few 3-Storey Houses In The Lakeview Modern Home Village. Unique Well Designed Open Concept Unsurpassed Quality Craftsmanship & Details Are Evident Thruout. Open Concept Gourmet Chef's Kitchen. 2 Kitchens + 3rd Floor Kitchenette. Large 5x9 Quartz Island Countertop. Ample Of Storage Space. 9-12 Ft Ceilings. Strong Waterproof Shotcrete Foundation. Heated Driveway & W/O Bsmnt Floor, Entrance Area And Wshrms Floors. Huge Fiberglass Windows $ Entrance Door. Custom made 25-foot-long chandelier with 45 bulbs. Stunning Led Light Fixtures & Mirror. High Quality Engineering Floor- The Best Option For Locations Close To Big Water. The Fully Finished Basement Offers Incredible Potential, With Separate Entrance Providing The Ideal Setup For In-law Suite, Older Kid Suite Or Rental Income. Towel Warmers. Shoe Closet. Balcony in Master bedroom and Terrace on 3d floor. Custom made 25-foot-long chandelier with 45 bulbs Central AC system (6 Tn) & Additional 3rd floor AC Unit High Efficiency Furnace With Humidifier. High Efficiency Gas Modulating-Condensing Boiler. Black Powder Coated Stainless Steel Outside Railings. Door Bell With Video & Audio Communication By Mobile Device. Gas line to BBQ. Central Vacuum System. 2 Car Garage 20Lx17.4Wx12.4H Ft With Glass Door & Epoxy Covered Floor. Epoxy Covered Entrance Steps & Basement Landing. 3 Wells For Storm Water On Basement Landing.Trench Drain System Around The House. Sauna & Modern Extra Roomy Hot Tub With Lounger, Up To 8 Prs & More. Parks, Trails. About 20 Min To Downtown Toronto.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29981949/662-byngmount-avenue-mississauga-lakeview",
+    "source_address": "662 BYNGMOUNT AVENUE, Mississauga (Lakeview), Ontario L5G1R4",
+    "scraped_at": "2026-07-02T23:05:39.391502+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "dffe8b96969fc34c19b6d869a03cefee30b840ba7a6720efb6bd6725412548e0",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-066",
+    "description": "Welcome to luxury living at the prestigious Whitehaus Condos! This beautiful, immaculate 2-bedroom, 2-full-bath suite boasts a bright and sunny southern exposure that floods the space with natural light. The highly functional floor plan features a sleek, modern kitchen equipped with a large center island-perfect for entertaining. Enjoy top-tier, upscale building amenities including a state-of-the-art fitness center, event kitchen, artist lounge, games room, and a lush garden terrace. Located right at Yonge & Eglinton with world-class transit, dining, and shopping at your doorstep. Just move in and enjoy!",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29982184/1205-33-helendale-avenue-toronto-yonge-eglinton",
+    "source_address": "1205 - 33 HELENDALE AVENUE, Toronto (Yonge-Eglinton), Ontario M4R0A4",
+    "scraped_at": "2026-07-02T22:46:35.031439+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "ecc35ba4b9672147aeb16bfd64a6cd77c0be9dc21581cabb922006117b9eb9f7",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-067",
+    "description": "Rare Opportunity To Live Directly Across From The ROM On One Of Bloor's Most Prestigious Blocks! This Bright South-East Corner Suite Offers 978 Sq.Ft. Plus An Incredible 467 Sq.Ft. Wrap-Around Terrace (Over 1,400 Sq.Ft. Total). Only 4 Suites On The Floor, Offering Exceptional Privacy And Quiet Living. Floor-To-Ceiling Windows Fill The Home With Natural Light, While The Expansive Terrace Is Perfect For Dining, Entertaining Or Relaxing. Steps To Yorkville, U of T, Subway, Fine Dining, Shopping And More. Existing Patio Furniture Included. A Truly One-Of-A-Kind Home In An Unbeatable Location!",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29996232/200-bloor-street-w-toronto-annex",
+    "source_address": "200 BLOOR STREET W, Toronto (Annex), Ontario M5S0B1",
+    "scraped_at": "2026-07-06T22:05:31.975383+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "d9f75511d96b18be864fe5eb5ad44fd3e21d09090de1429364a0c2d320c39875",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-068",
+    "description": "Located in the heart of downtown Toronto's Bay Street Corridor, this bright and functional 1+Den, 2-bathroom suite is situated in the highly sought-after College Park South Tower. offering a practical layout and modern finishes, The open-concept living and dining area is filled with natural light, featuring floor-to-ceiling windows that provide beautiful city views and create a spacious, airy feel. The modern kitchen is equipped with stainless steel appliances, stone countertops, a stylish mirror backsplash, and ample cabinetry, combining both function and contemporary design. The primary bedroom is well-sized with closet space and direct access to a full bathroom. The den is generously sized and versatile, suitable as a second bedroom or home office, adding flexibility to the layout. A second full bathroom enhances comfort and convenience. Additional features include laminate flooring throughout, in-suite laundry, and one underground parking space. Residents enjoy premium building amenities includina a 24-hour concierge fitness centre, indoor pool sauna, partv room, meeting rooms, guest suites, and secure entry. Direct indoor access to the PATH system and College subway station, offering unmatched year-round connectivity without stepping outdoors. This primeang unmatched stance\"location is within walking distance to the University of Toronto, Toronto Metropolitan University, Eaton Centre, Financial District, major hospitals, restaurants, cafes, and entertainment. With strong rental demand and exceptional walkability, this suite presents an excellent opportunity for both end-users and investors in one of Toronto's most connected downtown communities.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29984852/610-761-bay-street-toronto-bay-street-corridor",
+    "source_address": "610 - 761 BAY STREET, Toronto (Bay Street Corridor), Ontario M5G2R2",
+    "scraped_at": "2026-07-06T23:19:38.699353+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "0127da7835086dec5adef8cd42d8d5d7359a9068233f8eee2c9ecd6461f3d29a",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-069",
+    "description": "Welcome to this beautifully maintained family home nestled on a quiet crescent in the highly sought-after Cooksville community of Mississauga. Offering 4+1 bedrooms, a spacious functional layout of over 3,000 sq ft of living space, and a completely carpet-free interior, this home is ideal for families, investors, or multi-generational living. With a durable metal roof, fresh modern finishes, and generous principal rooms, the property delivers both comfort and long-term value in a prime central location close to schools, parks, shopping, transit, and major highways. The main floor features bright living and dining areas with elegant hardwood flooring, a cozy family room, and a beautifully updated kitchen complete with marble countertops, stylish backsplash, newly installed stove and dishwasher, and a walkout to a private balcony overlooking the backyard - perfect for entertaining or relaxing outdoors. The upper level offers spacious bedrooms including a large primary suite with a private 4-pieceensuite bath, providing a comfortable retreat for the whole family. One of the home's most attractive features is the fully finished walk-out basement with a separate entrance, offering excellent rental income potential or private space for extended family. This self-contained suite includes 1 bedroom, 1 bathroom, a full kitchen, separate laundry, and direct access to the backyard for added privacy and convenience. Located minutes from Square One Shopping Centre, Cooksville GO Station, community centers, restaurants, and everyday amenities, this exceptional property combines location, functionality, and income potential in one outstanding opportunity.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29979202/103-whitchurch-mews-mississauga-cooksville",
+    "source_address": "103 WHITCHURCH MEWS, Mississauga (Cooksville), Ontario L5A4B2",
+    "scraped_at": "2026-07-06T18:18:37.320834+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "1b44572a1c088163f4d8b0464066500fd12259f04ab525a4a239580f2c8862b8",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-070",
+    "description": "Luxurious, Famous Picasso One Of A Kind South View One Bedrm + Den 658 Sqft. 9Ft Ceiling. In The Heart Of Entertainment District, Harbourfront, Vibrant And Trendy Queen St West. Steps To Restaurant, Cn Tower, Ttc And Much More.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29997367/3106-318-richmond-street-toronto-waterfront-communities-waterfront-communities-c1",
+    "source_address": "3106 - 318 RICHMOND STREET, Toronto (Waterfront Communities), Ontario M5V1X2",
+    "scraped_at": "2026-07-07T02:50:52.933829+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "6a3a2b92a6d7d293604954e3dce592d939e2c407026a073ac3bfadee425a0f50",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-071",
+    "description": "Experience urban living at its best in this spacious, high-floor corner unit at The Britt, located in the heart of the Bay Street Corridor. This bright and functional suite offers nearly 1,000 sq. ft. of living space, featuring three bedrooms, two bathrooms, and a large balcony with stunning, unobstructed city views. The modern kitchen comes fully equipped with premium built-in appliances, and the location is unbeatable-just steps from Wellesley subway station, U of T, TMU, Queen's Park, major hospitals, and endless dining and grocery options. Complete with one dedicated parking space, this move-in-ready home offers the perfect blend of convenience, comfort, and professional appeal.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29997549/3208-955-bay-street-toronto-bay-street-corridor",
+    "source_address": "3208 - 955 BAY STREET, Toronto (Bay Street Corridor), Ontario M5S0C6",
+    "scraped_at": "2026-07-07T22:00:48.473944+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "c2f6d68ea45b7bd93d8e0ae98fdb5f12eb4a8786e0d0ebc9c2ec45e0ed521e73",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-072",
+    "description": "Available August 1st - Festival - Tower D - 497 sq feet - 1 Bedroom & 1 Full bathroom, Balcony - Open concept kitchen living room, - ensuite laundry, stainless steel kitchen appliances included. Engineered hardwood floors, stone counter tops.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30000796/801-28-interchange-way-vaughan-vaughan-corporate-centre",
+    "source_address": "801 - 28 INTERCHANGE WAY, Vaughan (Vaughan Corporate Centre), Ontario L4K0P8",
+    "scraped_at": "2026-07-07T22:04:37.648155+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "4e36ff289d50ce3a0842e1b2ebf4594401fe3dd116d8dc7e4ead1c6514a72179",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-073",
+    "description": "Indx Bachelor Condo Unit In Financial District With Functional Layout, Modern Kitchen With Premium Appliances, Stone Countertop. Unobstructed Eastern Exposure. Easy Access To Path And Subway, 9 Ft Ceilings, Floor To Ceiling Windows, Balcony. Perfect Home For The Downtown Professional. 24 Hrs. Concierge. Merge Fitness Centre, Outdoor Terrace With BBQs, Common Share Room With Fireplace, Golf Simulator, Billiards, Poker Room, Library And Guest Suite.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29998107/3905-70-temperance-street-toronto-bay-street-corridor",
+    "source_address": "3905 - 70 TEMPERANCE STREET, Toronto (Bay Street Corridor), Ontario M5H0B1",
+    "scraped_at": "2026-07-08T01:27:27.586891+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "a7f83d3d3fb46be707c9da924f7507c5f89db975b3f05ce0a33cfd2ac3e5b512",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-074",
+    "description": "Well-maintained residential property in a desirable Toronto neighborhood with convenient access to schools, parks, public transit, and everyday amenities. Suitable for families or investors seeking a prime location.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29996219/1242-8-hillsdale-avenue-e-toronto-mount-pleasant-west",
+    "source_address": "1242 - 8 HILLSDALE AVENUE E, Toronto (Mount Pleasant West), Ontario M4S0B2",
+    "scraped_at": "2026-07-08T04:03:50.350953+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "b284e61ea8a9e58dff0fd7f94483d17e86da214463d10436d768a5aef967363f",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-075",
+    "description": "Welcome to Suite 302 at The Phoenix! This newly renovated 862 sq. ft. 2-bedroom, 2-bathroom suite features soaring 10-ft ceilings, hardwood floors, a brand-new kitchen and bathrooms, and a desirable split-bedroom floor plan for added privacy. Oversized windows fill the suite with natural light, while the open-concept living space is highlighted by a custom accent wall, perfect for your entertainment system.Located directly across from Davisville Subway Station, you're just steps to cafés, restaurants, shops, parks, and the Beltline Trail. Enjoy exceptional building amenities including concierge, gym, rooftop terrace with BBQs, party room, and visitor parking. A stylish, move-in-ready home in one of Midtown Toronto's most sought-after locations.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30000161/302-1901-yonge-street-toronto-mount-pleasant-west",
+    "source_address": "302 - 1901 YONGE STREET, Toronto (Mount Pleasant West), Ontario M4S1Y6",
+    "scraped_at": "2026-07-08T22:48:19.878899+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "9c18623bad0b40f2570ec9a1afe29d42fe26d4096a512fc33306125d579129e0",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-076",
+    "description": "A show stopper! Stunning house in Toronto's desirable Oakwood Village neighborhood and steps away from Eglinton's new subway line. This elegant 3-story home offers 4,500 sqft of total living space with almost 3,200 square feet of above-grade contemporary design and luxurious finishes. Featuring 4 spacious bedrooms and 6 beautifully appointed bathrooms, it seamlessly blends style and functionality. The open-concept main floor flows from a sleek kitchen outfitted with premium appliances and custom cabinetry to the inviting living and dining areas. Each bedroom boasts generous space and a private en-suite. Primary suit serves as a true sanctuary, spa-inspired bath with heated floor, and a X-large walk-in closet. This home redefines modern living. Basement offers almost 1,300 sqft of living space that is nearly backyard level and includes second laundry rough-in, extra bedroom and a 3-piece bathroom. Electric car charger rough-in is conveniently available in the garage.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29808707/57-alameda-avenue-toronto-oakwood-village",
+    "source_address": "57 ALAMEDA AVENUE, Toronto (Oakwood Village), Ontario M6C3W3",
+    "scraped_at": "2026-07-09T05:00:35.607547+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "2aa4164c49f79120392fd90dd73cdbaccf088382ce1af27a84b614ed2109f21d",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-077",
+    "description": "Visit the REALTOR website for further information about this Listing.  Welcome to 21 Kings Inn Trail, a rare executive residence nestled in the highly coveted, quiet enclave of Bayview Country Club Estates. Situated on one of the largest and most desirable south-facing lots on the street, this property backs directly onto the pristine, sprawling greenery of the prestigious Bayview Golf & Country Club. Step into a spectacular, resort-style backyard oasis designed for ultimate relaxation and entertaining. Framed by majestic, towering mature trees, the sprawling grounds offer an incredibly unique layout with extremely limited neighbor exposure, providing a rare sense of deep privacy and natural serenity. Enjoy long summer days by the massive saltwater inground pool, complete with a cascading waterfall feature and a custom built treehouse-a true private sanctuary in the heart of Markham. Inside, the home boasts a completely turnkey, light-filled interior footprint featuring hardwood floors throughout and spacious principal rooms. The heart of the home is a masterpiece: a custom, professionally designed chef's kitchen by Binns, fully equipped with premium chef-grade appliances, rich granite countertops, and seamless finishes. The second level features 4 large, bright bedrooms, including a spacious primary suite complete with a private 4-piece ensuite bath and walk-in closet.  The fully finished lower level layout adds massive functional square footage, complete with pot lighting, a sprawling recreation room, and a fully equipped second kitchen-ideal for an in-law suite, multi-generational living, or full rec room with gym. Perfectly anchored in an unbeatably quiet, family-oriented neighborhood just steps from parks, transit, and local amenities, this home sits within the highly ranked, top-tier school catchment of Bayview Fairways Public School, Thornlea Secondary School, and St. Robert Catholic High School.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30009337/21-kings-inn-trail-markham-bayview-fairway-bayview-country-club-estates",
+    "source_address": "21 KINGS INN TRAIL, Markham (Bayview Fairway-Bayview Country Club Estates), Ontario L3T1T6",
+    "scraped_at": "2026-07-09T05:05:27.043957+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "5d9679f55189b20ee0390ed77a1975bc981ec372092f76028d59bcbd6a8ee90e",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-078",
+    "description": "Welcome to Greenwich Village, a stylish and spacious 1,100 SF modern condo townhome nestled in the heart of Clanton Park. This rare 2-bedroom + study, 2-bathroom unit offers a thoughtfully designed layout with exceptional features that elevate everyday living. Enjoy the convenience of a nearby underground parking spot just steps from your door and the added benefit of being one of the few units where you can temporarily stop in front to unload groceries or drop off family, making life that much easier. Step inside to discover an open-concept living and dining area with rich hardwood floors, a sleek kitchen outfitted with stainless steel appliances, quartz countertops, and custom roller blinds. The primary bedroom boasts floor-to-ceiling windows, a private balcony, and a generous double closet. The second bedroom features a skylight and built-in closet organizers, while the dedicated study offers a bright workspace with walk-out access to another balcony. Enjoy morning coffee or evening wine on either of your two private balconies, or head up to your 247 SF rooftop terrace with stunning southeast views of the city skyline and CN Tower perfect for BBQs, entertaining, or simply relaxing under the stars. With ensuite laundry, central air, and a tankless water heater, comfort and convenience are built in. Located steps from public transit, parks, schools, restaurants, and Yorkdale Mall, this townhome offers the perfect blend of urban accessibility and residential tranquility. Whether you're a professional, a small family, or someone seeking a vibrant yet peaceful lifestyle, this unit checks all the boxes. Don't miss your chance to lease one of North Yorks most desirable townhomes. Schedule your viewing today and experience elevated living in Greenwich Village.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30017329/41-871-sheppard-avenue-w-toronto-clanton-park",
+    "source_address": "41 - 871 SHEPPARD AVENUE W, Toronto (Clanton Park), Ontario M3H0E8",
+    "scraped_at": "2026-07-12T05:11:16.61891+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "f3ea8877922a2c712d10af75b63e124b469eef6c930a2cbe21c43e0678cc94b8",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-079",
+    "description": "The Luxurious Davisville Units are available.Come and live in this exclusive new mid-rise boutique residence in the heart of the highly soughtafter Yonge & Eglinton neighborhood. This unit is a Rental Replacement unit offered in a new development.Offered at a mid-range affordablerent. Subject to Provincial rental guideline increases on an annual basis-rent controlled. It is a 2 Bedroom offering a spacious open conceptlayout with elegant modern finishes, combining comfort and style in a vibrant urban setting. Enjoy top-tier amenities, including a fully equippedgym, yoga studio, pet spa, business center, rooftop lounge, and an outdoor entertaining area perfect for gatherings or quiet relaxation. Just stepsfrom everything you need with trendy restaurants, grocery stores, boutique shops,and the subway are all minutes away. Locker available foradditional $125/month.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30051677/204-8-manor-road-w-toronto-yonge-eglinton",
+    "source_address": "204 - 8 MANOR ROAD W, Toronto (Yonge-Eglinton), Ontario M4S0E6",
+    "scraped_at": "2026-07-20T03:09:45.443147+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "57124a6ce287294deeae58b4609d86ecc34d33720159953b3deee8b144adb363",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-080",
+    "description": "Welcome to 701 Sheppard Ave W, Unit 229 a beautifully customized second-floor suite offering modern comfort and timeless finishes in theheart of Clanton Park. Professionally renovated in May 2025, this 1 bed+den unit brings elevated living with thoughtful upgrades throughout.Step inside to discover modern, smooth ceilings and high-efficiency, dimmable LED pot lights throughout that fill the space with warm, ambientlight. Premium engineered hardwood flooring runs seamlessly throughout no carpet, just sleek, durable elegance underfoot. The fully updatedbathroom is complete with a modern vanity mirror, upgraded light fixture, Moen faucet, and a custom tile tub surround, offering a refined, spa-likefeel. Additional upgrades include stylish custom roller blinds, a contemporary tiled kitchen backsplash, and enhanced lighting that adds depthand polish to every room. A charming Juliette balcony offers a breath of fresh air and a view to the outdoors a perfect complement to the unitsbright and open layout. Ideally located in one of Torontos most connected neighborhoods, Unit 229 is just steps to transit, shopping, dining, andeverything Clanton Park has to offer. This is a rare chance to own a move-in-ready, design-forward unit in a sought-after boutique building.Urbanliving, refined. Your next chapter begins here.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30021026/229-701-sheppard-avenue-w-toronto-clanton-park",
+    "source_address": "229 - 701 SHEPPARD AVENUE W, Toronto (Clanton Park), Ontario M3H0B2",
+    "scraped_at": "2026-07-12T05:14:19.99442+00:00",
+    "acquisition": "database_archive",
+    "description_sha256": "a1838bc317a2ca1ec68773cdd81b755c845b8e57d64764fa6dd1b8a22e2fcc6d",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-081",
+    "description": "Looking to expand your investment portfolio?  Look no further than 76 Kathleen Street, steps away from the bus route and grocery store.  This impressive property features 3-one bedroom units, 1-two bedroom unit and a bachelor unit.  Apartments 3, 4 and 5(paint and new flooring July 2025) underwent complete renovations with permits in 2011.  Apartment 1 was renovated in 2014 and apartment 2 in 2019.  New membrane roof was installed in 2014 and the exterior siding and trim was done in 2019.  Upper and main floor is separated with cement flooring.  Laundry hookups in 2 units.  All units feature their own entrance.  Do not miss your chance to own this investment property. Please note: some pictures are from when units were vacant.",
+    "expected_flags": {
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29413486/76-kathleen-street-sudbury",
+    "source_address": "76 Kathleen Street, Sudbury, Ontario P3C2L9",
+    "scraped_at": "2026-09-07T05:18:20.603641+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "454238e16dc67266ab01e7845e9744901bc47611c1856b73afde62ff0662c07a",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts. Historical photo references do not establish current tenancy; tenanted not scored."
+  },
+  {
+    "id": "gc-082",
+    "description": "Excellent opportunity in prime Olde Stoney Creek location, steps to schools, shopping and transit! The huge 56 X 197 foot lot is perfect to build your dream home. The existing house itself is in a state of neglect and disrepair and requires significant renovation and restoration. Ideal for a contractor or handyman/first-time buyer with the resources to bring it back to life. Current improvements include a steel roof, furnace, and central air (2018). The rear yard itself, while overgrown, boasts numerous fruit trees and shrubs (apple, plum, cherry, pear) and berry bushes. Due to the current condition of the property, it is not safe to walk through the house and the property is being sold \"As-Is, Where-Is) with no representations or warranties regarding its condition or potential uses.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": true,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": true
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29637915/115-king-street-e-hamilton-stoney-creek",
+    "source_address": "115 KING STREET E, Hamilton (Stoney Creek), Ontario L8G1L2",
+    "scraped_at": "2026-09-07T05:18:25.107229+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "70645ef0271c402a76089e81c2643557988a271b06d49740166a3c5da73940df",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-083",
+    "description": "Bright and contemporary 2-bedroom basement apartment in desirable Highland Creek. This self- contained unit has its own separate entrance and is carpet-free, featuring an expansive 23+ ft open-concept living, dining, and kitchen area with pot lights throughout, neutral tasteful colour tones, and above-grade windows for excellent natural light. The kitchen offers extensive cabinetry including two pantries, ceramic backsplash, gas stove, and built-in dishwasher. Both bedrooms face the rear garden and include built-in closets. The washroom boasts an oversized frameless glass shower and floating vanity. Newer front-loader washer/dryer in common laundry area. Up to 2 parking spaces available. Tenant responsible for 40% utilities. Located near Highland Creek Village with easy access to public trails, transit, the 401, waterfront trails, places of worship, shopping, the Toronto Zoo, the Pan Am Centre, and U of T Scarborough. Ideally suited for a professional couple seeking a quiet, home-like setting in the country. Available immediately, subject to Rental Application.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29921666/basement-113-scarboro-avenue-toronto-highland-creek",
+    "source_address": "BASEMENT - 113 SCARBORO AVENUE, Toronto (Highland Creek), Ontario M1C1M5",
+    "scraped_at": "2026-09-07T05:15:34.720650+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "d704347841ab3c7f36b2535645c570359a3d95cb9ac8fea9578803a160bd5980",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-084",
+    "description": "Welcome to waterfront living, where neighbours still wave hello. This superb condo offers the perfect blend of lifestyle and function, with a bright, practical layout, excellent storage for the home chef, and absolutely no wasted space. As an added bonus, the maintenance fees coverall utilities! Enjoy 5-star amenities including a 24-hour concierge, fully equipped gym, two party rooms, guest suites, and a stunning rooftop terrace with BBQs and breathtaking lake and skyline views. Step outside to transit, waterfront trails, Harbourfront, the Music Garden, LovePark, Union Station, and some of Toronto's best restaurants, grocers, and nightlife in the vibrant Fashion District. Surrounded by parks, city energy, and the calming lakefront, this is more than a condo - it's a lifestyle. Come by for a visit... you may never want to leave.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": true,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/29992547/1105-410-queens-quay-w-toronto-waterfront-communities-waterfront-communities-c1",
+    "source_address": "1105 - 410 QUEENS QUAY W, Toronto (Waterfront Communities), Ontario M5V3T1",
+    "scraped_at": "2026-09-07T05:16:50.895262+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "7f8faafb7b65666fd14fb5de938303b9cc59b2fb9ca77af823f670aafa2cd2d5",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-085",
+    "description": "Large Two Bedroom Basement Apartment that feels like home and larger than many apartments located in The Heart of North York in a Nice family friendly cul-de-sac. Features An Open Concept Layout With A Large Living Room, Leading to a Large Den & Two Bedrooms. Lots of natural light, Private Separate Entrance, Eat-In Kitchen, Private Ensuite Laundry, Upgraded 3-Piece Ensuite, Driveway Parking Space, Ample Closet Spaces. Close to Finch Subway Station, Minutes Walk to Yonge Street, Shops and restaurants. This property offers excellent public transport access only minutes walk to Drewry Ave Bus Stop. Great schools zoning, RJ Lang Elementary and middle school and Newtonbrook Secondary School. Tenant Responsible For 1/3 of Utilities.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30086966/basement-5-carnegie-court-toronto-newtonbrook-west",
+    "source_address": "BASEMENT - 5 CARNEGIE COURT, Toronto (Newtonbrook West), Ontario M2M1W2",
+    "scraped_at": "2026-09-07T05:15:31.986129+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "323de0f4ff2d5b6e79683e67b60ea618fdd7b1ff5166ec12fdbde8113ad07806",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-086",
+    "description": "Attention first time home buyers, investors and renovators! This 1-bedroom home is a true fixer-upper with incredible potential, situated on a generous lot in a convenient Stoney Creek location.  Whether you're looking to renovate, rebuild or create your next investment project, this property offers a fantastic opportunity to add value. The upstairs space offers the ability to add more bedrooms and the large detached garage offers a large space for plenty of options. Bring your vision and transform this property into something special. Large lot, endless possibilities, and an affordable entry into the market for the right buyer.  Don't miss this chance to unlock the potential of 342 Barton St. The home is being sold AS-IS, WHERE-IS, with no representations or warranties by the Seller.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": true,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": true
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30115204/342-barton-street-hamilton",
+    "source_address": "342 BARTON Street, Hamilton, Ontario L8E2K9",
+    "scraped_at": "2026-09-07T05:18:20.840611+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "b4ccf62d818db726d91b3736b4dff3a97e5882f5c9ebfdd481f6a880c2f37b46",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-087",
+    "description": "Opportunity awaits! Situated on a beautiful lot in a great location, this property offers exceptional potential for buyers looking for their next renovation project. The existing home requires updating and renovations and is being sold in as-is where is condition. The property is located within Niagara Escarpment Commission (NEC) and Conservation Halton jurisdiction. RSA.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": true,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30117690/698-york-road-hamilton-dundas",
+    "source_address": "698 YORK ROAD, Hamilton (Dundas), Ontario L9H5X1",
+    "scraped_at": "2026-09-07T05:18:24.365893+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "a9d890d0cd696d141883773e18caf3058cf2d76063dbf5464f8878ae62d534b2",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-088",
+    "description": "Welcome to 607 Danforth Avenue, a beautifully updated brick bungalow nestled on a mature, treed lot in the heart of desirable New Sudbury.  This move-in-ready home has been extensively updated in recent years, featuring new flooring, windows, doors, a modern kitchen, and renovated bathrooms. The bright, open-concept main floor offers a functional layout with two spacious bedrooms, master bedroom features a walk-in closet and laundry, inviting living and dining areas, perfect for everyday living and entertaining. The fully finished basement provides additional living space and includes a large storage room/workshop that could easily be converted into a third bedroom, home office, or hobby room to suit your needs. Outside, you'll appreciate the large paved driveway with ample parking for multiple vehicles, along with a beautifully maintained lawn and colorful flower gardens  that enhance the home's curb appeal and create a welcoming outdoor setting.  Ideally located just minutes from shopping, schools, parks, restaurants, and all major amenities, this home offers the perfect combination of comfort, convenience, and value. Don't miss your opportunity to own this fantastic New Sudbury home-book your private showing today before it's gone!",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30124390/607-danforth-avenue-sudbury",
+    "source_address": "607 Danforth Avenue, Sudbury, Ontario P3A3Y3",
+    "scraped_at": "2026-09-07T05:18:31.610890+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "7b2f588cd608ead85a0ced86137184018e5362793b78e165d2ce91e690237ce5",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-089",
+    "description": "Bright and Spacious 1-Bedroom Basement Apartment in East York Bright and spacious 1-bedroom basement apartment located in the desirable East York area, near O'Connor Drive and St. Clair Avenue East. This beautifully updated home offers a functional layout, a large open-concept living and dining area, and a freshly renovated kitchen. Ideal for a single professional or couple seeking a clean, bright, and well-maintained home in a convenient East York location. Tenant is responsible for 30% of gas and water utilities, 20% of hydro, tenant insurance, and standard maintenance obligations. Non-smokers preferred. Required Documents: Rental application, full credit report, photo ID, two recent pay stubs, employment letter, and reference letter",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30129221/basement-47-amsterdam-avenue-toronto-oconnor-parkview",
+    "source_address": "BASEMENT - 47 AMSTERDAM AVENUE, Toronto (O&apos;Connor-Parkview), Ontario M4B2B9",
+    "scraped_at": "2026-09-07T05:15:47.583033+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "b4fb42eb4e4426c4cd5d17bb9ffd0bf47e9b09cff773c815c044cfb5621c4dfc",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-090",
+    "description": "Discover exceptional space, outstanding value, and an unbeatable Dundas-Queen West location - with all utilities included in the maintenance fees. Heat, hydro, water, and Bell Fibe TV & Internet package are all covered, offering effortless, predictable monthly living costs. This rarely offered 2 bedroom suite offers approximately 730 square feet of thoughtfully designed living space, soaring 9.5-foot ceilings, and an impressive 170 square foot private terrace. Designed for comfortable everyday living and effortless entertaining, the open-concept living, dining, and kitchen area creates a true \"great room\" atmosphere. Step directly outside to your oversized private terrace - a rare downtown retreat perfect for morning coffee, summer evenings, or hosting friends. Even better, BBQs are allowed! Residents enjoy an excellent selection of amenities including a outdoor pool, fitness centre, recreation room, landscaped courtyards, gated access with security, and pet-friendly living. Everyday conveniences including salons, doctor and dentist clinic are located right within the complex. Situated in the heart of downtown Toronto, this location places the city's best right at your doorstep. Steps to the AGO, OCAD University, Grange Park, the PATH, TTC, acclaimed restaurants, cafes, boutique shopping, and vibrant nightlife, this is urban living at its finest. An exceptional opportunity for first-time buyers or investors seeking a turnkey property in one of Toronto's most dynamic neighbourhoods. Responsible long-term tenants are willing to stay or vacate.",
+    "expected_flags": {
+      "tenanted": true,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": true,
+      "utilities_included": true,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30144128/113-71-mccaul-street-toronto-kensington-chinatown",
+    "source_address": "113 - 71 MCCAUL STREET, Toronto (Kensington-Chinatown), Ontario M5T2X1",
+    "scraped_at": "2026-09-07T05:16:50.162547+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "e13b7919acbeac8359b470a06e673cf1d5256d07a2e0c6d3c33d1f241cc365be",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-091",
+    "description": "Holy Moly!!! New Sudbury newly renovated modern style home is definitely a must see and features 4 bedrooms & 3 full bathrooms, and an attached heated garage with epoxy flooring. You will love the new custom kitchen, with quartz counters, top of the line stainless steel appliances, and tons of cabinets. The oversized primary suite boasts a private en-suite bath & large walk-in closet. The lower level could easily be transformed to a secondary unit, it offers a huge rec room with a cozy gas fireplace, a 4th bedroom, a full washroom, and a massive utility room, that offers tons of storage or options to add another room.  Step outside to the fenced backyard, a great space for kids, pets, or even a future pool.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30167686/2211-grenoble-sudbury",
+    "source_address": "2211 GRENOBLE, Sudbury, Ontario P3A0A9",
+    "scraped_at": "2026-09-07T05:18:21.101490+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "26996f106e6fb2c4a4b5d5026bb00a7b27f51732075852b8c64e528471d1c692",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-092",
+    "description": "Clean And Well-Maintained Basement Apartment In The Convenient Bayview/Finch Area. Practical And Functional Layout With Private Separate Entrance, Bedroom, Living Area, Kitchen And Bathroom. Close To TTC, Shopping, Restaurants, Parks And Everyday Amenities, With Easy Access To Finch Subway Station And Hwy 401. Great Value In A Convenient Location. Ideal For A Single Professional Or Couple. Basement Only. Tenant Pay All Utilities 30%.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30169862/basement-198a-finch-avenue-e-toronto-newtonbrook-east",
+    "source_address": "BASEMENT - 198A FINCH AVENUE E, Toronto (Newtonbrook East), Ontario M2N4R9",
+    "scraped_at": "2026-09-07T05:15:18.717106+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "810dda4b1e861c2640fb065734be5a3df4d1bb5ebf4b2bf36154e682bc63e7e4",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-093",
+    "description": "2 Parking Spaces, Including 1 EV-Equipped Space! Stunning Fully Renovated 2 Bedroom Corner Suite At Portrait Condos In Highly Coveted Clanton Park Community. This Spacious Bungalow-Style Suite Features 9-Foot Ceilings, Herringbone Flooring, Pot Lights, Modern Light Fixtures, Feature Walls, Custom Closet Built-Ins And Stylish California Shutters Throughout. Custom Chef's Kitchen With Oversized Island, Two-Tone Cabinetry, Quartz Counters, Pantry And Ample Storage. Open-Concept Living And Dining With Walk-Out To A Expansive 140SqFt Private Terrace With BBQ Hook-Up, Surrounded By Lush Gardens. Spacious Primary Bedroom With Walk-In Closet Featuring Custom Closet Organizers. Second Bedroom With Double-Door Entry And Closet. Spa-Like Bathroom With Glass Shower, Granite Counter And Designer Tile. Full Walk-In Laundry Room With Additional Storage. Live In A Boutique Mid-Rise Tower Nestled In One Of Toronto's Most Desirable Neighbourhoods Of Clanton Park, Known For Its Picturesque Tree-Line Streets And Expansive Homes. Maintenance Fees Include All Utilities Excluding Hydro. Includes 2 Parking Spaces, 1 EV-Equipped And Locker!",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": true,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30190868/113-701-sheppard-avenue-w-toronto-clanton-park",
+    "source_address": "113 - 701 SHEPPARD AVENUE W, Toronto (Clanton Park), Ontario M3H0B2",
+    "scraped_at": "2026-09-07T05:16:49.390616+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "25afe0be1bc2dd975cba5b60dae85269f9418e59c8173467b8151e8b237c0c05",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-094",
+    "description": "Beautifully Renovated 2-Bedroom Basement Apartment in East York.Enjoy modern, comfortable living in this fully renovated, bright 2-bedroom lower-level apartment with a separate entrance. Designed with an open-concept layout, this unit maximizes space and functionality, making it perfect for professionals, students, or a small family. Unbeatable location- DVP/Danforth/Transit/Shopping and/or Coffee! Tenant shares 50% of utilities with Main floor tenant",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": false,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30211461/lower-level-1277-broadview-avenue-toronto-broadview-north",
+    "source_address": "LOWER LEVEL - 1277 BROADVIEW AVENUE, Toronto (Broadview North), Ontario M4K2T5",
+    "scraped_at": "2026-09-07T05:16:13.616274+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "ee3896ca413c74cab75eabae59cab1ce2ae0a6ba5b05581f8eb1bdd5368dee3c",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-095",
+    "description": "Spacious, quiet, extremely clean furnished basement apartment with large above-grade windows and comfortable 6'5\" ceiling height. XL living room with gas fireplace, or could be used as 2nd bedroom, as it's separate & has a door. Large eat-in kitchen with plenty of storage space. Perfect for a couple, working professional, or perhaps 1-2 student(s). Tenant may use 1 parking space on driveway. Live on a picturesque street with friendly neighbours, beautiful lawns and gardens all around, and a quiet family of 2 living upstairs; this is a very tranquil, peaceful place to live. Basic utilities included (water, heat, AC, hydro). Tenant is responsible for own internet/cable. Shared Laundry/storage/mechanical room.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": true,
+      "parking_included": true,
+      "no_pets": false,
+      "pets_allowed": false,
+      "utilities_included": true,
+      "utilities_extra": false,
+      "needs_work": false,
+      "recently_renovated": false,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30237285/110-trinnell-boulevard-toronto-clairlea-birchmount",
+    "source_address": "110 TRINNELL BOULEVARD, Toronto (Clairlea-Birchmount), Ontario M1L1S7",
+    "scraped_at": "2026-09-07T05:15:56.078707+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "43a1a7395f15d8cc43eac6db866b536b2150b95acaba3a0357b5bf9ef18a8ae3",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
+  },
+  {
+    "id": "gc-096",
+    "description": "*SECOND MONTH & 11TH MONTH FREE IF A 12-MONTH LEASE IS SIGNED BEFORE THE END OF SEPTEMBER, 2026 AND WITH A START DATE OF NO LATER THAN OCTOBER 1ST, 2026 - LANDLORD MUST BE SATISFIED OF THE TENANTS RENTAL APPLICATION, CREDIT CHECK AND REFERENCES (a savings of $6,000). PARKING MAY BE AVAILABLE AT AN EXTRA COST - NO PETS. Beautiful 4 Bedroom Row House features 4 good size bedrooms, 2 Full Bathrooms which were recently updated, beautiful updated kitchen, lots of storage space, main floor laundry, forced air natural gas heating and a great size living room. Great central location, not far from both Carleton University and Ottawa University, walking distance to Light Rail Station, only minutes for downtown or Little Italy & only steps from Chinatown. Tenant pays heating, hydro, water/sewer, high speed internet, cable, and phone.",
+    "expected_flags": {
+      "tenanted": false,
+      "str_history": false,
+      "basement_unit": false,
+      "parking_included": false,
+      "no_pets": true,
+      "pets_allowed": false,
+      "utilities_included": false,
+      "utilities_extra": true,
+      "needs_work": false,
+      "recently_renovated": true,
+      "grow_op_history": false,
+      "flooding_history": false,
+      "illegal_unit_risk": false,
+      "special_assessment_risk": false,
+      "verify_history": false
+    },
+    "source_kind": "real_full_description",
+    "source_url": "https://www.realtor.ca/real-estate/30238613/260-bronson-avenue-bronson-avenue-ottawa-4204-west-centre-town",
+    "source_address": "260 BRONSON AVENUE BRONSON AVENUE, Ottawa, Ontario K1R6H8",
+    "scraped_at": "2026-09-07T05:18:19.661201+00:00",
+    "acquisition": "fresh_scrape",
+    "description_sha256": "ba2b3a7e3c6fb4c15be651ec4587d1aa5ea42afd3efa516bf98d5875ac18770a",
+    "notes": "Full description preserved verbatim. Labels concern evidence in the prose, not verified physical/legal facts."
   }
 ]

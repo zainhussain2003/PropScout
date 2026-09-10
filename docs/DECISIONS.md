@@ -592,6 +592,1416 @@ identity. Noted in `docs/ACCESS_SETUP.md` §3 for the next time.
 
 ---
 
+### D-019 · SunScout obstruction uses OpenStreetMap, not Mapbox 3D
+
+**Chosen.** `sunscout/obstruction.py` queries OpenStreetMap via Overpass for
+building footprints within 150m, converts each to a horizon profile, and the
+sun-path loop drops any hour where the sun sits below that skyline.
+
+**Why this is the differentiator.** Sun-path maths alone gives every unit in a
+tower the same score — a ground-floor unit boxed in by neighbours scores
+identically to the penthouse. Measured at Yonge–Dundas, south-facing:
+
+|                              | score            | annual hours | vs open sky      |
+| ---------------------------- | ---------------- | ------------ | ---------------- |
+| Sun-path only                | 87.3 "excellent" | 3,619        | —                |
+| Ground floor, real buildings | **72.8 "good"**  | 2,952        | **−667h (−18%)** |
+| 10th floor                   | 76.0             | 3,045        | −574h            |
+| 40th floor                   | 87.3 "excellent" | 3,619        | 0                |
+
+Same coordinates, same facade. That spread is the product claim.
+
+**Why OSM over Mapbox 3D (which spec §17 names).** Mapbox's 3D buildings are
+_derived from_ OSM; reading OSM directly avoids decoding vector tiles server-side
+to recover data we would then re-derive. Measured Toronto coverage:
+
+| area          | buildings | with height/levels |
+| ------------- | --------- | ------------------ |
+| downtown core | 18        | 13 (72%)           |
+| Yonge–Dundas  | 37        | 21 (56%)           |
+| North York    | 49        | 2 (4%)             |
+
+The raw percentages look bad until you notice **coverage correlates with the
+buildings that matter**: towers are tagged (CN Tower 553m, Pantages 45 levels),
+untagged ones are overwhelmingly detached houses that shade almost nothing. The
+model reports how many it skipped so the report can say so.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                                                            |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Mapbox 3D tiles, per spec              | Vector-tile decoding server-side for data OSM gives directly as JSON. Revisit if OSM coverage proves insufficient outside Toronto. |
+| Assume a height for untagged buildings | Manufactures obstruction that may not exist. The whole point is measuring real surroundings.                                       |
+| Ray-trace against a full 3D mesh       | Far more accurate and far slower; a 1°-resolution horizon is well inside the error introduced by missing heights.                  |
+| Ship without obstruction (status quo)  | Leaves the score saying a basement and a penthouse are equally bright.                                                             |
+
+**Two bugs found by checking against reality rather than trusting the output**
+
+1. Sampling only footprint _corners_ left holes mid-wall. Fixed by filling each
+   edge's arc.
+2. Taking a footprint's min/max bearing broke on any building surrounding the
+   observer — the Eaton Centre, 28m away, spans bearings 0°–359°, and would have
+   blacked out the entire sky from one building. Fixed by walking consecutive
+   vertices and always taking the short arc.
+
+A third finding was **not** a bug: due south reading "clear" at Yonge–Dundas is
+correct — the 145°–212° gap is Dundas Square itself. Worth stating, because the
+instinct was to "fix" it.
+
+**Deliberate limits, documented in the module and surfaced in the UI**
+
+- No terrain (flat enough in urban Ontario; would matter in Vancouver).
+- No trees — a summer-shaded window may score higher than it lives.
+- Direct sun only; a blocked hour still has skylight.
+- Untagged buildings skipped, so the result is a **floor on how much shade there
+  is, not a ceiling**. The report says exactly that.
+
+**Floor inference.** Listings expose a unit number, never a floor, and the floor
+decides whether a tower matters. `infer_floor_from_address` reads the Toronto
+`<floor><unit>` convention (3705 → 37, 229 → 2). It is a convention, not a rule,
+so it only ever refines an estimate and is never stated back to the user as fact.
+When it cannot be inferred the model assumes ground level — understating sun for a
+high unit rather than overstating it.
+
+**Failure behaviour.** Overpass is a free community endpoint that rate-limits.
+An outage falls back to the open-sky figure with `obstructionAssessed: false` —
+"we did not check" is never rendered as "nothing is in the way".
+
+---
+
+### D-020 · The one input accepts an address as well as a listing link
+
+**Chosen.** The hero field takes either. `classifyInput` decides which before
+anything is sent; an address goes to `POST /address` (geocode + province gate),
+then a short details card, then the existing ModeModal and pipeline.
+
+**Why.** The product accepted exactly one thing: a Realtor.ca URL. That works if
+you are already on Realtor.ca with the tab open, and is a dead end otherwise —
+someone who saw a sign on a lawn, got the address in a text, or is standing
+outside the building had nothing to paste. Worse, typing a perfectly good address
+returned _"That doesn't look like a valid URL"_, which reads as the product being
+broken rather than the input being wrong. That is the single most likely place to
+lose a first-time user.
+
+**Still not a search box.** An address identifies _one_ property; it does not open
+a catalogue. The moment we let people browse listings we are competing with
+HouseSigma and Realtor.ca at what they already do well, and the thing that makes
+PropScout worth using — one link, one question, one verdict — becomes a feature
+buried inside a worse version of a portal. `classifyInput`'s docstring says this
+so the next person does not "improve" it into search.
+
+**What an address can and cannot give.** Location is enough for SunScout (with
+real obstruction), walk and transit scores, schools, census income and growth, and
+rental comps. Price does not exist in any address lookup, and inventing it would
+fabricate the number the whole report turns on. So the details card asks for it.
+
+**Alternatives considered**
+
+| Option                                                     | Why not                                                                                                                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Look the address up in a listings feed and auto-fill price | Needs the paid Repliers plan; and a property not currently listed has no price to find. Would work sometimes and fail confusingly the rest of the time. |
+| Separate "URL" and "address" tabs                          | Two inputs where one will do. The user should not have to classify their own input before typing.                                                       |
+| Accept the address and estimate the price from comps       | Fabricates the number the report turns on. Same objection as D-004 and D-016.                                                                           |
+| Keep URL-only and improve the error message                | Better message, same dead end.                                                                                                                          |
+
+**Three real defects the live testing exposed**
+
+1. **Wrong building.** Mapbox reads "229-701 Sheppard Ave W" as street number 229
+   and returns M2N 1N2 — a different building from the real M3H 0B2 — at full
+   confidence. `splitUnitPrefix` strips the unit before geocoding and re-attaches
+   it after, which also feeds SunScout's floor inference.
+2. **Confident nonsense.** "asdfghjkl" scored 0.66 and resolved to a real street
+   in Ingleside, Ontario. A geocoder always returns _something_; a weak match
+   produces a complete, plausible report about a place the user never typed.
+   Matches below 0.9 relevance are now rejected (real addresses score 1.0).
+3. **My own regression.** I first appended ", Ontario, Canada" to bias matching.
+   It made things worse in both directions — it manufactured matches for nonsense,
+   and it made a Vancouver address return "we couldn't find that" instead of
+   reaching the BC waitlist gate. Removed; `country=CA` alone is correct.
+
+**Revisit if** Repliers covers Ontario — an address could then pre-fill price and
+beds, leaving the card as confirmation rather than data entry.
+
+---
+
+### D-021 · The details card is written for someone who is not confident with computers
+
+**Chosen.** Confirm the matched address first with a visible way back; two
+required fields (price, bedrooms); everything else visibly optional with a line
+saying what it improves; plain-language labels; `inputMode` for numeric keyboards;
+16px inputs; validation only on submit.
+
+**Why each of those**
+
+- **Confirm before asking.** Being told "that's not my building" _after_ filling a
+  form is the fastest way to lose someone. The address and a "No, search again"
+  button come before any field.
+- **Two required, not twelve.** Asking for taxes, year built, parking and
+  bathrooms up front reads as work. Price and bedrooms are the two the report
+  genuinely cannot proceed without.
+- **Optional means optional.** Each optional field says what it buys ("Often the
+  difference between a good and bad deal"), so skipping feels allowed rather than
+  careless.
+- **"What's it listed for?" not "List price (CAD)."** Same field, no vocabulary.
+- **16px inputs.** Below 16px, iOS Safari zooms the page on focus and the user
+  loses their place — a real, common, invisible-in-desktop-testing failure.
+- **`inputMode="numeric"`.** A phone shows a number pad instead of a QWERTY
+  keyboard for a price.
+- **No red until submit.** Per-keystroke validation marks a half-typed number as
+  wrong, which reads as being told off mid-sentence.
+
+**Verified on a 375×812 viewport**: single-column fields at full width, 16px
+throughout, correct `inputMode`, no horizontal overflow.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                     |
+| ------------------------------------------- | --------------------------------------------------------------------------- |
+| Multi-step wizard, one question per screen  | More taps and more chances to abandon, for six fields that fit on one card. |
+| Ask nothing; run with defaults              | Produces a deal score from an invented price — the worst possible failure.  |
+| Ask everything the scraper would have found | Twelve fields of homework before any value is shown.                        |
+
+---
+
+### D-022 · Address submit hands off to the ModeModal, not straight to /analyzing
+
+**Chosen.** After `POST /address/start` returns a token, the address path opens
+the same ModeModal the listing-link path uses.
+
+**Why.** My first version navigated directly to `/analyzing?token=…&kind=sale`.
+That page expects `mode`, not `kind`, so it bounced silently back to the landing
+page — the form appeared to do nothing. Beyond the bug, the mode is a real
+question: an investor and a personal buyer get materially different reports for
+the same address, and the product should not guess which one you are. Reusing the
+existing modal keeps both entry paths converging on one flow.
+
+---
+
+### D-023 · The test suite must not call OpenStreetMap
+
+**Chosen.** An autouse fixture in `services/calc-engine/conftest.py` replaces
+`build_profile` with one that reports the data source as unavailable.
+
+**Why.** Wiring obstruction into `POST /analysis/` (D-019) made every router test
+issue a real Overpass request. The calc suite went from **~6s to 29–73s** and
+started failing intermittently — one run reported `1 failed, 373 passed`, and the
+same suite passed on rerun untouched. Overpass is a free, rate-limited community
+endpoint; a test that fails because someone else's server is busy teaches nothing
+and trains people to rerun until green, which is how real failures get ignored.
+
+Returning an _unavailable_ profile is not a fiction: it is exactly what production
+does during an Overpass outage, so the path under test is a real one. The
+obstruction geometry itself is covered by 21 tests that pass buildings in directly
+and never touch the network.
+
+**Measured after:** 374 passed in 5.34s and 5.27s on consecutive runs.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Patch it in each affected test             | Seven-plus call sites, and the next test to hit the route silently reintroduces the network. |
+| Record/replay HTTP fixtures                | Real fidelity, real maintenance; overkill for a dependency the suite should simply not have. |
+| Leave it and tolerate the flake            | Normalises rerunning until green, which is how genuine regressions get waved through.        |
+| Gate on an env var read in production code | Puts test scaffolding in the shipped path.                                                   |
+
+**Worth noting for the future:** this only surfaced because the suite was run
+twice. A single green run after a change that adds a network dependency proves
+less than it appears to.
+
+---
+
+### D-024 · Chips carry the brand tint; the primary button stays ink
+
+**Context.** The brief was to make the product look less machine-generated and
+more human — colourway, not just copy. A DOM audit of a full report found that of
+~2,100 colour declarations, only **97 carried real colour** (accent 45, sage 27,
+clay 25). Everything else was the ink/muted grey ramp. Greyscale plus one dark
+button is the visual signature of a template.
+
+**Chosen — chips use `--accent-soft`.** The token's own definition is _"tinted
+fills — chips, hover washes, card headers"_, but `.chip` was rendering
+`--chip-bg` (neutral grey) and `--accent-soft` appeared in exactly two places,
+both on the landing page. Chips repeat dozens of times per report, so this is
+where a faint tint does the most work. Contrast measured before and after:
+**8.08:1 → 7.80:1**, against an AA requirement of 4.5:1.
+
+**Rejected — recolouring `.btn-primary`.** I changed it to the accent first,
+reasoning from `CLAUDE.md`'s token table ("--accent … brand, Pro badge, CTAs").
+That was wrong, and `src/styles/btnContrast.test.ts` caught it:
+
+> All 13 HTML prototypes ship `.btn-primary { background: var(--ink) }`; the
+> accent belongs to hover and `.btn-accent`.
+
+So ink-at-rest is a deliberate, tested decision traceable to the design source,
+and a dedicated `.btn-accent` variant already exists for accent CTAs (used by the
+paywall components). `CLAUDE.md` says design wins where the two disagree, so the
+change was reverted.
+
+**Worth recording as a contradiction rather than silently resolving:**
+`tokens.css` says `--accent-soft` is for chips while `global.css` gave chips
+`--chip-bg`, and `CLAUDE.md`'s table says the accent is for CTAs while the
+prototypes and their test say buttons are ink. The chip case had no test and the
+token comment was explicit, so it was changed; the button case had both a test and
+a prototype lineage, so it was left alone. If more brand colour is wanted on
+primary buttons, that is a change to the design source — worth doing deliberately,
+with the prototypes updated, rather than by drifting the CSS.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Warm the background from cool limestone to cream | Directly reverses PR10, whose stated rationale is a _"cooler neutral ground so verdict colors and the blue accent carry the temperature"_ — and `--caution` was darkened specifically to pass AA on limestone. Undoing it would break a measured contrast decision to chase a feeling. |
+| Swap the hero CTA to `.btn-accent`               | Sanctioned variant, but it makes the landing page's main button differ from every other primary button in the product. A consistency change, not a one-off.                                                                                                                            |
+| Add a second accent hue for warmth               | A two-accent palette needs its own contrast work across both themes; not something to introduce mid-session without design review.                                                                                                                                                     |
+
+---
+
+### D-025 · Primary buttons carry the brand colour
+
+**Chosen.** `.btn-primary` rests on `--accent` and hovers to `--accent-hover`,
+reversing the previous ink-at-rest rule. `btnContrast.test.ts` and the
+DESIGN_README divergence table were updated to match.
+
+**Why the earlier reasoning (D-024) was wrong.** I reverted this once because a
+test asserted `--ink`, justified as _"all 13 HTML prototypes ship
+`.btn-primary { background: var(--ink) }`"_. That justification does not hold:
+`DESIGN_README.md` states plainly that **`tokens.css` now supersedes every
+warm-cream prototype**, and `MVP_TODO.md:394` still lists resyncing them as
+outstanding. The prototypes carry the _retired terracotta_ palette. The test was
+pinning the most prominent element on every screen to a design source the project
+had already formally replaced.
+
+Deferring to the design source was right in principle; I just had not checked
+whether that source still governed. Worth remembering: "there is a test for it"
+answers what the rule is, not whether the reason behind it survives.
+
+**Measured effect.** Brand-colour declarations on the landing page went from a
+handful to **296** (harbour 223, sage 31, clay 12, amber 12, accent-soft 18). The
+DOM audit that prompted this found only 97 across an entire report.
+
+**Contrast, both themes.** Light: white on `#1F4E68` = **8.94:1**. Dark: the token
+system flips to `#0C1116` on `#5E93B0` = **5.67:1** — verified live rather than
+assumed, because a naive swap would have put white on the lightened blue at
+2.72:1, which the token comment had already warned about.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Use the existing `.btn-accent` on hero CTAs only | Makes the landing page's main button differ from every other primary button. Inconsistency reads as an oversight, not a choice. |
+| Keep ink, add colour elsewhere                   | Tried — chips alone (D-024) moved the needle far too little. The primary button is the single most repeated coloured surface.   |
+| Warm the whole neutral ground                    | Reverses PR10's measured decision and breaks `--caution`'s AA margin on limestone.                                              |
+
+**Not done, and deliberately.** The 13 prototypes in `docs/design_handoff/` are
+still on terracotta and are now one rule further out of date. Resyncing them is
+already tracked (`MVP_TODO.md:394`); doing it properly means regenerating them
+against current tokens, which is a design task rather than a code one.
+
+---
+
+### D-026 · The hero leads with a verdict, not a stock image
+
+**Chosen.** Split the hero into two columns: the headline and the input on the
+left, and on the right a small card showing a real product output — a deal score
+of 15, "Hard pass", against a $3.5M Mississauga listing with −$23,534/mo cash
+flow. Added one contrastive line under the `<h1>` in Instrument Serif and
+`--accent`: _"We don't list properties. We tell you whether to buy one."_
+
+**Why.** The reference the user supplied (nothtechnologygroup.com) works on two
+devices: a short contrastive claim that says what the company is _not_, and a
+cinematic hero. The claim transfers directly. The cinematic part does not — its
+imagery is a stock close-up of an eye, which is the single most worn AI-company
+trope; copying it would land us exactly where the user said not to be.
+
+The honest translation is to make the hero image _the thing the product
+produces_. Nobody else scores a Canadian listing and makes a call on it, so the
+verdict card is both the most distinctive asset we have and a truthful preview.
+
+**Deliberately a bad score.** The showcase verdict is a hard pass, not a
+recommendation. A tool that only ever shows good news is an advert, not an
+advisor, and the product's entire claim is that it will tell you not to buy.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Full-bleed photograph of a house or skyline | Every real-estate site on earth opens this way; it says "listings", which is the one thing we are not.         |
+| Abstract gradient / mesh hero               | The exact "AI-looking" surface the user asked to move away from, and it proves nothing about the product.      |
+| Keep the single-column typographic hero     | Was working, but the first product evidence sat two full screens down. The strongest asset was below the fold. |
+| Show a strong score (e.g. 78) instead       | Reads as marketing. The hard pass is more distinctive and more honest about what the product is for.           |
+
+---
+
+### D-027 · The showcase's largest panel shows a rent distribution, not an empty map
+
+**Chosen.** Replaced the 200px placeholder box inside the showcase "Rent
+positioning" card — a grey rectangle captioned _"Toronto · M4Y · 1km radius"_ —
+with a distribution of the 36 comps behind the quoted range: ten $50 buckets
+from $1,800 to $2,300, the market-mid bucket in `--accent`, the asking-rent
+bucket in `--caution`.
+
+**Why.** It was the biggest single element in the page's only piece of product
+proof, and it rendered as a rectangle with nothing in it. To a first-time
+visitor that reads as unfinished software, which undoes everything the rest of
+the page is arguing.
+
+A map would have been the wrong replacement twice over. The showcase already
+renders a real Mapbox comps map in the column beside this one, so it would have
+been a duplicate; and a map answers _where_, while the panel is titled "Rent
+positioning" and is asking _how much_.
+
+The distribution answers it, and it carries the argument the panel exists to
+make: the mass of the building sits in the low $1,900s and this ask is out in a
+thin tail with three comps behind it. That is the negotiation case, and it is
+precisely what a listing site will never show you.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Render a second real Mapbox map                  | Duplicates the comps map already in the adjacent column, and costs a tile request on every landing-page view.                                                           |
+| Keep the placeholder, restyle it                 | The problem is that it is empty, not that it is ugly.                                                                                                                   |
+| Drop the panel and let the range bar stand alone | The range bar gives three numbers with no sense of shape; "$2,150 against a $1,800–$2,300 range" sounds unremarkable until you see that almost nothing trades up there. |
+| Wire it to live comp data                        | The landing page must render identically for everyone and is snapshot-tested; live data would make it flaky and slow.                                                   |
+
+**Also changed.** The closing CTA read _"Stop building the spreadsheet again.
+Paste the URL."_ Since D-020 the input takes an address too, so the page was
+contradicting itself between the hero and the footer. Now: _"Paste a link, or
+type an address."_
+
+---
+
+### D-028 · Address-entered listings get their own row (`source_url` is NULL, not `''`)
+
+**Chosen.** Made `listings.source_url` nullable (migration
+`20260906_listings_source_url_nullable.sql`), write NULL rather than `''` for
+listings that came from a typed address, and insert rather than upsert when
+there is no source URL.
+
+**The bug.** `source_url` was `text unique not null`, written on the assumption
+that every listing comes from a page we scraped. Address entry (D-020) has no
+URL, so every such listing was stored with the empty string — and the UNIQUE
+constraint meant they all competed for one row. `saveListing` upserted on
+`source_url`, so the collision was silent rather than an error: **each new
+address overwrote the previous listing, and share tokens issued earlier
+repointed at whatever property was entered most recently.** Two people
+analysing two addresses would each see the other's property.
+
+Found by running the flow end to end, not by a unit test — every unit test
+mocked the database, so the constraint that caused it was never exercised.
+
+**Why NULL rather than a synthetic URL.** Postgres treats NULLs as distinct for
+uniqueness, so scraped listings keep deduplicating on their URL while every
+address-entered listing gets its own row. NULL is also what "there is no source
+page" actually means; a synthetic `address://<uuid>` would put a non-URL in a
+column named `source_url` and mislead the next person to read the table.
+
+**Alternatives considered**
+
+| Option                                          | Why not                                                                                                                     |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Synthetic unique value, e.g. `address://<uuid>` | No migration needed, but stores something that is not a URL in `source_url` and leaves the misleading NOT NULL invariant.   |
+| Drop the UNIQUE constraint entirely             | Breaks scraped-listing deduplication, which is the reason the constraint exists.                                            |
+| Key address listings on a normalised address    | Two people analysing the same building would share one listing row and overwrite each other's price. Same class of bug.     |
+| Leave the upsert and accept overwrites          | This is the bug. A user's saved report silently becoming someone else's property is the worst failure the product can have. |
+
+**Regression cover.** `supabaseService.test.ts` now asserts that a listing with
+no URL is inserted and never upserted, that a scraped listing still upserts on
+`source_url`, and that two addresses produce two rows.
+
+---
+
+### D-029 · Comparable sales render on the personal buyer report, labelled by provenance
+
+**Chosen.** Wired `PBSalesSection` to the comps the analysis actually returns.
+On a live report it renders them when there are any and keeps the honest empty
+state when there are none. When the comps came from the provider's sample
+coverage area, the section says so in `--caution`: _"Real sales from the
+provider's sample coverage area — not this neighbourhood."_
+
+**Why.** The comps integration landed in the API and reached the investor
+report, but the personal buyer report — where comparable sales are the headline
+section (§03) — still rendered the demo fixtures' empty state regardless. The
+data was being fetched, mapped, and thrown away.
+
+**What is deliberately not filled in.** The feed carries sold price and date but
+no days-on-market and no distance from the subject. Those columns render an em
+dash. A zero in a DOM column reads as "sold the same day" and is
+indistinguishable from a real figure, so the type makes them `number | null`
+and the absence is explicit rather than encoded as a plausible number.
+
+**§02 Fair market value stays empty on purpose.** It would be trivial to derive
+an FMV band from these comps, and it would be wrong: while sample mode is on
+they are Tacoma sales, and positioning a Vaughan condo against them would be
+confidently incorrect in a way nothing on the page would reveal. It switches on
+when the Repliers plan covers Ontario.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Render sample comps with no provenance label | Presents Tacoma sales as this listing's neighbours. Exactly the fabrication the empty state existed to prevent. |
+| Keep the empty state until Ontario data      | The pipeline then ships untested; this is what let the wiring gap survive unnoticed in the first place.         |
+| Show 0 for days on market                    | A precise-looking lie. Worse than a dash, because nothing signals it is unknown.                                |
+| Derive the FMV band from sample comps        | Confidently wrong. See above.                                                                                   |
+
+---
+
+### D-030 · The maintenance reserve does not assert a build era it does not know
+
+**Chosen.** `maintenanceNote(0)` now returns _"1.5% of value / yr · build year
+unknown"_ instead of _"pre-1980 build"_.
+
+**Why.** `yearBuilt` is 0 when the listing did not state one, which is always
+for address-entered listings. Zero fell through to the final branch, so the
+report told the user their possibly brand-new condo was a pre-1980 build. The
+1.5% rate is kept — the conservative choice when age is unknown — but the
+stated reason is now the true one.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Use the 0.5% rate when unknown         | Understates the reserve on an old building, which flatters the deal. Wrong direction to be wrong in. |
+| Hide the note when the year is unknown | The user then cannot see why the reserve is what it is, and the figure looks arbitrary.              |
+| Ask for build year in the details card | Another required field on a form deliberately kept to two (D-021), for a second-order number.        |
+
+---
+
+### D-031 · Rental comps widen by radius when the FSA has none
+
+**Chosen.** `fetchRentalComps` now takes the subject's coordinates. When the FSA
+search finds nothing, it searches outward — 5km, then 10km — using a bounding
+box in Postgres trimmed to a true circle by haversine. The radius used is
+returned as `radiusKm` and shown in the report: _"within 5km, not this postal
+area"_. Confidence is capped at medium for 5km and low for 10km.
+
+**Why.** The existing fallbacks widened the date window (90→180 days) and the
+bed count (exact→±1) but never the location, so an FSA with no scraped rows
+returned nothing. Vaughan's L4K — the Metropolitan Centre, a dense condo
+corridor — had **zero** rows while **86 comps sat within 5km**. Every report
+there fell back to the gross-yield proxy and told the user no comps existed.
+
+That fallback was not neutral. The proxy assumes ~6% gross yield, which on a
+$729,900 listing implies about $3,650/mo. The real local median is **$2,475**.
+The proxy was overstating rent by roughly 47% and making a bad deal look
+survivable: the same listing scores 13 on the proxy and **8** on real comps,
+with cash flow moving from about −$1,833 to −$2,724. The missing-data path was
+flattering exactly the deals the product exists to warn people off.
+
+**Why not just scrape more.** Worth doing, and the seeds already cover 23 GTA
+municipalities, but coverage will always have holes — new FSAs, thin weeks,
+sources changing markup. The report should degrade to "comps from nearby,
+disclosed" rather than "no data", regardless of how good coverage gets.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Fall back to the neighbouring FSA by string | L4K and L4J happen to be adjacent; L4K and L4B are not. FSA codes are not ordered geographically, so this is right by luck.     |
+| PostGIS / a stored procedure                | Correct at scale, but a dependency and a migration for what is a fallback path. Bounding box + haversine uses existing columns. |
+| Keep the gross-yield proxy                  | It is the bug. A silently wrong rent is worse than a disclosed nearby one.                                                      |
+| Widen without disclosing                    | Presents a Mississauga median as Vaughan's. The whole point is that the reader can discount it.                                 |
+
+---
+
+### D-032 · The golden dataset covers every flag, positively and negatively
+
+**Chosen.** Expanded `golden_cases.json` from 3 cases (12 assertions, 8 flags)
+to 51 cases (78 assertions) covering all 15 regex flags, each with at least one
+case asserting it _should_ fire and one asserting it _should not_. Added two
+tests beside the accuracy gate: one failing if any flag lacks positive or
+negative coverage, one failing on duplicate case ids.
+
+**Why the negative cases matter most.** The old suite passed at 100% while
+testing three flags. A pattern that matched everything would have passed it.
+The first run of the expanded set immediately caught a real contradiction:
+_"Sorry, no pets permitted"_ fired **both** `no_pets` and `pets_allowed`,
+because `pets (welcome|allowed|ok|permitted)` matches inside "no pets
+permitted". A tenant reading that report would have been told the building was
+pet friendly when the listing said the opposite. Fixed with negative lookbehinds
+for "no " and "not "; accuracy went 98.7% → 100%.
+
+**Honest limit — these are not scraped listings.** The spec asks for 50 _real_
+Ontario listing descriptions. These are written to read like real ones and are
+labelled by what a careful human would conclude, but they are synthetic. They
+prove the rules behave as intended on the language they target; they do **not**
+prove real Realtor.ca prose falls inside that language. Collecting genuine
+descriptions needs the scraper running at volume, and should replace or extend
+this set rather than sit alongside it.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Wait for real scraped descriptions          | The gate stays untested meanwhile, which is how the pets contradiction survived. Synthetic now, real later, is strictly better. |
+| Generate cases from the patterns themselves | Circular — every case passes by construction and nothing is ever caught.                                                        |
+| Positive cases only                         | What the old set effectively was. Rewards over-matching, which is the dominant failure mode of a regex pipeline.                |
+| Label these as real listings                | They are not. Presenting invented prose as scraped data is the exact dishonesty the rest of the product avoids.                 |
+
+---
+
+### D-033 · The golden dataset is validated against real listings, not just itself
+
+**What was asked.** Whether the expanded golden dataset (D-032) is _reliable_.
+
+**Finding: it was not, as evidence about real listings.** The dataset passed at
+100%, but I wrote both the cases and the patterns, so the cases used the exact
+vocabulary the patterns already matched. That is circular — it proves the rules
+are self-consistent, not that they work.
+
+**How it was checked.** Ran the extractor over the **22 real Realtor.ca
+descriptions** already in the `listings` table (average ~1,000 characters).
+Only **6 of 22** fired any flag. Inspecting the silent 16 showed genuine misses,
+not clean listings:
+
+| Real phrasing (verbatim from scraped listings) | Should fire          | Did fire |
+| ---------------------------------------------- | -------------------- | -------- |
+| "Fully Renovated Two-Bedroom Condo"            | `recently_renovated` | no       |
+| "Completely Renovated In 2023"                 | `recently_renovated` | no       |
+| "Professionally renovated in May 2025"         | `recently_renovated` | no       |
+| "Maintenance Fees Include Hydro And Cable"     | `utilities_included` | no       |
+| "The Maintenance Fee Includes All Utilities"   | `utilities_included` | no       |
+| "one dedicated parking space"                  | `parking_included`   | no       |
+
+Only `newly renovated` was matched; every other way a listing says the same
+thing was invisible.
+
+**Fixed.** Widened the three patterns against that evidence and locked the real
+phrasings in as golden cases gc-052…gc-058. Real-world recall went **6/22 →
+10/22** while the synthetic set stayed at 100%, which is the check that matters:
+the wider patterns did **not** start over-matching. Specifically `gc-001`
+("Condo fee includes water and building insurance") stays negative — the
+utilities rule is deliberately limited to hydro, heat and "all utilities",
+because water alone does not change the monthly cost — and gc-017/gc-018
+("parking may be rented", "no parking space") stay negative too.
+
+**A qualifier is required for renovation.** Bare `renovated` would fire on
+"renovated in 1998", which is not what the flag means. The list of qualifiers is
+taken from observed prose, not invented.
+
+**Still true, and worth repeating.** 22 listings is a small sample from a
+handful of Toronto FSAs. It is enough to disprove "the rules work on real
+prose"; it is not enough to prove they do. The set should grow as the scraper
+runs, and gc-052…gc-058 are marked as real-derived so the distinction survives.
+
+**Alternatives considered**
+
+| Option                                         | Why not                                                                                                                    |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Trust the 100% synthetic pass                  | Circular. It was 100% before the pets contradiction was found too.                                                         |
+| Match bare "renovated" / "parking"             | Fires on "renovated in 1998" and "no parking space". Recall bought with false positives is a bad trade.                    |
+| Mutation-test the patterns instead             | Would show the dataset constrains the regex, but still never leaves the vocabulary I chose. Real prose is the harder test. |
+| Wait for a larger scrape before touching rules | Six concrete misses were already in hand. Fixing them now is strictly better than fixing them later.                       |
+
+---
+
+### D-034 · A report never shows photo frames for photos it does not have
+
+**The problem, as seen on screen.** Every report opened with a four-frame photo
+grid — a large "exterior · condo" tile, thumbnails labelled "living",
+"kitchen", "floorplan", and a **"+ 18 more"** badge — rendered whether or not
+the listing had a single photo. A listing entered by address never has any,
+because there is no page to take them from. So the first thing a reader studied
+was 360px of empty grey claiming eighteen photos that did not exist.
+
+It made a finished report look broken, and it invented content, which is the one
+thing this product must not do. The "+ 18 more" was a literal hardcoded string
+in `TenantReport.tsx` and `LandlordPropertyHero.tsx`.
+
+**Chosen.** One shared `ListingVisual` used by all three heroes:
+
+- photos exist → main image plus **however many thumbnails there actually are**,
+  and "+ N more" only when N > 0;
+- exactly one photo → it fills the width instead of sitting beside empty frames;
+- no photos → the property on a real map, with the caption _"No listing photos ·
+  report built from the address"_.
+
+The map is honest, useful, and carries the same visual weight, so the page still
+opens on something worth looking at. When the hero shows a map, the section map
+lower down is suppressed — rendering the same map twice read as a fault.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Keep the grid, drop the "+ 18 more"        | Four empty grey frames still imply four missing photos.                                  |
+| Stock or illustrative imagery              | A picture of a building that is not this building is a fabrication, just a prettier one. |
+| Collapse the hero to text only             | The report then opens on nothing, and the page loses its anchor.                         |
+| Scrape photos for address-entered listings | There is no listing page to scrape. That is the premise of address entry.                |
+
+---
+
+### D-035 · Report layout collapses via CSS, not `window.innerWidth`
+
+**The bug.** At 375px the report hero stayed in two columns and the page
+scrolled sideways by 348px. `PropertyHero` chose its columns with
+`window.innerWidth <= 480` — and `innerWidth` reports the **overflowing** width,
+not the viewport. Content overflowed → `innerWidth` read 723 → the check said
+"not mobile" → two columns → which caused the overflow. The measurement was
+downstream of its own effect.
+
+**Chosen.** `.report-hero` in `global.css` with a media query, which reads the
+viewport and cannot be fooled. `minmax(0, 1.5fr)` rather than `1.5fr`, because a
+bare `fr` floors at min-content and refuses to shrink. `matchMedia` where JS
+still needs the breakpoint (gauge size), so it agrees with the stylesheet.
+
+Also raised `.grid-1col-mobile` from 480px to 900px and applied it to the eight
+report sections that had fixed two-column grids. A two-column section does not
+become usable at 481px — its content has a minimum width, so below roughly 900px
+the columns stop shrinking and push the page sideways instead.
+
+**Nav.** The report nav's Share / Sign in / Save row is 422px wide and would not
+shrink, shoving itself off screen. Share and Save are already offered by
+`StickyActionBar` on mobile, so they are hidden there — a duplicate removed, not
+a capability. The breadcrumb gets `min-width: 0` so it truncates instead of
+pushing the buttons out.
+
+Horizontal overflow at 375px went from **348px to 10px**; desktop is unchanged
+at 0.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Fix the JS threshold (480 → 900)       | Still measures the wrong thing. The feedback loop remains; it just triggers at a different width. |
+| `ResizeObserver` on the container      | Correct but heavy for what one media query expresses, and it still disagrees with the stylesheet. |
+| Leave sections at the 480px breakpoint | Measured: they overflow well above 480px, which is what pushed the page sideways.                 |
+| Let the nav row wrap                   | A two-line nav on every report is worse than hiding two buttons duplicated below.                 |
+
+**Not fixed, and honest about it.** ~10px of overflow remains from the sticky
+action bar. And the in-app browser here renders WebGL through Microsoft Basic
+Render Driver, so Mapbox paints intermittently for me — it renders correctly in
+a normal browser, so the map is **not** known-broken; I simply cannot judge it
+reliably from this environment.
+
+---
+
+### D-036 · Depth and motion become tokens; a report gets a section rail
+
+**Asked for:** modern and appealing to use, explicitly _not_ cinematic.
+
+**What was actually missing.** The token file had **two** shadows, three tight
+radii, and **no motion tokens at all**. `.card` — the single most repeated
+surface in the product, dozens per report — had no transition and no hover
+state. Every surface therefore sat at the same depth and nothing responded to
+being touched. That is why better formatting still read as "the same look":
+the page was well arranged and completely inert.
+
+**Chosen.**
+
+1. **A three-level elevation scale** (`--shadow-sm` / `--shadow-card` /
+   `--shadow-raised`), each a tight contact shadow plus a wide soft one. The
+   contact shadow is what stops a card looking pasted onto the background. Dark
+   mode carries depth through an inset top highlight instead, because a shadow
+   on a dark ground reads as nothing.
+2. **Motion tokens** — `--ease`, `--dur-fast`, `--dur`, `--dur-slow`. These
+   timings were already specified in CLAUDE.md but retyped at every call site,
+   so they had drifted from 0.12s to 0.3s across components.
+3. **Radii up one step** (6/12/18 → 8/14/20). The cheapest single change that
+   stops a dense data page reading like an internal admin tool.
+4. **`.card-interactive`**, deliberately separate from `.card`. Almost no report
+   card is clickable; giving every one a hover lift would promise an
+   interaction that is not there, which is worse than being inert.
+5. **`ReportSectionRail`** — a fixed rail in the left margin listing the
+   report's sections, tracking the reader on scroll and jumping on click.
+
+**Why the rail is the "appealing to use" half.** A report is eleven sections and
+several thousand pixels of dense numbers, and the only way through it was to
+scroll and hope — no sense of how much was left, which section you were in, or
+how to get back to one. The rail gives the document a visible shape.
+
+It **reads the DOM rather than keeping a list**: sections come from
+`[data-section]` and labels from a `data-section-topic` that `SectionHead` now
+emits, so a section added, removed or renamed appears correctly with no second
+place to update. A hardcoded table of contents would drift silently.
+
+**Deliberate limits.**
+
+- Labels appear only above 1620px. At 1440px the margin is 80px, so a 190px
+  label would sit on top of the report; below that the rail stays a column of
+  numbers, which still answers "where am I" and "how much is left".
+- Hidden below 1240px — it lives in a margin that does not exist on a phone.
+- A scroll listener, not `IntersectionObserver`: sections are taller than the
+  viewport, so several intersect at once and the observer cannot say which one
+  is being read without re-deriving positions anyway.
+- `prefers-reduced-motion` keeps the colour and shadow changes and drops the
+  transform. The state change is information; being moved around is not.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Full-bleed cinematic sections, scroll motion | Explicitly ruled out. It also does not transfer: most of the surface is a report, not a landing page.                         |
+| Restyle the type scale and palette           | The palette is PR10's measured, contrast-checked system. Changing it to look different would trade accessibility for novelty. |
+| Hover lift on every `.card`                  | Implies clickability across dozens of inert surfaces.                                                                         |
+| A horizontal sticky tab bar of sections      | Eats vertical space on every screen and truncates at eleven sections.                                                         |
+| Hardcode the rail's section list             | Drifts the moment a section is renamed, and silently.                                                                         |
+
+**Not claimed.** This is a foundation and one navigational addition. The report's
+own visual identity — the score card is still nine rows of small grey text
+around an underplayed gauge — is untouched and is the obvious next move.
+
+---
+
+### D-037 · The investment verdict leads the score card
+
+**Chosen.** A headline verdict, a prominent monthly cash-flow panel, and weighted
+component bars replace the centered gauge and equal-width hairlines. Keep the
+PR10 palette and assigned font roles. Spacing, typography, rules, and motion use
+tokens; reduced motion disables gauge and bar transitions. The backend remains
+the authority for both the score and verdict. Explain the 95-point component
+scale and normalized 100-point display, including risk limits. Zero points have
+zero fill; invalid points show an em dash rather than a plausible score.
+
+**Why.** A reader should see the recommendation and monthly financial consequence
+before studying the inputs. Weighted tracks expose the different contribution
+limits rather than implying every component matters equally.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                               |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| Cinematic imagery or a new palette          | Outside the owner's direction and the contrast-checked design system. |
+| Make only the gauge larger                  | Still makes the verdict and cash loss secondary.                      |
+| Equal-length tracks or minimum visible fill | Misrepresents weights or gives zero-point components apparent credit. |
+| Infer the verdict from component totals     | Would bypass backend risk ceilings.                                   |
+
+---
+
+### D-038 · Measure extraction on full, traceable listing prose
+
+**Chosen.** Add 38 verbatim Ontario descriptions: 22 from the approved database
+archive and 16 fresh successful scrapes, out of 21 attempted URLs. Five pages
+yielded no usable description and were excluded. Every new case carries its
+source URL, address, scrape timestamp, acquisition method and description hash.
+Keep the original 58 cases (51 synthetic, seven real-derived excerpts) intact.
+The dataset now has 96 cases and 653 assertions.
+
+Manually label the 15 regex flags, leaving current-tenancy labels unset in two
+ambiguous descriptions. Widen only evidenced phrase variants for parking,
+utilities, pets, tenancy, basement suites and renovation. Remove the bare
+dated-renovation pattern: a renovation in 2014 is not evidence of a recent
+renovation. Qualified language such as "fully renovated" remains supported.
+Add negation and older-renovation counterexamples. No flag severity changes.
+
+**Why.** Before these fixes the expanded aggregate still scored 97.1%, masking
+19 errors. On the fully labeled real positives, precision was 30/31 (96.8%) and
+recall 30/48 (62.5%). Both are now 48/48 with no false positives on this corpus.
+Enforce separate 95% real precision and recall gates plus exact preservation of
+the original cases. These are development-corpus results, not held-out accuracy.
+The prior "10/22 recall" was a listing activation count, not labeled flag recall.
+
+**Alternatives considered**
+
+| Option                                                  | Why not                                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Add more synthetic prose                                | Does not test vocabulary the rule author did not choose.                        |
+| Use aggregate accuracy alone                            | Negative labels concealed real missed flags.                                    |
+| Treat ambiguous historical tenancy as current occupancy | Would invent a present fact.                                                    |
+| Claim 100% real-world extraction                        | Rules were tuned on this corpus; broader and held-out coverage is still needed. |
+
+**Handoff correction.** The Haiku extractor exists and is invoked by the analysis
+router. Its broader semantic recall has not been established by this regex suite.
+
+---
+
+### D-039 · Live verification exposes display assumptions and duplicated tax
+
+**Chosen.** Preserve unknown year as the display model's zero sentinel. The
+investor maintenance display then uses the backend's 1% unknown-year assumption
+and explicitly labels it. Address entry does not collect parking, so show
+"— parking · not provided" instead of a claimed zero. For live investor reports,
+cash invested is down payment plus the API closing-cost total: that total already
+includes land transfer tax. Show the remaining costs separately from LTT.
+
+**Why.** The live report hid the invented build year while still using it to
+understate displayed maintenance at 0.5%. It also counted $11,073 of tax twice:
+cash to close was $170,526 instead of $159,453. These are display corrections;
+the backend reference remains 8 / hard pass and −$2,723.68/month.
+
+**Alternatives considered**
+
+| Option                                                   | Why not                                                        |
+| -------------------------------------------------------- | -------------------------------------------------------------- |
+| Hide the build year but keep an estimated age internally | The invented age still changes displayed costs.                |
+| Assume address-entry parking is zero                     | The form never asked for it.                                   |
+| Add LTT to closingCostsTotal                             | The backend already includes it, so this double counts tax.    |
+| Change backend scoring to match the old display          | Would make correct underwriting conform to a presentation bug. |
+
+**Verification and limits.** The owner approved four fresh shared-database
+verification reports, one per mode, plus reading archived descriptions. All four
+completed and kept distinct listing IDs and correct share-link properties after
+subsequent creations. No production deployment or merge was authorized.
+Vercel's environment-variable list confirms VITE_API_URL is assigned to both
+Production and Preview. Automatic approval review blocked opening its secret
+value; coverage is verified, the endpoint value is not.
+
+The live AI narrative also proposed a roughly $300,000 target price without a
+provided calculated target. Treat that as an unresolved narrative-grounding
+issue before release, not a verified negotiation recommendation. Personal-buyer
+maintenance defaults and demo closing-cost conventions need a separate parity
+review; do not infer that every mode's financial presentation is validated here.
+
+---
+
+### D-040 · A live personal report stays unscored until pricing is sourced
+
+**Chosen.** Live personal reports always pause their aggregate Home Score until
+verified Ontario fair-market-value data exists. Schools and SunScout still render
+in their own sourced sections; the paused score card shows only validated risk
+points. A photo-less address entry uses `ListingVisual`'s real map and caption,
+and missing parking says it was not provided. Tenant asking rent likewise shows
+an em dash plus the reason when the address workflow supplied none. Utility and
+insurance notes identify estimates without claiming a heating system, provider,
+or housing type the listing did not establish.
+
+**Why.** The live Buttermill personal report awarded 18/25 pricing points from an
+FMV band mechanically centered on asking, then displayed 83 / “Make an offer.” It
+also rendered four empty photo frames and “+ 28 more.” Those outputs looked
+authoritative while being derived from missing data. School data does not make
+the asking price fair, and a zero rent or parking count is not the same as an
+unknown value.
+
+**Alternatives considered**
+
+| Option                                                       | Why not                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------ |
+| Enable Home Score when either schools or FMV exists          | Schools cannot validate the pricing component.         |
+| Show known component points beside fabricated pricing points | The resulting total still flatters an unverified deal. |
+| Keep labelled photo placeholders in live reports             | Labels and a “more” count imply photos exist.          |
+| Render `$0/mo` or `None` for absent inputs                   | Those are factual claims, not empty states.            |
+
+---
+
+### D-041 · Mobile report grids may shrink below their contents
+
+**Chosen.** Mobile one-column helpers use `minmax(0, 1fr)` and set direct grid
+children to `min-width: 0`. The investor expense breakdown becomes one column
+below 900px, and personal-report action rows wrap. The personal demographic strip
+uses the same collapse helper.
+
+**Why.** At a 375px viewport the document was 385px wide in investor/landlord
+mode and 520px wide in personal mode. DOM bounds traced the first overflow to
+the two-column expense rows and the larger one to a fixed four-column statistics
+strip plus button rows. After these changes, measured document and viewport
+width are both 365px (the browser reserves 10px for its scrollbar).
+
+**Alternatives considered**
+
+| Option                               | Why not                                                           |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| Hide horizontal overflow on the page | Clips content and leaves the broken layout in place.              |
+| Shorten labels until they fit        | Content changes would only mask the fixed-width grid.             |
+| Add another JavaScript width check   | CSS owns layout and avoids the feedback loop documented in D-035. |
+
+---
+
+### D-042 · Reject AI narratives with unprovided dollar claims
+
+> **Superseded by D-043.** This boundary protected the brief Sonnet narrative
+> path. Verdict prose is now deterministic and no longer calls Sonnet.
+
+**Chosen.** Narrative prompts forbid calculated dollar amounts, and the service
+post-validates every currency claim against the numeric fields supplied to the
+model. It compares exact rounded dollar values while accepting commas, spacing,
+and negative signs. Any unprovided or decimal currency amount rejects the whole
+narrative and returns the existing explicit temporary-unavailable fallback.
+Tenant targets may repeat a supplied asking, low, mid, or high rent.
+
+**Why.** The real Buttermill narrative proposed a roughly $300,000 purchase
+target. The calculation engine supplied asking price, rent, cash flow and
+break-even rent, but no purchase target. A prompt instruction alone cannot make
+fabricated money safe; a deterministic output boundary can.
+
+**Alternatives considered**
+
+| Option                               | Why not                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Strengthen the prompt only           | The model can still disobey it, as the live run demonstrated.                                                                        |
+| Allow arithmetic-derived dollar gaps | Reimplements financial calculations in prose without a tested source field.                                                          |
+| Delete only the offending sentence   | Sentence splitting can leave dependent claims and produce incoherent advice.                                                         |
+| Validate every number in the prose   | Addresses, scores, percentages, counts and ordinary quantities need different semantics; currency is the observed high-risk failure. |
+
+**Limit.** This boundary does not prove that non-currency prose or percentages
+are grounded. Add typed source fields and validators when a real failure exposes
+those classes; do not claim general narrative factuality from this guard.
+
+---
+
+### D-043 · Generate verdict prose deterministically in the backend
+
+**Chosen.** `generateNarrative` is now a fixed backend formatter over validated
+structured inputs. Each report mode has explicit branches for known and missing
+evidence. It makes no model call, ignores subscription tier when choosing words,
+and produces byte-for-byte identical prose for identical inputs. Claude Haiku
+remains confined to structured listing-description flag extraction.
+
+**Why.** Even a language model called with temperature zero can vary between
+runs or model revisions. PropScout's verdict is decision support: two checks of
+the same inputs must not offer different advice. Deterministic branches also
+make missing evidence and negotiation limits testable instead of prompt wishes.
+
+**Live verification.** Four fresh Buttermill reports, one per mode, were run
+twice through the real local API/calc/shared-Supabase stack. Each second pass
+retained its listing ID, score, verdict, and byte-identical SHA-256 narrative
+hash. All four stayed at 8 / hard pass and −$2,723.68 monthly cash flow; the
+tenant and personal prose explicitly withheld conclusions that lacked asking
+rent or local comparable-sale evidence.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                             |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Keep Sonnet at temperature zero             | Temperature zero reduces randomness but does not guarantee identical output.                        |
+| Cache the first model response per listing  | Freezes an opaque response and can serve stale prose after calculations or evidence change.         |
+| Seed the prompt and validate dollar claims  | Still depends on model behaviour and only catches selected error classes after generation.          |
+| Generate once and reuse across report modes | Investors, personal buyers, tenants, and landlords need different decisions from the same property. |
+
+**Limit.** Identical prose requires identical structured inputs. A later rate,
+comparable, or verified-risk update can correctly change both metrics and text.
+
+---
+
+### D-044 · Use full clockwise score rings and code-rendered landing previews
+
+**Chosen.** Every numeric score uses a full circular track that starts at twelve
+o'clock and fills clockwise. Verdict pills sit outside the ring. The landing
+mode cards now render responsive HTML previews instead of cropped WebP report
+screenshots; chips live in normal document flow, and the SunScout summary uses
+shrinkable grid columns with a one-column phone layout. Tenant checklist and
+rent-alert actions also stack at the phone breakpoint so their controls cannot
+widen the document.
+
+**Why.** The 270-degree demo gauge looked incomplete and did not match the live
+report gauge. Cropped screenshots baked overlapping headers into the marketing
+page and could not reflow when the card width changed. Moving the verdict out of
+the ring prevents long labels from colliding with the number at every gauge size.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                        |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Keep the 270-degree speedometer arc    | The owner prefers the clock treatment, and the two styles made scores look unrelated.          |
+| Re-crop the existing WebP screenshots  | A fixed image can reproduce the same overlap at another width and cannot respond to text size. |
+| Patch each screenshot with new artwork | Maintains two visual implementations and lets marketing previews drift from product UI again.  |
+| Put verdict text inside the ring       | Long verdicts compete with the score and label, especially at the 84px and 120px sizes.        |
+
+---
+
+### D-045 · Allow scoped Vercel Previews and preserve report error truth
+
+**Chosen.** The API CORS allowlist keeps the configured canonical frontend and
+also accepts HTTPS origins belonging to PropScout deployments under the owner's
+Vercel project namespace. The saved-report client returns `null` only for API
+404/410 responses; network and unexpected server failures produce a separate
+temporary-unavailable state.
+
+**Why.** The corrected Preview API URL still could not load a known report even
+though the same endpoint returned it directly. Response headers proved that the
+API always emitted the production origin, so the browser rejected Preview
+requests. The client then swallowed that network error and falsely said the
+report had expired or never existed. Both behaviours prevented honest
+pre-merge end-to-end verification and misrepresented a service outage as data
+loss.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Set `FRONTEND_URL` to the current Preview   | Breaks browser access, redirects, and PDF rendering for `propscout.ca`.                 |
+| Allow every `*.vercel.app` origin           | Grants credentialed CORS access to unrelated Vercel projects.                           |
+| Add only the current branch alias           | The next branch or immutable deployment URL would fail again.                           |
+| Keep returning `null` for every fetch error | Tells users their report is gone when the service or browser connection is unavailable. |
+
+**Limit.** The CORS change takes effect only after the API branch is deployed.
+The Vercel frontend variable was corrected and its Preview rebuilt, but Preview
+cannot complete a browser E2E run against production API until this backend
+change ships.
+
+---
+
+### D-046 · Use one full-width listing-type bar in every mode preview
+
+**Chosen.** Each landing-page report preview starts with the same 30px,
+full-width listing-type bar. The three compact previews use one fixed 194px
+canvas, and the small investor clock splits “Deal score” and “/ 100” across two
+centered lines inside a 92px ring.
+
+**Why.** Inline chips produced three different apparent header widths and made
+the cards look unrelated. The investor's longer one-line score label exceeded
+the usable width inside the dial, while its taller content made that preview a
+different height from its neighbours.
+
+**Alternatives considered**
+
+| Option                                | Why not                                                                 |
+| ------------------------------------- | ----------------------------------------------------------------------- |
+| Give each chip the same fixed width   | A fixed chip still reads as a tag rather than a consistent card header. |
+| Make only the investor preview taller | Preserves the uneven row the owner identified.                          |
+| Shrink the label onto one line        | The text becomes too small before it fits comfortably inside the ring.  |
+| Move `/ 100` outside the dial         | Separates the scale from the score it explains.                         |
+
+---
+
+### D-047 · Derive live tenant advice only from listing-specific evidence
+
+**Chosen.** Live tenant checklists use the scraped listing and its fired risk
+flags. A bedroom-window question appears only when the analysis found an
+unverified-bedroom, glass-door-bedroom, or no-exterior-window flag. Negotiation
+targets start at the observed comparable-range low rather than three percent
+below it. A scraped parking-space count remains “confirm” until the listing data
+proves it is included in rent. SunScout describes low sky openness even when
+modeled direct-sun loss rounds to zero, and it states that buildings with unknown
+heights were omitted. Annual savings use the asking rent minus each end of the
+target range, so the negotiation and monthly-cost sections agree.
+
+**Why.** The real one-bedroom Yonge Street run inherited a demo-only “second
+room” question. It also proposed $1,900 when the lowest observed comparable was
+$1,959, and called the skyline effectively open beside a 14% openness reading.
+Each statement went beyond or contradicted the available evidence.
+
+**Alternatives considered**
+
+| Option                                               | Why not                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| Keep one generic demo checklist for every report     | It introduces room and amenity claims that may not apply to the listing. |
+| Keep a 3% below-range negotiation anchor             | No observed comparable supports that number.                             |
+| Treat a nonzero parking-space count as included      | The scrape proves the count, not whether the landlord charges extra.     |
+| Calculate savings from the width of the target range | That does not measure savings from the rent the tenant was asked to pay. |
+| Describe obstruction only from lost direct-sun hours | A zero rounded loss can coexist with a heavily obstructed sky dome.      |
+| Treat buildings without recorded heights as low-rise | Their heights are unknown, so the report cannot make that claim.         |
+
+---
+
+### D-048 · Preserve explicit tenant facts and label modeled proximity honestly
+
+**Chosen.** Strict deterministic phrases such as “Includes Parking and Locker”
+now confirm those amenities in a live tenant report, while utilities and other
+lease terms stay unknown. Nearby amenities show straight-line distance without
+inventing drive time. Saved tenant reports pass their analysis token to
+SunScout so the user can replace its south-facing default with the real facade
+direction. School copy names only the EQAO data that is present and states that
+attendance boundaries are not verified. Empty listing sections distinguish “No
+supported flags” from “Viewing required.” Unsourced light-demand marketing and
+inactive rent-alert and personal-buy controls are removed or labeled unavailable.
+
+**Why.** The Yonge Street listing explicitly includes parking and a locker, but
+the report discarded both claims. Its location section converted straight-line
+distance into a supposed drive time using a fixed 30 km/h speed. Its school
+footer claimed Fraser rankings and highlighted catchments even though every
+Fraser value was null and boundaries are not ingested. SunScout exposed its
+direction control in other saved report modes but omitted it from the tenant
+page. The conversion area also promised monitoring and local valuation actions
+that had no working handler or Ontario sales source.
+
+**Alternatives considered**
+
+| Option                                                 | Why not                                                                     |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Treat any parking or locker mention as included        | A mention does not prove that the amenity is part of the monthly rent.      |
+| Keep the fixed-speed drive-time estimate               | It ignores the road network and traffic while presenting a precise minute.  |
+| Keep Fraser and catchment copy as future-facing UI     | It describes data the current report does not contain.                      |
+| Leave SunScout permanently on the south-facing default | The actual facade is knowable by the user and materially changes the model. |
+| Give both empty sections “Not enough detail”           | The two states have different causes and different next actions.            |
+| Keep inactive forms as visual previews                 | Users can reasonably believe a submitted email started real monitoring.     |
+
+---
+
+### D-049 · Keep side-score stickiness only while the hero is side by side
+
+**Chosen.** Tenant, personal-buyer, and landlord side-score cards remain sticky
+above 900px, where they occupy a separate column beside the property visual. At
+the existing 900px one-column breakpoint, their position becomes static and the
+top offset is cleared. The score can still be ordered before the photos on
+smaller screens, but it scrolls away as ordinary content.
+
+**Why.** Inline sticky positioning survived the responsive grid collapse. Once
+the photo column moved underneath the score, the full score card stayed pinned
+for the height of that photo column, making the images visibly travel behind it.
+The sticky relationship is useful only while the two columns are actually side
+by side.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------------ |
+| Remove sticky positioning at every width         | The desktop side-by-side card can remain visible without covering media. |
+| Raise the score card's background or z-index     | This hides the symptom while preserving the obstructive scroll behavior. |
+| Move photos above the score on all small screens | It changes the established score-first reading order unnecessarily.      |
+| Use JavaScript to toggle position on resize      | CSS already owns the grid breakpoint and cannot drift out of sync.       |
+
+---
+
+### D-050 · Collapse the schools grid on phone widths
+
+**Chosen.** The tenant schools section keeps three columns above 640px and
+collapses to one column at and below 640px.
+
+**Why.** Its fixed three-column grid relied on each track's minimum content
+width. At 375px, the third column began beyond the viewport and widened the page
+by 84px. One full-width column keeps school names, board labels, distance, and
+quality readable without horizontal scrolling.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
+| Force three narrower columns at every width | School names and the card footer would become too narrow to read.         |
+| Hide horizontal overflow on the whole page  | A global mask could conceal unrelated responsive defects elsewhere.       |
+| Use a horizontally scrolling school row     | Core report content should read in the document's normal vertical scroll. |
+
+---
+
+### D-051 · Align rent-marker tooltips inward at the chart edges
+
+**Chosen.** The rental-comps marker keeps its centred tooltip through the middle
+60% of the range. Within the outer 20% on either side, the tooltip aligns inward
+from the marker and moves its pointer to match.
+
+**Why.** On the live Yonge Street report, the asking rent sat near the high end
+of the comp range. Its visually hidden tooltip still extended past the 375px
+viewport and widened the whole document by six pixels. Edge-aware positioning
+keeps the tooltip available on hover and keyboard focus without creating
+horizontal page movement.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| Hide horizontal overflow on the whole page       | It masks future responsive defects and can clip legitimate focused UI. |
+| Remove the marker tooltip on phones              | Touch and keyboard users would lose the exact asking-rent explanation. |
+| Make every tooltip left- or right-aligned        | Middle markers read most clearly when the label remains centred.       |
+| Shorten the tooltip text until it happens to fit | Copy length is not a reliable layout constraint across viewports.      |
+
+---
+
+### D-052 · Preserve empty report sections and disclose rent-comp provenance
+
+**Chosen.** Empty tenant sections keep the same `data-section` identifier as
+populated sections so the report rail and audit tools can still reach them.
+The rent-positioning and market-evidence sections name Rentals.ca, Kijiji, and
+PadMapper as nightly asking-rent sources and state whether the result came from
+the first three postal characters or a widened radius search.
+
+**Why.** Missing evidence is part of PropScout's conclusion and should remain a
+first-class section rather than disappear from navigation. The live report also
+showed a precise comp median and count without telling the reader whether those
+records were sample data, sold leases, or current asking rents. Provenance and
+geographic scope are necessary to judge how much confidence to place in the
+range.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| Omit identifiers from empty states           | Navigation then skips the sections where the report admits missing proof. |
+| Describe the source only as “market data”    | It does not let a reader distinguish asking rents from completed leases.  |
+| Always claim the comps are from the same FSA | The API widens to a radius when the FSA has no usable records.            |
+| Call the feeds comparable leases             | The records are scraped listing asks, not verified signed lease amounts.  |
+
+---
+
+### D-053 · Treat zero listing tax as unknown and canonicalize municipality names
+
+**Chosen.** A scraped annual-property-tax value counts as known only when it is
+greater than zero. A `$0` Realtor.ca value is stored as unknown, and the analysis
+uses the existing conservative city-rate estimate. Realtor.ca city labels with a
+parenthesized neighbourhood, such as `Toronto (Yonge-Eglinton)`, are reduced to
+their municipality for tax rates, CMHC vacancy data, and Toronto municipal land
+transfer tax. The analysis route also recognizes the suffixed form so reports
+already saved under it remain correct when recalculated.
+
+**Why.** The live Hillsdale listing published `$0` tax and called its city
+`Toronto (Yonge-Eglinton)`. Accepting both literally removed all property tax
+from operating expenses and all Toronto MLTT from closing costs. Each error made
+the investment look better than the available evidence supports.
+
+**Alternatives considered**
+
+| Option                                                   | Why not                                                                    |
+| -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Accept `$0` whenever Realtor.ca publishes it             | A zero placeholder does not establish a legal tax exemption.               |
+| Leave tax unknown in the calculation                     | The calc engine requires a value and zero would understate carrying costs. |
+| Use the Ontario default rate for suffixed Toronto labels | A municipality-specific rate is already available and more accurate.       |
+| Fix only newly scraped city names                        | Existing saved listings with the suffix would still omit Toronto MLTT.     |
+
+---
+
+### D-054 · Persist effective tax provenance and use Toronto's actual MLTT brackets
+
+**Chosen.** Completed analyses persist the annual property tax used by the
+calculator and whether it was estimated. Personal and investor reports use that
+same value for their itemized costs, label estimates for verification, and keep
+older reports compatible when the fields are absent. The web calculator now
+uses Toronto's municipal LTT brackets independently from Ontario's provincial
+brackets.
+
+**Why.** After the backend correctly replaced Hillsdale's `$0` placeholder with
+a city-rate estimate, the personal page still printed `$0/yr` and the investor
+expense rows omitted tax because both recalculated from the raw listing. The
+Toronto cash-to-close card also claimed `$72,750` in total LTT while its own
+provincial and municipal rows summed to `$72,000`; the schedules diverge between
+`$55,000` and `$400,000` and cannot be modeled by simply doubling provincial
+tax.
+
+**Alternatives considered**
+
+| Option                                        | Why not                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------- |
+| Let each page estimate tax independently      | Rates and provenance could drift from the backend calculation.                  |
+| Replace the raw listing tax with the estimate | It would present an inferred value as a scraped listing fact.                   |
+| Hide tax whenever the listing omits it        | Monthly totals would still need a value and could silently disagree.            |
+| Model Toronto MLTT as equal to provincial LTT | The bracket schedules differ and produced contradictory totals on this listing. |
+
+---
+
+### D-055 · Keep displayed units and Toronto-tax copy aligned with the calculation
+
+**Chosen.** Personal-school footers describe EQAO composites as values out of
+100, matching the cards and stored data. The Toronto financing control says it
+adds municipal LTT using Toronto's bracket schedule. The saved investor report
+uses the persisted effective tax and its provenance rather than a separate
+raw-listing mapper.
+
+**Why.** The Hillsdale audit showed 90.0/100 school cards followed by “out of
+10,” and an MLTT control claiming municipal tax doubled the provincial amount
+after the calculator was corrected to the actual municipal schedule. A second
+investor mapper also kept rendering an unknown tax as zero after the shared
+mapper had been fixed.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                            |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| Convert stored EQAO composites to a 0–10 display | Every card and score calculation already uses the 0–100 composite. |
+| Keep “doubles provincial” as shorthand           | It is numerically false wherever the two bracket schedules differ. |
+| Maintain separate tax logic in both mappers      | The paths had already drifted and produced contradictory reports.  |
+
+---
+
+### D-056 · Show school distance as measured and let financing presets wrap
+
+**Chosen.** Real personal-buyer school cards show the stored straight-line
+distance and label it “straight-line.” They omit drive time until a routing
+source supplies one. Financing preset buttons wrap onto another line when the
+available card width is too small.
+
+**Why.** The personal report converted school distance to a precise “1 min
+drive” using a fixed two-minutes-per-kilometre multiplier even though no route
+was queried. At a 310px app viewport, the four financing presets also widened
+the document by 36px and caused horizontal scrolling.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                |
+| -------------------------------------------- | ---------------------------------------------------------------------- |
+| Keep the drive time with an “approx.” prefix | A fixed multiplier still ignores streets, crossings, and traffic.      |
+| Hide school distance entirely                | The straight-line distance is real and useful when clearly identified. |
+| Clip or horizontally scroll the preset row   | The buttons fit cleanly when normal flex wrapping is enabled.          |
+
+---
+
+### D-057 · Collapse investment metric tiles before their content overflows
+
+**Chosen.** The investment metric grid switches from four columns to two below
+701px, and every tile may shrink within its grid track. The personal-buyer
+checklist follows section 07 as section 08 now that the unused comparable-sales
+map is not rendered.
+
+**Why.** A six-viewport audit found that the DSCR and break-even tiles widened a
+640px page to 647px while every other tested sale-report width fit. The same
+audit exposed a visible section-number jump from 07 to 09 on the personal
+report. Both defects came from desktop assumptions that no longer matched the
+rendered report.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| Hide horizontal overflow on the report     | It would conceal clipped values and future responsive defects.           |
+| Shrink the metric labels and values        | The report would become harder to read while still depending on content. |
+| Collapse every two-column utility at 700px | Only the investment metric grid failed at that width.                    |
+| Keep section 09 as a placeholder for a map | A reader should not see a missing section number for absent content.     |
+
+---
+
+### D-058 · Keep provider sample sales out of local market claims
+
+**Chosen.** When Repliers returns its Tacoma sample coverage, the investor card
+is titled “Provider sample sales,” its count says “provider sample sales,” and
+the empty appreciation card states that no local series is connected. Investor
+and personal reports name Teranet, Statistics Canada, or a trend period only
+when the corresponding value actually came from that source; an empty value
+instead says that no source or result is connected.
+
+**Why.** The Hillsdale report correctly warned that the Tacoma rows were sample
+data while the same card called them “verified sales” under “What sold nearby.”
+The adjacent all-dash card also attributed nonexistent values to Teranet and
+public MLS. Those labels could make a reader treat demo coverage as Toronto
+evidence despite the warning.
+
+**Alternatives considered**
+
+| Option                                      | Why not                                                              |
+| ------------------------------------------- | -------------------------------------------------------------------- |
+| Keep the local headings beside the warning  | Contradictory labels make the provenance warning easy to misread.    |
+| Hide the Tacoma rows                        | They remain useful for exercising the UI when plainly identified.    |
+| Fill appreciation from the two Tacoma sales | Two unrelated sales cannot establish a Toronto appreciation series.  |
+| Always show the Teranet attribution         | A source should be named only when the displayed value came from it. |
+
+---
+
+### D-059 · Remove inert promises and decorative placeholder metrics
+
+**Chosen.** The STR preview states that revenue figures are unavailable and no
+longer renders a blurred metric grid or an inactive notification button. The
+personal report removes inactive agent-email and referral buttons, describes
+the missing integrations, and gives its investment action a working route back
+to the analyzer. An empty investor risk scan is amber and says only that no risk
+language was found in the listing description.
+
+**Why.** The live sale audit found controls that promised email, referral, and
+notification actions but had no handlers or connected service. It also found a
+green “No red flags” result based only on description parsing. Interface
+decoration and reassuring copy must not imply data or capabilities that the
+product does not have.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| Leave the controls enabled for visual polish | A working-looking control is a product claim, even before a backend exists. |
+| Disable the same buttons without explanation | It would still leave the reader guessing why the action cannot run.         |
+| Keep blank blurred STR tiles                 | Decorative metrics imply a modeled result where no source is connected.     |
+| Treat an empty wording scan as a pass        | Listing copy cannot clear inspection, title, flood, or building risks.      |
+
+---
+
+### D-060 · Treat zero parking as unknown until the source proves absence
+
+**Chosen.** Every report mapper renders `parkingSpots <= 0` as
+“— parking · not provided.” A positive count is still shown normally. The
+upstream schema should eventually carry explicit parking provenance so a
+verified zero can be distinguished from a missing value.
+
+**Why.** The live Buttermill sale returned zero in the normalized field without
+evidence that the listing said there was no parking. The personal report turned
+that ambiguous default into the factual claim “None.” The current API shape does
+not expose a `parkingKnown` flag, so zero cannot safely support that claim.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                     |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| Continue treating zero as no parking       | The normalized default does not prove the listing explicitly reported zero. |
+| Infer parking from the building or address | That would fabricate a listing fact from a plausible association.           |
+| Hide the parking field                     | The reader should see that this due-diligence item is still unresolved.     |
+| Add `parkingKnown` in this UI fix          | Correct long term, but it requires scraper, API, and stored-schema changes. |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

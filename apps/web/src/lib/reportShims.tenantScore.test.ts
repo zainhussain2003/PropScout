@@ -9,7 +9,13 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { shimToTenantListingData } from './reportShims'
+import {
+  shimToTenantChecklist,
+  shimToTenantAmenities,
+  shimToTenantCostLines,
+  shimToTenantListingData,
+  shimToTenantNegotiation,
+} from './reportShims'
 import type { Analysis, DealScore, RentalEstimate } from '../types/analysis'
 import type { Listing } from '../types/property'
 
@@ -101,5 +107,62 @@ describe('shimToTenantListingData — score suppression', () => {
     expect(data.scoreNumber).toBeGreaterThanOrEqual(75)
     expect(data.scoreTone).toBe('pass')
     expect(data.verdictLabel).toBe('Fair rent')
+  })
+})
+
+describe('live tenant report facts', () => {
+  it('keeps the negotiation target inside the observed comparable range', () => {
+    const negotiation = shimToTenantNegotiation(LISTING, baseAnalysis(COMPS))
+    const listingData = shimToTenantListingData(LISTING, baseAnalysis(COMPS))
+    const costLines = shimToTenantCostLines(LISTING, baseAnalysis(COMPS))
+
+    expect(negotiation.targetLow).toBe(COMPS.low)
+    expect(negotiation.targetHigh).toBe(COMPS.mid)
+    expect(listingData.targetLow).toBe(COMPS.low)
+    expect(costLines.find((line) => line.k === 'Rent')?.target).toBe(COMPS.low)
+    expect(negotiation.suggestedMessage).toContain(`propose $${COMPS.low.toLocaleString()}/mo`)
+  })
+
+  it('does not claim that a scraped parking space is included in rent', () => {
+    const amenities = shimToTenantAmenities(LISTING)
+    const costLines = shimToTenantCostLines(LISTING, baseAnalysis(COMPS))
+
+    expect(amenities.find((item) => item.label === 'Parking')?.status).toBe('unclear')
+    expect(costLines.find((line) => line.k === 'Parking')?.included).toBe('maybe')
+  })
+
+  it('uses an explicit parking-and-locker inclusion claim without guessing utilities', () => {
+    const listing = { ...LISTING, description: 'Includes Parking and Locker' }
+    const amenities = shimToTenantAmenities(listing)
+    const costLines = shimToTenantCostLines(listing, baseAnalysis(COMPS))
+    const checklist = shimToTenantChecklist(listing, baseAnalysis(COMPS))
+
+    expect(amenities.find((item) => item.label === 'Parking')?.status).toBe('incl')
+    expect(amenities.find((item) => item.label === 'Locker')?.status).toBe('incl')
+    expect(amenities.find((item) => item.label === 'Water')?.status).toBe('unclear')
+    expect(costLines.find((line) => line.k === 'Parking')?.included).toBe(true)
+    expect(checklist[0]?.label).toMatch(/parking stall and locker identifiers/i)
+  })
+
+  it('does not invent a second room for an unflagged one-bedroom listing', () => {
+    const checklist = shimToTenantChecklist({ ...LISTING, beds: 1 }, baseAnalysis(COMPS))
+
+    expect(checklist.map((item) => item.label).join(' ')).not.toMatch(/second room/i)
+    expect(checklist.map((item) => item.label).join(' ')).not.toMatch(/every advertised bedroom/i)
+  })
+
+  it('adds a bedroom verification only when the analysis found a bedroom caveat', () => {
+    const analysis = baseAnalysis(COMPS)
+    analysis.riskFlags = [
+      {
+        id: 'unverified_bedroom',
+        severity: 'red',
+        label: 'Unverified bedroom (den or office)',
+        evidence: 'Den advertised as a bedroom',
+      },
+    ]
+
+    const checklist = shimToTenantChecklist(LISTING, analysis)
+    expect(checklist[0]?.label).toMatch(/every advertised bedroom/i)
   })
 })

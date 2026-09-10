@@ -349,13 +349,126 @@ export async function getAnalysisByToken(token: string): Promise<GetAnalysisResu
   try {
     response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`)
   } catch {
-    return null
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach the analysis service — check your connection and try again.',
+      0
+    )
   }
 
-  if (response.status === 404) return null
-  if (!response.ok) return null
+  if (response.status === 404 || response.status === 410) return null
+  if (!response.ok) {
+    throw new ApiRequestError(
+      'FETCH_FAILED',
+      'Could not load this report — please try again in a moment.',
+      response.status
+    )
+  }
 
   const result = (await response.json()) as GetAnalysisResult
   result.analysis = withCleanNarrative(result.analysis)
   return result
+}
+
+// ── Address-first entry ───────────────────────────────────────────────────────
+
+/** A geocoded Ontario address, ready for the details step. */
+export interface AddressLookupResult {
+  ok: true
+  address: string
+  unit: string | null
+  postalCode: string
+  city: string
+  coordinates: { lat: number; lng: number }
+}
+
+/** An address outside Ontario — routes to the waitlist screen, not an error. */
+export interface AddressOutOfProvince {
+  ok: false
+  error: 'PROVINCE_NOT_SUPPORTED'
+  province: string
+}
+
+/**
+ * POST /address — resolve a typed street address to a specific Ontario property.
+ *
+ * Not a search: this identifies one property, it does not return a list to browse.
+ *
+ * @param address - exactly what the user typed, unit prefix included.
+ * @throws ApiRequestError with a user-facing message for anything unusable.
+ */
+export async function lookupAddress(
+  address: string
+): Promise<AddressLookupResult | AddressOutOfProvince> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/address`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address }),
+    })
+  } catch {
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach PropScout — check your connection and try again.',
+      0
+    )
+  }
+
+  const body = (await response.json()) as Record<string, unknown>
+
+  if (!response.ok) {
+    throw new ApiRequestError(
+      String(body.code ?? 'ADDRESS_LOOKUP_FAILED'),
+      String(body.message ?? "We couldn't look that address up — try again."),
+      response.status
+    )
+  }
+
+  return body as unknown as AddressLookupResult | AddressOutOfProvince
+}
+
+/**
+ * POST /address/start — create an analysis from a confirmed address plus the
+ * details the user supplied. Returns the share token, same as scrapeUrl.
+ */
+export async function startFromAddress(payload: {
+  address: string
+  postalCode: string
+  city: string
+  lat: number
+  lng: number
+  listingType: 'for-sale' | 'for-rent'
+  price: number | null
+  rentMonthly: number | null
+  beds: number
+  baths: number
+  sqft: number | null
+  condoFeeMonthly: number | null
+  annualTaxes: number | null
+}): Promise<{ token: string; listing: Listing }> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/address/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach PropScout — check your connection and try again.',
+      0
+    )
+  }
+
+  const body = (await response.json()) as Record<string, unknown>
+  if (!response.ok) {
+    throw new ApiRequestError(
+      String(body.code ?? 'START_FAILED'),
+      String(body.message ?? 'Could not start the report — please try again.'),
+      response.status
+    )
+  }
+  return body as unknown as { token: string; listing: Listing }
 }

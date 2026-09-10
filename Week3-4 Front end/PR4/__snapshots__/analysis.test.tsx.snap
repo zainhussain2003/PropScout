@@ -57,7 +57,7 @@ exports[`AIVerdictBlock > matches snapshot 1`] = `
       class="mono"
       style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;"
     >
-      Scout AI · investor verdict
+      PropScout · investor verdict
     </span>
     <span
       style="flex: 1 1 0%;"
@@ -66,7 +66,7 @@ exports[`AIVerdictBlock > matches snapshot 1`] = `
       class="mono"
       style="font-size: 10px; letter-spacing: 0.12em; color: color-mix(in oklab, var(--bg) 40%, transparent);"
     >
-      claude · sonnet 4.6
+      validated inputs
     </span>
   </div>
   <div
@@ -110,6 +110,7 @@ exports[`DealScore > matches snapshot 1`] = `
       <circle
         cx="60"
         cy="60"
+        data-score-ring="clock"
         fill="none"
         r="55.5"
         stroke="var(--fail)"
@@ -136,13 +137,13 @@ exports[`DealScore > matches snapshot 1`] = `
       >
         Deal score / 100
       </span>
-      <span
-        style="margin-top: 6px; font-size: 11px; font-weight: 500; color: var(--fail); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--fail); background: color-mix(in oklab, var(--fail) 8%, transparent); white-space: nowrap;"
-      >
-        Hard pass
-      </span>
     </div>
   </div>
+  <span
+    style="font-size: 11px; font-weight: 500; color: var(--fail); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--fail); background: color-mix(in oklab, var(--fail) 8%, transparent); max-width: 120px; text-align: center; line-height: 1.3;"
+  >
+    Hard pass
+  </span>
 </div>
 `;
 
@@ -1157,58 +1158,937 @@ exports[`PropertyHero > matches snapshot 1`] = `
     </span>
   </div>
   <div
-    style="display: grid; grid-template-columns: 1.5fr 1fr; gap: clamp(28px, 3.5vw, 52px); align-items: flex-start;"
+    class="report-hero"
   >
     <div
       class="col"
       style="gap: 28px;"
     >
       <div
-        style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; grid-template-rows: 360px; height: 360px; overflow: hidden;"
+        class="col"
+        style="gap: 8px;"
       >
         <div
-          class="photo-ph"
-          style="border-radius: 18px; height: 100%; overflow: hidden;"
-        >
-          <span>
-            exterior · 
-            condo apartment
-          </span>
-        </div>
-        <div
-          class="col"
-          style="gap: 8px; min-height: 0px;"
+          style="border-radius: 18px; overflow: hidden; height: 360px;"
         >
           <div
-            class="photo-ph"
-            style="border-radius: 14px; flex: 1 1 0%; min-height: 0px; position: relative; overflow: hidden;"
+            aria-label="Map showing rental comps near Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor"
+            role="img"
+            style="position: relative; height: 360px; border-radius: 14px; overflow: hidden; background: var(--bg-elev); border: 1px solid var(--line);"
           >
-            <span>
-              living
-            </span>
-          </div>
-          <div
-            class="photo-ph"
-            style="border-radius: 14px; flex: 1 1 0%; min-height: 0px; position: relative; overflow: hidden;"
-          >
-            <span>
-              kitchen
-            </span>
-          </div>
-          <div
-            class="photo-ph"
-            style="border-radius: 14px; flex: 1 1 0%; min-height: 0px; position: relative; overflow: hidden;"
-          >
-            <span>
-              floorplan
-            </span>
+            <svg
+              aria-hidden="true"
+              height="100%"
+              preserveAspectRatio="xMidYMid slice"
+              style="display: block;"
+              viewBox="0 0 400 240"
+              width="100%"
+            >
+              <defs>
+                <lineargradient
+                  id="mapWash"
+                  x1="0"
+                  x2="0"
+                  y1="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stop-color="color-mix(in oklab, var(--accent) 5%, var(--bg-elev))"
+                  />
+                  <stop
+                    offset="100%"
+                    stop-color="var(--bg-elev)"
+                  />
+                </lineargradient>
+                <pattern
+                  height="6"
+                  id="mapMicro"
+                  patternUnits="userSpaceOnUse"
+                  width="6"
+                >
+                  <rect
+                    fill="transparent"
+                    height="6"
+                    width="6"
+                  />
+                  <circle
+                    cx="0.5"
+                    cy="0.5"
+                    fill="currentColor"
+                    opacity="0.05"
+                    r="0.4"
+                  />
+                </pattern>
+              </defs>
+              <rect
+                fill="url(#mapWash)"
+                height="240"
+                width="400"
+              />
+              <rect
+                fill="url(#mapMicro)"
+                height="240"
+                style="color: var(--ink);"
+                width="400"
+              />
+              <path
+                d="M 280 -20 Q 320 30 380 50 L 410 60 L 410 -10 Z"
+                fill="color-mix(in oklab, var(--accent) 14%, var(--bg-elev))"
+                opacity="0.45"
+              />
+              <path
+                d="M 280 -20 Q 320 30 380 50"
+                fill="none"
+                stroke="color-mix(in oklab, var(--accent) 25%, transparent)"
+                stroke-width="0.6"
+              />
+              <rect
+                fill="color-mix(in oklab, var(--pass) 20%, transparent)"
+                height="68"
+                rx="3"
+                stroke="color-mix(in oklab, var(--pass) 25%, transparent)"
+                stroke-width="0.5"
+                width="118"
+                x="170"
+                y="78"
+              />
+              <rect
+                fill="none"
+                height="64"
+                rx="2"
+                stroke="color-mix(in oklab, var(--pass) 18%, transparent)"
+                stroke-dasharray="2 3"
+                stroke-width="0.5"
+                width="114"
+                x="172"
+                y="80"
+              />
+              <g
+                style="color: var(--line-strong);"
+              >
+                <g>
+                  <line
+                    opacity="0.45"
+                    stroke="currentColor"
+                    stroke-width="9"
+                    x1="-10"
+                    x2="410"
+                    y1="84"
+                    y2="80"
+                  />
+                  <line
+                    stroke="var(--bg-elev)"
+                    stroke-width="7"
+                    x1="-10"
+                    x2="410"
+                    y1="84"
+                    y2="80"
+                  />
+                  <line
+                    opacity="0.85"
+                    stroke="var(--bg)"
+                    stroke-width="5"
+                    x1="-10"
+                    x2="410"
+                    y1="84"
+                    y2="80"
+                  />
+                  <line
+                    opacity="0.7"
+                    stroke="color-mix(in oklab, var(--accent) 40%, transparent)"
+                    stroke-dasharray="3 4"
+                    stroke-width="0.5"
+                    x1="-10"
+                    x2="410"
+                    y1="84"
+                    y2="80"
+                  />
+                </g>
+                <g>
+                  <line
+                    opacity="0.45"
+                    stroke="currentColor"
+                    stroke-width="9"
+                    x1="-10"
+                    x2="410"
+                    y1="152"
+                    y2="155"
+                  />
+                  <line
+                    stroke="var(--bg-elev)"
+                    stroke-width="7"
+                    x1="-10"
+                    x2="410"
+                    y1="152"
+                    y2="155"
+                  />
+                  <line
+                    opacity="0.85"
+                    stroke="var(--bg)"
+                    stroke-width="5"
+                    x1="-10"
+                    x2="410"
+                    y1="152"
+                    y2="155"
+                  />
+                  <line
+                    opacity="0.7"
+                    stroke="color-mix(in oklab, var(--accent) 40%, transparent)"
+                    stroke-dasharray="3 4"
+                    stroke-width="0.5"
+                    x1="-10"
+                    x2="410"
+                    y1="152"
+                    y2="155"
+                  />
+                </g>
+                <g>
+                  <line
+                    opacity="0.45"
+                    stroke="currentColor"
+                    stroke-width="9"
+                    x1="168"
+                    x2="170"
+                    y1="-10"
+                    y2="250"
+                  />
+                  <line
+                    stroke="var(--bg-elev)"
+                    stroke-width="7"
+                    x1="168"
+                    x2="170"
+                    y1="-10"
+                    y2="250"
+                  />
+                  <line
+                    opacity="0.85"
+                    stroke="var(--bg)"
+                    stroke-width="5"
+                    x1="168"
+                    x2="170"
+                    y1="-10"
+                    y2="250"
+                  />
+                </g>
+                <g>
+                  <line
+                    opacity="0.45"
+                    stroke="currentColor"
+                    stroke-width="9"
+                    x1="290"
+                    x2="288"
+                    y1="-10"
+                    y2="250"
+                  />
+                  <line
+                    stroke="var(--bg-elev)"
+                    stroke-width="7"
+                    x1="290"
+                    x2="288"
+                    y1="-10"
+                    y2="250"
+                  />
+                  <line
+                    opacity="0.85"
+                    stroke="var(--bg)"
+                    stroke-width="5"
+                    x1="290"
+                    x2="288"
+                    y1="-10"
+                    y2="250"
+                  />
+                </g>
+              </g>
+              <g
+                opacity="0.7"
+                stroke="var(--line)"
+                stroke-width="2"
+              >
+                <line
+                  x1="-10"
+                  x2="170"
+                  y1="22"
+                  y2="22"
+                />
+                <line
+                  x1="200"
+                  x2="410"
+                  y1="22"
+                  y2="22"
+                />
+                <line
+                  x1="-10"
+                  x2="170"
+                  y1="46"
+                  y2="46"
+                />
+                <line
+                  x1="200"
+                  x2="410"
+                  y1="46"
+                  y2="46"
+                />
+                <line
+                  x1="-10"
+                  x2="170"
+                  y1="112"
+                  y2="112"
+                />
+                <line
+                  x1="-10"
+                  x2="170"
+                  y1="138"
+                  y2="138"
+                />
+                <line
+                  x1="290"
+                  x2="410"
+                  y1="112"
+                  y2="112"
+                />
+                <line
+                  x1="290"
+                  x2="410"
+                  y1="138"
+                  y2="138"
+                />
+                <line
+                  x1="-10"
+                  x2="170"
+                  y1="180"
+                  y2="180"
+                />
+                <line
+                  x1="-10"
+                  x2="170"
+                  y1="206"
+                  y2="206"
+                />
+                <line
+                  x1="290"
+                  x2="410"
+                  y1="180"
+                  y2="180"
+                />
+                <line
+                  x1="290"
+                  x2="410"
+                  y1="206"
+                  y2="206"
+                />
+                <line
+                  x1="40"
+                  x2="40"
+                  y1="-10"
+                  y2="250"
+                />
+                <line
+                  x1="86"
+                  x2="86"
+                  y1="-10"
+                  y2="78"
+                />
+                <line
+                  x1="86"
+                  x2="86"
+                  y1="160"
+                  y2="250"
+                />
+                <line
+                  x1="130"
+                  x2="130"
+                  y1="-10"
+                  y2="78"
+                />
+                <line
+                  x1="130"
+                  x2="130"
+                  y1="160"
+                  y2="250"
+                />
+                <line
+                  x1="218"
+                  x2="218"
+                  y1="-10"
+                  y2="78"
+                />
+                <line
+                  x1="218"
+                  x2="218"
+                  y1="160"
+                  y2="250"
+                />
+                <line
+                  x1="252"
+                  x2="252"
+                  y1="-10"
+                  y2="78"
+                />
+                <line
+                  x1="252"
+                  x2="252"
+                  y1="160"
+                  y2="250"
+                />
+                <line
+                  x1="338"
+                  x2="338"
+                  y1="-10"
+                  y2="250"
+                />
+                <line
+                  x1="380"
+                  x2="380"
+                  y1="-10"
+                  y2="250"
+                />
+              </g>
+              <g
+                fill="var(--ink)"
+                opacity="0.07"
+              >
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="18"
+                  x="44"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="16"
+                  x="66"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="22"
+                  x="86"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="14"
+                  x="112"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="24"
+                  x="130"
+                  y="30"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="14"
+                  x="44"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="22"
+                  x="62"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="18"
+                  x="88"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="16"
+                  x="110"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="24"
+                  x="130"
+                  y="50"
+                />
+                <rect
+                  height="12"
+                  rx="1.5"
+                  width="18"
+                  x="180"
+                  y="22"
+                />
+                <rect
+                  height="12"
+                  rx="1.5"
+                  width="14"
+                  x="202"
+                  y="22"
+                />
+                <rect
+                  height="12"
+                  rx="1.5"
+                  width="22"
+                  x="220"
+                  y="22"
+                />
+                <rect
+                  height="12"
+                  rx="1.5"
+                  width="16"
+                  x="246"
+                  y="22"
+                />
+                <rect
+                  height="12"
+                  rx="1.5"
+                  width="20"
+                  x="266"
+                  y="22"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="180"
+                  y="40"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="18"
+                  x="206"
+                  y="40"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="228"
+                  y="40"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="18"
+                  x="254"
+                  y="40"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="10"
+                  x="276"
+                  y="40"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="18"
+                  x="296"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="16"
+                  x="318"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="24"
+                  x="338"
+                  y="30"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="14"
+                  x="366"
+                  y="30"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="18"
+                  x="296"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="22"
+                  x="318"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="16"
+                  x="344"
+                  y="50"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="18"
+                  x="364"
+                  y="50"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="44"
+                  y="96"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="18"
+                  x="70"
+                  y="96"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="92"
+                  y="96"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="14"
+                  x="118"
+                  y="96"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="136"
+                  y="96"
+                />
+                <rect
+                  height="20"
+                  rx="1.5"
+                  width="18"
+                  x="44"
+                  y="116"
+                />
+                <rect
+                  height="20"
+                  rx="1.5"
+                  width="22"
+                  x="66"
+                  y="116"
+                />
+                <rect
+                  height="20"
+                  rx="1.5"
+                  width="16"
+                  x="92"
+                  y="116"
+                />
+                <rect
+                  height="20"
+                  rx="1.5"
+                  width="22"
+                  x="112"
+                  y="116"
+                />
+                <rect
+                  height="20"
+                  rx="1.5"
+                  width="20"
+                  x="138"
+                  y="116"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="22"
+                  x="310"
+                  y="96"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="18"
+                  x="336"
+                  y="96"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="16"
+                  x="358"
+                  y="96"
+                />
+                <rect
+                  height="22"
+                  rx="1.5"
+                  width="18"
+                  x="310"
+                  y="114"
+                />
+                <rect
+                  height="22"
+                  rx="1.5"
+                  width="22"
+                  x="332"
+                  y="114"
+                />
+                <rect
+                  height="22"
+                  rx="1.5"
+                  width="16"
+                  x="358"
+                  y="114"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="16"
+                  x="44"
+                  y="164"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="22"
+                  x="64"
+                  y="164"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="18"
+                  x="90"
+                  y="164"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="22"
+                  x="112"
+                  y="164"
+                />
+                <rect
+                  height="14"
+                  rx="1.5"
+                  width="16"
+                  x="138"
+                  y="164"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="22"
+                  x="44"
+                  y="182"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="18"
+                  x="70"
+                  y="182"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="22"
+                  x="92"
+                  y="182"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="16"
+                  x="118"
+                  y="182"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="20"
+                  x="138"
+                  y="182"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="296"
+                  y="162"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="18"
+                  x="322"
+                  y="162"
+                />
+                <rect
+                  height="16"
+                  rx="1.5"
+                  width="22"
+                  x="344"
+                  y="162"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="18"
+                  x="296"
+                  y="184"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="22"
+                  x="318"
+                  y="184"
+                />
+                <rect
+                  height="18"
+                  rx="1.5"
+                  width="22"
+                  x="344"
+                  y="184"
+                />
+              </g>
+              <rect
+                fill="none"
+                height="239"
+                stroke="var(--line)"
+                stroke-width="0.5"
+                width="399"
+                x="0.5"
+                y="0.5"
+              />
+            </svg>
+            <div
+              style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;"
+            >
+              <div
+                style="position: absolute; inset: -22px; border-radius: 999px; background: radial-gradient(circle, color-mix(in oklab, var(--accent) 40%, transparent) 0%, transparent 65%);"
+              />
+              <div
+                style="position: relative; width: 30px; height: 30px; border-radius: 999px; background: var(--accent); border: 3px solid var(--surface); box-shadow: 0 8px 22px rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;"
+              >
+                ★
+              </div>
+            </div>
+            <div
+              style="position: absolute; left: 14%; top: 40%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+            >
+              <div
+                class="mono tabular"
+                style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+              >
+                $2,850
+              </div>
+              <div
+                style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+              />
+            </div>
+            <div
+              style="position: absolute; left: 72%; top: 22%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+            >
+              <div
+                class="mono tabular"
+                style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+              >
+                $3,050
+              </div>
+              <div
+                style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+              />
+            </div>
+            <div
+              style="position: absolute; left: 36%; top: 64%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+            >
+              <div
+                class="mono tabular"
+                style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+              >
+                $2,750
+              </div>
+              <div
+                style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+              />
+            </div>
+            <div
+              style="position: absolute; left: 75%; top: 68%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+            >
+              <div
+                class="mono tabular"
+                style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+              >
+                $3,200
+              </div>
+              <div
+                style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+              />
+            </div>
+            <div
+              style="position: absolute; left: 58%; top: 78%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+            >
+              <div
+                class="mono tabular"
+                style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+              >
+                $2,900
+              </div>
+              <div
+                style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+              />
+            </div>
+            <div
+              aria-hidden="true"
+              style="position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(14,19,32,0.08);"
+            >
+              <div
+                style="width: 26px; height: 26px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center;"
+              >
+                +
+              </div>
+              <div
+                style="width: 26px; height: 26px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; border-top: 1px solid var(--line);"
+              >
+                −
+              </div>
+            </div>
             <div
               class="mono"
-              style="position: absolute; right: 10px; bottom: 10px; font-size: 10px; letter-spacing: 0.1em; padding: 3px 8px; background: color-mix(in oklab, var(--surface) 90%, transparent); border-radius: 999px; color: var(--ink); backdrop-filter: blur(4px);"
+              style="position: absolute; bottom: 8px; left: 14px; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: color-mix(in oklab, var(--surface) 85%, transparent); padding: 2px 6px; border-radius: 4px;"
             >
-              + more
+              © Mapbox · OpenStreetMap
+            </div>
+            <div
+              style="position: absolute; top: 10px; right: 10px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(6px); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);"
+            >
+              Map placeholder · Mapbox GL JS
             </div>
           </div>
+        </div>
+        <div
+          class="mono"
+          style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+        >
+          No listing photos · report built from the address
         </div>
       </div>
       <div
@@ -1344,1039 +2224,142 @@ exports[`PropertyHero > matches snapshot 1`] = `
           </span>
         </div>
       </div>
-      <div
-        aria-label="Map showing rental comps near Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor"
-        role="img"
-        style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; background: var(--bg-elev); border: 1px solid var(--line);"
-      >
-        <svg
-          aria-hidden="true"
-          height="100%"
-          preserveAspectRatio="xMidYMid slice"
-          style="display: block;"
-          viewBox="0 0 400 240"
-          width="100%"
-        >
-          <defs>
-            <lineargradient
-              id="mapWash"
-              x1="0"
-              x2="0"
-              y1="0"
-              y2="1"
-            >
-              <stop
-                offset="0%"
-                stop-color="color-mix(in oklab, var(--accent) 5%, var(--bg-elev))"
-              />
-              <stop
-                offset="100%"
-                stop-color="var(--bg-elev)"
-              />
-            </lineargradient>
-            <pattern
-              height="6"
-              id="mapMicro"
-              patternUnits="userSpaceOnUse"
-              width="6"
-            >
-              <rect
-                fill="transparent"
-                height="6"
-                width="6"
-              />
-              <circle
-                cx="0.5"
-                cy="0.5"
-                fill="currentColor"
-                opacity="0.05"
-                r="0.4"
-              />
-            </pattern>
-          </defs>
-          <rect
-            fill="url(#mapWash)"
-            height="240"
-            width="400"
-          />
-          <rect
-            fill="url(#mapMicro)"
-            height="240"
-            style="color: var(--ink);"
-            width="400"
-          />
-          <path
-            d="M 280 -20 Q 320 30 380 50 L 410 60 L 410 -10 Z"
-            fill="color-mix(in oklab, var(--accent) 14%, var(--bg-elev))"
-            opacity="0.45"
-          />
-          <path
-            d="M 280 -20 Q 320 30 380 50"
-            fill="none"
-            stroke="color-mix(in oklab, var(--accent) 25%, transparent)"
-            stroke-width="0.6"
-          />
-          <rect
-            fill="color-mix(in oklab, var(--pass) 20%, transparent)"
-            height="68"
-            rx="3"
-            stroke="color-mix(in oklab, var(--pass) 25%, transparent)"
-            stroke-width="0.5"
-            width="118"
-            x="170"
-            y="78"
-          />
-          <rect
-            fill="none"
-            height="64"
-            rx="2"
-            stroke="color-mix(in oklab, var(--pass) 18%, transparent)"
-            stroke-dasharray="2 3"
-            stroke-width="0.5"
-            width="114"
-            x="172"
-            y="80"
-          />
-          <g
-            style="color: var(--line-strong);"
-          >
-            <g>
-              <line
-                opacity="0.45"
-                stroke="currentColor"
-                stroke-width="9"
-                x1="-10"
-                x2="410"
-                y1="84"
-                y2="80"
-              />
-              <line
-                stroke="var(--bg-elev)"
-                stroke-width="7"
-                x1="-10"
-                x2="410"
-                y1="84"
-                y2="80"
-              />
-              <line
-                opacity="0.85"
-                stroke="var(--bg)"
-                stroke-width="5"
-                x1="-10"
-                x2="410"
-                y1="84"
-                y2="80"
-              />
-              <line
-                opacity="0.7"
-                stroke="color-mix(in oklab, var(--accent) 40%, transparent)"
-                stroke-dasharray="3 4"
-                stroke-width="0.5"
-                x1="-10"
-                x2="410"
-                y1="84"
-                y2="80"
-              />
-            </g>
-            <g>
-              <line
-                opacity="0.45"
-                stroke="currentColor"
-                stroke-width="9"
-                x1="-10"
-                x2="410"
-                y1="152"
-                y2="155"
-              />
-              <line
-                stroke="var(--bg-elev)"
-                stroke-width="7"
-                x1="-10"
-                x2="410"
-                y1="152"
-                y2="155"
-              />
-              <line
-                opacity="0.85"
-                stroke="var(--bg)"
-                stroke-width="5"
-                x1="-10"
-                x2="410"
-                y1="152"
-                y2="155"
-              />
-              <line
-                opacity="0.7"
-                stroke="color-mix(in oklab, var(--accent) 40%, transparent)"
-                stroke-dasharray="3 4"
-                stroke-width="0.5"
-                x1="-10"
-                x2="410"
-                y1="152"
-                y2="155"
-              />
-            </g>
-            <g>
-              <line
-                opacity="0.45"
-                stroke="currentColor"
-                stroke-width="9"
-                x1="168"
-                x2="170"
-                y1="-10"
-                y2="250"
-              />
-              <line
-                stroke="var(--bg-elev)"
-                stroke-width="7"
-                x1="168"
-                x2="170"
-                y1="-10"
-                y2="250"
-              />
-              <line
-                opacity="0.85"
-                stroke="var(--bg)"
-                stroke-width="5"
-                x1="168"
-                x2="170"
-                y1="-10"
-                y2="250"
-              />
-            </g>
-            <g>
-              <line
-                opacity="0.45"
-                stroke="currentColor"
-                stroke-width="9"
-                x1="290"
-                x2="288"
-                y1="-10"
-                y2="250"
-              />
-              <line
-                stroke="var(--bg-elev)"
-                stroke-width="7"
-                x1="290"
-                x2="288"
-                y1="-10"
-                y2="250"
-              />
-              <line
-                opacity="0.85"
-                stroke="var(--bg)"
-                stroke-width="5"
-                x1="290"
-                x2="288"
-                y1="-10"
-                y2="250"
-              />
-            </g>
-          </g>
-          <g
-            opacity="0.7"
-            stroke="var(--line)"
-            stroke-width="2"
-          >
-            <line
-              x1="-10"
-              x2="170"
-              y1="22"
-              y2="22"
-            />
-            <line
-              x1="200"
-              x2="410"
-              y1="22"
-              y2="22"
-            />
-            <line
-              x1="-10"
-              x2="170"
-              y1="46"
-              y2="46"
-            />
-            <line
-              x1="200"
-              x2="410"
-              y1="46"
-              y2="46"
-            />
-            <line
-              x1="-10"
-              x2="170"
-              y1="112"
-              y2="112"
-            />
-            <line
-              x1="-10"
-              x2="170"
-              y1="138"
-              y2="138"
-            />
-            <line
-              x1="290"
-              x2="410"
-              y1="112"
-              y2="112"
-            />
-            <line
-              x1="290"
-              x2="410"
-              y1="138"
-              y2="138"
-            />
-            <line
-              x1="-10"
-              x2="170"
-              y1="180"
-              y2="180"
-            />
-            <line
-              x1="-10"
-              x2="170"
-              y1="206"
-              y2="206"
-            />
-            <line
-              x1="290"
-              x2="410"
-              y1="180"
-              y2="180"
-            />
-            <line
-              x1="290"
-              x2="410"
-              y1="206"
-              y2="206"
-            />
-            <line
-              x1="40"
-              x2="40"
-              y1="-10"
-              y2="250"
-            />
-            <line
-              x1="86"
-              x2="86"
-              y1="-10"
-              y2="78"
-            />
-            <line
-              x1="86"
-              x2="86"
-              y1="160"
-              y2="250"
-            />
-            <line
-              x1="130"
-              x2="130"
-              y1="-10"
-              y2="78"
-            />
-            <line
-              x1="130"
-              x2="130"
-              y1="160"
-              y2="250"
-            />
-            <line
-              x1="218"
-              x2="218"
-              y1="-10"
-              y2="78"
-            />
-            <line
-              x1="218"
-              x2="218"
-              y1="160"
-              y2="250"
-            />
-            <line
-              x1="252"
-              x2="252"
-              y1="-10"
-              y2="78"
-            />
-            <line
-              x1="252"
-              x2="252"
-              y1="160"
-              y2="250"
-            />
-            <line
-              x1="338"
-              x2="338"
-              y1="-10"
-              y2="250"
-            />
-            <line
-              x1="380"
-              x2="380"
-              y1="-10"
-              y2="250"
-            />
-          </g>
-          <g
-            fill="var(--ink)"
-            opacity="0.07"
-          >
-            <rect
-              height="14"
-              rx="1.5"
-              width="18"
-              x="44"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="16"
-              x="66"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="22"
-              x="86"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="14"
-              x="112"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="24"
-              x="130"
-              y="30"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="14"
-              x="44"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="22"
-              x="62"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="18"
-              x="88"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="16"
-              x="110"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="24"
-              x="130"
-              y="50"
-            />
-            <rect
-              height="12"
-              rx="1.5"
-              width="18"
-              x="180"
-              y="22"
-            />
-            <rect
-              height="12"
-              rx="1.5"
-              width="14"
-              x="202"
-              y="22"
-            />
-            <rect
-              height="12"
-              rx="1.5"
-              width="22"
-              x="220"
-              y="22"
-            />
-            <rect
-              height="12"
-              rx="1.5"
-              width="16"
-              x="246"
-              y="22"
-            />
-            <rect
-              height="12"
-              rx="1.5"
-              width="20"
-              x="266"
-              y="22"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="180"
-              y="40"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="18"
-              x="206"
-              y="40"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="228"
-              y="40"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="18"
-              x="254"
-              y="40"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="10"
-              x="276"
-              y="40"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="18"
-              x="296"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="16"
-              x="318"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="24"
-              x="338"
-              y="30"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="14"
-              x="366"
-              y="30"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="18"
-              x="296"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="22"
-              x="318"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="16"
-              x="344"
-              y="50"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="18"
-              x="364"
-              y="50"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="44"
-              y="96"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="18"
-              x="70"
-              y="96"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="92"
-              y="96"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="14"
-              x="118"
-              y="96"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="136"
-              y="96"
-            />
-            <rect
-              height="20"
-              rx="1.5"
-              width="18"
-              x="44"
-              y="116"
-            />
-            <rect
-              height="20"
-              rx="1.5"
-              width="22"
-              x="66"
-              y="116"
-            />
-            <rect
-              height="20"
-              rx="1.5"
-              width="16"
-              x="92"
-              y="116"
-            />
-            <rect
-              height="20"
-              rx="1.5"
-              width="22"
-              x="112"
-              y="116"
-            />
-            <rect
-              height="20"
-              rx="1.5"
-              width="20"
-              x="138"
-              y="116"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="22"
-              x="310"
-              y="96"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="18"
-              x="336"
-              y="96"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="16"
-              x="358"
-              y="96"
-            />
-            <rect
-              height="22"
-              rx="1.5"
-              width="18"
-              x="310"
-              y="114"
-            />
-            <rect
-              height="22"
-              rx="1.5"
-              width="22"
-              x="332"
-              y="114"
-            />
-            <rect
-              height="22"
-              rx="1.5"
-              width="16"
-              x="358"
-              y="114"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="16"
-              x="44"
-              y="164"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="22"
-              x="64"
-              y="164"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="18"
-              x="90"
-              y="164"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="22"
-              x="112"
-              y="164"
-            />
-            <rect
-              height="14"
-              rx="1.5"
-              width="16"
-              x="138"
-              y="164"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="22"
-              x="44"
-              y="182"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="18"
-              x="70"
-              y="182"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="22"
-              x="92"
-              y="182"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="16"
-              x="118"
-              y="182"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="20"
-              x="138"
-              y="182"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="296"
-              y="162"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="18"
-              x="322"
-              y="162"
-            />
-            <rect
-              height="16"
-              rx="1.5"
-              width="22"
-              x="344"
-              y="162"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="18"
-              x="296"
-              y="184"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="22"
-              x="318"
-              y="184"
-            />
-            <rect
-              height="18"
-              rx="1.5"
-              width="22"
-              x="344"
-              y="184"
-            />
-          </g>
-          <rect
-            fill="none"
-            height="239"
-            stroke="var(--line)"
-            stroke-width="0.5"
-            width="399"
-            x="0.5"
-            y="0.5"
-          />
-        </svg>
-        <div
-          style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;"
-        >
-          <div
-            style="position: absolute; inset: -22px; border-radius: 999px; background: radial-gradient(circle, color-mix(in oklab, var(--accent) 40%, transparent) 0%, transparent 65%);"
-          />
-          <div
-            style="position: relative; width: 30px; height: 30px; border-radius: 999px; background: var(--accent); border: 3px solid var(--surface); box-shadow: 0 8px 22px rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;"
-          >
-            ★
-          </div>
-        </div>
-        <div
-          style="position: absolute; left: 14%; top: 40%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
-        >
-          <div
-            class="mono tabular"
-            style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
-          >
-            $2,850
-          </div>
-          <div
-            style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
-          />
-        </div>
-        <div
-          style="position: absolute; left: 72%; top: 22%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
-        >
-          <div
-            class="mono tabular"
-            style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
-          >
-            $3,050
-          </div>
-          <div
-            style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
-          />
-        </div>
-        <div
-          style="position: absolute; left: 36%; top: 64%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
-        >
-          <div
-            class="mono tabular"
-            style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
-          >
-            $2,750
-          </div>
-          <div
-            style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
-          />
-        </div>
-        <div
-          style="position: absolute; left: 75%; top: 68%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
-        >
-          <div
-            class="mono tabular"
-            style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
-          >
-            $3,200
-          </div>
-          <div
-            style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
-          />
-        </div>
-        <div
-          style="position: absolute; left: 58%; top: 78%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
-        >
-          <div
-            class="mono tabular"
-            style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
-          >
-            $2,900
-          </div>
-          <div
-            style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
-          />
-        </div>
-        <div
-          class="mono"
-          style="position: absolute; top: 12px; left: 14px; padding: 4px 10px; border-radius: 6px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(4px); border: 1px solid var(--line); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);"
-        >
-          Unit 5702 · 5 Buttermill Avenue, Vaughan · L4K · VMC Corridor
-        </div>
-        <div
-          aria-hidden="true"
-          style="position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(14,19,32,0.08);"
-        >
-          <div
-            style="width: 26px; height: 26px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center;"
-          >
-            +
-          </div>
-          <div
-            style="width: 26px; height: 26px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; border-top: 1px solid var(--line);"
-          >
-            −
-          </div>
-        </div>
-        <div
-          class="mono"
-          style="position: absolute; bottom: 8px; left: 14px; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: color-mix(in oklab, var(--surface) 85%, transparent); padding: 2px 6px; border-radius: 4px;"
-        >
-          © Mapbox · OpenStreetMap
-        </div>
-        <div
-          style="position: absolute; top: 10px; right: 10px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(6px); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);"
-        >
-          Map placeholder · Mapbox GL JS
-        </div>
-      </div>
     </div>
-    <div
-      class="card col"
-      style="padding: 32px; gap: 24px; position: sticky; top: 84px; order: 0;"
+    <aside
+      aria-label="Investment verdict"
+      class="card report-hero-score scorecard"
+      style="--score-tone: var(--fail);"
     >
       <div
-        class="col"
-        style="align-items: center; gap: 8px;"
+        class="scorecard-heading"
       >
         <div
-          aria-label="Deal score: 8 out of 100"
-          style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
+          class="scorecard-call"
+        >
+          <span
+            class="mono scorecard-eyebrow"
+          >
+            The investment verdict
+          </span>
+          <h2
+            class="serif scorecard-verdict"
+          >
+            Hard pass
+          </h2>
+          <p
+            class="scorecard-tagline"
+          >
+            Fails on multiple fundamentals.
+          </p>
+        </div>
+        <div
+          class="scorecard-gauge"
         >
           <div
-            style="position: relative; width: 180px; height: 180px;"
+            aria-label="Deal score: 8 out of 100"
+            style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
           >
-            <svg
-              aria-hidden="true"
-              height="180"
-              role="img"
-              viewBox="0 0 180 180"
-              width="180"
-            >
-              <circle
-                cx="90"
-                cy="90"
-                fill="none"
-                r="83"
-                stroke="var(--line)"
-                stroke-width="14"
-              />
-              <circle
-                cx="90"
-                cy="90"
-                fill="none"
-                r="83"
-                stroke="var(--fail)"
-                stroke-dasharray="521.5043804959057"
-                stroke-dashoffset="521.5043804959057"
-                stroke-linecap="round"
-                stroke-width="14"
-                style="transition: stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1);"
-                transform="rotate(-90 90 90)"
-              />
-            </svg>
             <div
-              style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px;"
+              style="position: relative; width: 120px; height: 120px;"
             >
-              <span
-                class="serif tabular"
-                style="font-size: 75.6px; line-height: 1; font-weight: 400; color: var(--ink);"
+              <svg
+                aria-hidden="true"
+                height="120"
+                role="img"
+                viewBox="0 0 120 120"
+                width="120"
               >
-                8
-              </span>
-              <span
-                class="mono"
-                style="font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; text-align: center; margin-top: 6px; white-space: nowrap;"
+                <circle
+                  cx="60"
+                  cy="60"
+                  fill="none"
+                  r="55.5"
+                  stroke="var(--line)"
+                  stroke-width="9"
+                />
+                <circle
+                  cx="60"
+                  cy="60"
+                  data-score-ring="clock"
+                  fill="none"
+                  r="55.5"
+                  stroke="var(--fail)"
+                  stroke-dasharray="348.71678454846705"
+                  stroke-dashoffset="348.71678454846705"
+                  stroke-linecap="round"
+                  stroke-width="9"
+                  style="transition: stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1);"
+                  transform="rotate(-90 60 60)"
+                />
+              </svg>
+              <div
+                style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 11px;"
               >
-                Deal score / 100
-              </span>
-              <span
-                style="margin-top: 6px; font-size: 11px; font-weight: 500; color: var(--fail); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--fail); background: color-mix(in oklab, var(--fail) 8%, transparent); white-space: nowrap;"
-              >
-                Hard pass
-              </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 50.4px; line-height: 1; font-weight: 400; color: var(--ink);"
+                >
+                  8
+                </span>
+              </div>
             </div>
           </div>
+          <span
+            class="mono scorecard-caption"
+          >
+            Score / 100
+          </span>
         </div>
       </div>
       <div
-        class="col"
-        style="text-align: center; align-items: center; gap: 8px;"
+        class="scorecard-cashflow"
       >
-        <div
-          class="mono"
-          style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fail);"
+        <span
+          class="scorecard-eyebrow mono"
         >
-          Hard pass
-        </div>
-        <div
-          class="serif"
-          style="font-size: 20px; line-height: 1.2; text-wrap: balance;"
+          Monthly cash flow
+        </span>
+        <strong
+          class="mono tabular scorecard-cashflow-value"
+          style="color: var(--fail);"
         >
-          Fails on multiple fundamentals.
-        </div>
+          −$2,431
+          <span
+            class="scorecard-caption"
+          >
+             /mo
+          </span>
+        </strong>
+        <p
+          class="scorecard-caption"
+        >
+          After operating costs and mortgage, with the assumptions below.
+        </p>
       </div>
       <div
-        class="divider"
-        style="border-top: 1px solid var(--line);"
-      />
-      <div
-        class="col"
-        style="gap: 10px;"
+        class="scorecard-breakdown"
       >
-        <div
-          class="mono"
-          style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        <h3
+          class="mono scorecard-eyebrow"
         >
           Score breakdown
-        </div>
+        </h3>
+        <p
+          class="scorecard-caption"
+        >
+          Points earned · longer tracks carry more weight
+        </p>
         <div
-          class="col"
-          style="gap: 4px;"
+          class="scorecard-factor"
         >
           <div
-            style="display: flex; justify-content: space-between; font-size: 12px;"
+            class="scorecard-row"
           >
-            <span
-              style="color: var(--ink-2);"
-            >
+            <span>
               Cap rate
             </span>
             <span
               class="mono tabular"
-              style="color: var(--muted);"
             >
               0
                / 
@@ -2384,28 +2367,32 @@ exports[`PropertyHero > matches snapshot 1`] = `
             </span>
           </div>
           <div
-            style="height: 3px; border-radius: 999px; background: var(--line);"
+            aria-label="Cap rate"
+            aria-valuemax="25"
+            aria-valuemin="0"
+            aria-valuenow="0"
+            aria-valuetext="0 of 25 points"
+            class="scorecard-track"
+            role="meter"
+            style="width: 100%;"
           >
             <div
-              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+              class="scorecard-fill"
+              style="width: 0%;"
             />
           </div>
         </div>
         <div
-          class="col"
-          style="gap: 4px;"
+          class="scorecard-factor"
         >
           <div
-            style="display: flex; justify-content: space-between; font-size: 12px;"
+            class="scorecard-row"
           >
-            <span
-              style="color: var(--ink-2);"
-            >
+            <span>
               Cash flow
             </span>
             <span
               class="mono tabular"
-              style="color: var(--muted);"
             >
               0
                / 
@@ -2413,28 +2400,32 @@ exports[`PropertyHero > matches snapshot 1`] = `
             </span>
           </div>
           <div
-            style="height: 3px; border-radius: 999px; background: var(--line);"
+            aria-label="Cash flow"
+            aria-valuemax="25"
+            aria-valuemin="0"
+            aria-valuenow="0"
+            aria-valuetext="0 of 25 points"
+            class="scorecard-track"
+            role="meter"
+            style="width: 100%;"
           >
             <div
-              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+              class="scorecard-fill"
+              style="width: 0%;"
             />
           </div>
         </div>
         <div
-          class="col"
-          style="gap: 4px;"
+          class="scorecard-factor"
         >
           <div
-            style="display: flex; justify-content: space-between; font-size: 12px;"
+            class="scorecard-row"
           >
-            <span
-              style="color: var(--ink-2);"
-            >
-              CoC return
+            <span>
+              Cash-on-cash return
             </span>
             <span
               class="mono tabular"
-              style="color: var(--muted);"
             >
               0
                / 
@@ -2442,28 +2433,32 @@ exports[`PropertyHero > matches snapshot 1`] = `
             </span>
           </div>
           <div
-            style="height: 3px; border-radius: 999px; background: var(--line);"
+            aria-label="Cash-on-cash return"
+            aria-valuemax="20"
+            aria-valuemin="0"
+            aria-valuenow="0"
+            aria-valuetext="0 of 20 points"
+            class="scorecard-track"
+            role="meter"
+            style="width: 80%;"
           >
             <div
-              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+              class="scorecard-fill"
+              style="width: 0%;"
             />
           </div>
         </div>
         <div
-          class="col"
-          style="gap: 4px;"
+          class="scorecard-factor"
         >
           <div
-            style="display: flex; justify-content: space-between; font-size: 12px;"
+            class="scorecard-row"
           >
-            <span
-              style="color: var(--ink-2);"
-            >
-              DSCR
+            <span>
+              Debt coverage (DSCR)
             </span>
             <span
               class="mono tabular"
-              style="color: var(--muted);"
             >
               0
                / 
@@ -2471,28 +2466,32 @@ exports[`PropertyHero > matches snapshot 1`] = `
             </span>
           </div>
           <div
-            style="height: 3px; border-radius: 999px; background: var(--line);"
+            aria-label="Debt coverage (DSCR)"
+            aria-valuemax="15"
+            aria-valuemin="0"
+            aria-valuenow="0"
+            aria-valuetext="0 of 15 points"
+            class="scorecard-track"
+            role="meter"
+            style="width: 60%;"
           >
             <div
-              style="width: 0%; height: 100%; border-radius: 999px; background: var(--fail);"
+              class="scorecard-fill"
+              style="width: 0%;"
             />
           </div>
         </div>
         <div
-          class="col"
-          style="gap: 4px;"
+          class="scorecard-factor"
         >
           <div
-            style="display: flex; justify-content: space-between; font-size: 12px;"
+            class="scorecard-row"
           >
-            <span
-              style="color: var(--ink-2);"
-            >
-              Demand
+            <span>
+              Rental demand
             </span>
             <span
               class="mono tabular"
-              style="color: var(--muted);"
             >
               3
                / 
@@ -2500,95 +2499,81 @@ exports[`PropertyHero > matches snapshot 1`] = `
             </span>
           </div>
           <div
-            style="height: 3px; border-radius: 999px; background: var(--line);"
+            aria-label="Rental demand"
+            aria-valuemax="10"
+            aria-valuemin="0"
+            aria-valuenow="3"
+            aria-valuetext="3 of 10 points"
+            class="scorecard-track"
+            role="meter"
+            style="width: 40%;"
           >
             <div
-              style="width: 30%; height: 100%; border-radius: 999px; background: var(--caution);"
+              class="scorecard-fill"
+              style="width: 30%;"
             />
           </div>
         </div>
         <div
-          style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;"
+          class="scorecard-row"
         >
-          <span
-            style="color: var(--ink-2);"
-          >
+          <span>
             Risk deductions
           </span>
           <span
-            class="mono tabular"
-            style="color: var(--fail);"
+            class="mono tabular scorecard-penalty"
           >
             −
             6
           </span>
         </div>
+        <p
+          class="scorecard-caption"
+        >
+          Components use a 95-point scale. The score above is shown out of 100; risk limits can lower the final verdict.
+        </p>
       </div>
-      <div
-        class="divider"
-        style="border-top: 1px solid var(--line);"
-      />
-      <div
-        class="col"
-        style="gap: 12px;"
+      <dl
+        class="scorecard-facts"
       >
         <div
-          style="display: flex; justify-content: space-between; align-items: baseline;"
+          class="scorecard-row"
         >
-          <span
-            class="mono"
-            style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
-          >
+          <dt>
             Asking
-          </span>
-          <span
-            class="serif tabular"
-            style="font-size: 32px; line-height: 1;"
+          </dt>
+          <dd
+            class="mono tabular"
           >
             $729,900
-          </span>
+          </dd>
         </div>
         <div
-          style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+          class="scorecard-row"
         >
-          <span>
-            Cash flow
-          </span>
-          <span
-            class="mono tabular"
-            style="font-weight: 600; color: var(--fail);"
-          >
-            −$2,431/mo
-          </span>
-        </div>
-        <div
-          style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
-        >
-          <span>
+          <dt>
             Cap rate
-          </span>
-          <span
+          </dt>
+          <dd
             class="mono tabular"
-            style="font-weight: 600; color: var(--ink);"
           >
             1.47%
-          </span>
+          </dd>
         </div>
         <div
-          style="display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);"
+          class="scorecard-row"
         >
-          <span>
+          <dt>
             DSCR
-          </span>
-          <span
+          </dt>
+          <dd
             class="mono tabular"
-            style="font-weight: 600; color: var(--ink);"
           >
             0.44×
-          </span>
+          </dd>
         </div>
-      </div>
-    </div>
+      </dl>
+    </aside>
   </div>
 </section>
 `;
@@ -2664,7 +2649,8 @@ exports[`RentalCompsBar > matches snapshot 1`] = `
       />
       <div
         class="comp-marker-tip"
-        style="position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease; transform-origin: bottom center; box-shadow: 0 6px 16px rgba(0,0,0,.18);"
+        data-alignment="center"
+        style="position: absolute; bottom: calc(100% + 6px); left: 50%; right: auto; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease; transform-origin: bottom center; box-shadow: 0 6px 16px rgba(0,0,0,.18);"
       >
         <span
           class="mono tabular"

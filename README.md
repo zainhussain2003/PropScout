@@ -1,18 +1,18 @@
 # PropScout
 
-Canadian real estate analysis platform. Paste a Realtor.ca URL and receive a full investment, personal buyer, tenant, or landlord report in under 30 seconds — deal score, rental comps, cash flow projections, and AI narrative included.
+Canadian real estate analysis platform. Paste a Realtor.ca URL and receive a full investment, personal buyer, tenant, or landlord report in under 30 seconds — deal score, rental comps, cash flow projections, and an evidence-based verdict included.
 
 ---
 
 ## Docs
 
-| File                                                                 | Purpose                                                               |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [`docs/propscout_platform_spec.md`](docs/propscout_platform_spec.md) | Single source of truth — architecture, features, formulas, AI prompts |
-| [`CLAUDE.md`](CLAUDE.md)                                             | Coding standards, project structure, session rules for Claude Code    |
-| [`docs/MVP_TODO.md`](docs/MVP_TODO.md)                               | MVP scope and progress — tick off as tasks complete                   |
-| [`docs/TESTING.md`](docs/TESTING.md)                                 | Manual and automated test guide — update when features are added      |
-| [`docs/SETUP.md`](docs/SETUP.md)                                     | Pre-development checklist — accounts, tooling, CI/CD, legal           |
+| File                                                                 | Purpose                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [`docs/propscout_platform_spec.md`](docs/propscout_platform_spec.md) | Single source of truth — architecture, features, formulas, verdict rules |
+| [`CLAUDE.md`](CLAUDE.md)                                             | Coding standards, project structure, session rules for Claude Code       |
+| [`docs/MVP_TODO.md`](docs/MVP_TODO.md)                               | MVP scope and progress — tick off as tasks complete                      |
+| [`docs/TESTING.md`](docs/TESTING.md)                                 | Manual and automated test guide — update when features are added         |
+| [`docs/SETUP.md`](docs/SETUP.md)                                     | Pre-development checklist — accounts, tooling, CI/CD, legal              |
 
 ---
 
@@ -33,7 +33,7 @@ propscout.ca  (Vercel — React + TypeScript)
 | Database      | Supabase (Postgres + Auth)                 | Supabase                 |
 | Scraping      | Playwright                                 | Railway (scheduled jobs) |
 | AI extraction | Claude Haiku (`claude-haiku-4-5-20251001`) | Anthropic                |
-| AI narrative  | Claude Sonnet (`claude-sonnet-4-6`)        | Anthropic                |
+| Verdict prose | Deterministic TypeScript formatter         | Fastify API              |
 | Maps          | Mapbox GL JS                               | Mapbox                   |
 | Sun path      | pvlib (local — no API call)                | —                        |
 | Payments      | Stripe                                     | Stripe                   |

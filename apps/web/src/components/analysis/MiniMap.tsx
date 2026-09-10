@@ -22,6 +22,12 @@ interface MiniMapProps {
   pins?: MapPin[]
   /** Subject property coordinates — enables the real Mapbox map. */
   center?: { lat: number; lng: number } | null
+  /**
+   * Show the address caption over the map. Off when the address is already
+   * displayed next to the map — in the report hero it sat directly above the
+   * H1 showing the same text, which read as a rendering fault.
+   */
+  showAddressLabel?: boolean
 }
 
 // Simple lat/lng → SVG coordinate mapping
@@ -42,7 +48,13 @@ function latLngToXY(
   }
 }
 
-export function MiniMap({ height = 280, address, pins = [], center }: MiniMapProps): JSX.Element {
+export function MiniMap({
+  height = 280,
+  address,
+  pins = [],
+  center,
+  showAddressLabel = true,
+}: MiniMapProps): JSX.Element {
   const token = getMapboxToken()
   const wantRealMap = token != null && center != null
   const [mapFailed, setMapFailed] = useState(false)
@@ -53,15 +65,24 @@ export function MiniMap({ height = 280, address, pins = [], center }: MiniMapPro
     let cancelled = false
     let teardown: (() => void) | undefined
 
-    void mountMiniMap(mapContainerRef.current, { token, center, pins }).then((handle) => {
+    const container = mapContainerRef.current
+
+    void mountMiniMap(container, { token, center, pins }).then((handle) => {
       if (handle == null) {
         if (!cancelled) setMapFailed(true)
         return
       }
       if (cancelled) {
+        // StrictMode's first pass is torn down before the async mount resolves.
+        // Remove the map AND clear anything it left behind, so the surviving
+        // mount starts from an empty container rather than a half-built one.
         handle.remove()
+        container.replaceChildren()
       } else {
-        teardown = () => handle.remove()
+        teardown = () => {
+          handle.remove()
+          container.replaceChildren()
+        }
       }
     })
 
@@ -88,24 +109,26 @@ export function MiniMap({ height = 280, address, pins = [], center }: MiniMapPro
         <div ref={mapContainerRef} style={{ width: '100%', height, display: 'block' }} />
 
         {/* Address label overlay */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 12,
-            left: 12,
-            background: 'color-mix(in oklab, var(--surface) 92%, transparent)',
-            backdropFilter: 'blur(8px)',
-            borderRadius: 8,
-            padding: '6px 12px',
-            fontSize: 11,
-            fontFamily: "'Geist Mono', monospace",
-            color: 'var(--ink)',
-            border: '1px solid var(--line)',
-            pointerEvents: 'none',
-          }}
-        >
-          {address}
-        </div>
+        {showAddressLabel && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 12,
+              left: 12,
+              background: 'color-mix(in oklab, var(--surface) 92%, transparent)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 11,
+              fontFamily: "'Geist Mono', monospace",
+              color: 'var(--ink)',
+              border: '1px solid var(--line)',
+              pointerEvents: 'none',
+            }}
+          >
+            {address}
+          </div>
+        )}
       </div>
     )
   }
@@ -409,27 +432,30 @@ export function MiniMap({ height = 280, address, pins = [], center }: MiniMapPro
         </div>
       ))}
 
-      {/* Top-left address label */}
-      <div
-        className="mono"
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 14,
-          padding: '4px 10px',
-          borderRadius: 6,
-          background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
-          border: '1px solid var(--line)',
-          fontSize: 10,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: 'var(--muted)',
-        }}
-      >
-        {address}
-      </div>
+      {/* Top-left address label — suppressed when the caller already shows the
+          address beside the map (the report hero does). */}
+      {showAddressLabel && (
+        <div
+          className="mono"
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 14,
+            padding: '4px 10px',
+            borderRadius: 6,
+            background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            border: '1px solid var(--line)',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+          }}
+        >
+          {address}
+        </div>
+      )}
 
       {/* Bottom-right zoom controls (decorative — this is a placeholder) */}
       <div

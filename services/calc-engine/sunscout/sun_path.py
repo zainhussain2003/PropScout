@@ -9,6 +9,8 @@ Weights and benchmarks are starting assumptions — update spec when adjusted.
 """
 
 import pvlib
+
+from sunscout.obstruction import ObstructionProfile, build_profile
 import pandas as pd
 from dataclasses import dataclass, field
 
@@ -77,7 +79,10 @@ DAYS_PER_MONTH = {
 
 
 def window_sun_hours_by_month(
-    lat: float, lng: float, window_bearing: float
+    lat: float,
+    lng: float,
+    window_bearing: float,
+    obstruction: "ObstructionProfile | None" = None,
 ) -> dict[int, float]:
     """
     Returns estimated total hours of direct sun per month for a window.
@@ -91,6 +96,10 @@ def window_sun_hours_by_month(
         lng: Property longitude (decimal degrees).
         window_bearing: Window facing direction in degrees (0=North, 90=East,
                         180=South, 270=West).
+        obstruction: Optional horizon profile from surrounding buildings. When
+                     given, an hour is counted only if the sun also clears the
+                     skyline in its direction — the difference between a
+                     penthouse and a ground unit at the same coordinates.
 
     Returns:
         Dict mapping month number (1–12) to estimated total hours that month.
@@ -112,8 +121,15 @@ def window_sun_hours_by_month(
             if row["apparent_elevation"] <= 0:
                 continue
             angle_diff = abs((row["azimuth"] - window_bearing + 180) % 360 - 180)
-            if angle_diff <= 90:
-                day_hours += 1.0
+            if angle_diff > 90:
+                continue
+            # The sun is on this window's side of the building; it still only
+            # counts if it clears whatever stands in that direction.
+            if obstruction is not None and obstruction.is_blocked(
+                row["azimuth"], row["apparent_elevation"]
+            ):
+                continue
+            day_hours += 1.0
         # Multiply sample-day hours by days in month for estimated monthly total
         monthly_hours[month] = round(day_hours * DAYS_PER_MONTH[month], 1)
 
@@ -155,6 +171,8 @@ def calculate_sun_hours(
     lat: float,
     lng: float,
     azimuth_deg: float | None = None,
+    floor: int | None = None,
+    assess_obstruction: bool = False,
 ) -> SunScoutResult:
     """
     Calculate peak sun hours and seasonal solar exposure for a property.
@@ -168,6 +186,11 @@ def calculate_sun_hours(
         lng: Property longitude.
         azimuth_deg: Building facade azimuth in degrees (0=North, 180=South).
                      None defaults to south-facing.
+        floor: The unit's storey. Only meaningful with assess_obstruction — a
+               30th-floor unit clears most of what shades the ground floor.
+        assess_obstruction: When True, query surrounding buildings and deduct
+               hours the sun spends behind them. Off by default because it makes
+               a network call; the caller decides whether that cost is warranted.
 
     Returns:
         SunScoutResult with annual and seasonal sun hour data.
@@ -184,9 +207,21 @@ def calculate_sun_hours(
         "living": (facade + 90.0) % 360.0,
     }
 
+    # Horizon profile is computed once and shared by every window — it describes
+    # the surroundings, not the window.
+    obstruction: ObstructionProfile | None = None
+    if assess_obstruction:
+        obstruction = build_profile(lat, lng, floor=floor)
+        if not obstruction.available:
+            # Could not reach the data source. Fall back to open-sky rather than
+            # deducting hours we never verified — "unknown" is not "blocked".
+            obstruction = None
+
     window_hours: dict[str, dict[int, float]] = {}
     for window_name, bearing in windows_to_calculate.items():
-        window_hours[window_name] = window_sun_hours_by_month(lat, lng, bearing)
+        window_hours[window_name] = window_sun_hours_by_month(
+            lat, lng, bearing, obstruction=obstruction
+        )
 
     score = annual_light_score(window_hours)
     verdict = _verdict_from_score(score)

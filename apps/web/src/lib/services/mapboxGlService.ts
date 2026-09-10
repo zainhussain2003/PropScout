@@ -58,12 +58,24 @@ export async function mountMiniMap(
 
     mapboxgl.accessToken = opts.token
 
+    // React StrictMode invokes effects twice in development. Because mounting
+    // is async (dynamic import), the second mount can begin while the first
+    // map's canvas is still in the container — Mapbox then warns "the map
+    // container element should be empty" and the map paints nothing at all.
+    // Clearing first makes a re-mount idempotent.
+    container.replaceChildren()
+
     const map = new mapboxgl.Map({
       container,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [opts.center.lng, opts.center.lat],
       zoom: opts.zoom ?? 13.5,
     })
+
+    // The container is often laid out (or resized by a parent grid) after the
+    // map is constructed. Without this the map keeps its initial size — which
+    // can be zero — and never requests tiles for the visible area.
+    map.once('load', () => map.resize())
     // A report section must never hijack page scroll.
     map.scrollZoom.disable()
 

@@ -41,6 +41,7 @@ export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarP
   const range = high - low
   const raw = range === 0 ? 0.5 : (ask - low) / range
   const fraction = Math.max(0, Math.min(1, raw))
+  const tipAlignment = fraction >= 0.8 ? 'right' : fraction <= 0.2 ? 'left' : 'center'
 
   const verdict =
     ask >= high
@@ -163,11 +164,13 @@ export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarP
           />
           <div
             className="comp-marker-tip"
+            data-alignment={tipAlignment}
             style={{
               position: 'absolute',
               bottom: 'calc(100% + 6px)',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              left: tipAlignment === 'right' ? 'auto' : tipAlignment === 'left' ? -8 : '50%',
+              right: tipAlignment === 'right' ? -8 : 'auto',
+              transform: tipAlignment === 'center' ? 'translateX(-50%)' : 'none',
               background: 'var(--ink)',
               color: 'var(--bg)',
               padding: '6px 10px',
@@ -192,7 +195,12 @@ export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarP
               style={{
                 position: 'absolute',
                 top: '100%',
-                left: '50%',
+                left:
+                  tipAlignment === 'right'
+                    ? 'calc(100% - 22px)'
+                    : tipAlignment === 'left'
+                      ? 22
+                      : '50%',
                 transform: 'translateX(-50%)',
                 width: 0,
                 height: 0,

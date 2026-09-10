@@ -17,7 +17,7 @@
 9. [Report D — Landlord rental analysis](#9-report-d--landlord-rental-analysis)
 10. [Deal score formula](#10-deal-score-formula)
 11. [Technical architecture](#11-technical-architecture)
-12. [AI narrative spec](#12-ai-narrative-spec)
+12. [Deterministic verdict narrative spec](#12-deterministic-verdict-narrative-spec)
 13. [Data and API stack](#13-data-and-api-stack)
 14. [PDF export spec](#14-pdf-export-spec)
 15. [Revenue model](#15-revenue-model)
@@ -102,30 +102,30 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 
 ### Feature matrix
 
-| Feature                                             | Free                              | Pro                     | Professional    | Team            |
-| --------------------------------------------------- | --------------------------------- | ----------------------- | --------------- | --------------- |
-| Report A — Investment                               | 3/month, limited                  | Unlimited, full         | Unlimited, full | Unlimited, full |
-| Report B — Personal purchase                        | 3/month, limited                  | Unlimited, full         | Unlimited, full | Unlimited, full |
-| Report C — Tenant evaluation                        | Unlimited, no login               | Unlimited               | Unlimited       | Unlimited       |
-| Report D — Landlord rental                          | 3/month, limited                  | Unlimited, full         | Unlimited, full | Unlimited, full |
-| Rental comps (full — range, map, trend, confidence) | Yes                               | Yes                     | Yes             | Yes             |
-| Full investment metrics                             | All metrics                       | All metrics             | All             | All             |
-| Financing scenarios                                 | All scenarios + sliders           | All scenarios + sliders | All             | All             |
-| Risk analysis                                       | Full detail                       | Full detail             | Full            | Full            |
-| Neighbourhood intelligence                          | Yes                               | Yes                     | Yes             | Yes             |
-| School rankings                                     | Yes                               | Yes                     | Yes             | Yes             |
-| STR vs LTR analysis                                 | No (Phase 2)                      | Yes                     | Yes             | Yes             |
-| SunScout — sun path + light score + seasonal arc    | Yes                               | Yes                     | Yes             | Yes             |
-| SunScout — building obstruction (3D Mapbox)         | No                                | Yes                     | Yes             | Yes             |
-| AI narrative verdict                                | 1 short paragraph (4–5 sentences) | Full (3 paragraphs)     | Full            | Full            |
-| PDF export                                          | No                                | Yes                     | Yes             | Yes             |
-| Saved analyses                                      | Last 10                           | Unlimited               | Unlimited       | Unlimited       |
-| Portfolio tracker                                   | No                                | Up to 10 properties     | Unlimited       | Unlimited       |
-| White-label branded reports                         | No                                | No                      | Yes             | Yes             |
-| Shareable client links                              | No                                | No                      | Yes             | Yes             |
-| Bulk URL analysis                                   | No                                | No                      | Yes             | Yes             |
-| Multi-user seats                                    | 1                                 | 1                       | 1               | 5–20+           |
-| API access                                          | No                                | No                      | No              | Yes             |
+| Feature                                             | Free                    | Pro                     | Professional    | Team            |
+| --------------------------------------------------- | ----------------------- | ----------------------- | --------------- | --------------- |
+| Report A — Investment                               | 3/month, limited        | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report B — Personal purchase                        | 3/month, limited        | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report C — Tenant evaluation                        | Unlimited, no login     | Unlimited               | Unlimited       | Unlimited       |
+| Report D — Landlord rental                          | 3/month, limited        | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Rental comps (full — range, map, trend, confidence) | Yes                     | Yes                     | Yes             | Yes             |
+| Full investment metrics                             | All metrics             | All metrics             | All             | All             |
+| Financing scenarios                                 | All scenarios + sliders | All scenarios + sliders | All             | All             |
+| Risk analysis                                       | Full detail             | Full detail             | Full            | Full            |
+| Neighbourhood intelligence                          | Yes                     | Yes                     | Yes             | Yes             |
+| School rankings                                     | Yes                     | Yes                     | Yes             | Yes             |
+| STR vs LTR analysis                                 | No (Phase 2)            | Yes                     | Yes             | Yes             |
+| SunScout — sun path + light score + seasonal arc    | Yes                     | Yes                     | Yes             | Yes             |
+| SunScout — building obstruction (3D Mapbox)         | No                      | Yes                     | Yes             | Yes             |
+| Verdict summary                                     | First decision sentence | Full deterministic text | Full            | Full            |
+| PDF export                                          | No                      | Yes                     | Yes             | Yes             |
+| Saved analyses                                      | Last 10                 | Unlimited               | Unlimited       | Unlimited       |
+| Portfolio tracker                                   | No                      | Up to 10 properties     | Unlimited       | Unlimited       |
+| White-label branded reports                         | No                      | No                      | Yes             | Yes             |
+| Shareable client links                              | No                      | No                      | Yes             | Yes             |
+| Bulk URL analysis                                   | No                      | No                      | Yes             | Yes             |
+| Multi-user seats                                    | 1                       | 1                       | 1               | 5–20+           |
+| API access                                          | No                      | No                      | No              | Yes             |
 
 ### Paywall trigger points
 
@@ -173,7 +173,7 @@ Property taxes: $3,326/yr
 Condo fee: $761/mo
 Pulling rental comps nearby...
 Running investment analysis...
-Generating AI verdict...
+Building evidence-based verdict...
 ```
 
 Each confirmed field appears as it's extracted. Fields not found appear as amber "enter manually" prompts. The analysis waits for any required missing fields (condo fee for condos, taxes if absent) before running.
@@ -182,7 +182,7 @@ Time targets: Urban Ontario under 10 seconds. Smaller cities up to 25 seconds.
 
 ### Step 4 — Report display
 
-Full report renders in-page. Gated sections show blurred previews, never hidden entirely. Sections load progressively: scorecard first, AI narrative last.
+Full report renders in-page. Gated sections show blurred previews, never hidden entirely. Sections load progressively: scorecard first, verdict last.
 
 ### Step 5 — Export and share
 
@@ -214,6 +214,13 @@ Triggered when a for-sale URL is pasted and the user selects "Investment." This 
 Address, asking price, key tags (property type, beds/baths, sqft, parking, condo fee, year built, rent control status), deal score badge.
 
 **2. Deal scorecard**
+
+The investment hero leads with the backend verdict and monthly cash flow. Its
+five component bars share one points scale, so their track lengths reflect the
+25/25/20/15/10 weights. Zero points render with zero fill and invalid values as
+an em dash. The UI explains that components total 95 points, while the stored
+display score is normalized to 100 and may be limited by risk gates. The client
+never derives a new verdict from the bars.
 
 | Metric              | Pass          | Caution     | Fail       |
 | ------------------- | ------------- | ----------- | ---------- |
@@ -297,7 +304,7 @@ At MVP: LTR baseline shown from comps. STR section shows "Coming soon — AirDNA
 All tiers: annual light score 0–100, hours of direct sun by month, window-by-window forecast by compass direction, seasonal arc visualization.
 Investor Pro and above: building obstruction (3D Mapbox data) — accurate shadow mapping in dense cities like Toronto and Vancouver. Full spec in Section 17.
 
-**10. AI narrative verdict**
+**10. Deterministic verdict**
 
 Full-width dark section. Three paragraphs. Plain English. Direct. Full prompt spec in Section 12.
 
@@ -355,7 +362,7 @@ Same as Report A Section 7.
 
 Same as Report A Section 9. Particularly relevant for personal buyers who will live in the space.
 
-**7. AI narrative — personal buyer verdict**
+**7. Deterministic personal-buyer verdict**
 
 Answers: Is this priced fairly for what it is and where it is? What is the most important consideration for a personal buyer in this specific location? What should they do before making an offer?
 
@@ -514,7 +521,7 @@ Natural light forecast for the unit. Especially useful for tenants who cannot ve
 
 ---
 
-**11. AI narrative — tenant verdict**
+**11. Deterministic tenant verdict**
 
 Direct answer: sign at asking / negotiate first / walk away, and the specific reason why.
 
@@ -746,7 +753,7 @@ ceiling ladder lives in code but is not displayed.
 | Database         | Supabase (Postgres + Auth + Storage)                   |
 | Scraping workers | Playwright, scheduled jobs on Railway                  |
 | Calc engine      | Python FastAPI microservice on Railway                 |
-| AI narrative     | Claude API (claude-sonnet-4-6)                         |
+| Verdict prose    | Deterministic Fastify formatter                        |
 | Maps             | Mapbox GL JS                                           |
 | Sun path math    | NREL SPA via pvlib (runs locally, no API call)         |
 | School lookup    | Google Places API + EQAO/Fraser local database         |
@@ -963,21 +970,27 @@ waitlist (id uuid PK, email text, province char(2), created_at timestamptz)
 
 ---
 
-## 12. AI narrative spec
+## 12. Deterministic verdict narrative spec
 
-> **TEMPLATE CODE** — All prompts below are starting templates. Iterate on wording, tone, and structure based on output quality during development. The gold-standard examples in this section are the quality target — if generated output does not match that quality, refine the prompt, not the examples.
+Verdict prose is assembled in the Fastify backend from validated structured
+inputs. There is no Sonnet call. Each mode uses explicit branches for available
+and missing evidence; identical inputs produce byte-for-byte identical prose.
+Subscription tier controls how much of that stored verdict the UI reveals, not
+the words the backend generates. See D-043.
+
+> **HISTORICAL REFERENCE.** The prompt and prose examples retained below record
+> the superseded Sonnet design. They are not executed and are not current product
+> claims. New behavior must be specified as deterministic branches and tests.
 
 ### Purpose
 
-The AI narrative is the final section of every report. It does not repeat the numbers — the numbers are already shown above it. It adds judgment: what does this mean, and what should the reader do?
+The verdict turns validated report inputs into a stable screening decision and a concrete next step. Unknown evidence is named explicitly and never filled with plausible prose.
 
 ### Model
 
-Model: claude-sonnet-4-6
-Max tokens: 600
-Temperature: 0 (fully reproducible — same inputs always produce the same narrative)
+No language model. `generateNarrative` is a deterministic formatter.
 
-### Prompt — Report A and D (investment)
+### Retired prompt — Report A and D (investment)
 
 ```
 You are a senior Canadian real estate investment analyst writing a deal verdict.
@@ -1012,7 +1025,7 @@ No bullet points. Do not mention PropScout. Do not say "as an AI."
 Assume the reader has seen all the numbers already — add judgment, not repetition.
 ```
 
-### Prompt — Report B (personal purchase)
+### Retired prompt — Report B (personal purchase)
 
 ```
 You are a real estate advisor helping someone decide whether to buy a home for personal use.
@@ -1033,7 +1046,7 @@ Rules: second person. Warm but direct. Maximum 240 words. Plain paragraphs only.
 Do not mention PropScout.
 ```
 
-### Prompt — Report C (tenant)
+### Retired prompt — Report C (tenant)
 
 ```
 You are a tenant advisor reviewing a rental listing.
@@ -1089,14 +1102,14 @@ The difference between free and Pro is not "useless vs useful" — free users ge
 
 ### Output validation
 
-Before storing or displaying any narrative:
+Before storing or displaying a verdict:
 
-- Free tier: minimum 60 words, maximum 120 words
-- Pro tier: minimum 150 words, maximum 320 words
-- Must not contain: "as an AI," "I cannot," "PropScout," bullet points, or numbered lists
-- Must contain at least one dollar figure
-- If validation fails: regenerate once with the same prompt
-- If second attempt fails: log failure and display fallback — "AI summary temporarily unavailable — all analysis data above is unaffected"
+- Choose the template only from `ReportMode`.
+- Render currency only from finite typed inputs.
+- State why pricing, rent, mobility, or risk evidence is unavailable.
+- Never calculate an offer price, dollar difference, or negotiation midpoint in prose.
+- Repeated calls with deeply equal inputs must return exactly equal strings.
+- Never vary prose by subscription tier.
 
 ---
 
@@ -1118,7 +1131,7 @@ Before storing or displaying any narrative:
 | CMHC                                     | Vacancy rates by city                        | Free public data                              |
 | Statistics Canada                        | Demographics and income by postal code       | Free public data                              |
 | NREL SPA via pvlib                       | SunScout sun path math                       | Free — runs locally                           |
-| Claude API                               | AI narrative generation                      | ~$20–50/mo at MVP volume                      |
+| Claude Haiku API                         | Structured description-flag extraction       | Usage-based                                   |
 | Stripe                                   | Subscription payments                        | 2.9% + $0.30 per transaction                  |
 
 ### Phase 2 APIs
@@ -1153,7 +1166,7 @@ Generated via Puppeteer — headless Chrome renders the web report HTML and capt
 | 4    | Financing: mortgage scenarios, OSFI result, closing costs, break-even rent     |
 | 5    | Risk flags: each with severity and investor implication                        |
 | 6    | Neighbourhood data: demographics, walkability, development, price appreciation |
-| 7    | AI narrative: full-page, large type, standalone verdict                        |
+| 7    | Deterministic verdict: full-page, large type                                   |
 | 8    | SunScout: light score, seasonal grid, window breakdown                         |
 
 **Report B — Personal purchase (6 pages)**
@@ -1165,7 +1178,7 @@ Generated via Puppeteer — headless Chrome renders the web report HTML and capt
 | 3    | Comparable sales and fair market value     |
 | 4    | School rankings — elementary, middle, high |
 | 5    | Neighbourhood intelligence and SunScout    |
-| 6    | AI narrative                               |
+| 6    | Deterministic verdict                      |
 
 **Report C — Tenant evaluation (6 pages)**
 
@@ -1176,7 +1189,7 @@ Generated via Puppeteer — headless Chrome renders the web report HTML and capt
 | 3    | Rent positioning + negotiation assessment                                         |
 | 4    | Monthly cost breakdown + location and lifestyle                                   |
 | 5    | SunScout + confirm-before-signing checklist                                       |
-| 6    | AI narrative verdict + conversion prompt                                          |
+| 6    | Deterministic verdict + conversion prompt                                         |
 
 **Branding:**
 
@@ -1272,7 +1285,7 @@ A working product that can be shared with real users. Every item below is requir
 
 **Weeks 6–7: AI and PDF**
 
-- Claude API integration — all four narrative prompts with output validation
+- Deterministic verdict formatter — all four modes with exact-repeat tests
 - Puppeteer PDF generation — all four report types
 - PropScout branding in PDF footer
 
@@ -1287,7 +1300,7 @@ A working product that can be shared with real users. Every item below is requir
 
 - End-to-end test with 20 real Ontario properties — variety of types (condo, detached, semi, duplex)
 - Fix accuracy issues in rental comp estimates
-- Mobile responsiveness: scorecard and AI narrative must be readable on phone
+- Mobile responsiveness: scorecard and verdict must be readable on phone
 - All error states working and tested
 - Province gate (non-Ontario properties)
 
@@ -1370,7 +1383,7 @@ def annual_light_score(windows: dict) -> int:
 1. Annual light score with a visual gauge
 2. Seasonal grid: columns = Dec / Mar / Jun / Sep, rows = named windows, values = hours of direct sun
 3. Sun arc SVG: summer day arc vs winter day arc over the property's location
-4. Plain-English implication note (included in AI narrative input for Report A and B)
+4. Plain-English implication note (included in deterministic verdict inputs for Report A and B)
 
 ### Score interpretation
 
@@ -1425,7 +1438,7 @@ The US PropScout (propscout.ai) is a different product, different market, no leg
 
 ### The problem
 
-Realtors are incentivised to obscure negatives. A glass-door den becomes "a versatile second bedroom." A basement unit becomes "a finished lower level retreat." A missing parking space becomes "parking available — inquire with management." If PropScout feeds raw listing descriptions directly into the deal score or AI narrative, it will eventually misread creative marketing language as factual property data — and users will lose trust in the score.
+Realtors are incentivised to obscure negatives. A glass-door den becomes "a versatile second bedroom." A basement unit becomes "a finished lower level retreat." A missing parking space becomes "parking available — inquire with management." If PropScout feeds raw listing descriptions directly into the deal score or verdict, it will eventually misread creative marketing language as factual property data — and users will lose trust in the score.
 
 The solution is to treat the listing description as untrusted input that must pass through a structured extraction pipeline before any number is calculated or any flag is set. The deal score is always derived from validated structured data, never from an AI reading marketing copy directly.
 
@@ -1492,11 +1505,11 @@ Step 3: Logic gate
 Step 4: Python calc engine
         |  (runs all math on validated flags and structured data only)
         |
-Step 5: Claude Sonnet narrative
-           (writes verdict from hard numbers — never reads raw description)
+Step 5: Deterministic verdict formatter
+           (writes stable prose from hard numbers and validated flags)
 ```
 
-Steps 1–3 run as a single pre-processing service before the calc engine is called. The calc engine and narrative prompt never receive the raw listing description — only the validated structured output from Step 3.
+Steps 1–3 run as a single pre-processing service before the calc engine is called. The calc engine and verdict formatter use only validated structured output from Step 3.
 
 ### Step 1 — Deterministic regex (runs first, always)
 
@@ -1797,12 +1810,12 @@ flag_overrides (
 )
 ```
 
-### Step 5 — What the narrative prompt receives
+### Step 5 — What the deterministic verdict formatter receives
 
-The Claude Sonnet narrative prompt (Section 12) never receives the raw listing description. It receives only the validated structured output from Steps 1–3 — hard numbers and confirmed flags.
+The formatter never receives the raw listing description. It receives only the validated structured output from Steps 1–3 — hard numbers and confirmed flags.
 
 ```python
-# What gets passed to the narrative prompt
+# What gets passed to the verdict formatter
 narrative_input = {
     "address":             "5702-5 Buttermill Ave, Vaughan",
     "price":               729900,
@@ -1872,7 +1885,7 @@ def test_extraction_accuracy(case):
         )
 ```
 
-**Accuracy target:** 95% or above across all golden dataset cases before MVP ships. Re-run the full suite whenever the extraction prompt changes, the Haiku model version changes, or new flag types are added.
+**Accuracy target:** 95% or above across all golden dataset cases before MVP ships. Re-run the full suite whenever the extraction prompt changes, the Haiku model version changes, or new flag types are added. The suite separately gates real-description precision and recall at 95%, because aggregate assertion accuracy can conceal missed positive flags. As of 2026-09-07 it contains 96 cases and 653 assertions: 51 synthetic cases, seven real-derived excerpts, and 38 verbatim full Ontario listing descriptions with URLs, scrape timestamps, acquisition methods, and content hashes. This is a development corpus, not a held-out accuracy claim.
 
 **Building the golden dataset:** Search Realtor.ca and Zillow.ca for listings with known issues — glass-door dens marketed as bedrooms, basement units with creative descriptions, missing parking. Save the raw description and manually label the correct flags. Aim for at least 10 examples of each flag type, including negative examples (descriptions that should NOT trigger the flag).
 

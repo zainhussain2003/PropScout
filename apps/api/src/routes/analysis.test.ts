@@ -210,6 +210,30 @@ describe('POST / — analysis orchestrator', () => {
     expect(sentBody.cmhc_vacancy_rate).toBe(getVacancyRateByCity('Vaughan'))
   })
 
+  it('recognizes Toronto neighbourhood suffixes for MLTT and tax estimation', async () => {
+    mockGetListingByToken.mockResolvedValue({
+      ...LISTING_FIXTURE,
+      city: 'Toronto (Yonge-Eglinton)',
+      price: 1_995_000,
+      // Protect saved rows created before zero-tax placeholders were rejected.
+      annualTaxes: 0,
+    })
+
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const fetchMock = global.fetch as jest.Mock
+    const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+    const sentBody = JSON.parse((calcCall![1] as RequestInit).body as string) as {
+      property_data: { annual_taxes: number; is_toronto: boolean }
+    }
+    expect(sentBody.property_data.annual_taxes).toBe(14_264)
+    expect(sentBody.property_data.is_toronto).toBe(true)
+  })
+
   // ── Test 1c ────────────────────────────────────────────────────────────────
 
   it('forwards the user-dismissed flag IDs to the calc engine payload', async () => {
@@ -492,6 +516,9 @@ describe('POST / - coordinates in the analysis payload', () => {
       lat: 43.7942,
       lng: -79.5268,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
 
     const res = await app.inject({
@@ -553,6 +580,9 @@ describe('POST / - SunScout wiring', () => {
       lat: 43.7942,
       lng: -79.5268,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
     global.fetch = jest
       .fn()
@@ -597,6 +627,46 @@ describe('POST / - SunScout wiring', () => {
       monthlyHours: [3.1, 4.0, 5.5, 6.4, 7.6, 8.4, 8.2, 7.3, 6.2, 4.8, 3.6, 3.0],
       sunScore: 72,
       verdict: 'good',
+      // Obstruction (spec §17 Phase 2). The fixture is an older calc-engine
+      // response with no obstruction fields, so the mapper must default them —
+      // assessed:false, everything else null. That distinction matters: false
+      // means "we checked and the sky is open", null means "not assessed".
+      obstructionAssessed: false,
+      obstructionOpenness: null,
+      obstructionBuildingsUsed: null,
+      obstructionBuildingsUnknown: null,
+      hoursLostToBuildings: null,
+    })
+  })
+
+  it('maps obstruction fields when the calc engine reports them', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      makeCalcResponse({
+        ...CALC_ENGINE_FIXTURE,
+        sun_scout: {
+          ...PY_SUN_SCOUT,
+          obstruction_assessed: true,
+          obstruction_openness: 0.842,
+          obstruction_buildings_used: 21,
+          obstruction_buildings_unknown: 16,
+          hours_lost_to_buildings: 667.0,
+        },
+      })
+    )
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.sunScout).toMatchObject({
+      obstructionAssessed: true,
+      obstructionOpenness: 0.842,
+      obstructionBuildingsUsed: 21,
+      obstructionBuildingsUnknown: 16,
+      hoursLostToBuildings: 667.0,
     })
   })
 
@@ -673,6 +743,9 @@ describe('POST / - schools wiring', () => {
       lat: 43.7942,
       lng: -79.5268,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
     global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
   })

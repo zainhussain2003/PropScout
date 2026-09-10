@@ -127,12 +127,16 @@ export function InvestmentMetricsSection({
 
   // Expense rows: [label, value, note]
   const expenseRows: Array<[string, number, string]> = [
-    ['Property taxes', metrics.expenses.taxes, 'as listed'],
+    [
+      'Property taxes',
+      metrics.expenses.taxes,
+      listing.annualTaxesKnown === false ? 'city-rate estimate · verify' : 'as listed',
+    ],
     ['Insurance (0.35%)', metrics.expenses.insurance, 'of value'],
     [
       'Maintenance reserve',
       metrics.expenses.maintenance,
-      `${fmtPct(metrics.expenses.maintenance / listing.price, 2)} of value`,
+      `${fmtPct(metrics.expenses.maintenance / listing.price, 2)} of value${listing.yearBuiltKnown === false ? ' · assumed; build year unknown' : ''}`,
     ],
     ['Vacancy allowance (5%)', metrics.expenses.vacancy, 'of gross rent'],
     [
@@ -176,7 +180,7 @@ export function InvestmentMetricsSection({
 
       {/* 8-tile grid — 4-col desktop, 2-col mobile */}
       <div
-        className="grid-2col-mobile"
+        className="grid-2col-mobile investment-metrics-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -235,7 +239,10 @@ export function InvestmentMetricsSection({
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+          <div
+            className="expense-breakdown-grid"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}
+          >
             {expenseRows.map(([label, value, note], i) => (
               <div
                 key={label}

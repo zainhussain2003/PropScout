@@ -12,7 +12,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       style="padding: 14px 0px; justify-content: space-between;"
     >
       <div
-        class="row gap-16"
+        class="row gap-16 nav-crumbs"
+        style="min-width: 0px;"
       >
         <div
           class="row gap-12"
@@ -39,23 +40,27 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         </div>
         <div
           class="row gap-8"
-          style="color: var(--muted); font-size: 13px;"
+          style="color: var(--muted); font-size: 13px; min-width: 0px;"
         >
           <span
             style="opacity: 0.55;"
           >
             /
           </span>
-          <span>
+          <span
+            class="nav-hide-sm"
+          >
             Personal buyer report
           </span>
           <span
+            class="nav-hide-sm"
             style="opacity: 0.55;"
           >
             /
           </span>
           <span
             aria-label="Copy share link"
+            class="nav-slug"
             style="color: var(--ink); font-family: "Geist Mono", monospace; font-size: 12px; cursor: pointer; transition: color 0.15s ease; user-select: none;"
           >
             248-mountcrest-burlington
@@ -83,7 +88,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           />
         </button>
         <button
-          class="btn btn-ghost"
+          class="btn btn-ghost nav-hide-sm"
           style="padding: 10px 14px;"
         >
           <svg
@@ -105,22 +110,26 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         >
           Sign in
         </button>
-        <button
-          class="btn btn-primary"
+        <span
+          class="nav-hide-sm"
         >
-          Save to account 
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="13"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.6"
-            viewBox="0 0 24 24"
-            width="13"
-          />
-        </button>
+          <button
+            class="btn btn-primary"
+          >
+            Save to account 
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="13"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+              width="13"
+            />
+          </button>
+        </span>
       </div>
     </div>
   </header>
@@ -190,50 +199,135 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         style="gap: 28px;"
       >
         <div
-          style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; height: 360px;"
+          class="col"
+          style="gap: 8px;"
         >
           <div
-            class="photo-ph"
-            style="border-radius: 18px; height: 100%;"
-          >
-            <span>
-              front · curb view
-            </span>
-          </div>
-          <div
-            class="col"
-            style="gap: 8px;"
+            style="border-radius: 18px; overflow: hidden; height: 360px;"
           >
             <div
-              class="photo-ph"
-              style="border-radius: 14px; flex: 1 1 0%;"
+              aria-label="Map showing rental comps near 248 Mountcrest Avenue, Burlington · L7N · Roseland"
+              role="img"
+              style="position: relative; height: 360px; border-radius: 14px; overflow: hidden; background: var(--bg-elev); border: 1px solid var(--line);"
             >
-              <span>
-                living room
-              </span>
-            </div>
-            <div
-              class="photo-ph"
-              style="border-radius: 14px; flex: 1 1 0%;"
-            >
-              <span>
-                kitchen
-              </span>
-            </div>
-            <div
-              class="photo-ph"
-              style="border-radius: 14px; flex: 1 1 0%; position: relative;"
-            >
-              <span>
-                backyard
-              </span>
+              <svg
+                aria-hidden="true"
+                height="100%"
+                preserveAspectRatio="xMidYMid slice"
+                style="display: block;"
+                viewBox="0 0 400 240"
+                width="100%"
+              />
+              <div
+                style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;"
+              >
+                <div
+                  style="position: absolute; inset: -22px; border-radius: 999px; background: radial-gradient(circle, color-mix(in oklab, var(--accent) 40%, transparent) 0%, transparent 65%);"
+                />
+                <div
+                  style="position: relative; width: 30px; height: 30px; border-radius: 999px; background: var(--accent); border: 3px solid var(--surface); box-shadow: 0 8px 22px rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600;"
+                >
+                  ★
+                </div>
+              </div>
+              <div
+                style="position: absolute; left: 14%; top: 40%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+              >
+                <div
+                  class="mono tabular"
+                  style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+                >
+                  $2,850
+                </div>
+                <div
+                  style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+                />
+              </div>
+              <div
+                style="position: absolute; left: 72%; top: 22%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+              >
+                <div
+                  class="mono tabular"
+                  style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+                >
+                  $3,050
+                </div>
+                <div
+                  style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+                />
+              </div>
+              <div
+                style="position: absolute; left: 36%; top: 64%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+              >
+                <div
+                  class="mono tabular"
+                  style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+                >
+                  $2,750
+                </div>
+                <div
+                  style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+                />
+              </div>
+              <div
+                style="position: absolute; left: 75%; top: 68%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+              >
+                <div
+                  class="mono tabular"
+                  style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+                >
+                  $3,200
+                </div>
+                <div
+                  style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+                />
+              </div>
+              <div
+                style="position: absolute; left: 58%; top: 78%; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;"
+              >
+                <div
+                  class="mono tabular"
+                  style="font-size: 11px; padding: 4px 9px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); box-shadow: 0 6px 14px -6px rgba(14,19,32,0.25), 0 1px 2px rgba(14,19,32,0.08); white-space: nowrap; font-weight: 500; letter-spacing: -0.005em;"
+                >
+                  $2,900
+                </div>
+                <div
+                  style="width: 6px; height: 6px; border-radius: 999px; background: var(--ink); border: 1.5px solid var(--surface);"
+                />
+              </div>
+              <div
+                aria-hidden="true"
+                style="position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(14,19,32,0.08);"
+              >
+                <div
+                  style="width: 26px; height: 26px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center;"
+                >
+                  +
+                </div>
+                <div
+                  style="width: 26px; height: 26px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; border-top: 1px solid var(--line);"
+                >
+                  −
+                </div>
+              </div>
               <div
                 class="mono"
-                style="position: absolute; right: 10px; bottom: 10px; font-size: 10px; letter-spacing: 0.1em; padding: 3px 8px; background: color-mix(in oklab, var(--surface) 90%, transparent); border-radius: 999px; color: var(--ink); backdrop-filter: blur(4px);"
+                style="position: absolute; bottom: 8px; left: 14px; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: color-mix(in oklab, var(--surface) 85%, transparent); padding: 2px 6px; border-radius: 4px;"
               >
-                + 28 more
+                © Mapbox · OpenStreetMap
+              </div>
+              <div
+                style="position: absolute; top: 10px; right: 10px; background: color-mix(in oklab, var(--surface) 90%, transparent); backdrop-filter: blur(6px); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);"
+              >
+                Map placeholder · Mapbox GL JS
               </div>
             </div>
+          </div>
+          <div
+            class="mono"
+            style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
+          >
+            No listing photos · report built from the address
           </div>
         </div>
         <div
@@ -369,7 +463,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         </div>
       </div>
       <div
-        class="card col"
+        class="card col report-side-score"
         style="padding: 32px; gap: 24px; position: sticky; top: 84px;"
       >
         <div
@@ -405,13 +499,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
                 >
                   Home score / 100
                 </span>
-                <span
-                  style="margin-top: 6px; font-size: 11px; font-weight: 500; color: var(--pass); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--pass); background: color-mix(in oklab, var(--pass) 8%, transparent); white-space: nowrap;"
-                >
-                  Good deal
-                </span>
               </div>
             </div>
+            <span
+              style="font-size: 11px; font-weight: 500; color: var(--pass); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--pass); background: color-mix(in oklab, var(--pass) 8%, transparent); max-width: 180px; text-align: center; line-height: 1.3;"
+            >
+              Good deal
+            </span>
           </div>
         </div>
         <div
@@ -705,7 +799,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono"
           style="font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;"
         >
-          Scout AI · home buyer verdict
+          PropScout · home buyer verdict
         </span>
         <span
           style="flex: 1 1 0%;"
@@ -714,7 +808,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono"
           style="font-size: 10px; letter-spacing: 0.12em; color: color-mix(in oklab, var(--bg) 40%, transparent);"
         >
-          claude · sonnet 4.6
+          validated inputs
         </span>
       </div>
       <div
@@ -819,6 +913,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="01"
+      data-section-topic="True monthly cost"
     >
       <div
         class="col gap-12"
@@ -858,6 +954,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       </span>
     </div>
     <div
+      class="grid-1col-mobile"
       style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 22px; align-items: flex-start;"
     >
       <div
@@ -906,7 +1003,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              $4,280/yr
+              $4,280/yr · as listed
             </span>
           </div>
           <span
@@ -958,7 +1055,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              detached / semi estimate
+              0.35% of value · confirm quote
             </span>
           </div>
           <span
@@ -1010,7 +1107,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              11¢/kWh · avg consumption
+              size-based estimate · confirm
             </span>
           </div>
           <span
@@ -1036,7 +1133,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              forced-air heating
+              size-based estimate · confirm
             </span>
           </div>
           <span
@@ -1062,7 +1159,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              metered · municipal
+              estimate · confirm
             </span>
           </div>
           <span
@@ -1088,7 +1185,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              1 Gbps · Rogers / Bell
+              estimate · confirm
             </span>
           </div>
           <span
@@ -1272,6 +1369,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="02"
+      data-section-topic="Fair market value"
     >
       <div
         class="col gap-12"
@@ -1509,6 +1608,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="03"
+      data-section-topic="Comparable sales"
     >
       <div
         class="col gap-12"
@@ -1547,6 +1648,12 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         8 sales · last 6 mo
       </span>
     </div>
+    <p
+      class="mono"
+      style="font-size: 11px; color: var(--muted); letter-spacing: 0.12em; margin-bottom: 16px;"
+    >
+      Sample comparables · demo report
+    </p>
     <div
       class="card"
       style="padding: 0px; overflow: hidden;"
@@ -1607,8 +1714,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            0.05 km
-             · sold 
+            0.05 km · 
+            sold 
             Apr 2026
           </span>
         </div>
@@ -1634,15 +1741,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          538
+          $538
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          9
-          d
+          9d
         </span>
       </div>
       <div
@@ -1661,8 +1766,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            0.4 km
-             · sold 
+            0.4 km · 
+            sold 
             Mar 2026
           </span>
         </div>
@@ -1688,15 +1793,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          549
+          $549
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          14
-          d
+          14d
         </span>
       </div>
       <div
@@ -1715,8 +1818,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            0.6 km
-             · sold 
+            0.6 km · 
+            sold 
             Mar 2026
           </span>
         </div>
@@ -1742,15 +1845,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          526
+          $526
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          7
-          d
+          7d
         </span>
       </div>
       <div
@@ -1769,8 +1870,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            0.8 km
-             · sold 
+            0.8 km · 
+            sold 
             Feb 2026
           </span>
         </div>
@@ -1796,15 +1897,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          553
+          $553
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          11
-          d
+          11d
         </span>
       </div>
       <div
@@ -1823,8 +1922,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            0.2 km
-             · sold 
+            0.2 km · 
+            sold 
             Feb 2026
           </span>
         </div>
@@ -1850,15 +1949,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          552
+          $552
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          18
-          d
+          18d
         </span>
       </div>
       <div
@@ -1877,8 +1974,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            1.1 km
-             · sold 
+            1.1 km · 
+            sold 
             Jan 2026
           </span>
         </div>
@@ -1904,15 +2001,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          511
+          $511
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          22
-          d
+          22d
         </span>
       </div>
       <div
@@ -1931,8 +2026,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            1.3 km
-             · sold 
+            1.3 km · 
+            sold 
             Jan 2026
           </span>
         </div>
@@ -1958,15 +2053,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          526
+          $526
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          6
-          d
+          6d
         </span>
       </div>
       <div
@@ -1985,8 +2078,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            0.9 km
-             · sold 
+            0.9 km · 
+            sold 
             Dec 2025
           </span>
         </div>
@@ -2012,15 +2105,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          $
-          536
+          $536
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--ink-2);"
         >
-          15
-          d
+          15d
         </span>
       </div>
       <div
@@ -2049,15 +2140,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="mono tabular"
           style="text-align: right; color: var(--accent);"
         >
-          $
-          538
+          $538
         </span>
         <span
           class="mono tabular"
           style="text-align: right; color: var(--accent);"
         >
-          14
-          d
+          14d
         </span>
       </div>
     </div>
@@ -2067,6 +2156,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="04"
+      data-section-topic="Schools"
     >
       <div
         class="col gap-12"
@@ -2218,8 +2309,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               0.6 km
                · 
-              2 min
-               drive
+              2 min drive
             </span>
             <span>
               Top 20%
@@ -2319,8 +2409,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               1.2 km
                · 
-              4 min
-               drive
+              4 min drive
             </span>
             <span>
               Above avg
@@ -2420,8 +2509,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               1.8 km
                · 
-              5 min
-               drive
+              5 min drive
             </span>
             <span>
               Above avg
@@ -2538,8 +2626,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               0.6 km
                · 
-              2 min
-               drive
+              2 min drive
             </span>
             <span>
               Top 20%
@@ -2639,8 +2726,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               2.4 km
                · 
-              7 min
-               drive
+              7 min drive
             </span>
             <span>
               Above avg
@@ -2757,8 +2843,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               1.4 km
                · 
-              4 min
-               drive
+              4 min drive
             </span>
             <span
               class="tabular"
@@ -2861,8 +2946,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               3.2 km
                · 
-              8 min
-               drive
+              8 min drive
             </span>
             <span
               class="tabular"
@@ -2965,8 +3049,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span>
               4.1 km
                · 
-              10 min
-               drive
+              10 min drive
             </span>
             <span
               class="tabular"
@@ -2981,7 +3064,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
     <p
       style="margin-top: 24px; font-size: 13px; color: var(--muted); max-width: 720px;"
     >
-      EQAO scores (out of 10) are 2024 results from the Ontario Education Quality and Accountability Office. Fraser percentile is from the Fraser Institute's 2025 school report card. Catchment boundaries pulled live from board GIS data.
+      EQAO scores (out of 100) are 2024 results from the Ontario Education Quality and Accountability Office. Fraser percentile is from the Fraser Institute's 2025 school report card. Catchment boundaries pulled live from board GIS data.
        
       <span
         style="color: var(--accent);"
@@ -2996,6 +3079,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="05"
+      data-section-topic="Neighbourhood"
     >
       <div
         class="col gap-12"
@@ -3406,6 +3491,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       </div>
     </div>
     <div
+      class="grid-1col-mobile"
       style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 16px;"
     >
       <div
@@ -3507,6 +3593,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="06"
+      data-section-topic="SunScout"
     >
       <div
         class="col gap-12"
@@ -4004,6 +4092,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="07"
+      data-section-topic="Risks & conditions"
     >
       <div
         class="col gap-12"
@@ -4149,6 +4239,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
   >
     <div
       class="tr-section-head"
+      data-section-n="08"
+      data-section-topic="Before you bid"
     >
       <div
         class="col gap-12"
@@ -4162,7 +4254,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             style="color: var(--accent);"
           >
             § 
-            09
+            08
           </span>
           <span
             style="margin-left: 12px; color: var(--muted);"
@@ -4347,7 +4439,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         </label>
       </div>
       <div
-        class="row gap-12"
+        class="row gap-12 mobile-action-row"
         style="margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line);"
       >
         <button
@@ -4366,22 +4458,12 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           />
            Export checklist as PDF
         </button>
-        <button
-          class="btn btn-ghost"
+        <span
+          class="mono"
+          style="font-size: 11px; color: var(--muted);"
         >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="13"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.6"
-            viewBox="0 0 24 24"
-            width="13"
-          />
-           Email to my agent
-        </button>
+          Agent email delivery is not connected yet.
+        </span>
       </div>
     </div>
   </section>
@@ -4415,15 +4497,17 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         <p
           style="font-size: 15px; color: var(--ink-2);"
         >
-          Re-run this same listing as an investment and we'll show you the cap rate, the cash flow, the OSFI position, and the 20-year equity build. Free with your account.
+          Return to the analyzer and choose Investment to calculate cap rate, cash flow, the OSFI position, and the 20-year equity build for this listing.
         </p>
         <div
-          class="row gap-12"
+          class="row gap-12 mobile-action-row"
         >
           <button
             class="btn btn-primary"
           >
-            Open investment report 
+            <span>
+              Analyze as an investment
+            </span>
             <svg
               aria-hidden="true"
               fill="none"
@@ -4463,36 +4547,14 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         <p
           style="font-size: 15px; color: color-mix(in oklab, var(--bg) 70%, transparent);"
         >
-          We'll send this report to a verified 
-          Burlington
-           agent who knows the area. No obligation — they reach out only if you reply.
+          PropScout does not have a verified Burlington agent-referral service connected yet. Share the report link directly with an agent you trust.
         </p>
-        <div
-          class="row gap-12"
+        <span
+          class="mono"
+          style="font-size: 11px; color: color-mix(in oklab, var(--bg) 55%, transparent);"
         >
-          <button
-            class="btn btn-accent"
-          >
-            Send to an agent 
-            <svg
-              aria-hidden="true"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.6"
-              viewBox="0 0 24 24"
-              width="13"
-            />
-          </button>
-          <button
-            class="btn"
-            style="background: transparent; color: var(--bg); border: 1px solid color-mix(in oklab, var(--bg) 25%, transparent);"
-          >
-            How this works
-          </button>
-        </div>
+          Agent referrals unavailable
+        </span>
       </div>
     </div>
   </section>

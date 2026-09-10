@@ -7,6 +7,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
+import { corsOrigins } from './corsOrigins'
 
 const fastify = Fastify({
   logger: true,
@@ -16,7 +17,7 @@ async function main(): Promise<void> {
   // ── Plugins ────────────────────────────────────────────────────────────────
 
   await fastify.register(cors, {
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    origin: corsOrigins(process.env.FRONTEND_URL ?? 'http://localhost:5173'),
     credentials: true,
   })
 
@@ -62,6 +63,8 @@ async function main(): Promise<void> {
   await fastify.register(import('./routes/pdf'), { prefix: '/analysis' })
 
   await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })
+  // Address-first entry: many people know the address but not the listing URL.
+  await fastify.register(import('./routes/address'), { prefix: '/address' })
 
   await fastify.register(import('./routes/billing'), { prefix: '/billing' })
 

@@ -177,7 +177,11 @@ export function useInvestorReport(
       noi: analysis.metrics.noi,
       capRate: analysis.metrics.capRate,
       grm: analysis.metrics.grm,
-      closingCostsTotal: analysis.metrics.closingCostsTotal,
+      // Local calculator accepts non-tax costs and adds the current LTT once.
+      closingCostsTotal:
+        analysis.metrics.closingCostsTotal -
+        analysis.metrics.lttProvincial -
+        analysis.metrics.lttMunicipal,
     }
     const raw = computeDemoMetrics(stable, listing, financing)
     return enrichMetrics(raw, listing, financing)

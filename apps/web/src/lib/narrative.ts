@@ -1,12 +1,9 @@
 /**
  * Narrative text helpers.
  *
- * The Sonnet AI verdict narrative occasionally comes back with Markdown emphasis
- * markers (e.g. "priced **$552 above the market median**"). The report UI renders
- * the narrative as plain text — it has no Markdown parser — so those markers would
- * otherwise leak through as literal asterisks. We strip them at the service layer
- * (the single source that returns the Analysis) so every report mode and tier
- * shows clean prose.
+ * Historical analyses may contain Markdown emphasis markers from the retired
+ * language-model narrative path. The report UI renders plain text, so this
+ * compatibility helper strips those markers while preserving the inner text.
  */
 
 /**

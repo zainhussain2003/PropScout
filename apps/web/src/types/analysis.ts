@@ -71,6 +71,10 @@ export interface InvestmentMetrics {
   closingCostsTotal: number
   lttProvincial: number
   lttMunicipal: number // Toronto only
+  /** Effective annual tax used by the backend; optional on older saved reports. */
+  annualTaxesUsed?: number
+  /** Whether annualTaxesUsed came from the city-rate fallback. */
+  annualTaxesEstimated?: boolean
 
   // Sanity
   hasSanityWarnings: boolean
@@ -117,6 +121,14 @@ export interface RentalEstimate {
   compCount: number
   confidence: 'low' | 'medium' | 'high'
   postalCode: string
+  /**
+   * Radius searched, in km, when this FSA had no comps and the search widened
+   * geographically. Null or absent when the comps are from this FSA.
+   *
+   * Shown in the report: a median drawn from 10km away can cross into another
+   * municipality's rental market, and presenting it as local would be wrong.
+   */
+  radiusKm?: number | null
 }
 
 export interface SunScoutResult {
@@ -127,6 +139,16 @@ export interface SunScoutResult {
   monthlyHours: number[] // 12 values, index 0=Jan, index 11=Dec (bedroom_main window)
   sunScore: number
   verdict: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
+  /**
+   * Building-obstruction results (spec §17 Phase 2). All optional: analyses
+   * stored before 2026-09-06 predate the feature, and `false` ("we checked, the
+   * sky is open") is a different claim from absent ("we did not check").
+   */
+  obstructionAssessed?: boolean
+  obstructionOpenness?: number | null
+  obstructionBuildingsUsed?: number | null
+  obstructionBuildingsUnknown?: number | null
+  hoursLostToBuildings?: number | null
 }
 
 /** One school from the schools table, ranked by straight-line distance. */
@@ -221,7 +243,7 @@ export interface FinancingInputs {
   mortgageRate: number // e.g. 0.0479 for 4.79%
   amortizationYears: number // e.g. 25
   includeManagementFee: boolean
-  isToronto: boolean // Toronto LTT stacking (doubles provincial)
+  isToronto: boolean // adds Toronto municipal LTT using its own brackets
   appreciationRate: number // e.g. 0.03 for 3% — equity projections only
   assumedIncome: number // household income for OSFI GDS calc, default 125000
 }
@@ -286,6 +308,15 @@ export interface DealScoreData {
   deductions: number // total risk-flag deductions (capped at 15)
 }
 
+/** Presentation of a component on the common weighted-points scale. */
+export interface ScoreBarData {
+  label: string
+  value: number | null
+  max: number
+  trackPercent: number
+  fillPercent: number
+}
+
 /** Pin marker for the MiniMap component. */
 export interface MapPin {
   lat: number
@@ -332,6 +363,8 @@ export interface ListingData {
   rentControl: boolean
   price: number
   annualTaxes: number
+  /** False when annualTaxes is a conservative estimate rather than a listing fact. */
+  annualTaxesKnown?: boolean
   condoFeeMonthly: number
   rentEstimate: number // mid rent estimate from comps
   rentLow: number

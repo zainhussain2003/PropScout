@@ -218,6 +218,7 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
       if (row) row.analysis = analysis
     })
     mockFetchRentalComps.mockResolvedValue({
+      radiusKm: null,
       low: 2700,
       mid: 2900,
       high: 3200,
@@ -245,6 +246,9 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
       lat: 43.79,
       lng: -79.53,
       formattedAddress: '5702 Buttermill Ave, Vaughan, ON',
+      postalCode: 'L4K0J5',
+      relevance: 1,
+      city: 'Vaughan',
     })
     mockGetWalkScore.mockResolvedValue({
       walk: 65,

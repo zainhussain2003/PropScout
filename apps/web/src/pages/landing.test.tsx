@@ -61,9 +61,9 @@ describe('LandingPage', () => {
     expect(screen.getByText(/know what a canadian listing/i)).toBeInTheDocument()
   })
 
-  it('renders the URL input with placeholder', () => {
+  it('renders one input that invites either a link or an address', () => {
     renderLanding()
-    expect(screen.getByPlaceholderText(/paste a listing url/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/listing link or address/i)).toBeInTheDocument()
   })
 
   it('renders the Analyze button', () => {
@@ -71,11 +71,11 @@ describe('LandingPage', () => {
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument()
   })
 
-  it('starts with an empty URL field so nothing is pre-filled for the user', () => {
+  it('starts empty so nothing is pre-filled for the user', () => {
     renderLanding()
     // The field used to be seeded with a real sample URL, which read as the user's
     // own input and got mangled when they typed into it.
-    expect(screen.getByPlaceholderText(/paste a listing url/i)).toHaveValue('')
+    expect(screen.getByPlaceholderText(/listing link or address/i)).toHaveValue('')
   })
 
   it('disables Analyze while the URL field is empty', () => {
@@ -87,7 +87,7 @@ describe('LandingPage', () => {
 
   it('shows a validation error when Analyze is clicked with an unusable URL', async () => {
     renderLanding()
-    const input = screen.getByPlaceholderText(/paste a listing url/i)
+    const input = screen.getByPlaceholderText(/listing link or address/i)
     fireEvent.change(input, { target: { value: 'not-a-url' } })
     const analyzeButton = screen.getByRole('button', { name: /analyze/i })
     expect(analyzeButton).toBeEnabled()
@@ -130,7 +130,7 @@ describe('LandingPage', () => {
 
   it('shows error state when a non-listing URL is submitted', async () => {
     renderLanding()
-    const input = screen.getByPlaceholderText(/paste a listing url/i)
+    const input = screen.getByPlaceholderText(/listing link or address/i)
     fireEvent.change(input, { target: { value: 'https://www.example.com/property' } })
     fireEvent.click(screen.getByRole('button', { name: /analyze/i }))
     await waitFor(() => {
@@ -140,7 +140,7 @@ describe('LandingPage', () => {
 
   it('shows error state for a US Zillow URL', async () => {
     renderLanding()
-    const input = screen.getByPlaceholderText(/paste a listing url/i)
+    const input = screen.getByPlaceholderText(/listing link or address/i)
     fireEvent.change(input, { target: { value: 'https://www.zillow.com/homedetails/12345' } })
     fireEvent.click(screen.getByRole('button', { name: /analyze/i }))
     await waitFor(() => {
@@ -150,7 +150,7 @@ describe('LandingPage', () => {
 
   it('dismisses the error when "Dismiss" is clicked', async () => {
     renderLanding()
-    const input = screen.getByPlaceholderText(/paste a listing url/i)
+    const input = screen.getByPlaceholderText(/listing link or address/i)
     fireEvent.change(input, { target: { value: 'https://www.example.com' } })
     fireEvent.click(screen.getByRole('button', { name: /analyze/i }))
     await waitFor(() => screen.getByText(/not a usable link/i))
@@ -175,6 +175,35 @@ describe('LandingPage', () => {
   it('renders the FAQ section heading', () => {
     renderLanding()
     expect(screen.getByText(/common questions/i)).toBeInTheDocument()
+  })
+
+  it('uses deterministic-verdict copy and does not advertise an AI-written verdict', () => {
+    const { container } = renderLanding()
+    expect(container).toHaveTextContent(/deterministic written verdict/i)
+    expect(container).not.toHaveTextContent(/Scout AI|Sonnet|AI verdict/i)
+  })
+
+  it('renders score previews as full clock-style rings', () => {
+    const { container } = renderLanding()
+    expect(container.querySelectorAll('[data-score-ring="clock"]').length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('uses one full-width listing-type bar across all four report previews', () => {
+    const { container } = renderLanding()
+    const bars = container.querySelectorAll('[data-listing-type-bar]')
+    expect(bars).toHaveLength(4)
+    bars.forEach((bar) => {
+      expect(bar).toHaveStyle({ width: '100%', minHeight: '30px' })
+    })
+  })
+
+  it('wraps the compact deal-score denominator inside the clock dial', () => {
+    renderLanding()
+    const investorPreview = screen.getByRole('img', {
+      name: /investor report clock-style deal score/i,
+    })
+    expect(investorPreview).toHaveTextContent(/deal score/i)
+    expect(investorPreview).toHaveTextContent('/ 100')
   })
 
   it('expands an FAQ item on click', () => {

@@ -153,8 +153,14 @@ def _parse_rendered_fields(page: str) -> _DetailFields:
                 # e.g. "$2,696.29(CAD)" or "$3,326.00"
                 m = re.search(r"\$([\d,]+\.?\d*)", val)
                 if m:
-                    out.annual_taxes = int(float(m.group(1).replace(",", "")))
-                    out.taxes_known = True
+                    parsed_tax = int(float(m.group(1).replace(",", "")))
+                    # Realtor.ca sometimes publishes "$0" as a placeholder on
+                    # new or reassessed listings. It is not evidence of a real
+                    # tax exemption, so leave it unknown for the conservative
+                    # municipal-rate estimate downstream.
+                    if parsed_tax > 0:
+                        out.annual_taxes = parsed_tax
+                        out.taxes_known = True
 
             elif (
                 "maintenance fees" in label

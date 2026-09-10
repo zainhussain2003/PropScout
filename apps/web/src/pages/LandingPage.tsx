@@ -9,7 +9,7 @@
  *   + ModeModal (shown after URL submit)
  *
  * The ReportShowcase contains static mini-visualisations of analysis
- * components (DealScore, RentalCompsBar, AIVerdictBlock, RiskRow).
+ * components (DealScore, RentalCompsBar, VerdictBlock, RiskRow).
  * These are display-only helpers for the landing demo; the real
  * interactive components live in apps/web/src/components/analysis/
  * and will be built in PR 4.
@@ -27,6 +27,16 @@ import { ScoutMark } from '../components/shared/ScoutMark'
 import { ModeModal } from '../components/shared/ModeModal'
 import type { ListingPreviewData } from '../components/shared/ModeModal'
 import { validateUrl } from '../lib/validateUrl'
+import { classifyInput } from '../lib/classifyInput'
+import {
+  lookupAddress,
+  startFromAddress,
+  type AddressLookupResult,
+} from '../lib/services/analysisService'
+import {
+  AddressDetailsCard,
+  type AddressDetailsValue,
+} from '../components/shared/AddressDetailsCard'
 import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
 import { scrapeUrl, ApiRequestError } from '../lib/services/analysisService'
@@ -64,11 +74,7 @@ interface ShowcaseDealScoreProps {
 function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps): JSX.Element {
   const r = (size / 2) * 0.78
   const circ = 2 * Math.PI * r
-  const arc = circ * 0.75 // 270° arc
-  const gap = circ - arc
-  const filled = arc * (score / 100)
-  const dash = filled
-  const dashOffset = arc - filled
+  const filled = circ * (Math.max(0, Math.min(100, score)) / 100)
 
   // Unified on the DEAL_SCORE verdict brackets (matches the report gauge + labels).
   const stroke =
@@ -89,22 +95,22 @@ function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps):
           fill="none"
           stroke="var(--line)"
           strokeWidth={size * 0.065}
-          strokeDasharray={`${arc} ${gap}`}
+          strokeDasharray={circ}
           strokeLinecap="round"
-          style={{ transform: 'rotate(135deg)', transformOrigin: '50% 50%' }}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
         />
         {/* Fill */}
         <circle
+          data-score-ring="clock"
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
           stroke={stroke}
           strokeWidth={size * 0.065}
-          strokeDasharray={`${dash} ${circ - dash}`}
-          strokeDashoffset={dashOffset}
+          strokeDasharray={`${filled} ${circ - filled}`}
           strokeLinecap="round"
-          style={{ transform: 'rotate(135deg)', transformOrigin: '50% 50%' }}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
         />
       </svg>
       {/* Score number */}
@@ -129,16 +135,45 @@ function ShowcaseDealScore({ score, size, label = '' }: ShowcaseDealScoreProps):
           <span
             className="mono"
             style={{
-              fontSize: 9,
-              letterSpacing: '0.1em',
+              width: '68%',
+              fontSize: size <= 110 ? 7 : 9,
+              lineHeight: 1.15,
+              letterSpacing: size <= 110 ? '0.06em' : '0.1em',
               textTransform: 'uppercase',
+              textAlign: 'center',
               color: 'var(--muted)',
             }}
           >
-            {label}
+            <span style={{ display: 'block' }}>{label.replace(/\s*\/\s*100$/i, '')}</span>
+            {/\/\s*100$/i.test(label) && <span style={{ display: 'block' }}>/ 100</span>}
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+function PreviewListingType({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <div
+      data-listing-type-bar
+      className="mono"
+      style={{
+        width: '100%',
+        minHeight: 30,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 12px',
+        border: '1px solid var(--line)',
+        borderRadius: 'var(--radius-pill)',
+        background: 'var(--surface-2)',
+        color: 'var(--ink-2)',
+        fontSize: 10,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+      }}
+    >
+      {children}
     </div>
   )
 }
@@ -194,12 +229,109 @@ function ShowcaseRentalCompsBar({ low, mid, high, ask }: ShowcaseRentalCompsBarP
   )
 }
 
-interface ShowcaseAIVerdictBlockProps {
+/**
+ * The 36 comps behind the rent range, as a distribution.
+ *
+ * This slot used to be a 200px empty grey box captioned "Toronto · M4Y · 1km
+ * radius" — a placeholder for a map. It sat in the largest panel of the landing
+ * page's one piece of product proof, so the first real thing a visitor studied
+ * was a rectangle with nothing in it. A map was also the wrong answer twice
+ * over: the showcase already renders a real comps map in the column beside
+ * this, and a map answers "where", while the panel is titled "Rent positioning"
+ * and is asking "how much".
+ *
+ * A distribution answers it. It shows the shape of the market — that most of
+ * the building sits in the low $1,900s and the ask is out in a thin tail — which
+ * is the argument for negotiating, and the thing a listing site never shows you.
+ *
+ * Figures are fixed sample data for the showcase, consistent with the 14
+ * building + 22 nearby comps quoted above the panel.
+ */
+const SHOWCASE_RENT_BUCKETS = [2, 3, 5, 7, 6, 4, 3, 3, 2, 1] as const
+const SHOWCASE_BUCKET_LOW = 1800
+const SHOWCASE_BUCKET_WIDTH = 50
+
+interface ShowcaseRentDistributionProps {
+  /** Market mid — drawn as the reference line. */
+  mid: number
+  /** This unit's asking rent — the highlighted bucket. */
+  ask: number
+}
+function ShowcaseRentDistribution({ mid, ask }: ShowcaseRentDistributionProps): JSX.Element {
+  const bucketOf = (v: number): number =>
+    Math.floor((v - SHOWCASE_BUCKET_LOW) / SHOWCASE_BUCKET_WIDTH)
+  const askBucket = bucketOf(ask)
+  const midBucket = bucketOf(mid)
+  const tallest = Math.max(...SHOWCASE_RENT_BUCKETS)
+
+  return (
+    <div className="col gap-8">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${SHOWCASE_RENT_BUCKETS.length}, 1fr)`,
+          alignItems: 'end',
+          gap: 4,
+          height: 132,
+        }}
+      >
+        {SHOWCASE_RENT_BUCKETS.map((count, i) => {
+          const isAsk = i === askBucket
+          const isMid = i === midBucket
+          return (
+            <div key={i} className="col" style={{ justifyContent: 'flex-end', height: '100%' }}>
+              <span
+                className="mono tabular"
+                style={{
+                  fontSize: 10,
+                  textAlign: 'center',
+                  marginBottom: 4,
+                  color: isAsk ? 'var(--caution)' : 'var(--muted)',
+                }}
+              >
+                {count}
+              </span>
+              <div
+                style={{
+                  height: `${(count / tallest) * 100}%`,
+                  borderRadius: 4,
+                  // The asking rent is the point of the panel, so it is the only
+                  // bar that carries a verdict colour. The market mid is marked
+                  // but not judged.
+                  background: isAsk
+                    ? 'var(--caution)'
+                    : isMid
+                      ? 'var(--accent)'
+                      : 'color-mix(in oklab, var(--accent) 22%, transparent)',
+                }}
+              />
+            </div>
+          )
+        })}
+      </div>
+      {/* Endpoints are deliberately absent: the range bar directly below this
+          already prints $1,800 and $2,300, and repeating them read as a bug. */}
+      <div
+        className="mono"
+        style={{
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          color: 'var(--muted)',
+          textAlign: 'center',
+        }}
+      >
+        36 COMPS · 90 DAYS · 1KM RADIUS
+      </div>
+    </div>
+  )
+}
+
+interface ShowcaseVerdictBlockProps {
   addr: string
   headline: ReactNode
   sub: ReactNode
 }
-function ShowcaseAIVerdictBlock({ addr, headline, sub }: ShowcaseAIVerdictBlockProps): JSX.Element {
+function ShowcaseVerdictBlock({ addr, headline, sub }: ShowcaseVerdictBlockProps): JSX.Element {
   return (
     <div
       style={{
@@ -234,7 +366,7 @@ function ShowcaseAIVerdictBlock({ addr, headline, sub }: ShowcaseAIVerdictBlockP
             marginBottom: 8,
           }}
         >
-          Scout AI · {addr}
+          PropScout verdict · {addr}
         </span>
         <p
           style={{
@@ -371,6 +503,8 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   const [listing, setListing] = useState<Listing | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  // A resolved address awaiting the few details only the user has (price, beds).
+  const [addressResult, setAddressResult] = useState<AddressLookupResult | null>(null)
 
   const pickSample = (i: number): void => {
     setSampleIdx(i)
@@ -410,7 +544,45 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
       return
     }
 
-    // Real URL submit path — validate then call the scrape API.
+    // One field, two kinds of input. Decide which before sending, so someone who
+    // typed a perfectly good address is never told "that doesn't look like a
+    // valid URL" — the message that reads as the product being broken.
+    const classified = classifyInput(url)
+
+    if (classified.kind === 'unusable') {
+      setStage('error')
+      setErrorMsg(classified.message ?? 'Try a listing link, or a street address.')
+      return
+    }
+
+    if (classified.kind === 'address') {
+      setLoading(true)
+      setError(null)
+      void (async () => {
+        try {
+          const result = await lookupAddress(classified.value)
+          if (result.ok) {
+            setAddressResult(result)
+          } else {
+            setError(
+              `PropScout covers Ontario for now — that address is in ${result.province}. ` +
+                "We'll let you know when we reach it."
+            )
+          }
+        } catch (err) {
+          setError(
+            err instanceof ApiRequestError
+              ? err.message
+              : "We couldn't look that address up — try again."
+          )
+        } finally {
+          setLoading(false)
+        }
+      })()
+      return
+    }
+
+    // Listing-link path — validate then call the scrape API.
     const urlErr = validateUrl(url)
     if (urlErr !== null) {
       setStage('error')
@@ -473,7 +645,7 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
     ['Heat, water included · Hydro & parking extra', progress > 45],
     ['Pulling 12 rental comps in this building & FSA', progress > 65],
     ['Checking listing accuracy · scanning description', progress > 85],
-    ['Generating Scout AI verdict', progress > 95],
+    ['Building evidence-based verdict', progress > 95],
   ] as [string, boolean][]
 
   return (
@@ -484,37 +656,108 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
       >
         <div className="container col gap-32">
           {/* Headline strip */}
-          <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
-            <div className="row gap-12" style={{ marginBottom: 24 }}>
-              <span className="chip" style={{ background: 'transparent' }}>
-                <span
-                  style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
-                  className="live-dot"
-                />
-                Live in Ontario
-              </span>
-              <span className="chip">v0.9 · MVP preview</span>
+          {/* Two columns on desktop: the claim on the left, an actual verdict on the
+              right. The reference site leads with a cinematic stock image; the more
+              honest equivalent here is the thing the product produces. Nobody else
+              gives a Canadian listing a score and a hard call, so showing one is
+              both the differentiator and the proof. Collapses to one column on a
+              phone, where the verdict follows the claim. */}
+          <div className="hero-split">
+            <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
+              <div className="row gap-12" style={{ marginBottom: 24 }}>
+                <span className="chip" style={{ background: 'transparent' }}>
+                  <span
+                    style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
+                    className="live-dot"
+                  />
+                  Live in Ontario
+                </span>
+                <span className="chip">v0.9 · MVP preview</span>
+              </div>
+
+              <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
+                Know what a Canadian listing is
+                <br />
+                worth before you sign anything.
+              </h1>
+
+              {/* One contrastive line, borrowed in form from the reference's "We
+                don't just install AI. We run the workflow." Says what we are not,
+                then what we are — which is also the thing that keeps us from
+                drifting into being another listings portal. */}
+              <p
+                className="serif"
+                style={{
+                  fontSize: clampStr(19, 25),
+                  lineHeight: 1.3,
+                  color: 'var(--accent)',
+                  marginTop: 18,
+                  maxWidth: 640,
+                }}
+              >
+                We don&apos;t list properties. We tell you whether to buy one.
+              </p>
+
+              <p
+                style={{
+                  fontSize: clampStr(17, 21),
+                  maxWidth: 720,
+                  color: 'var(--ink-2)',
+                  marginTop: 22,
+                }}
+              >
+                Paste a listing link, or just type the address. In under a minute you get rental
+                comps from live Ontario data, true monthly costs with the OSFI stress test applied,
+                risk flags, and a written verdict. Built for Canadian rules — semi-annual
+                compounding, land transfer tax, CMHC — not US math with a maple leaf on it.
+              </p>
             </div>
 
-            <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
-              Know what a Canadian listing is
-              <br />
-              worth before you sign anything.
-            </h1>
-
-            <p
-              style={{
-                fontSize: clampStr(17, 21),
-                maxWidth: 720,
-                color: 'var(--ink-2)',
-                marginTop: 22,
-              }}
-            >
-              Paste a Realtor.ca or Zillow link. In under a minute you get rental comps from live
-              Ontario data, true monthly costs with the OSFI stress test applied, risk flags, and a
-              written verdict. Built for Canadian rules — semi-annual compounding, land transfer
-              tax, CMHC — not US math with a maple leaf on it.
-            </p>
+            {/* A real verdict from a real analysis — the $3.499M Byngmount listing
+                that scores 15/100 as a rental. Deliberately a bad score: a tool
+                that only ever shows good news is an advert, not an advisor. */}
+            <aside className="hero-verdict" aria-label="Example verdict">
+              <div
+                className="card col"
+                style={{ padding: 28, gap: 14, alignItems: 'center', textAlign: 'center' }}
+              >
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'var(--muted)',
+                  }}
+                >
+                  A verdict, not a listing
+                </span>
+                <ShowcaseDealScore score={15} size={148} label="Deal score" />
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--fail)',
+                  }}
+                >
+                  Hard pass
+                </span>
+                <p
+                  style={{
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
+                    color: 'var(--ink-2)',
+                    margin: 0,
+                    maxWidth: 240,
+                  }}
+                >
+                  A $3.5M Mississauga listing, underwritten as a rental. Cash flow −$23,534/mo. We
+                  say so.
+                </p>
+              </div>
+            </aside>
           </div>
 
           {/* Main URL input card */}
@@ -551,15 +794,17 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     if (e.key === 'Enter') handleAnalyze()
                   }}
                   disabled={loading}
-                  placeholder="Paste a listing URL"
-                  aria-label="Listing URL"
+                  placeholder="Listing link or address"
+                  aria-label="Listing link or property address"
                   style={{
                     flex: 1,
                     background: 'transparent',
                     border: 'none',
                     outline: 'none',
-                    fontFamily: "'Geist Mono', monospace",
-                    fontSize: 13,
+                    // Mono suits a URL and fights an address; addresses are the
+                    // input most people will type. Sans reads as "type anything here".
+                    fontFamily: 'inherit',
+                    fontSize: 14,
                     color: 'var(--ink)',
                     minWidth: 0,
                   }}
@@ -591,7 +836,7 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 // the person simply hasn't pasted anything — so the button reads as
                 // "not ready" instead of scolding them for pressing it.
                 disabled={loading || url.trim() === ''}
-                title={url.trim() === '' ? 'Paste a listing link first' : undefined}
+                title={url.trim() === '' ? 'Paste a link or type an address first' : undefined}
                 style={{ padding: '14px 22px', fontSize: 15, flexShrink: 0 }}
               >
                 {loading
@@ -700,6 +945,55 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {addressResult !== null && (
+              <div style={{ marginTop: 18 }}>
+                <AddressDetailsCard
+                  address={addressResult.address}
+                  city={addressResult.city}
+                  postalCode={addressResult.postalCode}
+                  submitting={loading}
+                  error={error}
+                  onBack={() => {
+                    setAddressResult(null)
+                    setError(null)
+                  }}
+                  onSubmit={(details: AddressDetailsValue) => {
+                    setLoading(true)
+                    setError(null)
+                    void (async () => {
+                      try {
+                        const { token, listing: created } = await startFromAddress({
+                          address: addressResult.address,
+                          postalCode: addressResult.postalCode,
+                          city: addressResult.city,
+                          lat: addressResult.coordinates.lat,
+                          lng: addressResult.coordinates.lng,
+                          ...details,
+                        })
+                        // Hand off to the same ModeModal the listing-link path
+                        // uses. The mode is a real question — an investor and a
+                        // tenant get different reports for the same address — and
+                        // /analyzing needs it. Skipping the modal and navigating
+                        // straight there dropped the mode and bounced back home.
+                        setToken(token)
+                        setListing(created)
+                        setAddressResult(null)
+                        setShowModal(true)
+                      } catch (err) {
+                        setError(
+                          err instanceof ApiRequestError
+                            ? err.message
+                            : 'Could not start the report — please try again.'
+                        )
+                      } finally {
+                        setLoading(false)
+                      }
+                    })()
+                  }}
+                />
               </div>
             )}
 
@@ -1010,7 +1304,7 @@ function ReportShowcase(): JSX.Element {
         >
           {/* Left column */}
           <div className="col" style={{ gap: 22 }}>
-            <ShowcaseAIVerdictBlock
+            <ShowcaseVerdictBlock
               addr="Unit 3705 · 28 Charles St E, Toronto ON"
               headline={
                 <>
@@ -1035,39 +1329,34 @@ function ReportShowcase(): JSX.Element {
 
             {/* Rent positioning */}
             <div className="card col gap-20" style={{ padding: 24 }}>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <h4
-                  className="serif"
-                  style={{ fontSize: 22, whiteSpace: 'nowrap', paddingRight: 8 }}
-                >
+              {/* Wraps on a phone: at 375px the nowrap heading and the comp
+                  count collided, and the meta line broke mid-phrase beside it. */}
+              <div
+                className="row"
+                style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}
+              >
+                <h4 className="serif" style={{ fontSize: 22, paddingRight: 8 }}>
                   Rent positioning
                 </h4>
                 <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
                   14 building comps · 22 nearby · 90d
                 </span>
               </div>
-              {/* MiniMap placeholder */}
-              <div
-                style={{
-                  height: 200,
-                  borderRadius: 10,
-                  background: 'var(--bg-elev)',
-                  border: '1px solid var(--line)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  Toronto · M4Y · 1km radius
-                </span>
-              </div>
+              <ShowcaseRentDistribution mid={1950} ask={2150} />
               <ShowcaseRentalCompsBar low={1800} mid={1950} high={2300} ask={2150} />
             </div>
 
             {/* Listing accuracy */}
             <div className="card col gap-4" style={{ padding: 24 }}>
-              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+              <div
+                className="row"
+                style={{
+                  justifyContent: 'space-between',
+                  marginBottom: 8,
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}
+              >
                 <h4 className="serif" style={{ fontSize: 22 }}>
                   Listing accuracy
                 </h4>
@@ -1398,12 +1687,152 @@ function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
   )
 }
 
+function ModePreview({ who, large = false }: { who: string; large?: boolean }): JSX.Element {
+  const shell: React.CSSProperties = {
+    height: large ? 300 : 194,
+    padding: 16,
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--line)',
+    background: 'var(--bg-elev)',
+    overflow: 'hidden',
+  }
+
+  if (who === 'Tenant') {
+    return (
+      <div style={shell} role="img" aria-label="Tenant report preview with a supported rent target">
+        <div className="col" style={{ gap: 14, height: '100%' }}>
+          <PreviewListingType>For rent · Free forever</PreviewListingType>
+          <div>
+            <div
+              className="mono"
+              style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
+            >
+              YOUR SUPPORTED RANGE
+            </div>
+            <div className="serif tabular" style={{ fontSize: large ? 42 : 28, lineHeight: 1.1 }}>
+              $1,950–$2,000<span style={{ fontSize: 13, color: 'var(--muted)' }}>/mo</span>
+            </div>
+          </div>
+          <div className="divider" />
+          {[
+            ['Comparable rentals', '36'],
+            ['Days on market', '22 days'],
+            ['Documented concern', 'Glass-door den'],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="row"
+              style={{ justifyContent: 'space-between', gap: 12, fontSize: 12 }}
+            >
+              <span style={{ color: 'var(--ink-2)' }}>{label}</span>
+              <span className="mono" style={{ textAlign: 'right' }}>
+                {value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (who === 'Personal buyer') {
+    return (
+      <div style={shell} role="img" aria-label="Personal buyer report monthly cost preview">
+        <div className="col gap-8">
+          <PreviewListingType>For sale</PreviewListingType>
+          <div
+            className="mono"
+            style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
+          >
+            TRUE MONTHLY COST
+          </div>
+          {[
+            ['Mortgage', '$3,460'],
+            ['Property tax', '$357'],
+            ['Condo fee', '$0'],
+            ['Insurance', '$215'],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="row"
+              style={{ justifyContent: 'space-between', fontSize: 11 }}
+            >
+              <span style={{ color: 'var(--ink-2)' }}>{label}</span>
+              <span className="mono">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (who === 'Investor') {
+    return (
+      <div
+        style={shell}
+        role="img"
+        aria-label="Investor report clock-style deal score of 8 out of 100"
+      >
+        <div className="col" style={{ alignItems: 'center', gap: 4 }}>
+          <PreviewListingType>For sale</PreviewListingType>
+          <ShowcaseDealScore score={8} size={92} label="Deal score / 100" />
+          <VerdictPill tone="fail" label="Hard pass" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={shell} role="img" aria-label="Landlord report rent positioning preview">
+      <div className="col gap-12">
+        <PreviewListingType>For rent</PreviewListingType>
+        <div>
+          <div
+            className="mono"
+            style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}
+          >
+            ASKING RENT
+          </div>
+          <div className="serif tabular" style={{ fontSize: 28 }}>
+            $3,400<span style={{ fontSize: 12, color: 'var(--muted)' }}>/mo</span>
+          </div>
+        </div>
+        <div
+          style={{ position: 'relative', height: 6, borderRadius: 999, background: 'var(--line)' }}
+        >
+          <div
+            style={{ width: '68%', height: '100%', borderRadius: 999, background: 'var(--accent)' }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: '68%',
+              top: -4,
+              width: 14,
+              height: 14,
+              borderRadius: 999,
+              background: 'var(--ink)',
+              transform: 'translateX(-50%)',
+            }}
+          />
+        </div>
+        <div
+          className="row mono"
+          style={{ justifyContent: 'space-between', fontSize: 9, color: 'var(--muted)' }}
+        >
+          <span>P25 · $2,850</span>
+          <span>Median · $3,100</span>
+          <span>P75 · $3,350</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ReportsSection(): JSX.Element {
   const modes = [
     {
       who: 'Tenant',
-      img: '/marketing/mode-tenant',
-      imgAlt: 'Tenant report — negotiation target of $1,950–2,000/mo with leverage factors',
       tag: 'For rent',
       title: "I'm looking at a rental",
       copy: "Free, no login. Flags fake bedrooms, basement units, missing parking, and overpriced asks. Tells you exactly where to negotiate to — and saves you the deposit on a unit that wasn't what it said it was.",
@@ -1416,8 +1845,6 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Personal buyer',
-      img: '/marketing/mode-personal',
-      imgAlt: 'Personal buyer report — true monthly cost breakdown totalling $6,057/mo',
       tag: 'For sale',
       title: "I'm buying a home to live in",
       copy: 'True monthly cost of ownership, comparable sales, walk/transit, school catchments. The home you can live in, not just close on.',
@@ -1429,8 +1856,6 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Investor',
-      img: '/marketing/mode-investor',
-      imgAlt: 'Investor report — deal score gauge reading 8/100, hard pass',
       tag: 'For sale',
       title: "I'm running it as a rental",
       copy: 'Cap rate, cash flow, DSCR, OSFI stress test, Ontario LTT, and our 0–100 deal score — modelled for Canadian rules, not bolted on.',
@@ -1443,8 +1868,6 @@ function ReportsSection(): JSX.Element {
     },
     {
       who: 'Landlord',
-      img: '/marketing/mode-landlord',
-      imgAlt: 'Landlord report — rent positioning slider against building comps',
       tag: 'For rent',
       title: "I'm pricing out my own unit",
       copy: 'Test whether your listed rent pencils against the building, the FSA, and the trend line — before you sign a year-long lease at the wrong number.',
@@ -1479,35 +1902,8 @@ function ReportsSection(): JSX.Element {
               className="grid-1col-mobile"
               style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 0 }}
             >
-              <div style={{ padding: 14, position: 'relative' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    minHeight: 300,
-                    overflow: 'hidden',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--line)',
-                    background: 'var(--accent-soft)',
-                  }}
-                >
-                  <img
-                    src={`${tenantMode.img}.webp`}
-                    srcSet={`${tenantMode.img}.webp 1x, ${tenantMode.img}@2x.webp 2x`}
-                    alt={tenantMode.imgAlt}
-                    loading="lazy"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'block',
-                      objectFit: 'cover',
-                      objectPosition: '50% 12%',
-                    }}
-                  />
-                </div>
-                <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
-                  <Chip>{tenantMode.tag}</Chip>
-                  <Chip accent>Free forever</Chip>
-                </div>
+              <div style={{ padding: 14 }}>
+                <ModePreview who={tenantMode.who} large />
               </div>
 
               <div
@@ -1551,35 +1947,8 @@ function ReportsSection(): JSX.Element {
                 className="card"
                 style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
               >
-                {/* Real product screenshot (PR10 part 4a) — a slight top-crop
-                    reads as a peek into the report. */}
-                <div style={{ padding: '14px 14px 0', position: 'relative' }}>
-                  <div
-                    style={{
-                      height: 180,
-                      overflow: 'hidden',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--line)',
-                      background: 'var(--accent-soft)',
-                    }}
-                  >
-                    <img
-                      src={`${m.img}.webp`}
-                      srcSet={`${m.img}.webp 1x, ${m.img}@2x.webp 2x`}
-                      alt={m.imgAlt}
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        display: 'block',
-                        objectFit: 'cover',
-                        objectPosition: '50% 12%',
-                        height: '100%',
-                      }}
-                    />
-                  </div>
-                  <div style={{ position: 'absolute', top: 26, left: 26 }} className="row gap-8">
-                    <Chip>{m.tag}</Chip>
-                  </div>
+                <div style={{ padding: '14px 14px 0' }}>
+                  <ModePreview who={m.who} />
                 </div>
 
                 <div className="col gap-16" style={{ padding: '24px 24px 26px' }}>
@@ -1632,7 +2001,7 @@ function HowSection(): JSX.Element {
     {
       n: '03',
       t: 'Read the verdict',
-      d: 'Numbers, comps, risk flags, schools, sun path, and a written verdict from Scout AI. Under sixty seconds, every time.',
+      d: 'Numbers, comps, risk flags, schools, sun path, and a deterministic written verdict. Under sixty seconds, every time.',
     },
   ]
 
@@ -1953,8 +2322,17 @@ function SunScoutSection(): JSX.Element {
 
         <div className="col gap-16">
           {/* Light score gauge */}
-          <div className="card row gap-24" style={{ padding: 24, alignItems: 'center' }}>
-            <div className="col gap-8" style={{ alignItems: 'center' }}>
+          <div
+            className="card sun-score-summary"
+            style={{
+              padding: 24,
+              display: 'grid',
+              gridTemplateColumns: 'minmax(130px, 0.7fr) minmax(0, 1fr)',
+              gap: 16,
+              alignItems: 'center',
+            }}
+          >
+            <div className="col gap-8" style={{ alignItems: 'center', minWidth: 0 }}>
               <ShowcaseDealScore score={84} size={130} label="" />
               <div
                 className="mono"
@@ -1963,12 +2341,14 @@ function SunScoutSection(): JSX.Element {
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
                   color: 'var(--muted)',
+                  textAlign: 'center',
+                  overflowWrap: 'anywhere',
                 }}
               >
                 Light score / 100
               </div>
             </div>
-            <div className="col gap-12" style={{ flex: 1 }}>
+            <div className="col gap-12" style={{ minWidth: 0 }}>
               <div
                 className="mono"
                 style={{
@@ -1980,7 +2360,14 @@ function SunScoutSection(): JSX.Element {
               >
                 Annual direct sun · weighted
               </div>
-              <div className="serif tabular" style={{ fontSize: 36, lineHeight: 1 }}>
+              <div
+                className="serif tabular"
+                style={{
+                  fontSize: 'clamp(28px, 3.2vw, 36px)',
+                  lineHeight: 1,
+                  overflowWrap: 'anywhere',
+                }}
+              >
                 1,512 <span style={{ color: 'var(--muted)', fontSize: 16 }}> hrs / yr</span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
@@ -2057,7 +2444,7 @@ function PricingSection(): JSX.Element {
         '3 sale-listing reports / month',
         'Unlimited tenant reports',
         'Full rental comps, confidence shown',
-        'AI verdict · 1 paragraph',
+        'Verdict summary',
         'Save your last 10 analyses',
       ],
     },
@@ -2070,7 +2457,7 @@ function PricingSection(): JSX.Element {
       featured: true,
       features: [
         'Unlimited reports, all four modes',
-        'Full 3-paragraph AI verdicts',
+        'Full evidence-based verdicts',
         'Financing sliders · OSFI, 35% down, conservative',
         'SunScout with building obstruction',
         'Portfolio tracker · up to 10 properties',
@@ -2313,8 +2700,8 @@ function FAQSection(): JSX.Element {
       a: 'A nightly scrape of Rentals.ca, Kijiji, and PadMapper. We dedupe, geocode, and timestamp every record. The time-series database accumulates from day one — after six months, it exists nowhere else in Canada.',
     },
     {
-      q: 'How accurate is the AI verdict?',
-      a: 'It writes the verdict from validated structured data only — never from free-text. Numbers come from our calc engine and comps DB, then Sonnet writes the prose. We never feed raw listing descriptions into the prompt.',
+      q: 'How is the verdict produced?',
+      a: 'The backend assembles the verdict deterministically from validated calculations, comparable data, and structured risk flags. The same inputs produce the same prose every time. Raw listing marketing text never directly changes a score or verdict.',
     },
     {
       q: 'Can I export to PDF?',
@@ -2427,7 +2814,7 @@ function CTASection(): JSX.Element {
               { color: 'var(--bg)', textWrap: 'balance', marginBottom: 24 } as React.CSSProperties
             }
           >
-            Stop building the spreadsheet again. Paste the URL.
+            Stop building the spreadsheet again. Paste a link, or type an address.
           </h2>
           <p
             style={{

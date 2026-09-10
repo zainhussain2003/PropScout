@@ -11,6 +11,19 @@ export interface GeocodingResult {
   lat: number
   lng: number
   formattedAddress: string
+  /**
+   * Mapbox's 0–1 confidence in the match. Anything low is a fuzzy guess: the
+   * string "asdfghjkl" scores 0.66 and resolves to a real street in Ingleside.
+   */
+  relevance: number
+  /**
+   * Postal code from the match, when Mapbox returned one. Null for a street or
+   * neighbourhood centroid. The province gate depends on it, so a null here
+   * means the match was not precise enough to analyse.
+   */
+  postalCode: string | null
+  /** Municipality from the match, or null. */
+  city: string | null
 }
 
 /**
@@ -52,7 +65,15 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     }
 
     const json = (await res.json()) as {
-      features?: Array<{ center: [number, number]; place_name: string }>
+      features?: Array<{
+        center: [number, number]
+        place_name: string
+        relevance?: number
+        // Mapbox returns the postal code either as its own context entry or, for
+        // an exact address match, on the feature itself.
+        properties?: { postcode?: string }
+        context?: Array<{ id: string; text: string }>
+      }>
     }
 
     if (!Array.isArray(json.features) || json.features.length === 0) {
@@ -63,7 +84,21 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     // center is [longitude, latitude] — note the order
     const [lng, lat] = feature.center
 
-    return { lat, lng, formattedAddress: feature.place_name }
+    const context = feature.context ?? []
+    const findContext = (prefix: string): string | null =>
+      context.find((c) => c.id?.startsWith(prefix))?.text ?? null
+
+    const postalCode = feature.properties?.postcode ?? findContext('postcode')
+    const city = findContext('place') ?? findContext('locality')
+
+    return {
+      lat,
+      lng,
+      formattedAddress: feature.place_name,
+      relevance: typeof feature.relevance === 'number' ? feature.relevance : 0,
+      postalCode: postalCode ? postalCode.replace(/\s+/g, '').toUpperCase() : null,
+      city,
+    }
   } catch (err) {
     console.error(`geocodeAddress: error geocoding "${address}":`, err)
     return null

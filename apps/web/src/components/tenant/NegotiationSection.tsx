@@ -15,6 +15,7 @@ import { SectionHead } from '../shared/SectionHead'
 import { Icon } from '../shared/Icon'
 
 interface NegotiationSectionProps {
+  askingRent: number
   targetLow: number
   targetHigh: number
   leverageFactors: TenantLeverageRow[]
@@ -28,6 +29,7 @@ interface NegotiationSectionProps {
 }
 
 export function NegotiationSection({
+  askingRent,
   targetLow,
   targetHigh,
   leverageFactors,
@@ -42,8 +44,8 @@ export function NegotiationSection({
   // is active (Vitest 2.x fakes queueMicrotask which React 18's scheduler uses).
   const copyBtnRef = useRef<HTMLButtonElement>(null)
 
-  const annualSavingsLow = (targetHigh - targetLow) * 12
-  const annualSavingsHigh = annualSavingsLow + 600 // ~$50/mo extra off floor
+  const annualSavingsLow = Math.max(0, askingRent - targetHigh) * 12
+  const annualSavingsHigh = Math.max(0, askingRent - targetLow) * 12
 
   function handleCopy(): void {
     const btn = copyBtnRef.current
@@ -75,6 +77,7 @@ export function NegotiationSection({
       />
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -114,14 +117,16 @@ export function NegotiationSection({
                   {targetHigh.toLocaleString('en-CA')}
                   <span style={{ fontSize: 16, color: 'var(--muted)' }}>/mo</span>
                 </div>
-                <div style={{ fontSize: 14, color: 'var(--ink-2)' }}>
-                  That's{' '}
-                  <span className="tabular" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-                    ${annualSavingsLow.toLocaleString('en-CA')}–
-                    {annualSavingsHigh.toLocaleString('en-CA')}
-                  </span>{' '}
-                  saved over a 12-month lease.
-                </div>
+                {annualSavingsHigh > 0 && (
+                  <div style={{ fontSize: 14, color: 'var(--ink-2)' }}>
+                    That's{' '}
+                    <span className="tabular" style={{ color: 'var(--accent)', fontWeight: 500 }}>
+                      ${annualSavingsLow.toLocaleString('en-CA')}–
+                      {annualSavingsHigh.toLocaleString('en-CA')}
+                    </span>{' '}
+                    saved over a 12-month lease.
+                  </div>
+                )}
               </>
             ) : (
               <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>

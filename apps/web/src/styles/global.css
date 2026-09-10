@@ -235,12 +235,20 @@ img {
  * Accent-at-rest was an earlier build deviation and failed WCAG AA (white on
  * the old terracotta ≈ 3.1:1); ink/bg at rest is ≈ 15.9:1 and white on the
  * harbour accent hover is 8.94:1. Locked by btnContrast.test.ts. */
+/* Primary actions carry the brand colour.
+   Until 2026-09-06 this was --ink, with harbour appearing only on hover, which
+   left every screen greyscale-plus-one-dark-button — a DOM audit of a full report
+   found only 97 of ~2,100 colour declarations carried any real colour. The
+   ink-at-rest rule came from the 13 HTML prototypes, which DESIGN_README records
+   as superseded by tokens.css and which still ship the retired terracotta palette,
+   so the rule was defending a source that no longer governs.
+   White on #1F4E68 is 8.94:1; dark mode flips to --accent-ink on #5E93B0 at 5.67:1. */
 .btn-primary {
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 .btn-primary:hover {
-  background: var(--accent);
+  background: var(--accent-hover);
   color: var(--accent-ink);
 }
 
@@ -271,7 +279,12 @@ img {
   gap: 6px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: var(--chip-bg);
+  /* --accent-soft, not --chip-bg: the token's own definition is "tinted fills —
+     chips, hover washes, card headers", but every chip was rendering in neutral
+     grey. Chips repeat dozens of times per report, so this is where a faint brand
+     tint does the most to stop the page reading as greyscale. At 8% opacity the
+     text contrast is unchanged. */
+  background: var(--accent-soft);
   color: var(--ink-2);
   font-size: 12px;
   font-weight: 500;
@@ -299,6 +312,50 @@ footer .chip {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+  transition:
+    box-shadow var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+/*
+ * Interactive cards only.
+ *
+ * Deliberately NOT applied to .card itself. A report is dozens of cards and
+ * almost none of them are clickable; giving every one a hover lift would
+ * promise an interaction that is not there, which is worse than being inert.
+ * Opt in where the card actually does something.
+ */
+.card-interactive {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-2px);
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/*
+ * Someone who has asked their system for less motion still needs the state
+ * change; they just should not be moved around by it. Colour and shadow stay,
+ * the translate goes.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-interactive {
+    transition-property: box-shadow, border-color;
+  }
+
+  .card-interactive:hover,
+  .card-interactive:active {
+    transform: none;
+  }
 }
 
 /* ── Navigation links ────────────────────────────────────────── */
@@ -426,7 +483,6 @@ footer a:hover {
 
 .comp-marker:hover .comp-marker-tip {
   opacity: 1 !important;
-  transform: translateX(-50%) translateY(-2px);
 }
 
 /* ── Hero input ──────────────────────────────────────────────── */
@@ -817,16 +873,71 @@ body::-webkit-scrollbar-thumb {
 
 /* ── Mobile grid collapse helpers ────────────────────────────── */
 
-@media (max-width: 480px) {
+/* 900px, not 480px: a two-column report section does not become usable at
+   481px — its content has a minimum width (metric tables, 12-month bar rows),
+   so below roughly 900px the columns stop shrinking and push the whole page
+   sideways instead. This matches .report-hero so the page collapses as one. */
+@media (max-width: 900px) {
   .grid-1col-mobile {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
-  .grid-2col-mobile {
-    grid-template-columns: 1fr 1fr !important;
+  .grid-1col-mobile > * {
+    min-width: 0;
+  }
+  .mobile-action-row {
+    flex-wrap: wrap;
   }
   /* Puts the last child (score card column) above content on mobile */
   .hero-score-first > *:last-child {
     order: -1;
+  }
+  /* Inline desktop stickiness must be cancelled when the two-column hero
+     collapses. Otherwise the score card stays pinned while the photo column,
+     now below it, scrolls behind the card. */
+  .grid-1col-mobile > .report-side-score {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .tenant-schools-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .tenant-checklist-actions,
+  .tenant-rent-alert-form {
+    flex-direction: column;
+  }
+
+  .tenant-checklist-actions .btn,
+  .tenant-rent-alert-form .btn {
+    width: 100%;
+  }
+
+  .sun-score-summary {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Four metric tiles fit at tablet widths, but their labels and values have a
+   larger min-content width than a 640px report card can provide. Collapse this
+   one grid earlier instead of allowing the final column to widen the page. */
+.investment-metrics-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .investment-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-2col-mobile {
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 
@@ -891,4 +1002,338 @@ body::-webkit-scrollbar-thumb {
 .scout-slider {
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+/* ── Hero split ──────────────────────────────────────────────────
+   Claim on the left, a real verdict on the right. One column below 900px so a
+   phone reads the claim first and meets the verdict straight after, rather than
+   squeezing a 148px gauge alongside a 40px headline. */
+.hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.85fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: center;
+}
+.hero-verdict {
+  justify-self: end;
+  width: 100%;
+  max-width: 340px;
+}
+
+@media (max-width: 900px) {
+  .hero-split {
+    grid-template-columns: 1fr;
+  }
+  .hero-verdict {
+    justify-self: stretch;
+    max-width: none;
+  }
+}
+
+/* ── Report hero ─────────────────────────────────────────────────
+   Photos/map on the left, score card on the right.
+
+   The columns were set from JS via `window.innerWidth <= 480`. That is the
+   wrong measurement twice over: innerWidth includes the scrollbar and, when
+   anything overflows horizontally, it reports the OVERFLOWING width — 723px on
+   a 375px phone — so the check said "not mobile" and kept two columns, which
+   caused the overflow that broke the check. A media query reads the viewport
+   and cannot be fooled by its own output.
+
+   minmax(0, …) is load-bearing: a bare 1.5fr floors at min-content, so a wide
+   score-card row or a long address pushed the grid past the viewport instead
+   of shrinking. */
+.report-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(28px, 3.5vw, 52px);
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .expense-breakdown-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .expense-breakdown-grid > div {
+    min-width: 0;
+    padding-inline: 0 !important;
+    border-left: none !important;
+  }
+
+  .expense-breakdown-grid > div:not(:last-child) {
+    border-bottom: 1px solid var(--line) !important;
+  }
+}
+
+/* The verdict is the report's headline; bars preserve component weights. */
+.scorecard {
+  min-width: 0;
+  padding: var(--scorecard-pad);
+  position: sticky;
+  top: var(--scorecard-top);
+  border-top: var(--scorecard-rule) solid var(--score-tone);
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.scorecard-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.scorecard-call {
+  flex: 1;
+  min-width: 0;
+}
+.scorecard-eyebrow {
+  font-size: var(--scorecard-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.scorecard-verdict {
+  font-size: var(--scorecard-headline);
+  line-height: 1.05;
+  color: var(--score-tone);
+  margin: var(--space-3) 0;
+  overflow-wrap: anywhere;
+}
+.scorecard-tagline {
+  font-size: var(--scorecard-body);
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+.scorecard-gauge {
+  flex-shrink: 0;
+  text-align: center;
+}
+.scorecard-gauge .serif {
+  font-family: 'Geist Mono', monospace;
+}
+.scorecard-caption {
+  font-size: var(--scorecard-caption);
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+.scorecard-cashflow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+.scorecard-cashflow-value {
+  font-size: var(--scorecard-value);
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.scorecard-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.scorecard-breakdown h3 {
+  margin: 0;
+}
+.scorecard-factor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.scorecard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--scorecard-body);
+  color: var(--ink-2);
+}
+.scorecard-row .mono {
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.scorecard-track {
+  height: var(--scorecard-track);
+  border-radius: var(--radius-sm);
+  background: var(--line);
+  overflow: hidden;
+}
+.scorecard-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width var(--dur) var(--ease);
+}
+.scorecard-row .scorecard-penalty {
+  color: var(--fail);
+}
+.scorecard-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.scorecard-facts dd {
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scorecard-fill,
+  .scorecard-gauge circle {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .report-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Verdict first on a phone: the reason to read the page is the score, not
+     the photo. */
+  .report-hero > .report-hero-score {
+    order: -1;
+  }
+  .scorecard {
+    position: static;
+  }
+}
+
+/* ── Report nav on small screens ─────────────────────────────────
+   The report nav carried Share link / Sign in / Save alongside the breadcrumb.
+   At 375px that row is 422px wide, so it pushed the page 348px past the
+   viewport — every section then scrolled sideways.
+
+   Share and Save are already offered by StickyActionBar on mobile, so hiding
+   them here removes a duplicate rather than a capability. Sign in and the
+   theme toggle stay, because nothing else offers them. */
+@media (max-width: 900px) {
+  .nav-hide-sm {
+    display: none !important;
+  }
+
+  /* The breadcrumb takes the space that is left and truncates; the action
+     group keeps its intrinsic width. Every ancestor needs min-width:0, or a
+     flex item refuses to shrink below its content and the slug overlaps the
+     buttons instead of ellipsising. */
+  .nav-crumbs {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .nav-slug {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ── Report section rail ─────────────────────────────────────────
+   A quiet map of the document in the left margin. Numbers at rest, topic on
+   hover — it should be findable when wanted and invisible when not.
+
+   Hidden below 1240px: it lives in the margin beside the content column, and
+   below that width there is no margin to live in. */
+.report-rail {
+  display: none;
+}
+
+@media (min-width: 1240px) {
+  .report-rail {
+    display: block;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    left: max(16px, calc((100vw - var(--maxw)) / 2 - 76px));
+    z-index: 30;
+  }
+}
+
+.report-rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.report-rail-stop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.report-rail-n {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  /* Fixed width so the numbers form a straight column and the labels that
+     appear on hover all start at the same x. */
+  width: 18px;
+  text-align: right;
+  opacity: 0.75;
+}
+
+/* The label is laid out at all times but clipped to zero width, so revealing it
+   costs no reflow of the numbers beside it. */
+.report-rail-topic {
+  font-size: 12.5px;
+  white-space: nowrap;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-width var(--dur) var(--ease),
+    opacity var(--dur) var(--ease);
+}
+
+/* Labels only where the margin can hold them. At 1440px the margin is 80px, so
+   a 190px label would sit on top of the report. Below this the rail stays a
+   column of numbers, which still answers "where am I" and "how much is left". */
+@media (min-width: 1620px) {
+  .report-rail:hover .report-rail-topic,
+  .report-rail-stop:focus-visible .report-rail-topic {
+    max-width: 190px;
+    opacity: 1;
+  }
+}
+
+.report-rail-stop:hover,
+.report-rail-stop:focus-visible {
+  color: var(--ink);
+  background: var(--chip-bg);
+}
+
+.report-rail-stop.is-active {
+  color: var(--accent);
+}
+
+.report-rail-stop.is-active .report-rail-n {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-rail-topic {
+    transition: none;
+  }
 }

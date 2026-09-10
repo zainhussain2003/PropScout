@@ -164,6 +164,7 @@ export function SunScoutPanel({
       />
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1.5fr',
@@ -297,8 +298,86 @@ export function SunScoutPanel({
 
           <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
             {sunScoutData.annualPeakSunHours.toFixed(0)} estimated annual peak sun hours (primary
-            window). Bright units rent 8–14% faster than comparable dim units.
+            window). This is a geometry-based light estimate, not a prediction of rental demand.
           </p>
+
+          {sunScoutData.obstructionAssessed === true && (
+            <div
+              style={{
+                marginTop: 4,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: 'var(--surface-2, color-mix(in oklab, var(--ink) 4%, transparent))',
+                border: '1px solid var(--line)',
+              }}
+            >
+              <div
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: 6,
+                }}
+              >
+                Real surroundings · checked
+              </div>
+              <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
+                {typeof sunScoutData.hoursLostToBuildings === 'number' &&
+                sunScoutData.hoursLostToBuildings > 0 ? (
+                  <>
+                    Neighbouring buildings take about{' '}
+                    <strong style={{ color: 'var(--ink)' }}>
+                      {Math.round(sunScoutData.hoursLostToBuildings).toLocaleString('en-CA')} hours
+                    </strong>{' '}
+                    of direct sun off this unit each year — the figures above already have that
+                    deducted.
+                  </>
+                ) : typeof sunScoutData.obstructionOpenness === 'number' &&
+                  sunScoutData.obstructionOpenness < 0.8 ? (
+                  <>
+                    The direct-sun model did not deduct measurable annual hours, but surrounding
+                    geometry leaves only{' '}
+                    <strong style={{ color: 'var(--ink)' }}>
+                      {Math.round(sunScoutData.obstructionOpenness * 100)}% of the sky dome open
+                    </strong>
+                    .
+                  </>
+                ) : (
+                  <>No measurable direct-sun loss from nearby buildings was found in the model.</>
+                )}
+                {typeof sunScoutData.obstructionOpenness === 'number' &&
+                  sunScoutData.obstructionOpenness >= 0.8 && (
+                    <>
+                      {' '}
+                      Sky openness{' '}
+                      <span className="mono">
+                        {Math.round(sunScoutData.obstructionOpenness * 100)}%
+                      </span>
+                      .
+                    </>
+                  )}
+              </p>
+              {typeof sunScoutData.obstructionBuildingsUnknown === 'number' &&
+                sunScoutData.obstructionBuildingsUnknown > 0 && (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      color: 'var(--muted)',
+                      margin: '8px 0 0',
+                    }}
+                  >
+                    Based on {sunScoutData.obstructionBuildingsUsed ?? 0} nearby building
+                    {(sunScoutData.obstructionBuildingsUsed ?? 0) === 1 ? '' : 's'} with a known
+                    height. {sunScoutData.obstructionBuildingsUnknown} more had no height on record
+                    and were left out rather than guessed. This means the calculated shade is a
+                    floor, not a ceiling.
+                  </p>
+                )}
+            </div>
+          )}
         </div>
       </div>
     </section>

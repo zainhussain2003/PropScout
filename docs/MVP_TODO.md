@@ -253,7 +253,7 @@ Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth 
 - [x] `<ProBadge tier>` — inline Pro marker with lock icon
 - [x] `<UpgradeCard headline sub ctaLabel dark>` — upgrade pitch card
 - [x] `<LockedSection headline sub mockContent height>` — blurred content + upgrade overlay
-- [x] `<TruncatedVerdict firstParagraph>` — AI verdict paragraph 2 blurred + inline upgrade strip
+- [x] `<TruncatedVerdict firstParagraph>` — deterministic verdict remainder blurred + inline upgrade strip
 - [x] `<LockedButton label icon onClick>` — lock-icon button opening upgrade modal
 - [x] `<UpgradeModal open onClose feature>` — 5 feature-specific variants
 - [x] `<HardLimitGate onClose monthlyLimit used resetsIn>` — full-screen monthly limit blocker
@@ -347,7 +347,7 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Modal → bottom-sheet on mobile (slides up with drag handle)
 - [x] Two-column reports collapse to single-column
 - [x] Sticky bottom action bar (Save/Share/PDF)
-- [x] AI verdict headline-only on mobile with "Read full verdict" expand
+- [x] Verdict headline-only on mobile with "Read full verdict" expand
 - [x] Score card moves above content on mobile (gauge shrinks to ~84px)
 
 > Accessibility: footer .chip contrast fixed (WCAG AA).
@@ -366,7 +366,7 @@ Reference: `Legal Pages.html` + `Mobile Pass.html`
 - [x] Mapbox geocoding service — `apps/api/src/services/mapboxService.ts`, returns lat/lng or null
 - [x] Walk Score service — `apps/api/src/services/walkScoreService.ts`, returns WalkScoreResult or null
 - [x] `extractListingFlags` — Claude Haiku step in anthropicService.ts, description in → structured flags out
-- [x] Claude narrative — `generateNarrative` in anthropicService.ts, free (1 para) and pro (2–3 para) tiers
+- [x] Deterministic verdict — `generateNarrative` in anthropicService.ts, identical inputs produce identical prose
 - [x] `POST /analysis` expanded to full orchestrator — 9-step pipeline, writes complete analysis on finish
 - [x] `GET /analysis/:token` — returns pending/processing status or full analysis, 404/410 on miss/expiry
 - [x] `analysisService.ts` — scrapeUrl, triggerAnalysis, fetchReport implemented with real API calls
@@ -423,7 +423,7 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 - [x] Fair-market-value band low/mid/high derived from the comps' price per sqft
       (`deriveFmvBand`; returns null below 3 usable comps)
 - [ ] Render licence attribution in the report — most MLS feeds mandate it
-- [ ] Wire into investor §08 comparable sales + personal buyer `PBSalesSection`
+- [x] Wire into investor §08 comparable sales + personal buyer `PBSalesSection` (D-029)
 - [ ] Remove the honest empty state once real comps land
 - [x] Unit tests (21, incl. a live contract test against the real API)
 - [ ] Add a regression case with known comps
@@ -448,7 +448,7 @@ Reference: `docs/PR10-design-humanization-prompt.md` · tests: `docs/PR10-UI-Tes
 - [ ] Highlight schools within catchment area (TDSB polygon data — Toronto first)
 - [ ] Walk Score API integration (Walk Score + Transit Score) — service layer exists (`walkscore_service.py`), wiring pending
 - [x] Statistics Canada — demographics by postal code (household income, population growth) — 1,626 FSAs with median income, 1,625 with 5-year population growth; loaders in `scripts/`
-- [ ] CMHC vacancy rate by city (public API, refresh quarterly) — service stub exists (`cmhc_service.py`)
+- [x] CMHC vacancy rate by city — wired end to end: `getVacancyRateByCity` → `cmhc_vacancy_rate` in the calc payload → NOI. Table refreshed annually.
 - [ ] Neighbourhood intelligence module assembled from above sources
 
 ### SunScout (moved from Week 5–6 — location intelligence block, fits here alongside Walk Score)
@@ -469,14 +469,14 @@ All tasks reference spec Section 19.
 - [x] Red flag threshold: 85%+ → red, deducts score (CONFIDENCE.RED_FLAG_MIN in analysis route)
 - [x] Amber flag threshold: 60–84% → amber, no score deduction
 - [x] Below 60% → not shown (filtered out before merge in analysis route)
-- [ ] `flag_overrides` table in Supabase
-- [ ] User override toggle component in React
-- [ ] Override triggers instant deal score recalculation (no page reload)
-- [ ] Override state saved to analysis record
+- [x] `flag_overrides` table in Supabase (verified live 2026-09-06)
+- [x] User override toggle component in React
+- [x] Override triggers instant deal score recalculation (no page reload)
+- [x] Override state saved to analysis record (GET/POST/DELETE verified end to end)
 - [ ] All 7 risk flag types rendering correctly in report UI
-- [ ] **Golden dataset — 50 real Ontario listing descriptions collected and labelled**
-- [x] Pytest regression test suite written for golden dataset (framework in place, 1 test passing)
-- [ ] Accuracy at or above 95% before proceeding to Week 6 (pending Haiku implementation)
+- [x] **Golden dataset — 96 cases / 653 assertions:** 51 synthetic, 7 real-derived excerpts, 38 verbatim full Ontario descriptions with provenance (see D-038)
+- [x] Pytest regression suite gates the original cases exactly and real-description precision + recall separately at 95%+
+- [x] Regex development corpus at 100% (653/653 assertions; 48/48 real positives, no real false positives). Haiku is implemented; its semantic recall needs a separate evaluation.
 
 ### SunScout
 
@@ -498,19 +498,17 @@ All tasks reference spec Section 19.
 
 ---
 
-## Week 6–7 — AI narratives and PDF
+## Week 6–7 — Verdict narratives and PDF
 
-### Claude Sonnet narratives
+### Deterministic verdict narratives
 
-- [x] Report A / D investment prompt — free tier (1 paragraph, 60–120 words)
-- [x] Report A / D investment prompt — Pro tier (3 paragraphs, 150–280 words)
-- [x] Report B personal prompt — free tier
-- [x] Report B personal prompt — Pro tier
-- [x] Report C tenant prompt — free tier
-- [x] Report C tenant prompt — Pro tier
-- [x] Output validation: word count, banned phrases, dollar figure requirement
-- [x] Regenerate once on validation failure, log and show fallback on second failure
-- [ ] Calibrate against gold-standard examples in spec Section 12 (manual QA step at launch)
+- [x] Report A investor formatter with known/missing evidence branches
+- [x] Report B personal-buyer formatter with known/missing evidence branches
+- [x] Report C tenant formatter with supported-median negotiation logic
+- [x] Report D landlord formatter with rent-positioning language
+- [x] Exact-repeat tests across identical inputs and subscription tiers
+- [x] Sonnet removed from the verdict path; Haiku remains isolated to structured flags
+- [ ] Calibrate deterministic wording against owner feedback after live use
 
 ### PDF export
 
@@ -538,7 +536,7 @@ All tasks reference spec Section 19.
 - [ ] Free tier: PDF button locked with upgrade prompt
 - [ ] Free tier: SunScout building obstruction locked (Phase 2 — show placeholder)
 - [ ] Free tier: portfolio tracker locked
-- [ ] Free tier: AI narrative capped at 1 paragraph
+- [ ] Free tier: written verdict capped at 1 paragraph
 - [ ] Pro tier: all above unlocked
 - [ ] Shareable link generation (UUID token stored in `analyses.share_token`)
 - [ ] Shareable link viewer (no login, shows full report, 30-day expiry)
@@ -559,8 +557,8 @@ All tasks reference spec Section 19.
 - [ ] Test all tier gates (free limits, PDF gate, portfolio gate)
 - [ ] Test shareable links (generate, view without login, expiry)
 - [ ] Test PDF generation for all 4 report types
-- [ ] Run golden dataset regression suite — must pass 95%+ before launch
-- [ ] Mobile test: scorecard and AI narrative on iOS and Android
+- [x] Run golden dataset regression suite — 100% on 96-case development corpus (2026-09-07)
+- [ ] Mobile test: scorecard and written verdict on iOS and Android
 
 ### Deploy
 

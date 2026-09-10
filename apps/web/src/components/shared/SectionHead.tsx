@@ -39,7 +39,9 @@ export function SectionHead({
   tone = 'pass',
 }: SectionHeadProps): JSX.Element {
   return (
-    <div className="tr-section-head">
+    // data-section-topic lets ReportSectionRail label each stop without a second
+    // list of section names to keep in sync with these headings.
+    <div className="tr-section-head" data-section-topic={topic} data-section-n={n}>
       <div className="col gap-12" style={{ maxWidth: 760 }}>
         <span
           className="mono"

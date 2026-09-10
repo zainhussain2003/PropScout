@@ -130,6 +130,13 @@ export interface PySunScout {
   monthly_hours: number[]
   sun_score: number
   verdict: string
+  // Obstruction (spec §17 Phase 2) — optional so an older calc-engine build,
+  // or a deploy where the two services are briefly out of step, still parses.
+  obstruction_assessed?: boolean
+  obstruction_openness?: number | null
+  obstruction_buildings_used?: number | null
+  obstruction_buildings_unknown?: number | null
+  hours_lost_to_buildings?: number | null
 }
 
 interface PyAnalysisOutput {
@@ -153,10 +160,19 @@ export function toSunScout(py: PySunScout | null | undefined): Analysis['sunScou
     monthlyHours: py.monthly_hours,
     sunScore: py.sun_score,
     verdict: py.verdict as NonNullable<Analysis['sunScout']>['verdict'],
+    obstructionAssessed: py.obstruction_assessed ?? false,
+    obstructionOpenness: py.obstruction_openness ?? null,
+    obstructionBuildingsUsed: py.obstruction_buildings_used ?? null,
+    obstructionBuildingsUnknown: py.obstruction_buildings_unknown ?? null,
+    hoursLostToBuildings: py.hours_lost_to_buildings ?? null,
   }
 }
 
-function toMetrics(py: PyInvestmentMetrics): InvestmentMetrics {
+function toMetrics(
+  py: PyInvestmentMetrics,
+  annualTaxesUsed: number,
+  annualTaxesEstimated: boolean
+): InvestmentMetrics {
   return {
     cashFlowMonthly: py.cash_flow_monthly,
     cashFlowAnnual: py.cash_flow_annual,
@@ -174,6 +190,8 @@ function toMetrics(py: PyInvestmentMetrics): InvestmentMetrics {
     closingCostsTotal: py.closing_costs_total,
     lttProvincial: py.ltt_provincial,
     lttMunicipal: py.ltt_municipal,
+    annualTaxesUsed,
+    annualTaxesEstimated,
     hasSanityWarnings: py.has_sanity_warnings,
   }
 }
@@ -244,10 +262,23 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // deductions to the deal score. Doing extraction here too would be
       // duplicate work and the result would be ignored.)
 
+      // Geocode BEFORE the comps lookup and the calc engine call. lat/lng in
+      // property_data is what makes the calc engine's SunScout (sun-path)
+      // branch fire, and the comps search needs it to widen by radius when the
+      // FSA has no rows. Non-fatal: null coords skip SunScout, the real map,
+      // and the geographic comp fallback, but the report still runs.
+      const coords = await geocodeAddress(listing.address)
+
       // Step 4 — fetch rental comps from nightly-scraped rental_listings.
       // Falls back to a low-confidence estimate from the listing's own rent
       // (or the price-based proxy) when the FSA has no comps yet.
-      const comps = await fetchRentalComps(listing.postalCode, listing.beds).catch(() => null)
+      // Coordinates let the search widen by radius when this FSA has no rows —
+      // dense condo FSAs such as Vaughan's L4K had none while dozens of comps
+      // sat within 5km. Without them the report fell back to a gross-yield
+      // proxy and told the user there were no comps for the area.
+      const comps = await fetchRentalComps(listing.postalCode, listing.beds, coords).catch(
+        () => null
+      )
 
       const rentalFallback =
         listing.rentMonthly ?? Math.round((listing.price ?? 0) * RENT_TO_PRICE_MONTHLY)
@@ -307,7 +338,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           rentMonthly: listing.rentMonthly ?? DEFAULT_RENT_MONTHLY,
           city: listing.city,
           propertyType: listing.propertyType,
-          annualTaxes: listing.annualTaxes,
+          annualTaxes:
+            listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null,
           condoFeeMonthly: listing.condoFeeMonthly,
         })
 
@@ -315,7 +347,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // find the actual value. Defaulting to 0 understated carrying costs
       // by $400–800/mo on a typical Ontario property.
       const annualTaxesForCalc =
-        listing.annualTaxes ?? estimateAnnualTaxes(estimatedPrice, listing.city)
+        listing.annualTaxes != null && listing.annualTaxes > 0
+          ? listing.annualTaxes
+          : estimateAnnualTaxes(estimatedPrice, listing.city)
 
       // Real per-city CMHC vacancy rate — feeds both the deal score's demand
       // component (calc engine) and the narrative, so they stay consistent.
@@ -330,11 +364,6 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       } catch {
         dismissedFlagIds = []
       }
-
-      // Geocode BEFORE the calc engine call — lat/lng in property_data is what
-      // makes the calc engine's SunScout (sun-path) branch fire. Non-fatal:
-      // null coords just skip SunScout and the real map.
-      const coords = await geocodeAddress(listing.address)
 
       const calcPayload = {
         // Forwarded so the calc engine runs the extraction pipeline and
@@ -352,7 +381,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           sqft: listing.sqft,
           year_built: listing.yearBuilt,
           property_type: listing.propertyType,
-          is_toronto: listing.city === 'Toronto',
+          is_toronto: /^toronto(?:\s|\(|$)/i.test(listing.city.trim()),
           lat: coords?.lat ?? null,
           lng: coords?.lng ?? null,
         },
@@ -467,9 +496,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         }
       }
 
-      // Step 8 — generate narrative (never throws)
+      // Step 8 — assemble deterministic verdict prose from validated inputs.
       // The Python calc engine returns flag_id (not id) and no label; resolve
-      // human-readable labels here for both the narrative + the UI payload.
+      // human-readable labels here for both the verdict + the UI payload.
       const resolvedFlags = pyData.risk_flags.map((f) => {
         const id = String(f.flag_id ?? f.id ?? '')
         return {
@@ -514,6 +543,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         askingRent: listing.rentMonthly ?? undefined,
         rentLow: rentalForCalc.low,
         rentHigh: rentalForCalc.high,
+        walkScore: walkScore?.walk ?? null,
+        transitScore: walkScore?.transit ?? null,
       }
 
       const narrative = await generateNarrative(narrativeInput)
@@ -524,7 +555,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         token,
         mode,
         createdAt: new Date().toISOString(),
-        metrics: toMetrics(pyData.metrics),
+        metrics: toMetrics(
+          pyData.metrics,
+          annualTaxesForCalc,
+          listing.annualTaxes == null || listing.annualTaxes <= 0
+        ),
         dealScore: toDealScore(pyData.deal_score),
         rentalComps: comps
           ? {
@@ -534,6 +569,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
               compCount: comps.compCount,
               confidence: comps.confidence,
               postalCode: listing.postalCode,
+              radiusKm: comps.radiusKm,
             }
           : null,
         riskFlags: resolvedFlags,

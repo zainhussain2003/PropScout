@@ -49,7 +49,10 @@ export function ListedVsRealitySection({
         tone="fail"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div
+        className="grid-1col-mobile"
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}
+      >
         {/* LEFT — how it's listed (marketing copy) */}
         <div className="card col" style={{ padding: 28, background: 'var(--bg-elev)' }}>
           {/* Column header */}

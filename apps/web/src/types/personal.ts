@@ -36,6 +36,7 @@ export interface PersonalProperty {
   priceChange: { abs: number; direction: 'up' | 'down' | null }
   // Carrying-cost inputs
   annualTaxes: number
+  annualTaxesKnown?: boolean
   condoFeeMonthly: number
   utilityEstMonthly: PersonalUtilities
   insuranceMonthlyEst: number
@@ -54,7 +55,8 @@ export interface PersonalSchool {
   /** e.g. 'HDSB · public', 'HCDSB · catholic' */
   board: string
   distance: string
-  driveTime: string
+  /** Present only when a real route/travel-time source supplied it. */
+  driveTime?: string
   eqao: number | null // EQAO composite 0–100 (% meeting standard); null when not loaded for this school
   fraser: number | null // 0–100 percentile · null when Fraser hasn't loaded for this school
   inCatchment: boolean
@@ -77,9 +79,18 @@ export interface PersonalComp {
   sqft: number
   sold: number
   soldDate: string // e.g. 'Apr 2026'
-  dom: number
-  ppsqft: number
-  distance: string // e.g. '0.05 km'
+  /**
+   * Days on market, or null when the source does not publish it.
+   *
+   * Nullable because the live MLS feed carries sold price and date but not DOM.
+   * A sentinel number (0, -1) would render as a real figure in the table and be
+   * indistinguishable from a same-day sale, so the absence is typed instead.
+   */
+  dom: number | null
+  /** Price per square foot, or null when the comp had no usable square footage. */
+  ppsqft: number | null
+  /** e.g. '0.05 km'; null when the source gives no distance from the subject. */
+  distance: string | null
 }
 
 // ── Neighbourhood ─────────────────────────────────────────────────────────────

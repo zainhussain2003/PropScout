@@ -6,6 +6,8 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
 >
   <div
     class="tr-section-head"
+    data-section-n="01"
+    data-section-topic="True monthly cost"
   >
     <div
       class="col gap-12"
@@ -45,6 +47,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
     </span>
   </div>
   <div
+    class="grid-1col-mobile"
     style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 22px; align-items: flex-start;"
   >
     <div
@@ -93,7 +96,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            $4,280/yr
+            $4,280/yr · as listed
           </span>
         </div>
         <span
@@ -145,7 +148,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            detached / semi estimate
+            0.35% of value · confirm quote
           </span>
         </div>
         <span
@@ -197,7 +200,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            11¢/kWh · avg consumption
+            size-based estimate · confirm
           </span>
         </div>
         <span
@@ -223,7 +226,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            forced-air heating
+            size-based estimate · confirm
           </span>
         </div>
         <span
@@ -249,7 +252,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            metered · municipal
+            estimate · confirm
           </span>
         </div>
         <span
@@ -275,7 +278,7 @@ exports[`PBTrueCostSection > matches snapshot 1`] = `
             class="mono"
             style="font-size: 10px; color: var(--muted);"
           >
-            1 Gbps · Rogers / Bell
+            estimate · confirm
           </span>
         </div>
         <span

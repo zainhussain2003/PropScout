@@ -66,11 +66,15 @@ describe('.btn-primary WCAG AA contrast', () => {
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('matches the design prototypes: ink at rest, accent only on hover', () => {
+  it('carries the brand colour at rest, not only on hover', () => {
     const { background } = btnPrimaryVars()
-    // All 13 HTML prototypes ship `.btn-primary { background: var(--ink) }`;
-    // the accent belongs to hover and .btn-accent.
-    expect(background).toBe('--ink')
+    // Changed 2026-09-06. This previously asserted '--ink' on the grounds that all
+    // 13 HTML prototypes ship `.btn-primary { background: var(--ink) }`. Those
+    // prototypes still carry the retired terracotta palette, and DESIGN_README
+    // records tokens.css as superseding them — so the rule pinned the button to a
+    // source that no longer governs, and left every screen greyscale.
+    // See docs/DECISIONS.md D-025.
+    expect(background).toBe('--accent')
   })
 })
 

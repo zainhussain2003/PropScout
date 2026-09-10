@@ -165,7 +165,7 @@ describe('InvestorReport page — loaded state (Vaughan / hard pass)', () => {
 
   it('renders the "Hard pass" verdict label', () => {
     renderInvestorReport()
-    // Multiple occurrences expected (hero card + AI verdict area)
+    // Multiple occurrences expected (hero card + written verdict area)
     const elements = screen.getAllByText('Hard pass')
     expect(elements.length).toBeGreaterThanOrEqual(1)
   })
@@ -246,14 +246,14 @@ describe('InvestorReport page — loaded state (Vaughan / hard pass)', () => {
     expect(lttElements.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('shows the AI verdict block with eyebrow "Scout AI · investor verdict"', () => {
+  it('shows the written verdict block with its PropScout eyebrow', () => {
     renderInvestorReport()
-    expect(screen.getByText(/Scout AI · investor verdict/i)).toBeInTheDocument()
+    expect(screen.getByText(/PropScout · investor verdict/i)).toBeInTheDocument()
   })
 
   it('shows the AIVerdictBlock model tag', () => {
     renderInvestorReport()
-    expect(screen.getByText('claude · sonnet 4.6')).toBeInTheDocument()
+    expect(screen.getByText('validated inputs')).toBeInTheDocument()
   })
 
   it('risk flags for Vaughan (condo fee + cash flow) appear in §06', () => {

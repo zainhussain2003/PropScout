@@ -29,7 +29,8 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     (
         "tenanted",
         re.compile(
-            r"\b(tenanted|tenant in place|currently rented|existing tenant)\b",
+            r"\b(tenanted|tenant in place|currently rented|existing tenant"
+            r"|tenants? are willing to stay or vacate)\b",
             re.IGNORECASE,
         ),
         92,
@@ -46,7 +47,8 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     (
         "basement_unit",
         re.compile(
-            r"\b(basement (unit|suite|apartment)|in-law suite|secondary suite)\b",
+            r"\b(basement (unit|suite|apartment)|in-law suite|secondary suite"
+            r"|walk-out basement[^.]{0,160}\.\s*This self-contained suite)\b",
             re.IGNORECASE,
         ),
         88,
@@ -54,8 +56,19 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     # Parking included
     (
         "parking_included",
+        # "includes one dedicated parking space" and "Complete with one
+        # dedicated parking space" both appear in scraped listings; the
+        # qualifier between "one" and "parking" defeated the original wording.
+        #
+        # The count/article prefix is required so "no parking space" (gc-018)
+        # and "Parking may be rented from the property manager" (gc-017) stay
+        # negative.
         re.compile(
-            r"\b(parking included|includes parking|one parking|1 parking|underground parking)\b",
+            r"\b(parking included|includes parking|one parking|1 parking|underground parking"
+            r"|(one|1|a)\s+(dedicated|assigned|owned|designated)\s+parking\s+(space|spot)"
+            r"|includes?\s+(an?\s+exclusive|\d+)\s+parking\s+(spaces?|spots?)"
+            r"|(?<!no )driveway parking space"
+            r"|ample parking for multiple vehicles)\b",
             re.IGNORECASE,
         ),
         85,
@@ -68,16 +81,30 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     ),
     (
         "pets_allowed",
+        # The negative lookbehinds stop "no pets permitted" / "not pets allowed"
+        # from matching. Without them a no-pets building fired BOTH no_pets and
+        # pets_allowed, and the tenant report could show a listing as pet
+        # friendly when the description said the opposite. Caught by gc-019.
         re.compile(
-            r"\b(pets (welcome|allowed|ok|permitted)|pet friendly)\b", re.IGNORECASE
+            r"(?<!\bno )(?<!\bnot )\b(pets (welcome|allowed|ok|permitted)|pet[ -]friendly)\b",
+            re.IGNORECASE,
         ),
         88,
     ),
     # Utilities
     (
         "utilities_included",
+        # "Maintenance Fee Includes All Utilities And Cable TV" and "Maintenance
+        # Fees Include Hydro And Cable" both appear in scraped listings and both
+        # missed the original wording.
+        #
+        # Restricted to hydro / heat / "all utilities" on purpose. A fee that
+        # includes water alone is not utilities-included in any sense that
+        # changes the monthly cost — "Condo fee includes water and building
+        # insurance" (golden case gc-001) must stay negative.
         re.compile(
-            r"\b(all utilities included|heat and hydro included|utilities incl)\b",
+            r"\b((all|basic) utilities included|heat and hydro included|utilities incl"
+            r"|fees?\s+(includes?|covers?)\s*[^.]{0,40}?(hydro|heat|all utilities))\b",
             re.IGNORECASE,
         ),
         90,
@@ -85,7 +112,10 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     (
         "utilities_extra",
         re.compile(
-            r"\b(heat extra|hydro extra|utilities extra|tenant pays utilities)\b",
+            r"\b(heat extra|hydro extra|utilities extra|tenant pays utilities"
+            r"|tenants?\s+(?:(?:is|are)\s+)?"
+            r"(?:pays?|responsible\s+for|shares?)\s*:?"
+            r"[^.!;\n]{0,70}?\b(?:utilities|hydro|heating|natural gas))\b",
             re.IGNORECASE,
         ),
         90,
@@ -102,8 +132,17 @@ FLAG_PATTERNS: list[tuple[str, re.Pattern[str], int]] = [
     ),
     (
         "recently_renovated",
+        # The qualifier list comes from real Realtor.ca prose, not invention:
+        # "Fully Renovated", "Completely Renovated In 2023" and "Professionally
+        # renovated in May 2025" all appear in scraped listings and all slipped
+        # past the original "newly renovated" wording.
+        #
+        # A qualifier is required. Bare "renovated" would fire on "renovated in
+        # 1998", which is not a selling point and not what this flag means.
         re.compile(
-            r"\b(newly renovated|recently updated|gut renovation"
+            r"\b((newly|recently|fully|completely|professionally|extensively|freshly|just)\s+"
+            r"renovated|recently updated|gut renovation|extensive renovations"
+            r"|extensively updated in recent years"
             r"|brand new (kitchen|bath|floors))\b",
             re.IGNORECASE,
         ),

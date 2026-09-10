@@ -10,6 +10,7 @@
  */
 
 import type { LandlordProperty, RentPositioning } from '../../types/landlord'
+import { ListingVisual } from '../analysis/ListingVisual'
 import type { DealScoreData, ComputedInvestorMetrics } from '../../types/analysis'
 import { DealScore } from '../analysis/DealScore'
 import { Chip } from '../shared/Chip'
@@ -22,6 +23,10 @@ interface LandlordPropertyHeroProps {
   metrics: ComputedInvestorMetrics
   score: DealScoreData
   positioning: RentPositioning
+  /** Photo URLs from the scraper; absent for address-entered listings. */
+  photoUrls?: string[]
+  /** Subject coordinates — renders the real map when there are no photos. */
+  mapCenter?: { lat: number; lng: number } | null
 }
 
 export function LandlordPropertyHero({
@@ -30,6 +35,8 @@ export function LandlordPropertyHero({
   metrics,
   score,
   positioning,
+  photoUrls,
+  mapCenter = null,
 }: LandlordPropertyHeroProps): JSX.Element {
   const verdictColor =
     score.tone === 'pass'
@@ -89,6 +96,7 @@ export function LandlordPropertyHero({
       </div>
 
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr',
@@ -98,47 +106,14 @@ export function LandlordPropertyHero({
       >
         {/* LEFT — photos + property meta */}
         <div className="col" style={{ gap: 28 }}>
-          {/* Photo grid placeholder */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 1fr',
-              gap: 8,
-              height: 360,
-            }}
-          >
-            <div className="photo-ph" style={{ borderRadius: 18, height: '100%' }}>
-              <span>your unit · skyline view</span>
-            </div>
-            <div className="col" style={{ gap: 8 }}>
-              <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
-                <span>living</span>
-              </div>
-              <div className="photo-ph" style={{ borderRadius: 14, flex: 1 }}>
-                <span>den</span>
-              </div>
-              <div className="photo-ph" style={{ borderRadius: 14, flex: 1, position: 'relative' }}>
-                <span>bedroom</span>
-                <div
-                  className="mono"
-                  style={{
-                    position: 'absolute',
-                    right: 10,
-                    bottom: 10,
-                    fontSize: 10,
-                    letterSpacing: '0.1em',
-                    padding: '3px 8px',
-                    background: 'color-mix(in oklab, var(--surface) 90%, transparent)',
-                    borderRadius: 999,
-                    color: 'var(--ink)',
-                    backdropFilter: 'blur(4px)',
-                  }}
-                >
-                  + 18 more
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Photos when the listing has them, the property on a map when it
+              does not — never grey frames with a hardcoded "+ 18 more". */}
+          <ListingVisual
+            photoUrls={photoUrls}
+            address={property.addressLine1}
+            center={mapCenter}
+            propertyType="unit"
+          />
 
           {/* Address + chips + meta */}
           <div className="col" style={{ gap: 18 }}>
@@ -266,8 +241,11 @@ export function LandlordPropertyHero({
           </div>
         </div>
 
-        {/* RIGHT — sticky landlord score card */}
-        <div className="card col" style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}>
+        {/* RIGHT — sticky beside photos; static once the hero becomes one column. */}
+        <div
+          className="card col report-side-score"
+          style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
+        >
           {/* DealScore gauge */}
           <div className="col" style={{ alignItems: 'center', gap: 8 }}>
             <DealScore
@@ -276,7 +254,6 @@ export function LandlordPropertyHero({
               tone={score.tone}
               size="lg"
               label="Landlord score / 100"
-              showVerdict
               verdictLabel={score.label}
               animate
             />

@@ -216,6 +216,14 @@ describe('RentalCompsBar', () => {
     expect(screen.getByText('$2,900/mo')).toBeInTheDocument()
   })
 
+  it('insets edge tooltips so hidden labels cannot widen phone layouts', () => {
+    const { rerender } = render(<RentalCompsBar low={2000} mid={2200} high={2400} ask={2600} />)
+    expect(screen.getByText('$2,600/mo').parentElement).toHaveAttribute('data-alignment', 'right')
+
+    rerender(<RentalCompsBar low={2000} mid={2200} high={2400} ask={1800} />)
+    expect(screen.getByText('$1,800/mo').parentElement).toHaveAttribute('data-alignment', 'left')
+  })
+
   it('renders the market-context strip only when context is provided', () => {
     const { rerender } = render(<RentalCompsBar low={2700} mid={2900} high={3200} ask={2900} />)
     expect(screen.queryByText('12-mo trend')).not.toBeInTheDocument()
@@ -251,18 +259,18 @@ describe('AIVerdictBlock', () => {
   it('renders the eyebrow text', () => {
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
     )
-    expect(screen.getByText(/Scout AI · investor verdict/i)).toBeInTheDocument()
+    expect(screen.getByText(/PropScout · investor verdict/i)).toBeInTheDocument()
   })
 
   it('renders the headline', () => {
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
@@ -273,7 +281,7 @@ describe('AIVerdictBlock', () => {
   it('renders the sub paragraph', () => {
     render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
@@ -303,15 +311,15 @@ describe('AIVerdictBlock', () => {
     expect(watermark).toBeInTheDocument()
   })
 
-  it('model tag "claude · sonnet 4.6" is always rendered', () => {
+  it('identifies the verdict as based on validated inputs', () => {
     render(<AIVerdictBlock eyebrow="eyebrow" headline="headline" sub="sub" />)
-    expect(screen.getByText('claude · sonnet 4.6')).toBeInTheDocument()
+    expect(screen.getByText('validated inputs')).toBeInTheDocument()
   })
 
   it('matches snapshot', () => {
     const { container } = render(
       <AIVerdictBlock
-        eyebrow="Scout AI · investor verdict"
+        eyebrow="PropScout · investor verdict"
         headline="Hard pass."
         sub="Deeply negative cash flow on every scenario."
       />
@@ -477,6 +485,46 @@ describe('PropertyHero', () => {
     // 'Hard pass' is the label for verdict = hard_pass. Per the design it
     // appears twice: as the pill inside the gauge AND as the eyebrow below.
     expect(screen.getAllByText('Hard pass').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('makes the backend verdict a headline and exposes weighted points accessibly', () => {
+    render(
+      <PropertyHero
+        listing={LISTING}
+        score={VAUGHAN_SCORE}
+        cashFlowMonthly={-2724}
+        capRate={0.0081}
+        dscr={0.15}
+      />
+    )
+    expect(screen.getByRole('heading', { name: 'Hard pass' })).toBeInTheDocument()
+    expect(screen.getAllByText('Hard pass')).toHaveLength(1)
+    expect(screen.getByText('−$2,724')).toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: 'Cap rate' })).toHaveAttribute('aria-valuemax', '25')
+    expect(screen.getByRole('meter', { name: 'Rental demand' })).toHaveStyle({ width: '40%' })
+    expect(screen.getByText(/95-point scale/)).toBeInTheDocument()
+  })
+
+  it('preserves a gated verdict when component points are high', () => {
+    render(
+      <PropertyHero
+        listing={LISTING}
+        score={{
+          ...VAUGHAN_SCORE,
+          displayTotal: 42,
+          label: 'Marginal',
+          tone: 'caution',
+          verdict: 'marginal',
+          breakdown: { ...VAUGHAN_SCORE.breakdown, capRate: 25, cashFlow: 25 },
+        }}
+        cashFlowMonthly={500}
+        capRate={0.06}
+        dscr={1.25}
+      />
+    )
+    expect(screen.getByRole('heading', { name: 'Marginal' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Deal score: 42 out of 100')).toBeInTheDocument()
+    expect(screen.queryByText('Strong deal')).not.toBeInTheDocument()
   })
 
   it('renders all listing chips', () => {
