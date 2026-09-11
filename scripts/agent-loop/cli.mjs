@@ -366,7 +366,13 @@ function initialState({
     round: 0,
     disputes: 0,
     createdAt: now,
-    deadlineAt: new Date(Date.now() + config.maxMinutes * 60_000).toISOString(),
+    // The task cap bounds *execution* time, not the calendar: each `run`
+    // sets deadlineAt from what is left of the budget and charges the time it
+    // actually ran. A task that sits between runs — waiting on a human, or
+    // on a bootstrap fix — is not charged for the wait. The first observed
+    // run expired without a single round for exactly that reason.
+    elapsedRunMs: 0,
+    deadlineAt: null,
     branches,
     worktrees,
     review: null,
@@ -462,14 +468,19 @@ function executeTask(flags) {
   const { repo, config, task, file, state } = context
   if (state.phase === 'complete') throw new Error(`${task} is already complete`)
   if (state.phase === 'rejected') throw new Error(`${task} was rejected; start a new task`)
-  if (remainingMs(state) <= 0) {
+  const budgetMs = config.maxMinutes * 60_000 - (state.elapsedRunMs ?? 0)
+  if (budgetMs <= 0) {
     updateState(file, state, { phase: 'human_required', humanGateReasons: ['time cap reached'] })
-    throw new Error('Task reached its time cap')
+    throw new Error(
+      `Task reached its time cap (${Math.round((state.elapsedRunMs ?? 0) / 60_000)} of ${config.maxMinutes} minutes of run time used)`
+    )
   }
   const reviewSchema = readJson(
     path.join(repo, 'docs', 'agent-loop', 'schemas', 'review.schema.json')
   )
   const release = acquireLock(pathsFor(repo, config, task).runtime)
+  const runStartedMs = Date.now()
+  updateState(file, state, { deadlineAt: new Date(runStartedMs + budgetMs).toISOString() })
 
   try {
     ensureBootstrapped(context)
@@ -613,6 +624,10 @@ function executeTask(flags) {
       humanGateReasons: [...state.humanGateReasons, 'round cap reached'],
     })
   } finally {
+    // Charge this invocation's run time against the budget, whatever happened.
+    updateState(file, state, {
+      elapsedRunMs: (state.elapsedRunMs ?? 0) + (Date.now() - runStartedMs),
+    })
     release()
   }
 }

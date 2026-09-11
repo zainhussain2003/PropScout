@@ -22,7 +22,9 @@ Migration files may be drafted and reviewed locally, but their presence marks th
 - Three Git worktrees with one writable owner per lane.
 - A runtime mailbox outside all worktrees.
 - A single-process lock held by `run`, `approve` and `reject`, with round, per-turn and task time
-  caps. Every model turn and gate runs under a wrapper that kills its process tree on timeout
+  caps. The task cap is **run time**, charged per `run` invocation and accumulated in the task
+  state; time spent stopped — waiting for a human, or for an operator fix — is not charged. Every
+  model turn and gate runs under a wrapper that kills its process tree on timeout
   (`taskkill /T` by absolute path; a failed kill is a failed run, not a silent wait) and sweeps
   surviving descendants on every exit path, including a successful one. The wrapper's grace is
   reserved inside the remaining budget, not added after the deadline. No round, claim generation
