@@ -115,8 +115,25 @@ export function runBuilder({ model, repo, worktree, runtime, values, timeout }) 
   return output.trim()
 }
 
-function extractClaudeStructuredOutput(stdout) {
+/**
+ * The schema file declares draft 2020-12, which is what it is written to.
+ * `claude --json-schema` validates the argument with a draft-07 validator that
+ * rejects an unknown `$schema` URI outright ("no schema with key or ref"), so
+ * the declaration is dropped for that call only. Nothing in the schema uses a
+ * 2020-12-only keyword; the coordinator's own validator (schema.mjs) ignores
+ * `$schema` and Codex's `--output-schema` accepts the file as written.
+ */
+export function schemaForClaude(schemaFile) {
+  const { $schema, ...schema } = JSON.parse(fs.readFileSync(schemaFile, 'utf8'))
+  return JSON.stringify(schema)
+}
+
+export function extractClaudeStructuredOutput(stdout) {
   const parsed = JSON.parse(stdout)
+  // `--output-format json` reports auth and API failures as a success-shaped
+  // envelope with `is_error: true` and prose in `result`; parsing that prose as
+  // a review would fail with an unhelpful JSON error.
+  if (parsed.is_error) throw new Error(`claude reviewer failed: ${parsed.result}`)
   if (parsed.structured_output) return parsed.structured_output
   if (typeof parsed.result === 'string') return JSON.parse(parsed.result)
   return parsed
@@ -152,7 +169,7 @@ export function runReviewer({ model, repo, worktree, runtime, values, timeout })
     )
     review = JSON.parse(fs.readFileSync(outputFile, 'utf8'))
   } else {
-    const schema = fs.readFileSync(schemaFile, 'utf8')
+    const schema = schemaForClaude(schemaFile)
     const result = run(
       'claude',
       [

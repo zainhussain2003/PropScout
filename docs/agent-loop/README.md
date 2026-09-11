@@ -146,7 +146,11 @@ push, or merge into the owner's branch.
 
 `agent:run` automatically performs bounded revision rounds. If the process itself is interrupted,
 run the same command again. Candidate commits remain isolated on the builder branch and the runtime
-state records the next safe operation.
+state records the next safe operation. A run that stopped during the review — the reviewer CLI
+failed, the machine went to sleep — resumes at the review of the same candidate (`phase:
+reviewing`, gates passed, builder lane still exactly at that commit); it does not spend a builder
+round asking for changes to a candidate that already satisfies the request. If the lane has been
+touched by hand since, the resume is refused and a fresh round's clean-lane check reports it.
 
 ## Completion and use of the result
 
