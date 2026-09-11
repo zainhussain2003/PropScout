@@ -52,8 +52,8 @@
       },
       {
         "name": "python venv",
-        "command": "python",
-        "args": ["-m", "venv", ".venv"],
+        "command": "py",
+        "args": ["-3.11", "-m", "venv", "--clear", ".venv"],
         "timeoutMs": 300000
       },
       {

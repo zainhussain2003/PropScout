@@ -223,6 +223,9 @@ function doctor() {
     ['node', commandExists('node')],
     ['npm', commandExists('npm')],
     ['python', commandExists('python')],
+    // The bootstrap builds each worktree's venv with the interpreter CI and
+    // Railway use (runtime.txt); the pinned wheels do not exist for newer ones.
+    ['python 3.11 (py launcher)', commandExists('py', ['-3.11', '--version'])],
     ['black', commandExists('python', ['-m', 'black', '--version'])],
     ['flake8', commandExists('python', ['-m', 'flake8', '--version'])],
     ['claude', commandExists('claude', ['--version'])],
