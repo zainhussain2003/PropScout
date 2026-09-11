@@ -436,6 +436,25 @@ test('the test-only environment seams are refused without --allow-test-seams', (
   assert.ok(!fs.existsSync(path.join(root, '.wt', 'e2e-seams')), 'nothing was created')
 })
 
+test('a task idle for longer than the cap still runs: the cap is run time, not calendar', () => {
+  // The first observed real run expired at round 0 because the deadline was
+  // fixed at init and the operator spent three hours fixing bootstrap.
+  const { root, repo } = fixtureRepo()
+  const fakes = fakeAgents(root, [
+    { verdict: 'accepted', summary: 'Fine.', next_instruction: '', findings: [finding()] },
+  ])
+  coordinator(repo, fakes, ['init', '--task', 'e2e-idle', '--request', 'Idle before first run'])
+  const file = path.join(root, '.rt', 'e2e-idle', 'state.json')
+  const state = JSON.parse(fs.readFileSync(file, 'utf8'))
+  // Backdate creation by a day; no run time has been charged.
+  state.createdAt = new Date(Date.now() - 24 * 60 * 60_000).toISOString()
+  fs.writeFileSync(file, JSON.stringify(state))
+  coordinator(repo, fakes, ['run', '--task', 'e2e-idle'])
+  const after = readState(root, 'e2e-idle')
+  assert.equal(after.phase, 'complete')
+  assert.ok(after.elapsedRunMs > 0 && after.elapsedRunMs < 10 * 60_000, 'run time charged')
+})
+
 test('a model turn that cannot fit in the remaining budget is not started', () => {
   // Gates already skipped here; a turn was clamped to 1ms and granted the
   // wrapper's grace, overrunning the deadline. Now it stops for a human.
@@ -445,7 +464,8 @@ test('a model turn that cannot fit in the remaining budget is not started', () =
   const file = path.join(root, '.rt', 'e2e-nofit', 'state.json')
   const state = JSON.parse(fs.readFileSync(file, 'utf8'))
   // Less than the grace remains: positive, so the round-level check passes.
-  state.deadlineAt = new Date(Date.now() + 5_000).toISOString()
+  // The budget is run time, so spend all but 5s of it before this run.
+  state.elapsedRunMs = 10 * 60_000 - 5_000
   fs.writeFileSync(file, JSON.stringify(state))
   coordinator(repo, fakes, ['run', '--task', 'e2e-nofit'])
   const after = readState(root, 'e2e-nofit')
