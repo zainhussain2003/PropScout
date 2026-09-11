@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "task": "honour-insurance-value",
+  "request": "In services/calc-engine/calculations/investment.py, calculate_cash_flow_monthly and calculate_break_even_rent accept an insurance_value parameter and never use it: both compute insurance as (property_value * INSURANCE_RATE) / 12, at lines 95 and 194. calculate_noi in the same file uses it correctly at line 40 (insurance = insurance_value * INSURANCE_RATE), so the three functions disagree with each other. Make both monthly functions honour the parameter: compute insurance as (insurance_value * INSURANCE_RATE) / 12. Update both docstrings accordingly: the insurance_value line currently reads 'Unused; insurance is calculated from property_value' and must describe it as the value insured, mirroring calculate_noi; the property_value line currently claims it is used for insurance and maintenance, and must say maintenance only. Every existing caller passes insurance_value equal to the purchase price, so no current output may change: services/calc-engine/tests/test_regression.py must still pass with its expected values edited in no way. Add direct unit tests for both functions to services/calc-engine/calculations/investment_test.py, which has none today: for each function, one case where insurance_value differs from property_value and the returned figure provably reflects insurance_value rather than property_value, and one case where the two are equal which pins the existing behaviour. The spec is silent on an insured value distinct from purchase price and no output changes, so do not edit the spec. Do not change signatures, parameter order, defaults, constants, call sites, or any other file.",
+  "builder": "codex",
+  "builder_sandboxed": true,
+  "reviewer": "claude",
+  "baseline_sha": "9734be7b9e69b6516260e7804878aa0371504247",
+  "accepted_sha": "b998f5c50c12bf68e43d3cc634d48305f4dd5697",
+  "rounds": 1,
+  "gates": [
+    {
+      "name": "web typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:39:53.502Z",
+      "durationMs": 5508
+    },
+    {
+      "name": "api typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:39:59.010Z",
+      "durationMs": 2793
+    },
+    {
+      "name": "web lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:40:01.803Z",
+      "durationMs": 13975
+    },
+    {
+      "name": "api lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:40:15.778Z",
+      "durationMs": 1943
+    },
+    {
+      "name": "python format",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\honour-insurance-value\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:40:17.721Z",
+      "durationMs": 1879
+    },
+    {
+      "name": "python lint",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\honour-insurance-value\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:40:19.600Z",
+      "durationMs": 1396
+    },
+    {
+      "name": "web tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:40:20.996Z",
+      "durationMs": 37197
+    },
+    {
+      "name": "api tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:40:58.193Z",
+      "durationMs": 26499
+    },
+    {
+      "name": "calc engine",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\honour-insurance-value\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:41:24.692Z",
+      "durationMs": 10589
+    },
+    {
+      "name": "scrapers",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\honour-insurance-value\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T20:41:35.281Z",
+      "durationMs": 2184
+    }
+  ],
+  "verdict": "accepted",
+  "summary": "Candidate correctly makes calculate_cash_flow_monthly and calculate_break_even_rent use insurance_value (mirroring calculate_noi), updates both docstrings exactly as specified, adds four parametrized unit tests whose expected values I independently recomputed and confirmed (e.g. cash flow: $3,800 rent - $1,800 mortgage - $300 tax - $200 condo - $500 maintenance - $70/$175 insurance = $930/$825), and touches no other files. Every existing call site (calculate_financing_scenarios, routers/analysis.py, test_regression.py) passes insurance_value equal to property_value/purchase_price, so no regression output changes. test_regression.py has zero diff.",
+  "accepted_at": "2026-09-11T20:53:42.687Z"
+}
