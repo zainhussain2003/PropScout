@@ -79,6 +79,21 @@ round.
 networking disabled by Codex's default policy. Its reviewer lane is `--sandbox read-only`. These
 are boundaries the model cannot reason its way past.
 
+On Windows that sandbox is **off by default**: without `windows.sandbox` configured,
+`--sandbox workspace-write` silently runs read-only (the first real run ended with every patch
+rejected). The coordinator passes `-c windows.sandbox="unelevated"` itself, because it ignores the
+operator's config. What the unelevated mode was verified to do on this project's machine
+(Codex 0.154): writes outside the worktree and `%TEMP%` are denied (`C:\dev`, the owner checkout,
+`~/.gitconfig` all refused); outbound network is refused (`curl` exit 7); reads are unrestricted
+by design, which includes `~/.codex/auth.json` — the network denial is what makes that tolerable.
+`elevated` mode adds firewall rules and dedicated sandbox users but needs `codex sandbox setup
+--elevated` from an administrator shell. `agent:doctor` checks that the builder's exact flag set
+resolves to `sandbox: workspace-write` and fails otherwise.
+
+A builder's own report is not evidence. In a probe with the sandbox read-only, Codex's write was
+refused and it still replied "WROTE". The coordinator commits what `git status` shows, and a turn
+that changed nothing stops the round ("Builder made no changes") rather than trusting the text.
+
 **Claude builder** runs with a tool allowlist:
 
 ```

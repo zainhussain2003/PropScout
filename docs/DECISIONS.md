@@ -2038,6 +2038,14 @@ child exited cleanly; kill and snapshot helpers are individually bounded inside 
 PowerShell runs with `PSModulePath` pinned to the inbox modules; `npm prefix -g` ignores ambient
 `NPM_CONFIG_*`.
 
+First observed real run (2026-09-11), three stops before the builder produced anything, none
+visible to the fixture suite: the venv used Python 3.14 (pins have no wheels; now `py -3.11`);
+the 3-hour cap counted calendar time (now run time); `codex exec` 0.125 had no
+`--ask-for-approval` flag. Fourth stop, after the builder had correctly identified the five
+functions to fix: Codex's Windows sandbox is off by default, so `workspace-write` ran read-only and
+every patch was rejected. The coordinator now passes `-c windows.sandbox="unelevated"`, verified to
+deny writes outside the worktree and all outbound network; doctor checks the resolved mode.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the

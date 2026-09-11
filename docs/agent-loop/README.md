@@ -50,6 +50,12 @@ The bootstrap creates each worktree's virtual environment with `py -3.11` — th
 `python` on `PATH` that is newer than 3.11 is fine for the coordinator itself; `agent:doctor`
 checks that the 3.11 launcher target is installed.
 
+On Windows, Codex's own sandbox must be configured or `--sandbox workspace-write` runs read-only.
+The coordinator passes `-c windows.sandbox="unelevated"` (restricted token + ACLs, no administrator
+setup) and `agent:doctor` fails if the builder's flag set does not resolve to
+`sandbox: workspace-write`. Keep the npm-installed `codex` current (`npm i -g @openai/codex@latest`):
+0.125 could not parse a config written by the desktop app and had no working Windows sandbox.
+
 Gates and bootstrap run with an allowlisted environment (`isolatedEnvironment` in
 `process.mjs`): if a gate needs a variable that is not on the list, add it there deliberately
 rather than exporting it — the list exists to keep the operator's keys out of candidate code.
