@@ -2060,6 +2060,17 @@ every check green because `--version` proves installation, not access. Doctor no
 `claude auth status` and `codex login status` — both offline and deterministic — and fails on
 either.
 
+**The loop then closed a task end to end, unattended** (task `docstring-args-returns`, PR #29):
+Codex built at `bf488ce`, the coordinator committed candidate `08d9482`, ten gates passed in ~1m50s,
+Claude reviewed that exact SHA read-only and accepted with no findings, and the coordinator
+fast-forwarded to `05d9166`. One round, no disputes, no human gate. 6m40s of charged run time
+across the six stops. Two things the fixture suite could not have told us: the reviewer's
+`--allowedTools` denies `Bash(python -m black …)` and an `awk` line-length check, so the reviewer
+reasoned about formatting rather than measuring it (the `python format` gate had already passed
+outside the sandbox, so this cost nothing here); and Black hangs inside Codex's unelevated sandbox —
+multiprocessing appears to be blocked — so the builder cannot self-check formatting and correctly
+reported that as incomplete rather than claiming a pass.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the
