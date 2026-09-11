@@ -77,6 +77,17 @@ def calculate_cash_flow_monthly(
     """
     Calculate monthly cash flow (rent net of all expenses and mortgage).
 
+    Args:
+        monthly_rent: Monthly rent at full occupancy in dollars.
+        mortgage_payment: Monthly mortgage payment in dollars.
+        annual_taxes: Annual property tax in dollars.
+        insurance_value: Unused; insurance is calculated from property_value.
+        condo_fee_monthly: Monthly condo / maintenance fee in dollars.
+        maintenance_rate: Annual maintenance reserve as a decimal of property value.
+        property_value: Property value in dollars used for insurance and maintenance.
+        include_management: Whether to include the management fee (default False).
+        vacancy_allowance: Fraction of rent lost to vacancy (default 5%).
+
     Returns:
         Monthly cash flow in dollars (negative = loss).
     """
@@ -144,6 +155,10 @@ def calculate_cash_on_cash(
     CoC = Annual Cash Flow / Total Cash Invested
     Total cash invested = down payment + closing costs.
 
+    Args:
+        annual_cash_flow: Annual cash flow after expenses and mortgage in dollars.
+        total_cash_invested: Down payment plus closing costs in dollars.
+
     Returns:
         CoC as a decimal (e.g. 0.06 = 6%).
     """
@@ -163,6 +178,15 @@ def calculate_break_even_rent(
 ) -> float:
     """
     Calculate the minimum monthly rent required to break even.
+
+    Args:
+        mortgage_payment: Monthly mortgage payment in dollars.
+        annual_taxes: Annual property tax in dollars.
+        insurance_value: Unused; insurance is calculated from property_value.
+        condo_fee_monthly: Monthly condo / maintenance fee in dollars.
+        maintenance_rate: Annual maintenance reserve as a decimal of property value.
+        property_value: Property value in dollars used for insurance and maintenance.
+        include_management: Whether to include the management fee (default False).
 
     Returns:
         Break-even rent in dollars per month.

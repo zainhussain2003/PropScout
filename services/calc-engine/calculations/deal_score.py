@@ -49,7 +49,16 @@ _DISPLAY_FLOOR = 5  # a property is always worth something (applied at display o
 
 
 def severe_ceiling(severe_flag_count: int) -> int:
-    """Max achievable score given N severe gating flags (spec §10a step 4)."""
+    """
+    Max achievable score given N severe gating flags (spec §10a step 4).
+
+    Args:
+        severe_flag_count: Number of severe gating flags.
+
+    Returns:
+        Integer score ceiling: 95 for zero or fewer flags, 40 for one,
+        30 for two, 20 for three, and 10 for four or more.
+    """
     if severe_flag_count <= 0:
         return _NO_GATE
     return max(
@@ -65,6 +74,13 @@ def to_display_score(raw: int) -> int:
     Floor: max(5, raw) — a property is always worth something. Normalise: × 100/95.
     The verdict LABEL is taken from the RAW score (get_verdict), never this value,
     so the floor can't lift a property into a better verdict band.
+
+    Args:
+        raw: Raw deal score on the 0–95 scale, before the display floor.
+
+    Returns:
+        Integer display score, rounded after flooring the raw score at 5
+        and normalising to the 100-point scale.
     """
     floored = max(_DISPLAY_FLOOR, raw)
     return round(floored * 100 / _COMPONENT_MAX)
