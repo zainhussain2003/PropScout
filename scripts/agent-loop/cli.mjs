@@ -156,7 +156,22 @@ function remainingMs(state) {
  */
 function turnTimeout(state, config) {
   const cap = (config.turnMinutes ?? 45) * 60_000
-  return Math.max(1, budgetedTimeout(remainingMs(state), cap))
+  return budgetedTimeout(remainingMs(state), cap)
+}
+
+/**
+ * Stop before a model turn that cannot fit in the remaining budget. A turn
+ * given a clamped 1ms timeout would still be granted the wrapper's grace and
+ * could overrun the task deadline by up to that grace; gates already skip in
+ * this situation, and turns must too.
+ */
+function turnFits(file, state, config, role) {
+  if (turnTimeout(state, config) > 0) return true
+  updateState(file, state, {
+    phase: 'human_required',
+    humanGateReasons: [...state.humanGateReasons, `time cap reached before ${role} turn`],
+  })
+  return false
 }
 
 /**
@@ -475,6 +490,7 @@ function executeTask(flags) {
         throw new Error('Builder worktree is on the wrong branch')
       }
 
+      if (!turnFits(file, state, config, 'builder')) return
       updateState(file, state, { phase: 'building' })
       const previousFeedback = state.review?.next_instruction ?? 'None — this is the first round.'
       const builderReport = runBuilder({
@@ -519,6 +535,7 @@ function executeTask(flags) {
         throw new Error(`A deterministic gate failed; inspect round-${round}-gates`)
       }
 
+      if (!turnFits(file, state, config, 'reviewer')) return
       updateState(file, state, { phase: 'reviewing' })
       const review = validateReview(
         runReviewer({

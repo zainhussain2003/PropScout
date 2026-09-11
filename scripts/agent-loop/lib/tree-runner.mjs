@@ -41,7 +41,12 @@ const system32 = path.join(
   'System32'
 )
 const TASKKILL = path.join(system32, 'taskkill.exe')
-const POWERSHELL = path.join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+const POWERSHELL_HOME = path.join(system32, 'WindowsPowerShell', 'v1.0')
+const POWERSHELL = path.join(POWERSHELL_HOME, 'powershell.exe')
+// Every helper call is bounded so the whole cleanup fits inside the grace
+// process.mjs reserves (15s): two kill attempts plus one snapshot.
+const KILL_ATTEMPT_TIMEOUT_MS = 3_000
+const SNAPSHOT_TIMEOUT_MS = 8_000
 
 const [, , timeoutArgument, command, ...args] = process.argv
 const timeoutMs = Number(timeoutArgument)
@@ -65,6 +70,7 @@ function killTree() {
       const result = spawnSync(TASKKILL, ['/PID', String(child.pid), '/T', '/F'], {
         stdio: 'ignore',
         windowsHide: true,
+        timeout: KILL_ATTEMPT_TIMEOUT_MS,
       })
       if (result.status === 0) return true
     }
@@ -90,12 +96,15 @@ function killTree() {
 function processSnapshot() {
   if (process.platform !== 'win32') return []
   const script =
-    "Get-CimInstance Win32_Process | ForEach-Object { '{0},{1},{2}' -f $_.ProcessId, $_.ParentProcessId, " +
+    "Import-Module -Name CimCmdlets -ErrorAction Stop; Get-CimInstance Win32_Process | ForEach-Object { '{0},{1},{2}' -f $_.ProcessId, $_.ParentProcessId, " +
     "$(if ($_.CreationDate) { $_.CreationDate.ToUniversalTime().ToString('o') } else { '' }) }"
   const result = spawnSync(POWERSHELL, ['-NoProfile', '-NonInteractive', '-Command', script], {
     encoding: 'utf8',
     windowsHide: true,
-    timeout: 30_000,
+    timeout: SNAPSHOT_TIMEOUT_MS,
+    // Only the inbox modules: a candidate with home-directory access could
+    // otherwise shadow CimCmdlets from Documents\WindowsPowerShell\Modules.
+    env: { ...process.env, PSModulePath: path.join(POWERSHELL_HOME, 'Modules') },
   })
   if (result.status !== 0 || !result.stdout) return null
   return result.stdout
@@ -141,16 +150,19 @@ function sweepOrphans() {
     }
   }
   let swept = 0
+  let failed = false
   for (const pid of victims) {
     try {
       process.kill(pid, 'SIGKILL')
       swept += 1
       process.stderr.write(`${SWEEP_MARKER} pid ${pid}\n`)
-    } catch {
-      // Already gone.
+    } catch (error) {
+      // ESRCH: already gone. Anything else (EPERM) is a live process we could
+      // not terminate — containment has failed and must be reported as such.
+      if (error.code !== 'ESRCH') failed = true
     }
   }
-  return { swept, failed: false }
+  return { swept, failed }
 }
 
 let timedOut = false
@@ -182,7 +194,13 @@ child.on('exit', (code, signal) => {
       // Group already empty.
     }
   }
-  sweepOrphans()
+  // A sweep that could not run or could not kill is a containment failure
+  // even when the child itself exited cleanly; do not return its success.
+  const sweep = sweepOrphans()
+  if (sweep.failed && !killFailed) {
+    process.stderr.write(`${KILL_FAILED_MARKER}: orphan sweep could not complete\n`)
+    killFailed = true
+  }
   if (killFailed) process.exit(KILL_FAILED_EXIT_CODE)
   if (timedOut) {
     process.stderr.write(`${TIMEOUT_MARKER} after ${timeoutMs}ms\n`)

@@ -2031,6 +2031,13 @@ than added after the deadline; `.cmd` shims resolve only from npm's global prefi
 not reproducible on the host (49/49, three runs) and are consistent with `taskkill` being denied
 inside Codex's own sandbox — which is exactly the silent-failure case the first fix removes.
 
+Fourth pass (Codex verdict: merge for supervised trials; three residual P2/P3s, all landed): a
+model turn that cannot fit in the remaining budget stops for a human instead of being clamped to
+1 ms and granted the grace; a sweep that cannot run or cannot kill fails the run even when the
+child exited cleanly; kill and snapshot helpers are individually bounded inside the grace;
+PowerShell runs with `PSModulePath` pinned to the inbox modules; `npm prefix -g` ignores ambient
+`NPM_CONFIG_*`.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the

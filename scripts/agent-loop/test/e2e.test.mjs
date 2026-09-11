@@ -436,6 +436,28 @@ test('the test-only environment seams are refused without --allow-test-seams', (
   assert.ok(!fs.existsSync(path.join(root, '.wt', 'e2e-seams')), 'nothing was created')
 })
 
+test('a model turn that cannot fit in the remaining budget is not started', () => {
+  // Gates already skipped here; a turn was clamped to 1ms and granted the
+  // wrapper's grace, overrunning the deadline. Now it stops for a human.
+  const { root, repo } = fixtureRepo()
+  const fakes = fakeAgents(root, [{ verdict: 'accepted', summary: 'unused', findings: [] }])
+  coordinator(repo, fakes, ['init', '--task', 'e2e-nofit', '--request', 'Turn should not start'])
+  const file = path.join(root, '.rt', 'e2e-nofit', 'state.json')
+  const state = JSON.parse(fs.readFileSync(file, 'utf8'))
+  // Less than the grace remains: positive, so the round-level check passes.
+  state.deadlineAt = new Date(Date.now() + 5_000).toISOString()
+  fs.writeFileSync(file, JSON.stringify(state))
+  coordinator(repo, fakes, ['run', '--task', 'e2e-nofit'])
+  const after = readState(root, 'e2e-nofit')
+  assert.equal(after.phase, 'human_required')
+  assert.ok(
+    after.humanGateReasons.some((r) => /before builder turn/.test(r)),
+    after.humanGateReasons
+  )
+  assert.equal(after.candidate, null, 'no candidate was built')
+  assert.equal(after.round, 1)
+})
+
 test('doctor refuses a redirected repository before touching it', () => {
   const { root, repo } = fixtureRepo()
   // A hostile AGENT_LOOP_REPO could carry git configuration that runs code

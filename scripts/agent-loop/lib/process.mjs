@@ -93,10 +93,16 @@ export function npmGlobalPrefix() {
       'bin',
       'npm-cli.js'
     )
+    // Ambient NPM_CONFIG_* (including NPM_CONFIG_PREFIX) must not move the
+    // trusted root; only npm's own config files decide it.
+    const env = Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith('NPM_CONFIG_'))
+    )
     const result = spawnSync(process.execPath, [npmCli, 'prefix', '-g'], {
       encoding: 'utf8',
       windowsHide: true,
       timeout: 15_000,
+      env,
     })
     if (result.status === 0 && result.stdout.trim()) cachedNpmPrefix = result.stdout.trim()
   } catch {
