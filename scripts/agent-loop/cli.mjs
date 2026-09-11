@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { fakeAgentsDirectory, runBuilder, runReviewer } from './lib/agents.mjs'
+import { CODEX_COMMON_FLAGS, fakeAgentsDirectory, runBuilder, runReviewer } from './lib/agents.mjs'
 import { bootstrapWorktree, venvPython } from './lib/bootstrap.mjs'
 import { validateCitations } from './lib/citations.mjs'
 import { generateClaimsMarkdown, loadClaims, writeClaims } from './lib/claims.mjs'
@@ -20,7 +20,7 @@ import {
   statusPaths,
 } from './lib/git.mjs'
 import { assertSafeBuilderPaths, isInside } from './lib/policy.mjs'
-import { budgetedTimeout, commandExists } from './lib/process.mjs'
+import { budgetedTimeout, commandExists, run } from './lib/process.mjs'
 import { assertMatchesSchema } from './lib/schema.mjs'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -214,6 +214,42 @@ function removeWorktree(repo, worktree, branchName) {
   return problems
 }
 
+/**
+ * `codex exec --sandbox workspace-write` on Windows silently runs read-only
+ * unless the Windows sandbox mode is configured; the first real run stopped
+ * with every patch rejected. This asks Codex to print its resolved sandbox
+ * for the exact flag set the builder lane uses (one trivial model call — the
+ * banner is printed from resolved config, so the check is deterministic) and
+ * fails doctor when it is anything but workspace-write.
+ */
+function codexSandboxResolves() {
+  try {
+    const result = run(
+      'codex',
+      [
+        'exec',
+        ...CODEX_COMMON_FLAGS,
+        '--sandbox',
+        'workspace-write',
+        '--skip-git-repo-check',
+        '--cd',
+        os.tmpdir(),
+        '-',
+      ],
+      // A prompt is required for the banner to print; keep the model call trivial.
+      {
+        echo: false,
+        timeout: 90_000,
+        input: 'Reply with the word OK and nothing else.',
+        killTree: false,
+      }
+    )
+    return /^sandbox: workspace-write/m.test(`${result.stdout}\n${result.stderr}`)
+  } catch (error) {
+    return /^sandbox: workspace-write/m.test(`${error.stdout ?? ''}\n${error.stderr ?? ''}`)
+  }
+}
+
 function doctor() {
   const repo = repoRoot(defaultRepo)
   const configFile = path.join(repo, '.agent-loop', 'config.json')
@@ -230,6 +266,7 @@ function doctor() {
     ['flake8', commandExists('python', ['-m', 'flake8', '--version'])],
     ['claude', commandExists('claude', ['--version'])],
     ['codex', commandExists('codex', ['--version'])],
+    ['codex sandbox (workspace-write resolves)', codexSandboxResolves()],
     ['config', fs.existsSync(configFile)],
     ['review schema', fs.existsSync(schemaFile)],
   ]

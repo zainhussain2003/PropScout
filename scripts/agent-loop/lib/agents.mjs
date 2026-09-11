@@ -32,6 +32,32 @@ function runFakeAgent(kind, { worktree, prompt, timeout, values }) {
   }).stdout
 }
 
+/**
+ * Flags common to both Codex lanes.
+ *
+ * `codex exec` is non-interactive: a command the sandbox blocks fails rather
+ * than prompting, so no approval flag exists or is needed. The operator's
+ * ~/.codex/config.toml enables plugins (github, browser, computer-use) and
+ * its execpolicy .rules could widen what may run; neither may reach a lane,
+ * so the coordinator's flags are the whole policy. Auth still comes from
+ * CODEX_HOME.
+ *
+ * On Windows, Codex's sandbox is off unless `windows.sandbox` is set — and
+ * `--sandbox workspace-write` then silently degrades to read-only. Because
+ * user config is ignored, the mode is passed here. `unelevated` (restricted
+ * token + ACLs, no administrator setup) was verified on this project's
+ * machine: writes outside the worktree and %TEMP% are denied, outbound
+ * network is refused, reads are unrestricted (Codex's design). `elevated`
+ * adds firewall rules and dedicated sandbox users but needs `codex sandbox
+ * setup --elevated` from an administrator shell.
+ */
+export const CODEX_COMMON_FLAGS = [
+  '--ephemeral',
+  '--ignore-user-config',
+  '--ignore-rules',
+  ...(process.platform === 'win32' ? ['-c', 'windows.sandbox="unelevated"'] : []),
+]
+
 function render(template, values) {
   return Object.entries(values).reduce(
     (text, [key, value]) => text.replaceAll(`{{${key}}}`, String(value)),
@@ -57,17 +83,9 @@ export function runBuilder({ model, repo, worktree, runtime, values, timeout }) 
       'codex',
       [
         'exec',
-        '--ephemeral',
+        ...CODEX_COMMON_FLAGS,
         '--sandbox',
         'workspace-write',
-        // `codex exec` is non-interactive: a command the sandbox blocks fails
-        // rather than prompting, so no approval flag exists or is needed.
-        // The operator's ~/.codex/config.toml enables plugins (github, browser,
-        // computer-use) and its execpolicy .rules could widen what may run;
-        // neither may reach a lane, so the coordinator's flags are the whole
-        // policy. Auth still comes from CODEX_HOME.
-        '--ignore-user-config',
-        '--ignore-rules',
         '--output-last-message',
         outputFile,
         '--cd',
@@ -119,17 +137,9 @@ export function runReviewer({ model, repo, worktree, runtime, values, timeout })
       'codex',
       [
         'exec',
-        '--ephemeral',
+        ...CODEX_COMMON_FLAGS,
         '--sandbox',
         'read-only',
-        // `codex exec` is non-interactive: a command the sandbox blocks fails
-        // rather than prompting, so no approval flag exists or is needed.
-        // The operator's ~/.codex/config.toml enables plugins (github, browser,
-        // computer-use) and its execpolicy .rules could widen what may run;
-        // neither may reach a lane, so the coordinator's flags are the whole
-        // policy. Auth still comes from CODEX_HOME.
-        '--ignore-user-config',
-        '--ignore-rules',
         '--output-schema',
         schemaFile,
         '--output-last-message',
