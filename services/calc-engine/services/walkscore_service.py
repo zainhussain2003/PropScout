@@ -7,7 +7,9 @@ import os
 import httpx
 
 
-async def get_walk_score(address: str, lat: float, lng: float) -> dict[str, object] | None:
+async def get_walk_score(
+    address: str, lat: float, lng: float
+) -> dict[str, object] | None:
     """
     Fetch Walk Score, Transit Score, and Bike Score for a property.
 
@@ -20,7 +22,7 @@ async def get_walk_score(address: str, lat: float, lng: float) -> dict[str, obje
         Dict with walk_score, transit_score, bike_score, description.
         Returns None if the API call fails.
     """
-    api_key = os.environ.get('WALKSCORE_API_KEY')
+    api_key = os.environ.get("WALKSCORE_API_KEY")
     if not api_key:
         return None
 
@@ -41,10 +43,10 @@ async def get_walk_score(address: str, lat: float, lng: float) -> dict[str, obje
             response.raise_for_status()
             data = response.json()
             return {
-                'walk_score': data.get('walkscore', 0),
-                'transit_score': data.get('transit', {}).get('score', 0),
-                'bike_score': data.get('bike', {}).get('score', 0),
-                'description': data.get('description', ''),
+                "walk_score": data.get("walkscore", 0),
+                "transit_score": data.get("transit", {}).get("score", 0),
+                "bike_score": data.get("bike", {}).get("score", 0),
+                "description": data.get("description", ""),
             }
     except Exception:
         return None

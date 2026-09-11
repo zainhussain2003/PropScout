@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://propscout.local/schemas/claim.schema.json",
+  "title": "PropScout agent finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "task",
+    "author",
+    "subject_sha",
+    "severity",
+    "status",
+    "evidence",
+    "citations",
+    "claim",
+    "verification",
+    "history"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "task": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "author": { "enum": ["claude", "codex", "coordinator"] },
+    "subject_sha": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+    "severity": { "enum": ["P0", "P1", "P2", "P3"] },
+    "status": { "enum": ["open", "verified", "rejected", "withdrawn"] },
+    "evidence": { "enum": ["confirmed", "inferred", "unknown"] },
+    "claim": { "type": "string", "minLength": 10 },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "start_line", "end_line"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "start_line": { "type": "integer", "minimum": 1 },
+          "end_line": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "runtime_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "result"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "result": { "type": "string", "minLength": 1 },
+        "artifact": { "type": "string" }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["by", "result", "note"],
+        "properties": {
+          "by": { "enum": ["claude", "codex", "coordinator", "human"] },
+          "result": { "enum": ["accepted", "rejected", "needs_changes", "needs_human"] },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["at", "actor", "from", "to", "note"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "actor": { "enum": ["claude", "codex", "coordinator", "human"] },
+          "from": { "type": ["string", "null"] },
+          "to": { "enum": ["open", "verified", "rejected", "withdrawn"] },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "supersedes": { "type": "string" },
+    "duplicate_of": { "type": "string" }
+  }
+}

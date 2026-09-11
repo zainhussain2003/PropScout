@@ -15,6 +15,17 @@ This file tells you everything you need to know to work effectively on this code
 | `MVP_TODO.md`                | MVP scope only — tick off as tasks are completed                          |
 | `TESTING.md`                 | Test for every feature, week by week — update when new features are added |
 | `SETUP.md`                   | Pre-development checklist — accounts, tooling, CI/CD, legal               |
+| `docs/agent-loop/README.md`  | Claude/Codex worktree, review, claim, and promotion protocol              |
+
+---
+
+## Claude + Codex coordinated tasks
+
+When a prompt says it was created by the PropScout agent-loop coordinator, also read `AGENTS.md`
+and `docs/agent-loop/README.md`. Obey the assigned lane: the builder may edit only its worktree and
+the reviewer is read-only. Neither role may commit, push, merge, deploy, apply a migration, touch
+production, or modify the coordinator's policy, schemas, prompts, scripts, CI, or instruction
+files. The coordinator owns those operations and stops for human approval when required.
 
 ---
 
@@ -1011,12 +1022,15 @@ Nothing merges to main until all six items are checked.
 ```
 propscout/
 │
+├── AGENTS.md                          # Shared Codex/automated-agent collaboration instructions
 ├── .env                               # Never committed — all API keys and secrets
 ├── .env.example                       # Committed — placeholder values only
 ├── .gitignore                         # Covers .env, node_modules, __pycache__, .venv, dist
 ├── README.md                          # Setup instructions, how to run tests, architecture overview
 ├── FUTURE.md                          # Out-of-MVP-scope items (CREA DDF, Cloudflare bypass) — referenced by MVP_TODO
 ├── package.json                       # Monorepo root — workspaces for apps/web and apps/api
+├── .agent-loop/
+│   └── config.json                    # Human-reviewed loop caps, protected paths, and test gates
 │
 ├── .github/
 │   └── workflows/
@@ -1037,6 +1051,13 @@ propscout/
 │   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
 │   ├── PR10-design-humanization-prompt.md  # PR10 spec — token revision, copy, imagery, founder note
 │   ├── PR10-UI-Tests.md               # PR10 Chrome UI test checklist (token propagation, imagery, dark/mobile)
+│   ├── agent-loop/                    # Claude/Codex workflow, policy, prompts, schemas, and canonical claims
+│   │   ├── README.md                  # Operating guide and recovery procedure
+│   │   ├── POLICY.md                  # Human gates and code-enforced safety boundary
+│   │   ├── CLAIMS.md                  # Generated findings report — never hand-edit
+│   │   ├── claims/                    # One canonical JSON record per accepted finding
+│   │   ├── prompts/                   # Protected builder and reviewer prompt templates
+│   │   └── schemas/                   # Protected claim and structured-review schemas
 │   └── design_handoff_propscout_mvp/  # Design files — PALETTE STALE since PR10: production tokens.css is ahead (see DESIGN_README divergence table)
 │       ├── tokens.css                 # CSS variables — copy to apps/web/src/styles/tokens.css
 │       └── designs/                   # 13 pixel-final HTML prototypes + JSX source
@@ -1297,6 +1318,18 @@ propscout/
 │           └── mapbox_service.py      # Geocoding, non-fatal on failure
 │
 ├── scripts/                           # One-off data loaders and builders (not part of a service)
+│   ├── agent-loop/                    # Local Claude/Codex coordinator — `npm run agent:*`
+│   │   ├── cli.mjs                    # init / run / status / approve / reject / doctor
+│   │   ├── lib/
+│   │   │   ├── agents.mjs             # codex / claude / fake-agent invocations
+│   │   │   ├── bootstrap.mjs          # npm ci + per-worktree Python venv before round 1
+│   │   │   ├── citations.mjs          # Resolve review citations at the candidate SHA
+│   │   │   ├── gates.mjs              # Deadline-bounded gate runner with stdout/stderr logs
+│   │   │   ├── process.mjs            # spawnSync wrapper (no shell; env allowlist; hardened npm .cmd shim resolution)
+│   │   │   ├── tree-runner.mjs        # Timeout wrapper that kills the whole process tree (not importable)
+│   │   │   ├── schema.mjs             # JSON Schema subset validator for reviews
+│   │   │   └── claims.mjs, git.mjs, policy.mjs  # claim records, git helpers, path policy
+│   │   └── test/                      # node --test — e2e.test.mjs drives a full loop with fake agents
 │   ├── _build_fsa_stats.py            # StatsCan 2021 FSA profile → fsa_stats.csv (median income)
 │   ├── _build_fsa_growth.py           # 2016+2021 FSA populations → pop_growth_5y (the 2021 profile
 │   │                                  # leaves that characteristic blank — see docs/DECISIONS.md D-010)

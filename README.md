@@ -182,6 +182,25 @@ Branch naming follows commit type: `feat/`, `fix/`, `refactor/`, `test/`, `docs/
 
 ---
 
+## Claude + Codex feature loop
+
+PropScout includes a local coordinator that lets one model implement a feature while the other
+reviews the exact candidate commit read-only. Work happens in isolated Git worktrees; deterministic
+tests and structured, SHA-anchored findings control whether a candidate reaches the coordinator
+branch. Nothing is merged into this checkout or deployed automatically.
+
+```powershell
+npm.cmd run agent:doctor
+npm.cmd run agent:init -- --task <task-slug> --builder claude --request "<complete feature request>"
+npm.cmd run agent:run -- --task <task-slug>
+npm.cmd run agent:status -- --task <task-slug>
+```
+
+Use `--builder codex` to reverse the roles. The full workflow, stop conditions, and recovery steps
+are in [`docs/agent-loop/README.md`](docs/agent-loop/README.md).
+
+---
+
 ## Deployments
 
 | Environment              | Trigger           | URL                                      |

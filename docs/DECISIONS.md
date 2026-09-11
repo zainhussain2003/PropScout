@@ -2002,6 +2002,64 @@ not expose a `parkingKnown` flag, so zero cannot safely support that claim.
 
 ---
 
+### D-061 · Codex is the only unattended builder; Claude builds only with an explicit acknowledgement
+
+**Chosen.** `.agent-loop/config.json` sets `defaultBuilder: "codex"`. `init --builder claude`
+is refused unless the operator also passes `--acknowledge-unsandboxed-claude-builder`, and the
+choice is written to the task state and decision record as `builder_sandboxed: false`. The
+coordinator additionally: bootstraps each worktree (`npm ci` plus a per-worktree Python venv)
+before the first round; treats the task time cap as hard (per-turn and per-gate timeouts are
+derived from the remaining budget, and gates past the deadline are skipped); takes the lock on
+`approve` and `reject`; validates reviews against the JSON schema including
+`additionalProperties: false`; resolves every citation at the candidate SHA; logs gate stdout and
+stderr on failure; removes lanes created by a partially failed `init`; runs Black and Flake8 as
+gates; and resolves npm `.cmd` shims on Windows to `node <entry>.js` rather than a shell.
+
+Second-pass hardening after Codex's counter-review of the first: gates and bootstrap run with
+an allowlisted environment and under a process-tree-killing timeout wrapper; the test-only
+environment seams are refused without `--allow-test-seams`; shim resolution rejects traversal and
+checks the real path; citations must have an ordered line range; the state-record write is inside
+the `init` rollback; no promotion starts past the deadline. POLICY.md now states that **gates run
+candidate code outside every sandbox** and that the loop is not unattended in the security sense
+until bootstrap and gates run in a container — a limit no code change here removes.
+
+Third pass, after Codex's review of the second: a failed tree kill is a failed run (exit 125,
+not a silent wait); descendants are swept on every exit path, so a detached grandchild does not
+survive its parent's successful exit; the wrapper's grace is reserved inside the budget rather
+than added after the deadline; `.cmd` shims resolve only from npm's global prefix, never `PATH`;
+`doctor` refuses a redirected repository before touching it. Codex's two "failing tests" were
+not reproducible on the host (49/49, three runs) and are consistent with `taskkill` being denied
+inside Codex's own sandbox — which is exactly the silent-failure case the first fix removes.
+
+Fourth pass (Codex verdict: merge for supervised trials; three residual P2/P3s, all landed): a
+model turn that cannot fit in the remaining budget stops for a human instead of being clamped to
+1 ms and granted the grace; a sweep that cannot run or cannot kill fails the run even when the
+child exited cleanly; kill and snapshot helpers are individually bounded inside the grace;
+PowerShell runs with `PSModulePath` pinned to the inbox modules; `npm prefix -g` ignores ambient
+`NPM_CONFIG_*`.
+
+**Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
+`read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
+`Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the
+path policy runs only after the turn. The first review of the loop described the Claude lane as
+bounded; the counter-review showed it was not, and a system that is unattended must not depend
+on a control that a model can route around. The other hardening items were each a concrete way
+the first implementation could either not complete a round (no dependencies in the worktree)
+or could overstate what it had checked (schema, citations, deadline, lock, logs).
+
+**Alternatives considered**
+
+| Option                                             | Why not                                                                                   |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Keep Claude as default and widen protected paths   | Raises the cost of an escape; does not close it. Documented as insufficient in POLICY.md. |
+| Remove the Claude builder entirely                 | Useful when attended, and for an eventual external-sandbox run; keep it behind a flag.    |
+| `shell: true` to launch npm-installed CLIs         | Reintroduces argument interpolation the loop was written to avoid.                        |
+| Rely on lint-staged for Python formatting          | Coordinator commits use `--no-verify`; the hook never runs on candidate commits.          |
+| Declare readiness from unit tests of policy/claims | They never drove a round. Readiness is now defined by the fixture e2e suite (8 paths).    |
+| Add a token or monetary cap                        | Neither CLI exposes one the coordinator can enforce; documented as a known limit.         |
+
+---
+
 ## Open items — deliberately not done this session
 
 Recorded so they are not mistaken for oversights.

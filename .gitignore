@@ -61,3 +61,7 @@ scripts/_build_fsa_stats.py
 
 # Agent sandbox run output — 22 log files, regenerated on every run.
 services/agents/logs/
+
+# Claude/Codex coordinator runtime (normally stored beside the repo)
+.agent-loop/runtime/
+.agent-loop/*.lock
