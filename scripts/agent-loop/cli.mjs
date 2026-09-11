@@ -250,6 +250,40 @@ function codexSandboxResolves() {
   }
 }
 
+/**
+ * `--version` proves a CLI is installed, not that it can reach a model. The
+ * second real run stopped at the reviewer with "Not logged in": the desktop
+ * app keeps its own credentials and the terminal `claude` had never been
+ * signed in, while doctor showed every check green. Both CLIs expose a
+ * deterministic, offline status command; use those.
+ */
+function claudeLoggedIn() {
+  try {
+    const result = run('claude', ['auth', 'status'], {
+      echo: false,
+      timeout: 30_000,
+      killTree: false,
+    })
+    return JSON.parse(result.stdout).loggedIn === true
+  } catch {
+    return false
+  }
+}
+
+function codexLoggedIn() {
+  try {
+    const result = run('codex', ['login', 'status'], {
+      echo: false,
+      timeout: 30_000,
+      killTree: false,
+    })
+    return /^Logged in/m.test(`${result.stdout}
+${result.stderr}`)
+  } catch {
+    return false
+  }
+}
+
 function doctor() {
   const repo = repoRoot(defaultRepo)
   const configFile = path.join(repo, '.agent-loop', 'config.json')
@@ -265,7 +299,9 @@ function doctor() {
     ['black', commandExists('python', ['-m', 'black', '--version'])],
     ['flake8', commandExists('python', ['-m', 'flake8', '--version'])],
     ['claude', commandExists('claude', ['--version'])],
+    ['claude login (claude auth login)', claudeLoggedIn()],
     ['codex', commandExists('codex', ['--version'])],
+    ['codex login (codex login)', codexLoggedIn()],
     ['codex sandbox (workspace-write resolves)', codexSandboxResolves()],
     ['config', fs.existsSync(configFile)],
     ['review schema', fs.existsSync(schemaFile)],
@@ -500,6 +536,25 @@ function ensureBootstrapped({ repo, config, task, file, state }) {
   updateState(file, state, { bootstrapped: true, phase: 'ready' })
 }
 
+/**
+ * Whether a run can pick up at the reviewer step: the previous run had built a
+ * candidate and passed every gate, then stopped during (or just before) the
+ * review. Re-running the builder there would ask it to change a candidate that
+ * already satisfies the request — the second real run ended that way — so the
+ * candidate is reviewed as-is instead. The lane must still be exactly at that
+ * candidate; anything else means the state and the worktree disagree, and a
+ * fresh round is the safe path.
+ */
+function reviewResumable(state) {
+  if (state.phase !== 'reviewing' || !state.candidate || !state.gates?.passed) return false
+  const builderWorktree = state.worktrees[state.builder]
+  return (
+    head(builderWorktree) === state.candidate &&
+    branch(builderWorktree) === state.branches[state.builder] &&
+    statusPaths(builderWorktree).length === 0
+  )
+}
+
 function executeTask(flags) {
   const context = loadContext(flags.task)
   const { repo, config, task, file, state } = context
@@ -522,7 +577,10 @@ function executeTask(flags) {
   try {
     ensureBootstrapped(context)
 
-    while (state.round < config.maxRounds) {
+    let resumeReview = reviewResumable(state)
+    if (resumeReview) console.log(`Resuming round ${state.round} at review of ${state.candidate}`)
+
+    while (resumeReview || state.round < config.maxRounds) {
       // The cap is checked per round, not only at start: a slow round must
       // not be followed by another that begins after the deadline.
       if (remainingMs(state) <= 0) {
@@ -533,57 +591,73 @@ function executeTask(flags) {
         return
       }
 
-      state.round += 1
-      const round = state.round
       const builderWorktree = state.worktrees[state.builder]
-      ensureClean(builderWorktree)
-      if (branch(builderWorktree) !== state.branches[state.builder]) {
-        throw new Error('Builder worktree is on the wrong branch')
-      }
-
-      if (!turnFits(file, state, config, 'builder')) return
-      updateState(file, state, { phase: 'building' })
-      const previousFeedback = state.review?.next_instruction ?? 'None — this is the first round.'
-      const builderReport = runBuilder({
-        model: state.builder,
-        repo,
-        worktree: builderWorktree,
-        runtime: pathsFor(repo, config, task).runtime,
-        timeout: turnTimeout(state, config),
-        values: {
-          TASK: task,
-          BASELINE_SHA: state.candidate ?? state.baseline,
-          REQUEST: state.request,
-          REVIEW_FEEDBACK: previousFeedback,
-          ROUND: round,
-        },
-      })
-
-      const changedPaths = statusPaths(builderWorktree)
-      if (changedPaths.length === 0) throw new Error('Builder made no changes')
-      const policy = assertSafeBuilderPaths(changedPaths, config)
-      stagePaths(builderWorktree, changedPaths)
-      const candidate = commit(builderWorktree, `feat(agent-${task}): candidate round ${round}`)
-      updateState(file, state, {
-        candidate,
-        phase: 'testing',
-        humanGateReasons: policy.humanGatePaths.map((value) => `human-gated path: ${value}`),
-      })
-
-      const interpreter = venvPython(builderWorktree)
-      const gateResult = runGates(
-        builderWorktree,
-        config.gates,
-        path.join(pathsFor(repo, config, task).runtime, `round-${round}-gates`),
-        {
-          deadlineAt: state.deadlineAt,
-          pythonExecutable: fs.existsSync(interpreter) ? interpreter : undefined,
+      let round
+      let candidate
+      let builderReport
+      if (resumeReview) {
+        resumeReview = false
+        round = state.round
+        candidate = state.candidate
+        const reportFile = path.join(
+          pathsFor(repo, config, task).runtime,
+          `round-${round}-${state.builder}-build.txt`
+        )
+        builderReport = fs.existsSync(reportFile)
+          ? fs.readFileSync(reportFile, 'utf8').trim()
+          : '(builder report not on file — the run resumed at review)'
+      } else {
+        state.round += 1
+        round = state.round
+        ensureClean(builderWorktree)
+        if (branch(builderWorktree) !== state.branches[state.builder]) {
+          throw new Error('Builder worktree is on the wrong branch')
         }
-      )
-      updateState(file, state, { gates: gateResult })
-      if (!gateResult.passed) {
-        updateState(file, state, { phase: 'gates_failed' })
-        throw new Error(`A deterministic gate failed; inspect round-${round}-gates`)
+
+        if (!turnFits(file, state, config, 'builder')) return
+        updateState(file, state, { phase: 'building' })
+        const previousFeedback = state.review?.next_instruction ?? 'None — this is the first round.'
+        builderReport = runBuilder({
+          model: state.builder,
+          repo,
+          worktree: builderWorktree,
+          runtime: pathsFor(repo, config, task).runtime,
+          timeout: turnTimeout(state, config),
+          values: {
+            TASK: task,
+            BASELINE_SHA: state.candidate ?? state.baseline,
+            REQUEST: state.request,
+            REVIEW_FEEDBACK: previousFeedback,
+            ROUND: round,
+          },
+        })
+
+        const changedPaths = statusPaths(builderWorktree)
+        if (changedPaths.length === 0) throw new Error('Builder made no changes')
+        const policy = assertSafeBuilderPaths(changedPaths, config)
+        stagePaths(builderWorktree, changedPaths)
+        candidate = commit(builderWorktree, `feat(agent-${task}): candidate round ${round}`)
+        updateState(file, state, {
+          candidate,
+          phase: 'testing',
+          humanGateReasons: policy.humanGatePaths.map((value) => `human-gated path: ${value}`),
+        })
+
+        const interpreter = venvPython(builderWorktree)
+        const gateResult = runGates(
+          builderWorktree,
+          config.gates,
+          path.join(pathsFor(repo, config, task).runtime, `round-${round}-gates`),
+          {
+            deadlineAt: state.deadlineAt,
+            pythonExecutable: fs.existsSync(interpreter) ? interpreter : undefined,
+          }
+        )
+        updateState(file, state, { gates: gateResult })
+        if (!gateResult.passed) {
+          updateState(file, state, { phase: 'gates_failed' })
+          throw new Error(`A deterministic gate failed; inspect round-${round}-gates`)
+        }
       }
 
       if (!turnFits(file, state, config, 'reviewer')) return

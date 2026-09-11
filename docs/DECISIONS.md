@@ -2046,6 +2046,31 @@ functions to fix: Codex's Windows sandbox is off by default, so `workspace-write
 every patch was rejected. The coordinator now passes `-c windows.sandbox="unelevated"`, verified to
 deny writes outside the worktree and all outbound network; doctor checks the resolved mode.
 
+Second real run: bootstrap, the builder turn, the candidate commit and all ten gates (~1m50s) ran
+clean on a real change for the first time. The fifth stop was the first real reviewer turn:
+`claude --print --json-schema` validates its argument with a draft-07 validator and rejects the
+`"$schema": …draft/2020-12` URI the schema file declares. The coordinator now drops that key for
+the Claude call only (the file, Codex's `--output-schema` and the coordinator's own validator are
+unchanged) and reports an `is_error` envelope from the CLI as the CLI's message instead of a JSON
+parse failure. Neither path had coverage: the fixture suite replaces both CLIs.
+
+Sixth stop, on the resumed review: the terminal `claude` had never been signed in on the machine
+(its credential file held empty tokens; the desktop app authenticates separately), yet doctor showed
+every check green because `--version` proves installation, not access. Doctor now runs
+`claude auth status` and `codex login status` — both offline and deterministic — and fails on
+either.
+
+**The loop then closed a task end to end, unattended** (task `docstring-args-returns`, PR #29):
+Codex built at `bf488ce`, the coordinator committed candidate `08d9482`, ten gates passed in ~1m50s,
+Claude reviewed that exact SHA read-only and accepted with no findings, and the coordinator
+fast-forwarded to `05d9166`. One round, no disputes, no human gate. 6m40s of charged run time
+across the six stops. Two things the fixture suite could not have told us: the reviewer's
+`--allowedTools` denies `Bash(python -m black …)` and an `awk` line-length check, so the reviewer
+reasoned about formatting rather than measuring it (the `python format` gate had already passed
+outside the sandbox, so this cost nothing here); and Black hangs inside Codex's unelevated sandbox —
+multiprocessing appears to be blocked — so the builder cannot self-check formatting and correctly
+reported that as incomplete rather than claiming a pass.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the
