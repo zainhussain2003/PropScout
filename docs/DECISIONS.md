@@ -2046,6 +2046,14 @@ functions to fix: Codex's Windows sandbox is off by default, so `workspace-write
 every patch was rejected. The coordinator now passes `-c windows.sandbox="unelevated"`, verified to
 deny writes outside the worktree and all outbound network; doctor checks the resolved mode.
 
+Second real run: bootstrap, the builder turn, the candidate commit and all ten gates (~1m50s) ran
+clean on a real change for the first time. The fifth stop was the first real reviewer turn:
+`claude --print --json-schema` validates its argument with a draft-07 validator and rejects the
+`"$schema": …draft/2020-12` URI the schema file declares. The coordinator now drops that key for
+the Claude call only (the file, Codex's `--output-schema` and the coordinator's own validator are
+unchanged) and reports an `is_error` envelope from the CLI as the CLI's message instead of a JSON
+parse failure. Neither path had coverage: the fixture suite replaces both CLIs.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the
