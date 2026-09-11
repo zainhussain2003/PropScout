@@ -2054,6 +2054,12 @@ the Claude call only (the file, Codex's `--output-schema` and the coordinator's 
 unchanged) and reports an `is_error` envelope from the CLI as the CLI's message instead of a JSON
 parse failure. Neither path had coverage: the fixture suite replaces both CLIs.
 
+Sixth stop, on the resumed review: the terminal `claude` had never been signed in on the machine
+(its credential file held empty tokens; the desktop app authenticates separately), yet doctor showed
+every check green because `--version` proves installation, not access. Doctor now runs
+`claude auth status` and `codex login status` — both offline and deterministic — and fails on
+either.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the
