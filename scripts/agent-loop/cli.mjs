@@ -48,6 +48,20 @@ const defaultRepo = process.env.AGENT_LOOP_REPO
  */
 const CLAUDE_BUILDER_ACKNOWLEDGEMENT = 'acknowledge-unsandboxed-claude-builder'
 
+/**
+ * The flag that permits the two test-only environment seams
+ * (`AGENT_LOOP_REPO`, `AGENT_LOOP_FAKE_AGENTS`). Without it, every command
+ * refuses to start while either variable is set: a seam left exported in a
+ * shell must not silently redirect a real run to another repository or
+ * replace both models with local scripts. `doctor` is exempt so it can
+ * report the condition.
+ */
+const TEST_SEAMS_FLAG = 'allow-test-seams'
+
+function activeTestSeams() {
+  return ['AGENT_LOOP_REPO', 'AGENT_LOOP_FAKE_AGENTS'].filter((name) => process.env[name])
+}
+
 function parseArgs(argv) {
   const [command = 'help', ...rest] = argv
   const flags = {}
@@ -214,6 +228,12 @@ function doctor() {
   console.log(
     'NOTE  the loop has no token or monetary cap; only round, turn and task time caps are enforced'
   )
+  console.log(
+    'NOTE  doctor checks presence and version only; a CLI release that changes sandbox or permission semantics needs a manual review of agents.mjs'
+  )
+  console.log(
+    'NOTE  gates and bootstrap run candidate code outside the builder sandbox with an allowlisted environment; use a container for unattended runs'
+  )
   if (checks.some(([, ok]) => !ok)) process.exitCode = 1
 }
 
@@ -264,6 +284,19 @@ function init(flags) {
       createWorktree(repo, worktrees[lane], branches[lane], baseline)
       created.push(lane)
     }
+    writeJson(
+      file,
+      initialState({
+        task,
+        flags,
+        builder,
+        builderSandboxed,
+        baseline,
+        branches,
+        worktrees,
+        config,
+      })
+    )
   } catch (error) {
     const problems = created.flatMap((lane) =>
       removeWorktree(repo, worktrees[lane], branches[lane])
@@ -274,8 +307,31 @@ function init(flags) {
     throw new Error(`init failed: ${error.message}.${cleanup}`)
   }
 
+  console.log(`Created ${task} from ${baseline}`)
+  console.log(`Coordinator: ${worktrees.coordinator}`)
+  console.log(
+    `Builder: ${builder}${builderSandboxed ? '' : ' (UNSANDBOXED — acknowledged)'} in ${worktrees[builder]}`
+  )
+}
+
+/**
+ * The state record is written inside the same rollback as lane creation: a
+ * failed write (permissions, disk, a locked runtime directory) would
+ * otherwise leave three worktrees with no record — exactly the orphan the
+ * rollback exists to prevent.
+ */
+function initialState({
+  task,
+  flags,
+  builder,
+  builderSandboxed,
+  baseline,
+  branches,
+  worktrees,
+  config,
+}) {
   const now = new Date().toISOString()
-  const state = {
+  return {
     version: 2,
     task,
     request: flags.request.trim(),
@@ -296,12 +352,6 @@ function init(flags) {
     gates: null,
     humanGateReasons: [],
   }
-  writeJson(file, state)
-  console.log(`Created ${task} from ${baseline}`)
-  console.log(`Coordinator: ${worktrees.coordinator}`)
-  console.log(
-    `Builder: ${builder}${builderSandboxed ? '' : ' (UNSANDBOXED — acknowledged)'} in ${worktrees[builder]}`
-  )
 }
 
 function updateState(file, state, values) {
@@ -497,6 +547,16 @@ function executeTask(flags) {
       }
       updateState(file, state, { review, reviewErrors: [] })
 
+      // The reviewer's turn was bounded, but claim generation, the metadata
+      // commit and promotion were not; do not begin them past the deadline.
+      if (remainingMs(state) <= 0) {
+        updateState(file, state, {
+          phase: 'human_required',
+          humanGateReasons: [...state.humanGateReasons, 'time cap reached after review'],
+        })
+        return
+      }
+
       if (review.verdict === 'changes_requested') {
         state.disputes += 1
         if (state.disputes >= 2) {
@@ -624,6 +684,18 @@ Commands:
 
 try {
   const { command, flags } = parseArgs(process.argv.slice(2))
+  const seams = activeTestSeams()
+  if (
+    seams.length &&
+    command !== 'doctor' &&
+    command !== 'help' &&
+    flags[TEST_SEAMS_FLAG] !== true
+  ) {
+    throw new Error(
+      `${seams.join(' and ')} ${seams.length > 1 ? 'are' : 'is'} set; these are test-only seams. ` +
+        `Unset them for a real run, or pass --${TEST_SEAMS_FLAG} from a test harness.`
+    )
+  }
   if (command === 'doctor') doctor()
   else if (command === 'init') init(flags)
   else if (command === 'run') executeTask(flags)

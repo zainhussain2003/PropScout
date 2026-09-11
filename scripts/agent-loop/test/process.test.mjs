@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createRequire } from 'node:module'
 import { run } from '../lib/process.mjs'
+
+const require = createRequire(import.meta.url)
 
 test('a failing command attaches its captured stdout and stderr to the error', () => {
   // The gate runner writes `error.stack` to the log when a gate fails. Before
@@ -72,4 +75,89 @@ test('resolves an npm .cmd shim to node plus the script it wraps, without a shel
 test('does not resolve a command that has no shim', async () => {
   const { resolveShim } = await import('../lib/process.mjs')
   assert.equal(resolveShim('definitely-not-a-real-command-xyz', []), null)
+})
+
+test('rejects a shim whose target escapes node_modules or traverses upward', async () => {
+  const { resolveShim } = await import('../lib/process.mjs')
+  const fs = await import('node:fs')
+  const os = await import('node:os')
+  const path = await import('node:path')
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'shim-'))
+  fs.mkdirSync(path.join(bin, 'node_modules'), { recursive: true })
+  const evil = path.join(os.tmpdir(), 'evil.js')
+  fs.writeFileSync(evil, 'process.stdout.write("pwned")')
+  const cases = {
+    traversal: '"%_prog%"  "%dp0%\\node_modules\\..\\..\\evil.js" %*\r\n',
+    outside: '"%_prog%"  "%dp0%\\evil.js" %*\r\n',
+    absolute: `"%_prog%"  "${evil}" %*\r\n`,
+  }
+  for (const [name, line] of Object.entries(cases)) {
+    fs.writeFileSync(path.join(bin, `${name}.cmd`), line)
+    assert.equal(resolveShim(name, [bin]), null, `${name} shim must not resolve`)
+  }
+})
+
+test('a timeout kills the whole process tree, not only the direct child', () => {
+  // The direct child spawns a *detached* grandchild — the one case Node's own
+  // Windows job object does not cover (a plain grandchild already dies with
+  // its parent there). Without the tree-runner wrapper this grandchild
+  // survives the timeout; verified by running the same fixture with
+  // `killTree: false`.
+  const fs = require('node:fs')
+  const os = require('node:os')
+  const path = require('node:path')
+  const marker = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'tree-')), 'grandchild.pid')
+  const grandchild = `require('node:fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid)); setInterval(() => {}, 1000)`
+  const child = `const { spawn } = require('node:child_process'); spawn(process.execPath, ['-e', ${JSON.stringify(grandchild)}], { stdio: 'ignore', detached: true }).unref(); setInterval(() => {}, 1000)`
+  let caught
+  try {
+    run(process.execPath, ['-e', child], { echo: false, timeout: 1500 })
+  } catch (error) {
+    caught = error
+  }
+  assert.ok(caught?.timedOut, 'expected a timeout')
+  const pid = Number(fs.readFileSync(marker, 'utf8'))
+  assert.ok(pid > 0)
+  let alive = true
+  try {
+    process.kill(pid, 0)
+  } catch {
+    alive = false
+  }
+  if (alive) {
+    try {
+      process.kill(pid, 'SIGKILL')
+    } catch {
+      // ignore
+    }
+  }
+  assert.equal(alive, false, `grandchild ${pid} survived the timeout`)
+})
+
+test('isolateEnv withholds everything but the allowlist and sets CI', async () => {
+  const { isolatedEnvironment } = await import('../lib/process.mjs')
+  const env = isolatedEnvironment({
+    PATH: 'x',
+    Path: 'y',
+    ANTHROPIC_API_KEY: 'secret',
+    GH_TOKEN: 'secret',
+    SUPABASE_SERVICE_ROLE_KEY: 'secret',
+    NODE_OPTIONS: '--require evil',
+    HOME: '/h',
+  })
+  assert.equal(env.ANTHROPIC_API_KEY, undefined)
+  assert.equal(env.GH_TOKEN, undefined)
+  assert.equal(env.SUPABASE_SERVICE_ROLE_KEY, undefined)
+  assert.equal(env.NODE_OPTIONS, undefined)
+  assert.equal(env.HOME, '/h')
+  assert.equal(env.PATH, 'x')
+  assert.equal(env.Path, 'y')
+  assert.equal(env.CI, '1')
+
+  const result = run(
+    process.execPath,
+    ['-e', 'process.stdout.write(String(process.env.AGENT_LOOP_PROBE ?? "absent"))'],
+    { echo: false, isolateEnv: true, env: {} }
+  )
+  assert.equal(result.stdout, 'absent')
 })

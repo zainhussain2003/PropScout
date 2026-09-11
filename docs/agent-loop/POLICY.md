@@ -22,19 +22,45 @@ Migration files may be drafted and reviewed locally, but their presence marks th
 - Three Git worktrees with one writable owner per lane.
 - A runtime mailbox outside all worktrees.
 - A single-process lock held by `run`, `approve` and `reject`, with round, per-turn and task time
-  caps. The task cap is hard: a gate or model turn is cut off at the deadline, and no round starts
-  after it.
+  caps. Every model turn and gate runs under a wrapper that kills its whole process tree on
+  timeout (including detached descendants, which Node's own child timeout does not reach); the
+  turn and gate timeouts are derived from the remaining task budget; no round, claim generation
+  or promotion starts after the deadline.
 - Explicit-path staging; never `git add -A`.
 - Protected coordinator, prompt, schema, CI, instruction, dependency-manifest and test-harness
   paths (`package.json`, lock files, `conftest.py`, `requirements.txt`, lint-staged and husky
   configuration).
 - Reviewer output validated against the JSON schema — including `additionalProperties: false` —
-  and every citation resolved at the candidate SHA before the review is recorded or fed back.
-- Configured bootstrap and gates execute as argument arrays, not interpolated shell commands.
+  and every citation resolved at the candidate SHA, with an ordered line range, before the review
+  is recorded or fed back. Resolution proves the location exists; it does not prove the cited
+  lines support the claim. That remains the human reader's check.
+- Configured bootstrap and gates execute as argument arrays, not interpolated shell commands,
+  with an allowlisted environment: the coordinator's API keys, tokens and `NODE_OPTIONS` are not
+  visible to candidate code. On Windows, npm `.cmd` shims are resolved to their `node_modules`
+  entry with traversal rejected and the real path checked, never through a shell.
+- The test-only seams (`AGENT_LOOP_REPO`, `AGENT_LOOP_FAKE_AGENTS`) are refused by every command
+  except `doctor` unless `--allow-test-seams` is passed; a seam left exported in a shell cannot
+  redirect or fake a real run.
 - Gate failures are logged with the command's stdout and stderr, not only the exit code.
-- A partially failed `init` removes the lanes it created; it never leaves orphaned branches or
-  worktrees without a task record.
+- A partially failed `init` — including a failed state-record write — removes the lanes it
+  created; it never leaves orphaned branches or worktrees without a task record.
 - Coordinator promotion is `git merge --ff-only` and occurs only after acceptance.
+
+## Gates run candidate code outside every sandbox
+
+The builder's turn is sandboxed (Codex) or allowlisted (Claude). The gates are neither. After the
+candidate commit, the **coordinator itself** runs `npm test`, `vitest`, `pytest`, Black and
+Flake8 on the candidate — in its own process tree, with the network and the filesystem. A
+candidate can put arbitrary code in an ordinary test file, and that code runs when the gate does.
+
+What the coordinator does about it, in code: the gate environment is an allowlist (no API keys,
+tokens, git credential helpers or `NODE_OPTIONS` from the operator's shell), and the gate's
+process tree is killed at its timeout. What it does not do: stop that code from reaching the
+network, reading the operator's home directory, or touching the owner checkout. Those need an
+OS or container boundary around the bootstrap and gate steps — Docker or WSL2 with networking
+disabled and only the candidate worktree mounted. **Until that exists, a run is not unattended in
+the security sense, whichever builder is chosen.** The Codex sandbox covers the turn, not the
+round.
 
 ## Builder lanes are not equally sandboxed
 
@@ -85,19 +111,29 @@ sandbox covers the same role without that gap.)
 
 ## Readiness
 
-The loop is considered operational only once the end-to-end suite
+Two different claims, kept separate:
+
+**Coordinator control flow is verified** once the end-to-end suite
 (`scripts/agent-loop/test/e2e.test.mjs`) passes: it drives the real coordinator through
 init → build → candidate commit → gates → review → promotion, plus the rejection, approval,
-blocked-approval, refused-Claude-builder, partial-init and invalid-citation paths, against a
-disposable repository with fake agents. Unit tests of the policy and claim modules alone do not
-establish readiness, and were the only evidence before this suite existed.
+blocked-approval, refused-Claude-builder, partial-init (lane and state-write failure),
+refused-test-seam and invalid-citation paths, against a disposable repository with fake agents.
+Unit tests of the policy and claim modules alone do not establish this, and were the only
+evidence before the suite existed.
 
-A real first task should still be harmless and observed: bootstrap and gate timings on this
-machine are not exercised by the fixture (its bootstrap is empty and its gate is trivial).
+**The loop is operational** only after a harmless task has been run with the real Codex CLI, the
+real bootstrap and all ten real gates, observed end to end, with the candidate promoted or
+rejected through the human gate. The fixture does not exercise: real CLI invocation and
+authentication, sandbox behaviour or network denial, `npm ci` / venv / pip resolution, real gate
+timings, candidate-controlled code inside a gate, environment leakage, a concurrent `run` against
+`approve`/`reject`, crash recovery mid-commit, or a real migration path. Until that run has
+happened, the loop is suitable for supervised trials only.
 
 No prompt is a security boundary. The driver therefore combines tool restrictions, filesystem
 separation, path policy, OS-sandboxed Codex execution, deterministic gates, and human-owned
 promotion — and states plainly where one lane falls short of that.
 
-If a CLI version changes its permission semantics, `agent:doctor` must fail or the invocation must
-be reviewed before unattended use resumes.
+`agent:doctor` checks that each CLI is present and answers `--version`; it cannot detect a
+release that changes sandbox or permission semantics. When either CLI is upgraded, the invocation
+in `scripts/agent-loop/lib/agents.mjs` must be re-read against that release's documentation before
+unattended use resumes.

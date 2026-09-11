@@ -48,10 +48,15 @@ export function runGates(worktree, gates, logDirectory, options = {}) {
     const timeout = Math.min(gate.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS, remainingMs)
 
     try {
+      // Gates run candidate-authored code in the coordinator's own process
+      // tree, outside the builder's sandbox. Withhold the coordinator's
+      // environment (API keys, tokens) from it; the tree-kill wrapper in
+      // `run` bounds its lifetime. This is damage limitation, not a sandbox.
       const result = run(command, gate.args, {
         cwd: path.join(worktree, gate.cwd ?? '.'),
         echo: false,
         timeout,
+        isolateEnv: true,
       })
       fs.writeFileSync(logFile, `${result.stdout}${result.stderr}`)
       results.push({

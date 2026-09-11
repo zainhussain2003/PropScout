@@ -137,7 +137,7 @@ function finding(overrides = {}) {
 }
 
 function coordinator(repo, fakes, args, extraEnv = {}) {
-  return run(node, [cli, ...args], {
+  return run(node, [cli, ...args, '--allow-test-seams'], {
     cwd: repo,
     echo: false,
     env: { AGENT_LOOP_REPO: repo, AGENT_LOOP_FAKE_AGENTS: fakes, ...extraEnv },
@@ -390,6 +390,50 @@ test('a partially failed init removes the lanes it had created', () => {
     !fs.existsSync(path.join(root, '.rt', 'e2e-partial', 'state.json')),
     'no state for a failed init'
   )
+})
+
+test('an init whose state write fails removes the lanes it had created', () => {
+  const { root, repo } = fixtureRepo()
+  const fakes = fakeAgents(root, [])
+  // Make the runtime directory for this task a regular file, so mkdir for
+  // state.json fails after all three worktrees exist.
+  fs.mkdirSync(path.join(root, '.rt'), { recursive: true })
+  fs.writeFileSync(path.join(root, '.rt', 'e2e-statefail'), 'not a directory')
+  assert.throws(
+    () =>
+      coordinator(repo, fakes, [
+        'init',
+        '--task',
+        'e2e-statefail',
+        '--request',
+        'Init whose state write fails',
+      ]),
+    /init failed/
+  )
+  const branches = git(repo, ['branch', '--list', 'agent/e2e-statefail/*'], { echo: false })
+  assert.equal(branches, '', 'no orphaned branches')
+  for (const lane of ['coordinator', 'claude', 'codex']) {
+    assert.ok(!fs.existsSync(path.join(root, '.wt', 'e2e-statefail', lane)), `${lane} lane removed`)
+  }
+})
+
+test('the test-only environment seams are refused without --allow-test-seams', () => {
+  const { root, repo } = fixtureRepo()
+  const fakes = fakeAgents(root, [])
+  let caught
+  try {
+    // Same env the harness uses, but without the flag the harness adds.
+    run(node, [cli, 'init', '--task', 'e2e-seams', '--request', 'Should be refused'], {
+      cwd: repo,
+      echo: false,
+      env: { AGENT_LOOP_REPO: repo, AGENT_LOOP_FAKE_AGENTS: fakes },
+    })
+  } catch (error) {
+    caught = error
+  }
+  assert.ok(caught, 'expected the coordinator to refuse')
+  assert.match(caught.stderr, /AGENT_LOOP_REPO and AGENT_LOOP_FAKE_AGENTS are set/)
+  assert.ok(!fs.existsSync(path.join(root, '.wt', 'e2e-seams')), 'nothing was created')
 })
 
 test('a review citing a path that does not exist at the candidate is rejected', () => {

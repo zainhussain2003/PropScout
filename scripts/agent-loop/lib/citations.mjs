@@ -25,6 +25,16 @@ export function validateCitations(worktree, sha, findings) {
       const label = `findings[${findingIndex}].citations[${citationIndex}]`
       const spec = `${sha}:${citation.path}`
 
+      // The schema bounds each line number on its own; it cannot express
+      // that the range is ordered. `start_line: 999, end_line: 1` would
+      // otherwise pass here and be fed back to the builder.
+      if (citation.start_line < 1 || citation.end_line < citation.start_line) {
+        errors.push(
+          `${label}: line range ${citation.start_line}-${citation.end_line} is not ordered (start_line must be >= 1 and <= end_line)`
+        )
+        return
+      }
+
       let content
       try {
         content = git(worktree, ['show', spec], { echo: false, trim: false })

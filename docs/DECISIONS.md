@@ -2015,6 +2015,14 @@ derived from the remaining budget, and gates past the deadline are skipped); tak
 stderr on failure; removes lanes created by a partially failed `init`; runs Black and Flake8 as
 gates; and resolves npm `.cmd` shims on Windows to `node <entry>.js` rather than a shell.
 
+Second-pass hardening after Codex's counter-review of the first: gates and bootstrap run with
+an allowlisted environment and under a process-tree-killing timeout wrapper; the test-only
+environment seams are refused without `--allow-test-seams`; shim resolution rejects traversal and
+checks the real path; citations must have an ordered line range; the state-record write is inside
+the `init` rollback; no promotion starts past the deadline. POLICY.md now states that **gates run
+candidate code outside every sandbox** and that the loop is not unattended in the security sense
+until bootstrap and gates run in a container — a limit no code change here removes.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the

@@ -1325,7 +1325,8 @@ propscout/
 │   │   │   ├── bootstrap.mjs          # npm ci + per-worktree Python venv before round 1
 │   │   │   ├── citations.mjs          # Resolve review citations at the candidate SHA
 │   │   │   ├── gates.mjs              # Deadline-bounded gate runner with stdout/stderr logs
-│   │   │   ├── process.mjs            # spawnSync wrapper (no shell; resolves npm .cmd shims on Windows)
+│   │   │   ├── process.mjs            # spawnSync wrapper (no shell; env allowlist; hardened npm .cmd shim resolution)
+│   │   │   ├── tree-runner.mjs        # Timeout wrapper that kills the whole process tree (not importable)
 │   │   │   ├── schema.mjs             # JSON Schema subset validator for reviews
 │   │   │   └── claims.mjs, git.mjs, policy.mjs  # claim records, git helpers, path policy
 │   │   └── test/                      # node --test — e2e.test.mjs drives a full loop with fake agents

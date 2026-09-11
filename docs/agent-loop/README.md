@@ -44,6 +44,10 @@ shim and runs its `.js` entry with the current Node binary instead. If `agent:do
 `FAIL codex` while `codex --version` works in a terminal, the shim format has changed and
 `resolveShim` needs updating.
 
+Gates and bootstrap run with an allowlisted environment (`isolatedEnvironment` in
+`process.mjs`): if a gate needs a variable that is not on the list, add it there deliberately
+rather than exporting it — the list exists to keep the operator's keys out of candidate code.
+
 ## Start a feature
 
 Task names are lowercase slugs. Quote the owner request so it is stored exactly.

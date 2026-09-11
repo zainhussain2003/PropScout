@@ -60,3 +60,14 @@ test('rejects a nonexistent file with a plain message, not a git stack trace', (
   assert.equal(errors.length, 1)
   assert.doesNotMatch(errors[0], /fatal:/)
 })
+
+test('rejects an unordered or zero-based line range the schema cannot express', () => {
+  const { repo, second } = tempRepo()
+  const errors = validateCitations(repo, second, [
+    { citations: [{ path: 'src/a.ts', start_line: 3, end_line: 1 }] },
+    { citations: [{ path: 'src/a.ts', start_line: 0, end_line: 1 }] },
+  ])
+  assert.equal(errors.length, 2)
+  assert.match(errors[0], /3-1 is not ordered/)
+  assert.match(errors[1], /0-1 is not ordered/)
+})
