@@ -60,8 +60,14 @@ export function runBuilder({ model, repo, worktree, runtime, values, timeout }) 
         '--ephemeral',
         '--sandbox',
         'workspace-write',
-        '--ask-for-approval',
-        'never',
+        // `codex exec` is non-interactive: a command the sandbox blocks fails
+        // rather than prompting, so no approval flag exists or is needed.
+        // The operator's ~/.codex/config.toml enables plugins (github, browser,
+        // computer-use) and its execpolicy .rules could widen what may run;
+        // neither may reach a lane, so the coordinator's flags are the whole
+        // policy. Auth still comes from CODEX_HOME.
+        '--ignore-user-config',
+        '--ignore-rules',
         '--output-last-message',
         outputFile,
         '--cd',
@@ -116,8 +122,14 @@ export function runReviewer({ model, repo, worktree, runtime, values, timeout })
         '--ephemeral',
         '--sandbox',
         'read-only',
-        '--ask-for-approval',
-        'never',
+        // `codex exec` is non-interactive: a command the sandbox blocks fails
+        // rather than prompting, so no approval flag exists or is needed.
+        // The operator's ~/.codex/config.toml enables plugins (github, browser,
+        // computer-use) and its execpolicy .rules could widen what may run;
+        // neither may reach a lane, so the coordinator's flags are the whole
+        // policy. Auth still comes from CODEX_HOME.
+        '--ignore-user-config',
+        '--ignore-rules',
         '--output-schema',
         schemaFile,
         '--output-last-message',
