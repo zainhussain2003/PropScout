@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "task": "docstring-args-returns",
+  "request": "In services/calc-engine/calculations/, five public functions have docstrings with no Args: or Returns: sections: deal_score.severe_ceiling, deal_score.to_display_score, investment.calculate_cash_flow_monthly, investment.calculate_cash_on_cash, investment.calculate_break_even_rent. Complete each docstring with Args: and Returns: sections in the format shown in CLAUDE.md section 7, keeping the existing summary text. Change nothing else: no logic, signatures, constants, tests, or other files.",
+  "builder": "codex",
+  "builder_sandboxed": true,
+  "reviewer": "claude",
+  "baseline_sha": "bf488ceef8a7a45dd2b4f8ddd474cb130b15db29",
+  "accepted_sha": "08d9482b1c4eefd521e7b4d7238195d671ba18eb",
+  "rounds": 1,
+  "gates": [
+    {
+      "name": "web typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:08.763Z",
+      "durationMs": 5785
+    },
+    {
+      "name": "api typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:14.548Z",
+      "durationMs": 2679
+    },
+    {
+      "name": "web lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:17.227Z",
+      "durationMs": 14843
+    },
+    {
+      "name": "api lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:32.070Z",
+      "durationMs": 1997
+    },
+    {
+      "name": "python format",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\docstring-args-returns\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:34.067Z",
+      "durationMs": 1749
+    },
+    {
+      "name": "python lint",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\docstring-args-returns\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:35.816Z",
+      "durationMs": 1299
+    },
+    {
+      "name": "web tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:20:37.115Z",
+      "durationMs": 39757
+    },
+    {
+      "name": "api tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:21:16.872Z",
+      "durationMs": 28336
+    },
+    {
+      "name": "calc engine",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\docstring-args-returns\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:21:45.208Z",
+      "durationMs": 7621
+    },
+    {
+      "name": "scrapers",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\docstring-args-returns\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-11T16:21:52.829Z",
+      "durationMs": 2341
+    }
+  ],
+  "verdict": "accepted",
+  "summary": "Candidate adds only Args:/Returns: sections to the five requested docstrings (deal_score.severe_ceiling, deal_score.to_display_score, investment.calculate_cash_flow_monthly, investment.calculate_cash_on_cash, investment.calculate_break_even_rent) in services/calc-engine/calculations/deal_score.py and investment.py. Diff stat confirms no other files touched (2 files, 41 insertions, 1 deletion, all within docstrings). Verified severe_ceiling's documented score ceilings (95/40/30/20/10) against the actual _SEVERE_GATE_BASE/_STEP/_FLOOR arithmetic for flag counts 0 through 5+ — all correct. Verified the 'insurance_value: Unused; insurance is calculated from property_value' claim against both function bodies — insurance_value is indeed never referenced in either function; only property_value * INSURANCE_RATE is used, so this documents a genuine pre-existing quirk accurately rather than introducing a new claim. Existing summary text preserved verbatim in all five docstrings. No logic, signatures, constants, or tests changed. Builder's noted Black-stalled issue is immaterial: Black does not rewrap docstring prose, and no added line exceeds 88 columns, so there is no formatting risk from this diff.",
+  "accepted_at": "2026-09-11T20:27:13.896Z"
+}
