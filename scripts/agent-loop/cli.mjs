@@ -250,6 +250,40 @@ function codexSandboxResolves() {
   }
 }
 
+/**
+ * `--version` proves a CLI is installed, not that it can reach a model. The
+ * second real run stopped at the reviewer with "Not logged in": the desktop
+ * app keeps its own credentials and the terminal `claude` had never been
+ * signed in, while doctor showed every check green. Both CLIs expose a
+ * deterministic, offline status command; use those.
+ */
+function claudeLoggedIn() {
+  try {
+    const result = run('claude', ['auth', 'status'], {
+      echo: false,
+      timeout: 30_000,
+      killTree: false,
+    })
+    return JSON.parse(result.stdout).loggedIn === true
+  } catch {
+    return false
+  }
+}
+
+function codexLoggedIn() {
+  try {
+    const result = run('codex', ['login', 'status'], {
+      echo: false,
+      timeout: 30_000,
+      killTree: false,
+    })
+    return /^Logged in/m.test(`${result.stdout}
+${result.stderr}`)
+  } catch {
+    return false
+  }
+}
+
 function doctor() {
   const repo = repoRoot(defaultRepo)
   const configFile = path.join(repo, '.agent-loop', 'config.json')
@@ -265,7 +299,9 @@ function doctor() {
     ['black', commandExists('python', ['-m', 'black', '--version'])],
     ['flake8', commandExists('python', ['-m', 'flake8', '--version'])],
     ['claude', commandExists('claude', ['--version'])],
+    ['claude login (claude auth login)', claudeLoggedIn()],
     ['codex', commandExists('codex', ['--version'])],
+    ['codex login (codex login)', codexLoggedIn()],
     ['codex sandbox (workspace-write resolves)', codexSandboxResolves()],
     ['config', fs.existsSync(configFile)],
     ['review schema', fs.existsSync(schemaFile)],

@@ -35,7 +35,10 @@ npm.cmd run agent:lint-claims
 ```
 
 `agent:doctor` verifies Git, Node, npm, Python, Black, Flake8, Claude Code, Codex, configuration,
-and schemas, and warns if a test-only environment override is set. It does not create worktrees or
+and schemas, and warns if a test-only environment override is set. It also checks that **both CLIs
+are signed in** (`claude auth status`, `codex login status`) — the Claude desktop app keeps its own
+credentials and does not sign in the terminal `claude`; run `claude auth login` once if that check
+fails. It does not create worktrees or
 call either model.
 
 On Windows the coordinator never launches a command through a shell. npm-installed CLIs such as
