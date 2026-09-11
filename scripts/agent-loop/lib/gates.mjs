@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { run } from './process.mjs'
+import { budgetedTimeout, run } from './process.mjs'
 
 const DEFAULT_GATE_TIMEOUT_MS = 30 * 60 * 1000
 
@@ -37,15 +37,16 @@ export function runGates(worktree, gates, logDirectory, options = {}) {
         ? options.pythonExecutable
         : gate.command
 
+    // The gate's timeout plus the tree wrapper's grace must fit in what is
+    // left; the grace is reserved inside the budget, not added after it.
     const remainingMs = deadline === null ? Infinity : deadline - startedMs
-    if (remainingMs <= 0) {
+    const timeout = budgetedTimeout(remainingMs, gate.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS)
+    if (timeout <= 0) {
       const error = `skipped: task deadline reached before "${gate.name}" started`
       fs.writeFileSync(logFile, `${error}\n`)
       results.push({ name: gate.name, command, status: 'skipped', startedAt, durationMs: 0, error })
       return { passed: false, results }
     }
-
-    const timeout = Math.min(gate.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS, remainingMs)
 
     try {
       // Gates run candidate-authored code in the coordinator's own process

@@ -2023,6 +2023,14 @@ the `init` rollback; no promotion starts past the deadline. POLICY.md now states
 candidate code outside every sandbox** and that the loop is not unattended in the security sense
 until bootstrap and gates run in a container — a limit no code change here removes.
 
+Third pass, after Codex's review of the second: a failed tree kill is a failed run (exit 125,
+not a silent wait); descendants are swept on every exit path, so a detached grandchild does not
+survive its parent's successful exit; the wrapper's grace is reserved inside the budget rather
+than added after the deadline; `.cmd` shims resolve only from npm's global prefix, never `PATH`;
+`doctor` refuses a redirected repository before touching it. Codex's two "failing tests" were
+not reproducible on the host (49/49, three runs) and are consistent with `taskkill` being denied
+inside Codex's own sandbox — which is exactly the silent-failure case the first fix removes.
+
 **Why.** The Codex lanes run under an OS-level sandbox (`--sandbox workspace-write` /
 `read-only`, networking off). The Claude builder’s tool allowlist is not a boundary:
 `Bash(npm run *)` and `Bash(python -m pytest *)` execute files the builder can `Write`, and the

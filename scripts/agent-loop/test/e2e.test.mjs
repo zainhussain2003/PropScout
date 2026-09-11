@@ -436,6 +436,27 @@ test('the test-only environment seams are refused without --allow-test-seams', (
   assert.ok(!fs.existsSync(path.join(root, '.wt', 'e2e-seams')), 'nothing was created')
 })
 
+test('doctor refuses a redirected repository before touching it', () => {
+  const { root, repo } = fixtureRepo()
+  // A hostile AGENT_LOOP_REPO could carry git configuration that runs code
+  // on `git status`; doctor must not consult it without the test flag.
+  fs.writeFileSync(path.join(repo, '.git', 'touched'), '')
+  git(repo, ['config', 'core.fsmonitor', 'this-would-run'], { echo: false })
+  let caught
+  try {
+    run(node, [cli, 'doctor'], {
+      cwd: root,
+      echo: false,
+      env: { AGENT_LOOP_REPO: repo },
+    })
+  } catch (error) {
+    caught = error
+  }
+  assert.ok(caught, 'doctor should exit non-zero')
+  assert.match(caught.stdout, /FAIL\s+AGENT_LOOP_REPO is set/)
+  assert.doesNotMatch(caught.stdout, /PASS\s+git/, 'no checks ran')
+})
+
 test('a review citing a path that does not exist at the candidate is rejected', () => {
   const { root, repo } = fixtureRepo()
   const fakes = fakeAgents(root, [

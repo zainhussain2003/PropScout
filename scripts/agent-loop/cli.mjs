@@ -20,7 +20,7 @@ import {
   statusPaths,
 } from './lib/git.mjs'
 import { assertSafeBuilderPaths, isInside } from './lib/policy.mjs'
-import { commandExists } from './lib/process.mjs'
+import { budgetedTimeout, commandExists } from './lib/process.mjs'
 import { assertMatchesSchema } from './lib/schema.mjs'
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -150,10 +150,13 @@ function remainingMs(state) {
   return new Date(state.deadlineAt).getTime() - Date.now()
 }
 
-/** Time a single model turn may take: the per-turn cap or what is left, whichever is smaller. */
+/**
+ * Time a single model turn may take: the per-turn cap or what is left, whichever
+ * is smaller, with the tree wrapper's grace reserved inside the remainder.
+ */
 function turnTimeout(state, config) {
   const cap = (config.turnMinutes ?? 45) * 60_000
-  return Math.min(cap, remainingMs(state))
+  return Math.max(1, budgetedTimeout(remainingMs(state), cap))
 }
 
 /**
@@ -682,19 +685,22 @@ Commands:
   gates`)
 }
 
-try {
+function main() {
   const { command, flags } = parseArgs(process.argv.slice(2))
+  // Checked before any repository or Git access: with AGENT_LOOP_REPO set,
+  // even `doctor`'s `git status` would run against the redirected repository
+  // and honour its configuration (`core.fsmonitor` and the like).
   const seams = activeTestSeams()
-  if (
-    seams.length &&
-    command !== 'doctor' &&
-    command !== 'help' &&
-    flags[TEST_SEAMS_FLAG] !== true
-  ) {
-    throw new Error(
+  if (seams.length && command !== 'help' && flags[TEST_SEAMS_FLAG] !== true) {
+    const message =
       `${seams.join(' and ')} ${seams.length > 1 ? 'are' : 'is'} set; these are test-only seams. ` +
-        `Unset them for a real run, or pass --${TEST_SEAMS_FLAG} from a test harness.`
-    )
+      `Unset them for a real run, or pass --${TEST_SEAMS_FLAG} from a test harness.`
+    if (command === 'doctor') {
+      console.log(`FAIL  ${message}`)
+      process.exitCode = 1
+      return
+    }
+    throw new Error(message)
   }
   if (command === 'doctor') doctor()
   else if (command === 'init') init(flags)
@@ -706,6 +712,10 @@ try {
   else if (command === 'report') report()
   else if (command === 'gates') gates()
   else help()
+}
+
+try {
+  main()
 } catch (error) {
   console.error(`agent-loop: ${error.message}`)
   process.exitCode = 1

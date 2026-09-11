@@ -22,10 +22,14 @@ Migration files may be drafted and reviewed locally, but their presence marks th
 - Three Git worktrees with one writable owner per lane.
 - A runtime mailbox outside all worktrees.
 - A single-process lock held by `run`, `approve` and `reject`, with round, per-turn and task time
-  caps. Every model turn and gate runs under a wrapper that kills its whole process tree on
-  timeout (including detached descendants, which Node's own child timeout does not reach); the
-  turn and gate timeouts are derived from the remaining task budget; no round, claim generation
-  or promotion starts after the deadline.
+  caps. Every model turn and gate runs under a wrapper that kills its process tree on timeout
+  (`taskkill /T` by absolute path; a failed kill is a failed run, not a silent wait) and sweeps
+  surviving descendants on every exit path, including a successful one. The wrapper's grace is
+  reserved inside the remaining budget, not added after the deadline. No round, claim generation
+  or promotion starts after the deadline. The sweep finds descendants by parent PID; a process
+  that has re-parented itself away from the tree is not found. Full containment needs a Windows
+  Job Object with breakaway prohibited — not creatable from Node without a native module — or
+  the container boundary described below.
 - Explicit-path staging; never `git add -A`.
 - Protected coordinator, prompt, schema, CI, instruction, dependency-manifest and test-harness
   paths (`package.json`, lock files, `conftest.py`, `requirements.txt`, lint-staged and husky
@@ -36,11 +40,16 @@ Migration files may be drafted and reviewed locally, but their presence marks th
   lines support the claim. That remains the human reader's check.
 - Configured bootstrap and gates execute as argument arrays, not interpolated shell commands,
   with an allowlisted environment: the coordinator's API keys, tokens and `NODE_OPTIONS` are not
-  visible to candidate code. On Windows, npm `.cmd` shims are resolved to their `node_modules`
-  entry with traversal rejected and the real path checked, never through a shell.
-- The test-only seams (`AGENT_LOOP_REPO`, `AGENT_LOOP_FAKE_AGENTS`) are refused by every command
-  except `doctor` unless `--allow-test-seams` is passed; a seam left exported in a shell cannot
-  redirect or fake a real run.
+  visible to candidate code. `HOME`, `USERPROFILE`, `APPDATA` and `PATH` are still passed —
+  npm, pip and the CLIs need them — so candidate code can still _find_ the operator's home
+  directory; it simply is not handed any secret from the environment. On Windows, npm `.cmd`
+  shims are resolved only from npm's global prefix (never from `PATH`), to their `node_modules`
+  entry, with traversal rejected and the real path checked, never through a shell. That prefix is
+  user-writable by definition — whoever can write there can replace the CLI itself — so the
+  parser is bounded to the trust the installed CLI already has, no wider.
+- The test-only seams (`AGENT_LOOP_REPO`, `AGENT_LOOP_FAKE_AGENTS`) are refused by every command,
+  `doctor` included, unless `--allow-test-seams` is passed — checked before any repository or Git
+  access, so a redirected repository's own configuration is never consulted.
 - Gate failures are logged with the command's stdout and stderr, not only the exit code.
 - A partially failed `init` — including a failed state-record write — removes the lanes it
   created; it never leaves orphaned branches or worktrees without a task record.

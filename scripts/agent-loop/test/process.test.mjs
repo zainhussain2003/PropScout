@@ -161,3 +161,50 @@ test('isolateEnv withholds everything but the allowlist and sets CI', async () =
   )
   assert.equal(result.stdout, 'absent')
 })
+
+test('a detached descendant that outlives a successful parent exit is swept', () => {
+  // Codex's escape: spawn detached, exit 0 — the timeout never fires, so a
+  // timeout-only kill leaves the grandchild running. The wrapper sweeps
+  // descendants on every exit path.
+  const fs = require('node:fs')
+  const os = require('node:os')
+  const path = require('node:path')
+  const marker = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'sweep-')), 'grandchild.pid')
+  const grandchild = `require('node:fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid)); setInterval(() => {}, 1000)`
+  const child = `const { spawn } = require('node:child_process'); spawn(process.execPath, ['-e', ${JSON.stringify(grandchild)}], { stdio: 'ignore', detached: true }).unref(); setTimeout(() => process.exit(0), 300)`
+  const result = run(process.execPath, ['-e', child], { echo: false, timeout: 30_000 })
+  assert.equal(result.status, 0)
+  assert.match(result.stderr, /terminated orphaned descendant/)
+  const pid = Number(fs.readFileSync(marker, 'utf8'))
+  let alive = true
+  try {
+    process.kill(pid, 0)
+  } catch {
+    alive = false
+  }
+  if (alive) process.kill(pid, 'SIGKILL')
+  assert.equal(alive, false, `grandchild ${pid} survived its parent's successful exit`)
+})
+
+test("shims are resolved only from npm's global prefix, never from PATH", async () => {
+  const { resolveShim, trustedShimDirectories } = await import('../lib/process.mjs')
+  const fs = await import('node:fs')
+  const os = await import('node:os')
+  const path = await import('node:path')
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'untrusted-'))
+  const target = path.join(bin, 'node_modules', 'evil', 'payload.js')
+  fs.mkdirSync(path.dirname(target), { recursive: true })
+  fs.writeFileSync(target, 'process.stdout.write("ARBITRARY_SCRIPT_RAN")')
+  fs.writeFileSync(
+    path.join(bin, 'notcodex.cmd'),
+    '"%_prog%"  "%dp0%\\node_modules\\evil\\payload.js" %*\r\n'
+  )
+  const originalPath = process.env.PATH
+  process.env.PATH = `${bin}${path.delimiter}${originalPath ?? ''}`
+  try {
+    assert.equal(resolveShim('notcodex'), null, 'a PATH directory must not supply a shim')
+    assert.ok(!trustedShimDirectories().includes(bin))
+  } finally {
+    process.env.PATH = originalPath
+  }
+})

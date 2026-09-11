@@ -7,9 +7,20 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const TREE_RUNNER = path.join(here, 'tree-runner.mjs')
 // Mirrored in tree-runner.mjs.
 const TIMEOUT_EXIT_CODE = 124
+const KILL_FAILED_EXIT_CODE = 125
 const TIMEOUT_MARKER = '[agent-loop] process tree timed out'
-// Headroom for the wrapper itself to start and to finish killing the tree.
-const TREE_RUNNER_GRACE_MS = 15_000
+const KILL_FAILED_MARKER = '[agent-loop] process tree kill FAILED'
+/**
+ * Headroom for the wrapper to start, kill the tree and sweep orphans. Callers
+ * that derive a timeout from a wall-clock budget must reserve this *inside*
+ * the budget (see `budgetedTimeout`); it is not added on top of the deadline.
+ */
+export const TREE_RUNNER_GRACE_MS = 15_000
+
+/** The largest timeout that, plus the wrapper's grace, still fits in `remainingMs`. */
+export function budgetedTimeout(remainingMs, cap = Infinity) {
+  return Math.min(cap, remainingMs - TREE_RUNNER_GRACE_MS)
+}
 
 /**
  * Environment variables a candidate's code may see while gates or bootstrap
@@ -65,6 +76,43 @@ export function isolatedEnvironment(source = process.env) {
   return env
 }
 
+let cachedNpmPrefix
+/**
+ * npm's global prefix — where `npm install -g` writes `.cmd` shims. Resolved
+ * once via npm itself (respects a custom `prefix`), falling back to npm's
+ * default of `%APPDATA%\npm`.
+ */
+export function npmGlobalPrefix() {
+  if (cachedNpmPrefix !== undefined) return cachedNpmPrefix
+  cachedNpmPrefix = null
+  try {
+    const npmCli = path.join(
+      path.dirname(process.execPath),
+      'node_modules',
+      'npm',
+      'bin',
+      'npm-cli.js'
+    )
+    const result = spawnSync(process.execPath, [npmCli, 'prefix', '-g'], {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 15_000,
+    })
+    if (result.status === 0 && result.stdout.trim()) cachedNpmPrefix = result.stdout.trim()
+  } catch {
+    // fall through
+  }
+  if (!cachedNpmPrefix && process.env.APPDATA)
+    cachedNpmPrefix = path.join(process.env.APPDATA, 'npm')
+  return cachedNpmPrefix
+}
+
+/** Directories whose `.cmd` shims the coordinator will resolve: npm's global prefix only. */
+export function trustedShimDirectories() {
+  const prefix = npmGlobalPrefix()
+  return prefix ? [prefix] : []
+}
+
 /**
  * Resolve an npm-installed command on Windows to `node <script>` without a
  * shell.
@@ -76,17 +124,19 @@ export function isolatedEnvironment(source = process.env) {
  * read the shim, find the `.js` entry it wraps, and run that with the current
  * Node binary.
  *
- * The shim is data from a PATH directory, so its contents are constrained
- * rather than trusted: the target must be the exact cmd-shim template, must
- * live under the shim directory's own `node_modules`, and its real path must
- * still be inside that directory after resolving `..` and links. Anyone who
- * can plant a `.cmd` ahead of npm's on PATH could replace the real shim
- * anyway; this stops the parser from being a *cheaper* path than that.
+ * Shims are looked up only in npm's global prefix — never along `PATH`, so a
+ * project-local, cwd-relative or otherwise unapproved directory cannot supply
+ * one. Within that directory the shim is still data, not trust: the target
+ * must be the exact cmd-shim template, must live under the directory's own
+ * `node_modules`, and its real path must still be inside it after resolving
+ * `..` and links. The prefix itself is user-writable by definition — whoever
+ * can write there can replace `codex` outright — so this bounds the parser to
+ * the same trust the installed CLI already has, no wider.
  *
- * Returns `{ executable, args }` or `null` when no shim is found. `searchPath`
- * defaults to `PATH`; tests pass an explicit directory.
+ * Returns `{ executable, args }` or `null` when no valid shim is found.
+ * `searchPath` defaults to the trusted directories; tests pass their own.
  */
-export function resolveShim(command, searchPath = (process.env.PATH ?? '').split(path.delimiter)) {
+export function resolveShim(command, searchPath = trustedShimDirectories()) {
   if (path.extname(command) || command.includes('/') || command.includes('\\')) return null
   for (const directory of searchPath) {
     if (!directory) continue
@@ -97,18 +147,19 @@ export function resolveShim(command, searchPath = (process.env.PATH ?? '').split
     const match = text.match(
       /^[^\r\n]*"%_prog%"\s+"%dp0%\\(node_modules\\[^"]+\.[cm]?js)"\s+%\*\s*$/m
     )
-    if (!match) return null
+    // A malformed shim in one directory must not stop a valid one in the next.
+    if (!match) continue
     const relative = match[1]
-    if (relative.split(/[\\/]/).some((segment) => segment === '..' || segment === '')) return null
-    const script = path.join(directory, relative)
+    if (relative.split(/[\\/]/).some((segment) => segment === '..' || segment === '')) continue
     let real
+    let root
     try {
-      real = fs.realpathSync(script)
+      real = fs.realpathSync(path.join(directory, relative))
+      root = fs.realpathSync(path.join(directory, 'node_modules'))
     } catch {
-      return null
+      continue
     }
-    const root = fs.realpathSync(path.join(directory, 'node_modules'))
-    if (!real.startsWith(root + path.sep)) return null
+    if (!real.startsWith(root + path.sep)) continue
     return { executable: process.execPath, args: [real] }
   }
   return null
@@ -144,7 +195,9 @@ export function run(command, args, options = {}) {
     executable = process.execPath
     executableArgs = [npmCli, ...args]
   } else if (process.platform === 'win32' || options.searchPath) {
-    const shim = resolveShim(command, options.searchPath)
+    const shim = options.searchPath
+      ? resolveShim(command, options.searchPath)
+      : resolveShim(command)
     if (shim) {
       executable = shim.executable
       executableArgs = [...shim.args, ...args]
@@ -184,20 +237,25 @@ export function run(command, args, options = {}) {
     result.error?.code === 'ETIMEDOUT' ||
     result.signal === 'SIGTERM' ||
     (treeKill && result.status === TIMEOUT_EXIT_CODE && stderr.includes(TIMEOUT_MARKER))
+  const killFailed =
+    treeKill && result.status === KILL_FAILED_EXIT_CODE && stderr.includes(KILL_FAILED_MARKER)
   if (result.error || result.status !== 0) {
     // Always name the exit code; append stderr when there is any. A log
     // reader needs both — "exit 1" alone says nothing, and stderr alone hides
     // whether the process was killed.
-    const detail = timedOut
-      ? `timed out after ${options.timeout}ms`
-      : result.error
-        ? result.error.message
-        : `exit ${result.status}${stderr.trim() ? `: ${stderr.trim()}` : ''}`
+    const detail = killFailed
+      ? `timed out after ${options.timeout}ms AND its process tree could not be killed`
+      : timedOut
+        ? `timed out after ${options.timeout}ms`
+        : result.error
+          ? result.error.message
+          : `exit ${result.status}${stderr.trim() ? `: ${stderr.trim()}` : ''}`
     const error = new Error(`${executable} ${executableArgs.join(' ')} failed: ${detail}`)
     error.stdout = stdout
     error.stderr = stderr
     error.status = result.status
-    error.timedOut = timedOut
+    error.timedOut = timedOut || killFailed
+    error.killFailed = killFailed
     throw error
   }
 
@@ -206,7 +264,9 @@ export function run(command, args, options = {}) {
 
 export function commandExists(command, versionArgs = ['--version']) {
   try {
-    run(command, versionArgs, { echo: false, timeout: 15_000 })
+    // No tree wrapper: a version probe spawns nothing worth sweeping, and the
+    // sweep's process snapshot would add a second to each of doctor's checks.
+    run(command, versionArgs, { echo: false, timeout: 15_000, killTree: false })
     return true
   } catch {
     return false
