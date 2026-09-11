@@ -44,6 +44,12 @@ shim and runs its `.js` entry with the current Node binary instead. If `agent:do
 `FAIL codex` while `codex --version` works in a terminal, the shim format has changed and
 `resolveShim` needs updating.
 
+The bootstrap creates each worktree's virtual environment with `py -3.11` — the interpreter
+`services/calc-engine/runtime.txt` and CI pin — because the pinned wheels (`lxml==5.3.0`,
+`pydantic==2.8.2`) do not exist for newer Pythons and fail to build from source on Windows. A
+`python` on `PATH` that is newer than 3.11 is fine for the coordinator itself; `agent:doctor`
+checks that the 3.11 launcher target is installed.
+
 Gates and bootstrap run with an allowlisted environment (`isolatedEnvironment` in
 `process.mjs`): if a gate needs a variable that is not on the list, add it there deliberately
 rather than exporting it — the list exists to keep the operator's keys out of candidate code.
