@@ -150,6 +150,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
   const marketData = row.market_data as {
     dealScore?: Analysis['dealScore']
     sunScout?: Analysis['sunScout']
+    holdCase?: Analysis['holdCase']
     walkScore?: Analysis['walkScore']
     coordinates?: Analysis['coordinates']
     schools?: Analysis['schools']
@@ -185,6 +186,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     walkScore: marketData?.walkScore ?? null,
     neighbourhood: null,
     sunScout: marketData?.sunScout ?? null,
+    holdCase: marketData?.holdCase ?? null,
     coordinates: marketData?.coordinates ?? null,
     schools: marketData?.schools ?? null,
     nearbyDistances: marketData?.nearbyDistances ?? null,
@@ -277,6 +279,7 @@ export async function saveAnalysis(
       market_data: {
         dealScore: analysis.dealScore,
         sunScout: analysis.sunScout,
+        holdCase: analysis.holdCase ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,
@@ -954,6 +957,7 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
       market_data: {
         dealScore: analysis.dealScore,
         sunScout: analysis.sunScout,
+        holdCase: analysis.holdCase ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,

@@ -1123,6 +1123,7 @@ propscout/
 │   │       │   │   └── PropertyHero.tsx       # Photo grid + chips + address + sticky score card
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
+│   │       │   │   ├── BreakEvenAppreciation.tsx  # Growth needed to return the cash a hold consumes (D-062)
 │   │       │   │   ├── FinancingSliders.tsx   # Live sliders — every metric recalculates on drag
 │   │       │   │   ├── OSFICard.tsx
 │   │       │   │   ├── LTTTable.tsx           # Ontario LTT bracket table
@@ -1273,6 +1274,7 @@ propscout/
 │   │   │   ├── investment.py + investment_test.py   # Cap rate, CoC, DSCR, GRM, cash flow, NOI
 │   │   │   ├── closing_costs.py + closing_costs_test.py  # LTT by province
 │   │   │   ├── deal_score.py + deal_score_test.py   # Spec Section 10 formula
+│   │   │   ├── hold_case.py + hold_case_test.py     # Break-even appreciation (spec §6, D-062)
 │   │   │   └── osfi.py + osfi_test.py
 │   │   ├── extraction/                # Listing description pipeline — spec Section 19 (TEMPLATE)
 │   │   │   ├── regex_rules.py         # Deterministic patterns — run first, never hallucinate

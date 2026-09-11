@@ -139,6 +139,17 @@ export interface PySunScout {
   hours_lost_to_buildings?: number | null
 }
 
+interface PyHoldCaseRow {
+  year: number
+  cash_invested: number
+  cumulative_contribution: number
+  total_cash_in: number
+  mortgage_balance: number
+  principal_repaid: number
+  break_even_sale_price: number
+  break_even_annual_rate: number
+}
+
 interface PyAnalysisOutput {
   metrics: PyInvestmentMetrics
   deal_score: PyDealScore
@@ -146,9 +157,25 @@ interface PyAnalysisOutput {
   has_sanity_warnings: boolean
   /** Present only when lat/lng were sent and the sun-path calc succeeded. */
   sun_scout?: PySunScout | null
+  /** Optional so an analysis stored before the hold case shipped still parses. */
+  hold_case?: PyHoldCaseRow[] | null
 }
 
 // ── snake_case → camelCase output transforms ──────────────────────────────────
+
+export function toHoldCase(py: PyHoldCaseRow[] | null | undefined): Analysis['holdCase'] {
+  if (py == null || py.length === 0) return null
+  return py.map((row) => ({
+    year: row.year,
+    cashInvested: row.cash_invested,
+    cumulativeContribution: row.cumulative_contribution,
+    totalCashIn: row.total_cash_in,
+    mortgageBalance: row.mortgage_balance,
+    principalRepaid: row.principal_repaid,
+    breakEvenSalePrice: row.break_even_sale_price,
+    breakEvenAnnualRate: row.break_even_annual_rate,
+  }))
+}
 
 export function toSunScout(py: PySunScout | null | undefined): Analysis['sunScout'] {
   if (py == null) return null
@@ -581,6 +608,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         comparableSales,
         comparableSalesAreSample,
         sunScout: toSunScout(pyData.sun_scout),
+        holdCase: toHoldCase(pyData.hold_case),
         coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
         schools,
         hasSanityWarnings: pyData.has_sanity_warnings,

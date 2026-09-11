@@ -43,6 +43,7 @@ import { DueDiligenceSection } from '../components/investor/DueDiligenceSection'
 import { LTTTable } from '../components/investor/LTTTable'
 import { OSFICard } from '../components/investor/OSFICard'
 import { EquityChart } from '../components/investor/EquityChart'
+import { BreakEvenAppreciation } from '../components/investor/BreakEvenAppreciation'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { TenantSchoolsSection } from '../components/tenant/TenantSchoolsSection'
 import { shimToTenantSchools, shimToNeighbourhood } from '../lib/reportShims'
@@ -55,6 +56,7 @@ import type {
   ComputedInvestorMetrics,
   FinancingInputs,
   FlagOverrideControls,
+  HoldCaseRow,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 
@@ -591,7 +593,13 @@ function OSFISection({
 
 // ── Equity section ────────────────────────────────────────────────────────────
 
-function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.Element {
+function EquitySection({
+  metrics,
+  holdCase,
+}: {
+  metrics: ComputedInvestorMetrics
+  holdCase: HoldCaseRow[] | null
+}): JSX.Element {
   const finalPoint = metrics.equityCurve[metrics.equityCurve.length - 1]
   const year20Equity = finalPoint?.equity ?? 0
 
@@ -614,6 +622,9 @@ function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.E
           totalCashInvested={metrics.totalCashInvested}
         />
       </div>
+      {holdCase != null && (
+        <BreakEvenAppreciation holdCase={holdCase} cashFlowMonthly={metrics.cashFlowMonthly} />
+      )}
     </section>
   )
 }
@@ -993,7 +1004,9 @@ function InvestorReportContent({
       )}
       {listingData.price > 0 && <OSFISection financing={financing} listing={listingData} />}
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
-      {listingData.price > 0 && <EquitySection metrics={metrics} />}
+      {listingData.price > 0 && (
+        <EquitySection metrics={metrics} holdCase={analysis.holdCase ?? null} />
+      )}
       {/* §08 Neighbourhood — stat tiles + comps + appreciation. Every field is
           data-honest: unknown stats render "—" and empty comps show the "no
           comparable-sales source yet" state (shimToNeighbourhood returns zeros

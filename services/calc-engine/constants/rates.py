@@ -78,6 +78,24 @@ TITLE_INSURANCE: float = 300.0
 HOME_INSPECTION: float = 600.0
 
 
+# ── Disposition (sale) cost estimates ──────────────────────────────────────────
+#
+# UNSOURCED PLACEHOLDERS. These drive break-even appreciation (hold_case.py),
+# which is sensitive to the commission rate: on a $730k property each 1% of
+# commission moves the required annual growth by roughly 0.1pp over a 10-year
+# hold. Replace with a sourced figure before the number is presented as
+# anything firmer than an estimate.
+
+# Total realtor commission on sale, both sides combined. Ontario practice is
+# commonly quoted as 5% (2.5% listing + 2.5% cooperating), but it is negotiable
+# and not regulated, so this is a convention rather than a published rate.
+REALTOR_COMMISSION: float = 0.05  # 5%
+
+# Legal fees on the sale side — discharge, adjustments, closing. Lower than the
+# purchase side (LEGAL_FEES) because there is no title insurance or search.
+SALE_LEGAL_FEES: float = 1_200.0
+
+
 def get_maintenance_rate(year_built: int | None) -> float:
     """
     Return the appropriate maintenance reserve rate based on construction year.

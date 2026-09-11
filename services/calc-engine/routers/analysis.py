@@ -19,6 +19,7 @@ from models.schemas import (
     SunScoutOutput,
     SunScoutRequest,
     SunScoutResponse,
+    HoldCaseOutput,
 )
 from sunscout.obstruction import build_profile, infer_floor_from_address
 from sunscout.sun_path import calculate_sun_hours
@@ -35,6 +36,7 @@ from calculations.investment import (
     calculate_break_even_rent,
 )
 from calculations.deal_score import calculate_deal_score, to_display_score
+from calculations.hold_case import calculate_break_even_appreciation
 from calculations.sanity import sanity_check_metrics
 from extraction.regex_rules import extract_regex_flags
 from extraction.haiku_extraction import extract_flags_with_haiku
@@ -288,6 +290,19 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         include_management=fin.include_management_fee,
     )
 
+    # Break-even economics: what price growth this hold must deliver to return
+    # the cash it consumes. Derived from the same financing the metrics above
+    # use, so the two always describe one scenario. Never feeds the deal score
+    # (spec §10a) — appreciation is reported, not rewarded.
+    hold_case = calculate_break_even_appreciation(
+        purchase_price=float(prop.price),
+        down_payment_pct=fin.down_payment_pct,
+        annual_rate=fin.mortgage_rate,
+        amortization_years=fin.amortization_years,
+        monthly_cash_flow=cash_flow_monthly,
+        is_toronto=prop.is_toronto,
+    )
+
     # ── 3b. Listing description extraction pipeline ───────────────────────────
     # Runs regex first (deterministic), then Haiku for gray areas.
     # Logic gate merges and applies confidence thresholds.
@@ -393,6 +408,9 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         break_even_rent=break_even_rent,
         deal_score=deal_score.total,
         cash_flow_monthly=cash_flow_monthly,
+        break_even_appreciation_rates=[
+            row["break_even_annual_rate"] for row in hold_case
+        ],
     )
     has_sanity_warnings = len(sanity_warnings) > 0
 
@@ -456,4 +474,5 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         risk_flags=serialised_flags,
         has_sanity_warnings=has_sanity_warnings,
         sun_scout=sun_scout_result,
+        hold_case=[HoldCaseOutput(**row) for row in hold_case],
     )

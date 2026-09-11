@@ -2110,3 +2110,59 @@ Recorded so they are not mistaken for oversights.
 - **`docs/MVP_TODO.md` mode naming**: the API accepts `investor` while the DB
   check constraint stores `investment`. Not a bug today (the API maps them) but a
   trap worth unifying.
+
+---
+
+### D-062 · Break-even appreciation is reported; the score stays untouched
+
+**Chosen.** A new `calculations/hold_case.py` computes, for 5/10/20-year holds, the annual price
+growth required to return every dollar the hold consumes — deposit, purchase closing costs and
+every monthly shortfall — after 5% selling commission, sale legal fees and mortgage discharge. It
+is closed-form (commission is a fraction of the same sale price, so no root-finding) and therefore
+deterministic. It reaches the investor report as a card under the equity chart. It does **not**
+feed the deal score.
+
+**Why.** `docs/product-audit/INVESTOR_METHOD_RESEARCH.md` established that a shortfall is not
+automatically a loss: "A $1,000 monthly shortfall is not automatically a $12,000 annual economic
+loss if the mortgage balance falls by more than $12,000. It is still a $12,000 annual **liquidity
+requirement**." The report could show a deep negative cash flow and a hard-pass verdict with no way
+for a long-term holder to see whether paydown covers it. The audit listed this as owner decision
+#4 and it was never recorded; this entry settles the narrow part of it.
+
+On the calibration property (−$2,126.82/mo) the numbers are the argument: **2.99%/yr over 5 years,
+1.98% over 10, 1.01% over 20**. The same property needs three times the annual growth over five
+years that it needs over twenty.
+
+**The presentation risk, and what was done about it.** 1.01% a year reads as _this deal is fine_
+until you see that reaching year 20 takes **$669,890** of cash, none of which earns anything in
+this model, in equity that cannot be spent until sale. The rate is therefore never rendered
+without the cash beside it, the copy says plainly that breaking even is not a return, and a test
+asserts the cash line appears for every rate. This is the same failure mode as D-004: a number
+that is individually true and collectively misleading.
+
+**What it deliberately does not do**
+
+| Decision                                        | Why                                                                                                                                         |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Does not change the deal score or verdict       | Spec §10 requires the score to be reproducible from property and financing alone; D-037 makes the backend its sole authority.               |
+| Does not credit positive cash flow against cost | A surplus reducing the cost basis would let strong rent flatter the required rate. Surplus contributes zero; the figure stays conservative. |
+| Does not clamp negative rates to zero           | A property that can decline and still return the cash is a real, favourable result. Hiding it would only ever understate the good case.     |
+| Does not say whether the rate is achievable     | No local appreciation series is connected (D-058). Stating a required rate is arithmetic; judging it would be invention.                    |
+| Does not model rent or expense growth           | That is the full hold-case engine (IRR, NPV, equity multiple) the audit proposes. Labelled "at today's rent and costs" rather than implied. |
+| Does not ask the user for a hold period         | The 5/10/20 snapshots already exist for the equity chart, so the two read against each other and the change needs no new input.             |
+
+**Alternatives considered**
+
+| Option                                                                             | Why not                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full strategy lens (Income-first / Balanced / Appreciation-led) changing the score | What the audit actually recommends, and still open. It needs a `score_version` bump, spec §10 changes, recalibration against real Ontario properties and the "Income fundamentals" rename — weeks, and a decision of its own. |
+| A declared "max monthly contribution" input                                        | Adds a field and a persisted value to answer a question the derived figure already answers without asking. Revisit if users ask to model reserves.                                                                            |
+| Compute it client-side beside the equity curve                                     | The equity curve is slider-live; cash flow on the live report is not (it comes straight from the API). A client-side break-even would mix live paydown with stale cash flow — one number describing two scenarios.            |
+
+**Known limit.** The 5% commission is a convention, not a published rate, and the result is
+sensitive to it: each 1% moves the required 10-year rate by roughly 0.1pp. Both selling-cost
+constants are marked unsourced in `constants/rates.py`.
+
+**Revisit if** a local appreciation series is connected — the report could then place the required
+rate against what the area has actually done, which is the single thing that would make this figure
+actionable rather than merely honest.

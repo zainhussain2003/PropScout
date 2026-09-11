@@ -249,8 +249,39 @@ Calculated outputs:
 - GRM — Gross Rent Multiplier = purchase price / annual gross rent
 - Break-even rent = all monthly expenses combined
 - Equity build at 5, 10, and 20 years (mortgage paydown + 3% appreciation, user-adjustable)
+- Break-even appreciation at 5, 10, and 20 years — the annual price growth required to return all cash the hold consumes
 
 Maintenance reserve by build year: post-2010 at 0.5%/yr, 1980–2010 at 1.0%/yr, pre-1980 at 1.5%/yr.
+
+**Break-even appreciation** (`calculations/hold_case.py`) answers the question a buyer facing
+negative cash flow actually asks: how much price growth makes this not a loss? For each hold
+period:
+
+```
+cash in   = down payment + purchase closing costs + cumulative monthly shortfall
+cash out  = sale price − selling costs − remaining mortgage balance
+sale price at break-even = (cash in + sale legal fees + balance) / (1 − commission rate)
+required annual rate     = (sale price / purchase price) ^ (1 / years) − 1
+```
+
+Closed-form, because commission is a fraction of the same sale price — no iteration, so the
+result is deterministic. Selling costs are 5% commission plus a flat legal fee, both unsourced
+placeholders in `constants/rates.py`.
+
+Rules this figure is presented under:
+
+- **It never touches the deal score.** Appreciation is a scenario, not an earned point (§10a).
+- **A surplus is not credited.** Positive cash flow contributes nothing to cash in, so the
+  required rate is never flattered by strong rent.
+- **A negative result is shown as negative** — a property whose paydown outruns its costs can
+  fall in value and still return the cash, and that is a real outcome, not a floor at zero.
+- **The cash is shown beside the rate.** A long hold can produce a small percentage while
+  demanding hundreds of thousands in contributions; the rate alone would mislead.
+- **No achievability claim.** There is no local appreciation series connected (D-058), so the
+  report states the required rate and stops.
+- **Today's rent and costs, held flat.** No rent growth, expense growth, vacancy, capital work
+  or renewal shock, and no credit for what the cash could have earned elsewhere. It is a
+  break-even, not a return, and must not be presented as a forecast.
 
 **4. Rental comps engine** (all tiers)
 

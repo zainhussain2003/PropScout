@@ -758,3 +758,57 @@ def test_matrix_condo_fee_unknown_is_hidden_from_tenants() -> None:
 
     assert "condo_fee_unknown" in inv_flags
     assert "condo_fee_unknown" not in ten_flags
+
+
+def test_analysis_returns_break_even_appreciation() -> None:
+    """
+    The hold case reaches the API and describes the same scenario as the metrics.
+
+    Buttermill carries a deep monthly shortfall, so the required growth must be
+    positive, and it must fall as the hold lengthens — paydown and compounding
+    both work in the buyer's favour over time. That ordering is the claim the
+    section exists to make, so it is asserted rather than assumed.
+    """
+    data = client.post("/analysis/", json=_VAUGHAN_PAYLOAD).json()
+    hold_case = data["hold_case"]
+
+    assert [row["year"] for row in hold_case] == [5, 10, 20]
+
+    rates = [row["break_even_annual_rate"] for row in hold_case]
+    assert all(rate > 0 for rate in rates), f"Expected positive required growth: {rates}"
+    assert rates[0] > rates[1] > rates[2], f"Required growth should fall with hold: {rates}"
+
+    # The cumulative contribution must reconcile with the cash flow reported
+    # beside it; a mismatch would mean the two describe different scenarios.
+    monthly_shortfall = -data["metrics"]["cash_flow_monthly"]
+    for row in hold_case:
+        expected = monthly_shortfall * 12 * row["year"]
+        assert abs(row["cumulative_contribution"] - expected) < 1.0
+        assert row["total_cash_in"] > row["cash_invested"]
+
+
+def test_hold_case_absent_shortfall_is_not_credited() -> None:
+    """
+    A property that covers its costs reports no contribution, and its required
+    growth is lower than the same property running a shortfall.
+    """
+    strong = {
+        **_VAUGHAN_PAYLOAD,
+        "rental": {
+            **_VAUGHAN_PAYLOAD["rental"],
+            "low": 6_000,
+            "mid": 6_500,
+            "high": 7_000,
+        },
+    }
+    data = client.post("/analysis/", json=strong).json()
+
+    assert data["metrics"]["cash_flow_monthly"] > 0
+    assert all(row["cumulative_contribution"] == 0.0 for row in data["hold_case"])
+
+    weak_rates = [
+        row["break_even_annual_rate"]
+        for row in client.post("/analysis/", json=_VAUGHAN_PAYLOAD).json()["hold_case"]
+    ]
+    strong_rates = [row["break_even_annual_rate"] for row in data["hold_case"]]
+    assert all(s < w for s, w in zip(strong_rates, weak_rates))
