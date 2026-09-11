@@ -2,12 +2,59 @@
 
 import pytest
 from .investment import (
+    calculate_break_even_rent,
     calculate_cap_rate,
+    calculate_cash_flow_monthly,
     calculate_dscr,
     calculate_grm,
     calculate_financing_scenarios,
 )
 from constants.rates import get_maintenance_rate
+
+
+@pytest.mark.parametrize(
+    "insurance_value, expected",
+    [(240_000, 930.0), (600_000, 825.0)],
+    ids=["distinct-insured-value", "equal-values-preserve-behaviour"],
+)
+def test_cash_flow_monthly_honours_insurance_value(
+    insurance_value: float, expected: float
+) -> None:
+    """Insurance uses insured value; maintenance still uses property value."""
+    result = calculate_cash_flow_monthly(
+        monthly_rent=4_000,
+        mortgage_payment=1_800,
+        annual_taxes=3_600,
+        insurance_value=insurance_value,
+        condo_fee_monthly=200,
+        maintenance_rate=0.01,
+        property_value=600_000,
+    )
+    # Net rent $3,800 less mortgage $1,800, tax $300, condo $200,
+    # maintenance $500, and insurance $70 (distinct) or $175 (equal).
+    assert result == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "insurance_value, expected",
+    [(240_000, 3_021.0526315789475), (600_000, 3_131.5789473684213)],
+    ids=["distinct-insured-value", "equal-values-preserve-behaviour"],
+)
+def test_break_even_rent_honours_insurance_value(
+    insurance_value: float, expected: float
+) -> None:
+    """Break-even rent covers insured-value costs and the default 5% vacancy."""
+    result = calculate_break_even_rent(
+        mortgage_payment=1_800,
+        annual_taxes=3_600,
+        insurance_value=insurance_value,
+        condo_fee_monthly=200,
+        maintenance_rate=0.01,
+        property_value=600_000,
+    )
+    # Fixed costs are $2,870 (insurance $70) or $2,975 (insurance $175).
+    # Divide by 0.95 to cover vacancy; maintenance remains $500 in both.
+    assert result == pytest.approx(expected)
 
 
 def test_calculate_cap_rate() -> None:

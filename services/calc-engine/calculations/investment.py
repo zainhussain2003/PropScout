@@ -81,10 +81,10 @@ def calculate_cash_flow_monthly(
         monthly_rent: Monthly rent at full occupancy in dollars.
         mortgage_payment: Monthly mortgage payment in dollars.
         annual_taxes: Annual property tax in dollars.
-        insurance_value: Unused; insurance is calculated from property_value.
+        insurance_value: Property value used for insurance calculation.
         condo_fee_monthly: Monthly condo / maintenance fee in dollars.
         maintenance_rate: Annual maintenance reserve as a decimal of property value.
-        property_value: Property value in dollars used for insurance and maintenance.
+        property_value: Property value in dollars used for maintenance only.
         include_management: Whether to include the management fee (default False).
         vacancy_allowance: Fraction of rent lost to vacancy (default 5%).
 
@@ -92,7 +92,7 @@ def calculate_cash_flow_monthly(
         Monthly cash flow in dollars (negative = loss).
     """
     effective_rent = monthly_rent * (1 - vacancy_allowance)
-    insurance_monthly = (property_value * INSURANCE_RATE) / 12
+    insurance_monthly = (insurance_value * INSURANCE_RATE) / 12
     maintenance_monthly = (property_value * maintenance_rate) / 12
     taxes_monthly = annual_taxes / 12
     management_monthly = monthly_rent * MANAGEMENT_FEE if include_management else 0.0
@@ -182,16 +182,16 @@ def calculate_break_even_rent(
     Args:
         mortgage_payment: Monthly mortgage payment in dollars.
         annual_taxes: Annual property tax in dollars.
-        insurance_value: Unused; insurance is calculated from property_value.
+        insurance_value: Property value used for insurance calculation.
         condo_fee_monthly: Monthly condo / maintenance fee in dollars.
         maintenance_rate: Annual maintenance reserve as a decimal of property value.
-        property_value: Property value in dollars used for insurance and maintenance.
+        property_value: Property value in dollars used for maintenance only.
         include_management: Whether to include the management fee (default False).
 
     Returns:
         Break-even rent in dollars per month.
     """
-    insurance_monthly = (property_value * INSURANCE_RATE) / 12
+    insurance_monthly = (insurance_value * INSURANCE_RATE) / 12
     maintenance_monthly = (property_value * maintenance_rate) / 12
     taxes_monthly = annual_taxes / 12
 
