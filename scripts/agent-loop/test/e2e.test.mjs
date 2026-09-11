@@ -12,6 +12,8 @@
  *   4. --builder claude refused without the acknowledgement flag.
  *   5. A partially failed init removes the lanes it created.
  *   6. A reviewer citation that does not resolve at the candidate is rejected.
+ *   7. A reviewer that crashes leaves the candidate reviewable; the next run
+ *      resumes at review without a second builder turn.
  */
 
 import assert from 'node:assert/strict'
@@ -118,7 +120,14 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const plan = JSON.parse(fs.readFileSync(path.join(here, 'plan.json'), 'utf8'))
 const round = Number(process.env.AGENT_LOOP_ROUND)
-const step = plan[round - 1] ?? plan[plan.length - 1]
+const { crashOnce, ...step } = plan[round - 1] ?? plan[plan.length - 1]
+// Simulate the reviewer CLI failing (auth, schema, network) on its first call.
+const marker = path.join(here, 'crashed-round-' + round)
+if (crashOnce && !fs.existsSync(marker)) {
+  fs.writeFileSync(marker, '')
+  process.stderr.write(crashOnce)
+  process.exit(1)
+}
 process.stdout.write(JSON.stringify(step))
 `
   )
@@ -209,6 +218,70 @@ test('changes_requested then accepted: candidate is promoted to the coordinator 
     fs.existsSync(path.join(state.worktrees.coordinator, 'docs', 'agent-loop', 'CLAIMS.md'))
   )
   assert.ok(!fs.existsSync(path.join(root, '.rt', 'e2e-accept', 'lock')), 'lock released')
+})
+
+test('a crashed review is resumed on the next run without rebuilding', () => {
+  const { root, repo } = fixtureRepo()
+  const fakes = fakeAgents(root, [
+    {
+      crashOnce: 'reviewer CLI exploded',
+      verdict: 'accepted',
+      summary: 'Looks good.',
+      next_instruction: '',
+      findings: [finding()],
+    },
+  ])
+  coordinator(repo, fakes, ['init', '--task', 'e2e-resume', '--request', 'Write the feature'])
+
+  assert.throws(
+    () => coordinator(repo, fakes, ['run', '--task', 'e2e-resume']),
+    /reviewer CLI exploded/
+  )
+  const stopped = readState(root, 'e2e-resume')
+  assert.equal(stopped.phase, 'reviewing')
+  assert.equal(stopped.round, 1)
+  assert.ok(stopped.candidate)
+  assert.equal(stopped.gates.passed, true)
+  assert.equal(stopped.review, null)
+  const buildReport = path.join(root, '.rt', 'e2e-resume', 'round-1-codex-build.txt')
+  const reportBefore = fs.statSync(buildReport).mtimeMs
+
+  const resumed = coordinator(repo, fakes, ['run', '--task', 'e2e-resume'])
+  assert.match(resumed.stdout, new RegExp(`Resuming round 1 at review of ${stopped.candidate}`))
+  const state = readState(root, 'e2e-resume')
+  assert.equal(state.phase, 'complete')
+  assert.equal(state.round, 1, 'no second builder round')
+  assert.equal(state.candidate, stopped.candidate, 'the same candidate was reviewed')
+  assert.equal(state.review.verdict, 'accepted')
+  assert.equal(fs.statSync(buildReport).mtimeMs, reportBefore, 'builder was not re-invoked')
+  assert.ok(!fs.existsSync(path.join(root, '.rt', 'e2e-resume', 'round-2-codex-build.txt')))
+  const coordinatorHead = git(state.worktrees.coordinator, ['rev-parse', 'HEAD'], { echo: false })
+  assert.equal(coordinatorHead, state.acceptedHead)
+})
+
+test('a resume is refused when the builder lane no longer sits at the candidate', () => {
+  const { root, repo } = fixtureRepo()
+  const fakes = fakeAgents(root, [
+    {
+      crashOnce: 'reviewer CLI exploded',
+      verdict: 'accepted',
+      summary: 'Looks good.',
+      next_instruction: '',
+      findings: [finding()],
+    },
+  ])
+  coordinator(repo, fakes, ['init', '--task', 'e2e-drift', '--request', 'Write the feature'])
+  assert.throws(() => coordinator(repo, fakes, ['run', '--task', 'e2e-drift']))
+  const stopped = readState(root, 'e2e-drift')
+  // Someone edited the lane by hand while it was parked.
+  fs.appendFileSync(path.join(stopped.worktrees.codex, 'src', 'feature.txt'), 'stray edit\n')
+
+  // Not resumable, so the coordinator starts a fresh round — and that round's
+  // clean-lane check is what stops it, not a review of a drifted candidate.
+  assert.throws(() => coordinator(repo, fakes, ['run', '--task', 'e2e-drift']), /not clean/i)
+  const state = readState(root, 'e2e-drift')
+  assert.equal(state.candidate, stopped.candidate, 'no candidate was recorded')
+  assert.equal(state.review, null, 'no review was recorded against the drifted lane')
 })
 
 test('human_required then reject: decision recorded, nothing promoted, evidence kept', () => {
