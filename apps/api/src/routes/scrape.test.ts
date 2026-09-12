@@ -306,7 +306,7 @@ describe('POST / — buildingType + parking mapping', () => {
     expect(body.listing.parkingSpots).toBe(1)
   })
 
-  it("keeps 'Single Family' + buildingType 'House' as detached, parking defaults to 0", async () => {
+  it("keeps 'Single Family' + buildingType 'House' as detached; absent parking stays null", async () => {
     mockFetch.mockResolvedValueOnce(
       makeFetchResponse(
         { ...ONTARIO_FIXTURE, property_type: 'Single Family', building_type: 'House' },
@@ -321,10 +321,13 @@ describe('POST / — buildingType + parking mapping', () => {
     })
 
     const body = JSON.parse(res.body) as {
-      listing: { propertyType: string; parkingSpots: number }
+      listing: { propertyType: string; parkingSpots: number | null }
     }
     expect(body.listing.propertyType).toBe('detached')
-    expect(body.listing.parkingSpots).toBe(0)
+    // The scraper found no "Total parking spaces" label. That is not zero
+    // spaces — it is a fact the page did not state (D-072). This assertion
+    // used to pin 0, which is how "0 parking" reached the report.
+    expect(body.listing.parkingSpots).toBeNull()
   })
 })
 

@@ -59,6 +59,7 @@ import type {
   FlagOverrideControls,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
+import { bareCount, knownCount } from '../lib/listingFacts'
 
 // ── Data mappers ──────────────────────────────────────────────────────────────
 
@@ -72,13 +73,13 @@ function splitAddress(address: string, city: string, province: string): [string,
 
 function buildChips(listing: Listing): string[] {
   const chips: string[] = []
-  chips.push(`${listing.beds} bed`)
-  chips.push(`${listing.baths} bath`)
+  chips.push(`${bareCount(listing.beds)} bed`)
+  chips.push(`${bareCount(listing.baths)} bath`)
   if (listing.sqft) chips.push(`${listing.sqft.toLocaleString('en-CA')} sqft`)
   if (listing.yearBuilt) chips.push(`Built ${listing.yearBuilt}`)
   const pt = listing.propertyType
   if (pt) chips.push(pt.charAt(0).toUpperCase() + pt.slice(1))
-  if (listing.parkingSpots > 0) chips.push(`${listing.parkingSpots} parking`)
+  if (knownCount(listing.parkingSpots) != null) chips.push(`${listing.parkingSpots} parking`)
   if (listing.condoFeeKnown && listing.condoFeeMonthly != null && listing.condoFeeMonthly > 0) {
     chips.push(`$${listing.condoFeeMonthly}/mo condo fee`)
   }
@@ -116,10 +117,10 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     propertyType: listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1),
     // PropertyHero renders "{beds} bed · {baths} bath" / "{parking} parking" —
     // these carry the bare numbers (was "2 bed bed · 2 bath bath", live 2026-07-02)
-    beds: String(listing.beds),
-    baths: String(listing.baths),
+    beds: bareCount(listing.beds),
+    baths: bareCount(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking: listing.parkingSpots > 0 ? String(listing.parkingSpots) : '—',
+    parking: bareCount(listing.parkingSpots),
     yearBuilt,
     rentControl: yearBuilt <= 2018,
     price,

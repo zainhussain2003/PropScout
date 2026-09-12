@@ -453,8 +453,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           annual_taxes: annualTaxesForCalc,
           condo_fee_monthly: listing.condoFeeMonthly,
           condo_fee_known: listing.condoFeeKnown,
-          beds: listing.beds,
-          baths: listing.baths,
+          // The engine's PropertyInput requires integers and uses neither
+          // count in a calculation; 0 here is a schema placeholder, not a
+          // fact — the report renders the nullable Listing, not this payload.
+          beds: listing.beds ?? 0,
+          baths: listing.baths ?? 0,
           sqft: listing.sqft,
           year_built: listing.yearBuilt,
           property_type: listing.propertyType,
