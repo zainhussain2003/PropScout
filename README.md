@@ -21,7 +21,7 @@ Canadian real estate analysis platform. Paste a Realtor.ca URL and receive a ful
 ```
 propscout.ca  (Vercel — React + TypeScript)
     → propscoutapi-production.up.railway.app  (Fastify — Node.js)
-        → propscout-production-e94c.up.railway.app  (FastAPI — Python)
+        → calc engine on Railway's private network via CALC_ENGINE_URL  (FastAPI — Python)
         → Supabase  (Postgres + Auth + Storage)
 ```
 
@@ -100,7 +100,7 @@ Create `apps/web/.env.local` — gitignored, never committed:
 
 ```bash
 VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_ANON_KEY=sb_publishable_your_key   # publishable key (sb_publishable_...), on its own line
 VITE_MAPBOX_TOKEN=your_mapbox_token
 VITE_API_URL=http://localhost:3001
 ```
@@ -203,12 +203,12 @@ are in [`docs/agent-loop/README.md`](docs/agent-loop/README.md).
 
 ## Deployments
 
-| Environment              | Trigger           | URL                                      |
-| ------------------------ | ----------------- | ---------------------------------------- |
-| Frontend — production    | Merge to `master` | propscout.ca                             |
-| API — production         | Merge to `master` | propscoutapi-production.up.railway.app   |
-| Calc engine — production | Merge to `master` | propscout-production-e94c.up.railway.app |
-| Frontend — preview       | Pull request      | Auto-generated Vercel URL                |
+| Environment              | Trigger           | URL                                                                                                                          |
+| ------------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Frontend — production    | Merge to `master` | propscout.ca                                                                                                                 |
+| API — production         | Merge to `master` | propscoutapi-production.up.railway.app                                                                                       |
+| Calc engine — production | Merge to `master` | Private (Railway internal URL, `CALC_ENGINE_URL` on the API); no public domain — the old `…-e94c.up.railway.app` returns 502 |
+| Frontend — preview       | Pull request      | Auto-generated Vercel URL                                                                                                    |
 
 See [`docs/SETUP.md`](docs/SETUP.md) for the full deployment configuration.
 

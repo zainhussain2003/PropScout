@@ -2820,3 +2820,28 @@ were internally consistent and wrong for the property.
 defined as current rent minus current cash flow, which holds the vacancy allowance at today's rent
 rather than the break-even rent — self-consistent with the cash-flow figure beside it, about
 $140/mo low for this property, and a definition question rather than a bug.
+
+### D-075 · The account page belongs to a session
+
+**Chosen.** `/account` with no session renders a sign-in card ("Sign in to see your account")
+and the sign-in modal — not the account shell. While the stored session is still being read it
+renders nothing, so a signed-in user does not see the card flash. The sidebar's plan card now
+shows the resolved tier rather than a hardcoded "free" (audit A-05).
+
+**Why.** Seen on the first production run (2026-09-12): a signed-out visit to `/account` showed
+the sidebar, an "Account · FREE" chip, and _"We couldn't load your usage just now."_ Nothing had
+failed to load — no request was made, because there was no session to make it with. D-064 made
+the page stop inventing data; this makes it stop describing the absence of a session as an error.
+
+**Also from that run, recorded here because it is operational rather than code:** production
+sign-in was broken because `VITE_SUPABASE_ANON_KEY` on Vercel held the anon key with the Mapbox
+token concatenated onto it (Supabase's gateway answered 401 "Invalid API key" to every magic-link
+request). Fixed by re-creating the variable as a Vercel _Config_ variable holding the publishable
+key alone; `.env.example` and the README now say so. And Supabase's built-in mailer is limited to
+a handful of auth emails per hour across all users — hit within minutes of testing — so custom
+SMTP is required before anyone but the owner signs in.
+
+| Option                                     | Why not                                                                                             |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Redirect `/account` to `/` when signed out | Loses the intent; the person navigated to their account and should be offered the way in.           |
+| Keep the shell and change the copy         | A plan chip and a sidebar for someone with no plan is the same false statement in a different font. |

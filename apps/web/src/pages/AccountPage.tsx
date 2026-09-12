@@ -16,6 +16,8 @@ import { Wordmark } from '../components/shared/Wordmark'
 import { Footer } from '../components/shared/Footer'
 import { useAuth } from '../hooks/useAuth'
 import { useAccount } from '../hooks/useAccount'
+import { SignInModal } from '../components/shared/SignInModal'
+import { StubState } from '../components/states/StubState'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { startCheckout, openBillingPortal } from '../lib/services/billingService'
 import { FREE_TIER } from '../constants/tiers'
@@ -230,6 +232,40 @@ function SettingsToggle({ defaultValue }: SettingsToggleProps): JSX.Element {
         }}
       />
     </button>
+  )
+}
+
+// ── SignedOutState ────────────────────────────────────────────────────
+//
+// /account with no session used to render the full account shell: an
+// "Account · FREE" chip, the sidebar, and "We couldn't load your usage just
+// now" — a false statement, since nothing was loaded because nobody was
+// signed in (first production run, 2026-09-12). Usage, plan and billing are
+// properties of a sign-in; without one there is nothing to show, and the
+// honest page says so and offers the sign-in.
+
+function SignedOutState({ onSignIn }: { onSignIn: () => void }): JSX.Element {
+  const navigate = useNavigate()
+  return (
+    <div
+      style={{
+        minHeight: '60vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--gutter)',
+      }}
+    >
+      <StubState
+        icon="key"
+        tone="neutral"
+        eyebrow="Your account"
+        headline="Sign in to see your account."
+        body="Usage, plan and billing belong to a sign-in. Reports you've already run keep their share links either way."
+        primary={{ label: 'Sign in', onClick: onSignIn }}
+        secondary={{ label: 'Back to home', onClick: () => navigate('/') }}
+      />
+    </div>
   )
 }
 
@@ -909,9 +945,10 @@ export function AccountPage(): JSX.Element {
     document.documentElement.setAttribute('data-theme', newDark ? 'dark' : 'light')
   }
 
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const { tier, openUpgradeModal } = usePaywall()
   const [billingError, setBillingError] = useState<string | null>(null)
+  const [showSignIn, setShowSignIn] = useState(false)
 
   const rawView = searchParams.get('view')
   const activeTab: TabKey = isValidTab(rawView) ? rawView : 'saved'
@@ -961,6 +998,22 @@ export function AccountPage(): JSX.Element {
       view = <SavedAnalysesView tier={safeTierKey(tier)} onUpgrade={handleUpgrade} />
   }
 
+  // No session, no account shell. While the stored session is still being
+  // read, render nothing rather than flash the signed-out card at someone who
+  // is about to be signed in.
+  if (authLoading) {
+    return <div style={{ minHeight: '60vh' }} aria-busy="true" />
+  }
+  if (session == null) {
+    return (
+      <div>
+        <SignedOutState onSignIn={() => setShowSignIn(true)} />
+        <Footer />
+        <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
+      </div>
+    )
+  }
+
   return (
     <div>
       <AccountTopNav
@@ -978,7 +1031,9 @@ export function AccountPage(): JSX.Element {
             alignItems: 'flex-start',
           }}
         >
-          <AccountSidebar activeTab={activeTab} onTab={handleTabChange} tier="free" />
+          {/* The sidebar's plan card read "free" for every user regardless of
+              tier (audit A-05); it now shows the resolved tier like the nav. */}
+          <AccountSidebar activeTab={activeTab} onTab={handleTabChange} tier={tier} />
           <main>{view}</main>
         </div>
       </div>
