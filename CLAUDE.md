@@ -1090,6 +1090,7 @@ propscout/
 │   │       ├── App.tsx                # Root component — router, theme, global providers
 │   │       │
 │   │       ├── lib/scoreBreakdown.ts + scoreBreakdown.test.ts # Weighted component bar presentation
+│       ├── lib/listingFacts.ts + listingFacts.test.ts     # One rule for counts a source may not provide (D-072)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css

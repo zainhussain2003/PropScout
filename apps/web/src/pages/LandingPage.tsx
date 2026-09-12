@@ -41,6 +41,7 @@ import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
 import { scrapeUrl, ApiRequestError } from '../lib/services/analysisService'
 import { FREE_TIER } from '../constants/tiers'
+import { countLabel, NOT_PROVIDED } from '../lib/listingFacts'
 import { DEAL_SCORE } from '../constants/thresholds'
 import type { Listing } from '../types/property'
 
@@ -635,7 +636,7 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
           listing.listingType === 'for-sale'
             ? `$${(listing.price ?? 0).toLocaleString()}`
             : `$${(listing.rentMonthly ?? 0).toLocaleString()}/mo`,
-        beds: `${listing.beds} bed${listing.beds !== 1 ? 's' : ''} · ${listing.baths} bath${listing.baths !== 1 ? 's' : ''}`,
+        beds: `${countLabel(listing.beds, 'bed', { fallback: `${NOT_PROVIDED} beds` })} · ${countLabel(listing.baths, 'bath', { fallback: `${NOT_PROVIDED} baths` })}`,
         sqft: listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : '—',
       }
     : null

@@ -246,7 +246,9 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
         sqft: scraped.sqft,
         propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
         yearBuilt: scraped.year_built,
-        parkingSpots: scraped.parking_spaces ?? 0,
+        // The scraper yields null when the "Total parking spaces" label is
+        // absent; keep that distinction rather than storing 0 (D-072).
+        parkingSpots: scraped.parking_spaces ?? null,
         condoFeeMonthly: scraped.condo_fee_monthly,
         condoFeeKnown: scraped.condo_fee_known,
         annualTaxes: hasUsableAnnualTaxes ? scraped.annual_taxes : null,

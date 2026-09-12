@@ -2693,3 +2693,51 @@ as a guest. `AnalyzingPage` now holds until `loading` is false.
   seconds before they are triggered, so this is a boundary curiosity, not a loophole.
 - `HardLimitGate`'s `onUpgrade` is optional only for the design-review mount in `App.tsx`; every
   live mount must wire it.
+
+### D-072 · One rule for a fact the source did not provide
+
+**Chosen.** `Listing.beds`, `baths` and `parkingSpots` are `number | null` on both the API and
+the web, where `null` means the source did not provide it. Readers treat `0` the same way. One
+module — `apps/web/src/lib/listingFacts.ts` — turns a count into what the report says
+(`bareCount`, `countLabel`, `bedBathLabel`), and every report shim calls it instead of deciding
+for itself. The address path stores what its form did not collect as `null`; the scrape path
+keeps the scraper's `null` for parking instead of coercing it to `0`; the row reader passes
+`null` through instead of `?? 0`.
+
+**Why.** Audit P2 #9: unknown-fact preservation had become piecemeal rather than absent. D-030
+fixed the build year in one note, D-053 fixed taxes in one mapper, D-060 fixed parking in every
+mapper — each right, each a different rule in a different place. Meanwhile the API type said
+`beds: number`, so `POST /address/start` stored a blank bathroom field as `0`, the row reader
+turned a null into `0`, and the investor hero printed **"2 bed · 0 bath"** for a property whose
+owner never said how many bathrooms it had. The same unknown was "0 bath" on one report,
+"Not listed" on another and "—" on a third, and nine separate `parkingSpots > 0` checks were the
+only thing between a stored zero and a rendered claim.
+
+**Why 0 is treated as not provided.** The Realtor.ca scraper writes `0` when the bedroom or
+bathroom count is missing from the page (`beds_raw = … or "0"`), and every row stored before
+this decision holds `0` for "absent". A zero therefore cannot be told from a gap, on either path.
+"— bed" is a floor; "0 bed" is a claim — the same reasoning D-060 gave for parking, now applied
+to every count instead of one. The cost is that a genuine studio renders "— bed" until the
+scraper carries a `beds_known` flag the way it already carries `taxes_known`, `condo_fee_known`
+and `year_built_known`. That is the right place to fix it, and it is out of scope here: the
+scraper is a separate service and the contract must hold for the rows that already exist.
+
+**What the engine sees.** The calc engine's `PropertyInput` requires integer `beds`/`baths` and
+uses neither in a calculation, so the route sends `?? 0` there as a schema placeholder. The
+report renders the nullable `Listing`, never the engine payload. `fetchRentalComps` already
+accepted `beds: number | null` and skips the bedroom filter for null — it was the one consumer
+that had the contract right.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keep `number`, render 0 as "—" at each call site | Nine call sites already did that for parking and none for baths; this is the piecemeal state the audit named. The type has to say what the data means.                 |
+| Add `bedsKnown` / `bathsKnown` flags end to end  | The right long-term shape (the schema already has three such flags) but it needs the scraper to emit them and a migration to store them — a human gate, larger change. |
+| Render 0 as "Studio" for beds                    | A claim the source may not have made; the scraper's `or "0"` makes it unknowable today.                                                                                |
+| Require bathrooms on the address form            | Would remove one source of unknowns while leaving the rendering rule as scattered as before; and a person genuinely may not know.                                      |
+| Backfill stored zeros to null                    | Cannot distinguish the genuine zeros; reader-side tolerance gives the same result without touching rows.                                                               |
+
+**Known limits.** A genuine zero (studio, no parking) renders as not provided until the scraper
+proves it. `sqft` and `yearBuilt` were already nullable and are unchanged; `annualTaxes` keeps
+D-053's `> 0` rule, which this decision generalises rather than replaces.

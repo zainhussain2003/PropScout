@@ -20,18 +20,21 @@ export interface Listing {
   city: string
   province: Province
   postalCode: string
-  price: number | null            // null for rental listings
-  rentMonthly: number | null      // null for sale listings
-  beds: number
-  baths: number
+  price: number | null // null for rental listings
+  rentMonthly: number | null // null for sale listings
+  // Counts a source may not provide. null = not provided; readers also treat
+  // 0 as not provided — see lib/listingFacts.ts (D-072). Never render these
+  // directly; go through listingFacts so every report says the same thing.
+  beds: number | null
+  baths: number | null
   sqft: number | null
   propertyType: PropertyType
   yearBuilt: number | null
-  parkingSpots: number
+  parkingSpots: number | null
   condoFeeMonthly: number | null
   condoFeeKnown: boolean
   annualTaxes: number | null
   description: string | null
   photos: string[]
-  scrapedAt: string               // ISO 8601
+  scrapedAt: string // ISO 8601
 }

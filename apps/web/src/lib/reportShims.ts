@@ -40,6 +40,7 @@ import {
   formatPropertyType,
 } from '../constants/defaults'
 import { computeTenantScore } from './tenantScore'
+import { bareCount, bedBathLabel, countLabel, knownCount, NOT_PROVIDED } from './listingFacts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -100,10 +101,13 @@ function shimInvestorRiskFlags(flags: Analysis['riskFlags']): InvestorRiskFlag[]
   }))
 }
 
+/** D-060's wording, now produced by one helper wherever parking is shown. */
+const PARKING_NOT_PROVIDED = `${NOT_PROVIDED} parking · not provided`
+
 function buildInvestorChips(listing: Listing): string[] {
   const chips: string[] = []
   chips.push(listing.listingType === 'for-sale' ? 'For sale' : 'For rent')
-  chips.push(`${listing.beds} bed · ${listing.baths} bath`)
+  chips.push(bedBathLabel(listing))
   if (listing.sqft) chips.push(`${listing.sqft.toLocaleString()} sqft`)
   if (listing.condoFeeKnown && listing.condoFeeMonthly) chips.push('Condo')
   if (listing.yearBuilt) chips.push(`Built ${listing.yearBuilt}`)
@@ -150,10 +154,7 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
     listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
   const effectiveAnnualTaxes = listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0
 
-  const parking =
-    listing.parkingSpots > 0
-      ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
-      : '— parking · not provided'
+  const parking = countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED })
 
   // Sqft-scaled utility estimates — more accurate than flat rates for varied property sizes
   const sqftBasis = sqft > 0 ? sqft : PROPERTY_COST_ESTIMATES.SQFT_FALLBACK
@@ -167,8 +168,8 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
     province: listing.province,
     toronto: listing.city.toLowerCase() === 'toronto',
     propertyType: listing.propertyType,
-    beds: String(listing.beds),
-    baths: String(listing.baths),
+    beds: bareCount(listing.beds),
+    baths: bareCount(listing.baths),
     sqft,
     parking,
     yearBuilt: listing.yearBuilt ?? 0,
@@ -258,13 +259,10 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
     province: listing.province,
     isToronto: listing.city.toLowerCase() === 'toronto',
     propertyType: listing.propertyType,
-    beds: String(listing.beds),
-    baths: String(listing.baths),
+    beds: bareCount(listing.beds),
+    baths: bareCount(listing.baths),
     sqft: listing.sqft ?? 0,
-    parking:
-      listing.parkingSpots > 0
-        ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
-        : '— parking · not provided',
+    parking: countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED }),
     yearBuilt: listing.yearBuilt ?? 0,
     rentControl: true, // conservative Ontario default
     price: listing.price ?? 0,
@@ -359,8 +357,8 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     // The hero appends the unit ("{beds} · {baths} bath", "{sqft} sqft"), so these
     // carry bare values — beds keeps its "bed(s)" word (hero shows it as-is), but
     // baths/sqft must be bare or they double ("2 baths bath", "700 sqft sqft").
-    beds: `${listing.beds} bed${listing.beds !== 1 ? 's' : ''}`,
-    baths: String(listing.baths),
+    beds: countLabel(listing.beds, 'bed', { fallback: `${NOT_PROVIDED} beds` }),
+    baths: bareCount(listing.baths),
     sqft: listing.sqft ? listing.sqft.toLocaleString() : '',
     floor: '',
     utilities: '',
@@ -417,16 +415,11 @@ export function shimToTenantSpecRows(listing: Listing): {
   buildingRows: Array<[string, string]>
 } {
   const unitRows: Array<[string, string]> = [
-    ['Bedrooms', String(listing.beds)],
-    ['Bathrooms', String(listing.baths)],
+    ['Bedrooms', countLabel(listing.beds, 'bedroom', { fallback: 'Not listed' })],
+    ['Bathrooms', countLabel(listing.baths, 'bathroom', { fallback: 'Not listed' })],
     ['Interior size', listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : 'Not listed'],
     ['Property type', formatPropertyType(listing.propertyType)],
-    [
-      'Parking',
-      listing.parkingSpots > 0
-        ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''}`
-        : 'Not listed',
-    ],
+    ['Parking', countLabel(listing.parkingSpots, 'space', { fallback: 'Not listed' })],
   ]
   const buildingRows: Array<[string, string]> = [
     ['Year built', listing.yearBuilt ? String(listing.yearBuilt) : 'Not listed'],
@@ -486,15 +479,15 @@ export function shimToTenantCostLines(listing: Listing, analysis: Analysis): Ten
       included: 'maybe',
       note: 'confirm if included in rent',
     },
-    listing.parkingSpots > 0
+    knownCount(listing.parkingSpots) != null
       ? {
           k: 'Parking',
           asking: 0,
           target: 0,
           included: included.parking ? true : 'maybe',
           note: included.parking
-            ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''} — listing says included`
-            : `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''} — confirm if extra`,
+            ? `${countLabel(listing.parkingSpots, 'space')} — listing says included`
+            : `${countLabel(listing.parkingSpots, 'space')} — confirm if extra`,
         }
       : { k: 'Parking', asking: 0, target: 0, included: 'maybe', note: 'not listed — confirm' },
   ]
@@ -513,8 +506,8 @@ export function shimToTenantAmenities(listing: Listing): TenantAmenity[] {
       label: 'Parking',
       status: included.parking ? 'incl' : 'unclear',
       note:
-        listing.parkingSpots > 0
-          ? `${listing.parkingSpots} space${listing.parkingSpots !== 1 ? 's' : ''}${included.parking ? ' · listing says included' : ''}`
+        knownCount(listing.parkingSpots) != null
+          ? `${countLabel(listing.parkingSpots, 'space')}${included.parking ? ' · listing says included' : ''}`
           : 'not listed — confirm',
     },
     { label: 'Heat / gas', status: 'unclear', note: 'confirm with landlord' },
@@ -629,8 +622,8 @@ export function shimToTenantChecklist(listing: Listing, analysis: Analysis): Ten
     {
       label: included.parking
         ? `Are the parking stall${included.locker ? ' and locker' : ''} identifiers written into the lease?`
-        : listing.parkingSpots > 0
-          ? `Is the listed parking space${listing.parkingSpots === 1 ? '' : 's'} included in the monthly rent?`
+        : knownCount(listing.parkingSpots) != null
+          ? `Is the listed parking space${knownCount(listing.parkingSpots) === 1 ? '' : 's'} included in the monthly rent?`
           : 'Is parking available, and what would it cost each month?',
       critical: true,
     },
@@ -660,10 +653,7 @@ export function shimToTenantChecklist(listing: Listing, analysis: Analysis): Ten
 export function shimToLandlordProperty(listing: Listing, analysis: Analysis): LandlordProperty {
   const { line1, line2 } = parseAddress(listing.address)
   const price = listing.price ?? 0
-  const parking =
-    listing.parkingSpots > 0
-      ? `${listing.parkingSpots} spot${listing.parkingSpots !== 1 ? 's' : ''}`
-      : '— parking · not provided'
+  const parking = countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED })
 
   return {
     id: listing.id,
@@ -673,8 +663,8 @@ export function shimToLandlordProperty(listing: Listing, analysis: Analysis): La
     province: listing.province,
     toronto: listing.city.toLowerCase() === 'toronto',
     propertyType: formatPropertyType(listing.propertyType),
-    beds: String(listing.beds),
-    baths: String(listing.baths),
+    beds: bareCount(listing.beds),
+    baths: bareCount(listing.baths),
     sqft: listing.sqft ?? 0,
     parking,
     yearBuilt: listing.yearBuilt ?? 0,
