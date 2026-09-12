@@ -278,3 +278,46 @@ def test_nan_break_even_rent_triggers_nonfinite_warning() -> None:
     catch it."""
     result = sanity_check_metrics(**{**_VAUGHAN_OK, "break_even_rent": float("nan")})
     assert any("not a finite number" in w for w in result)
+
+
+def test_plausible_break_even_appreciation_passes() -> None:
+    """The calibration property's real rates (3.0% / 2.0% / 1.0%) are not warnings."""
+    warnings = sanity_check_metrics(
+        **_VAUGHAN_OK, break_even_appreciation_rates=[0.0299, 0.0198, 0.0101]
+    )
+    assert warnings == []
+
+
+def test_negative_break_even_appreciation_passes() -> None:
+    """
+    A property whose paydown outruns its costs can decline and still return the
+    cash. That is a real result, not a data error.
+    """
+    warnings = sanity_check_metrics(
+        **_VAUGHAN_OK, break_even_appreciation_rates=[-0.035, -0.05]
+    )
+    assert warnings == []
+
+
+def test_absurd_break_even_appreciation_warns() -> None:
+    """Above +50%/yr no Ontario market has sustained it — the inputs are wrong."""
+    warnings = sanity_check_metrics(
+        **_VAUGHAN_OK, break_even_appreciation_rates=[0.0299, 1.8]
+    )
+    assert len(warnings) == 1
+    assert "Break-even appreciation" in warnings[0]
+    assert "180.0%" in warnings[0]
+
+
+def test_nonfinite_break_even_appreciation_warns() -> None:
+    """NaN would pass every comparison, so it is named explicitly."""
+    warnings = sanity_check_metrics(
+        **_VAUGHAN_OK, break_even_appreciation_rates=[float("nan")]
+    )
+    assert len(warnings) == 1
+    assert "not a finite number" in warnings[0]
+
+
+def test_break_even_appreciation_omitted_is_not_checked() -> None:
+    """Older callers that don't pass the rates are unaffected."""
+    assert sanity_check_metrics(**_VAUGHAN_OK) == []

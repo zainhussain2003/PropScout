@@ -563,7 +563,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="serif tabular"
               style="font-size: 24px; line-height: 1; color: var(--accent);"
             >
-              $6,057
+              $6,038
               <span
                 style="font-size: 12px; color: var(--muted);"
               >
@@ -840,7 +840,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           class="tabular"
           style="color: var(--accent);"
         >
-          $6,057
+          $6,038
         </span>
          
         — about 
@@ -950,7 +950,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
       <span
         class="verdict-pill pass"
       >
-        $6,057/mo · all-in
+        $6,038/mo · all-in
       </span>
     </div>
     <div
@@ -984,7 +984,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono tabular"
             style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
           >
-            $4,007
+            $3,988
           </span>
         </div>
         <div
@@ -1244,7 +1244,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="serif tabular"
             style="text-align: right; font-size: 30px; line-height: 1; color: var(--accent);"
           >
-            $6,057
+            $6,038
             <span
               style="font-size: 13px; color: var(--muted);"
             >
@@ -1275,7 +1275,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="serif tabular"
               style="font-size: 32px; line-height: 1;"
             >
-              $4,007
+              $3,988
             </span>
             <span
               style="font-size: 13px; color: var(--muted);"
@@ -1338,14 +1338,14 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             </span>
              
             of gross income. At 
-            $6,057
+            $6,038
             /mo, that implies a household income of at least
              
             <span
               class="tabular"
               style="color: var(--accent); font-weight: 500;"
             >
-              $227,151
+              $226,439
             </span>
             .
           </p>

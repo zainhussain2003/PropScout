@@ -51,6 +51,14 @@ class SanityBounds:
     # error in rent or expenses, not a real (if extreme) deal.
     cash_flow_monthly_abs_max: float = 20_000.0
 
+    # Break-even appreciation: the annual growth a hold needs to return its cash.
+    # Wide on purpose — a deeply negative property genuinely can need double-digit
+    # growth, and a strong one genuinely can tolerate decline. Outside this band
+    # the inputs are wrong, not the deal: below -50%/yr the property is worthless
+    # within a couple of years, above +50%/yr no Ontario market has sustained it.
+    break_even_appreciation_min: float = -0.50
+    break_even_appreciation_max: float = 0.50
+
 
 _BOUNDS = SanityBounds()
 
@@ -64,6 +72,7 @@ def sanity_check_metrics(
     break_even_rent: float,
     deal_score: float | None = None,
     cash_flow_monthly: float | None = None,
+    break_even_appreciation_rates: list[float] | None = None,
     bounds: SanityBounds = _BOUNDS,
 ) -> list[str]:
     """
@@ -82,6 +91,9 @@ def sanity_check_metrics(
         deal_score: Final deal score (0–95). Optional — checked only when provided.
         cash_flow_monthly: Monthly cash flow in dollars. Optional — checked only
             when provided.
+        break_even_appreciation_rates: Required annual growth rates as decimals,
+            one per hold period (from hold_case.calculate_break_even_appreciation).
+            Optional — checked only when provided.
         bounds: Override default bounds for testing (use default in production).
 
     Returns:
@@ -186,5 +198,27 @@ def sanity_check_metrics(
             f"(beyond ±${bounds.cash_flow_monthly_abs_max:,.0f}). "
             "Verify rent and expense inputs."
         )
+
+    # ── Break-even appreciation ───────────────────────────────────────────────
+    # A non-finite rate means the closed form divided by ~zero (commission at
+    # 100%) or the price was non-positive; both are input errors, and NaN would
+    # pass every comparison below.
+    for rate in break_even_appreciation_rates or []:
+        if not math.isfinite(rate):
+            warnings.append(
+                f"Break-even appreciation ({rate}) is not a finite number — "
+                "verify purchase price and selling-cost constants."
+            )
+        elif not (
+            bounds.break_even_appreciation_min
+            <= rate
+            <= bounds.break_even_appreciation_max
+        ):
+            warnings.append(
+                f"Break-even appreciation {rate:.1%}/yr is outside the expected "
+                f"range ({bounds.break_even_appreciation_min:.0%}–"
+                f"{bounds.break_even_appreciation_max:.0%}). "
+                "Verify purchase price, cash flow and financing inputs."
+            )
 
     return warnings

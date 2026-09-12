@@ -2110,3 +2110,132 @@ Recorded so they are not mistaken for oversights.
 - **`docs/MVP_TODO.md` mode naming**: the API accepts `investor` while the DB
   check constraint stores `investment`. Not a bug today (the API maps them) but a
   trap worth unifying.
+
+---
+
+### D-062 · Break-even appreciation is reported; the score stays untouched
+
+**Chosen.** A new `calculations/hold_case.py` computes, for 5/10/20-year holds, the **minimum**
+annual price growth required to return every dollar the hold consumes — deposit, purchase closing
+costs and every monthly shortfall — after discharging the mortgage and **before the costs of
+selling**. It reaches the investor report as a card under the equity chart, labelled "at least".
+It does **not** feed the deal score.
+
+**Selling costs are excluded rather than assumed.** The first version of this used a 5%
+commission and a flat sale legal fee, marked unsourced. The owner's instruction was to remove
+anything not confirmed, and commission is the clearest case of that: it is negotiated per deal,
+not regulated or published, and the result is sensitive to it. Excluding it makes every figure a
+floor, which is the safe direction to be incomplete in only if the report says so — so the copy
+reads "a year, at least", states that a real sale costs money, and explains why no number is put
+on it. A test asserts the page never prints a commission figure of its own.
+
+That is the same call as D-019 (SunScout reports "a floor on how much shade there is, not a
+ceiling" rather than assuming heights for untagged buildings) and D-011/D-058 (omit rather than
+estimate). Note the asymmetry that makes labelling essential: an unlabelled floor _understates_
+the bar a deal has to clear, which is the direction that flatters it.
+
+**Why.** `docs/product-audit/INVESTOR_METHOD_RESEARCH.md` established that a shortfall is not
+automatically a loss: "A $1,000 monthly shortfall is not automatically a $12,000 annual economic
+loss if the mortgage balance falls by more than $12,000. It is still a $12,000 annual **liquidity
+requirement**." The report could show a deep negative cash flow and a hard-pass verdict with no way
+for a long-term holder to see whether paydown covers it. The audit listed this as owner decision
+#4 and it was never recorded; this entry settles the narrow part of it.
+
+On the calibration property (−$2,126.82/mo) the numbers are the argument: **at least 1.91%/yr over
+5 years, 1.45% over 10, 0.75% over 20**. The same property needs well over twice the annual growth
+over five years that it needs over twenty.
+
+**The presentation risk, and what was done about it.** 1.01% a year reads as _this deal is fine_
+until you see that reaching year 20 takes **$669,890** of cash, none of which earns anything in
+this model, in equity that cannot be spent until sale. The rate is therefore never rendered
+without the cash beside it, the copy says plainly that breaking even is not a return, and a test
+asserts the cash line appears for every rate. This is the same failure mode as D-004: a number
+that is individually true and collectively misleading.
+
+**What it deliberately does not do**
+
+| Decision                                        | Why                                                                                                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Does not change the deal score or verdict       | Spec §10 requires the score to be reproducible from property and financing alone; D-037 makes the backend its sole authority.                             |
+| Does not credit positive cash flow against cost | A surplus reducing the cost basis would let strong rent flatter the required rate. Surplus contributes zero; the figure stays conservative.               |
+| Does not clamp negative rates to zero           | A property that can decline and still return the cash is a real, favourable result. Hiding it would only ever understate the good case.                   |
+| Does not say whether the rate is achievable     | No local appreciation series is connected (D-058). Stating a required rate is arithmetic; judging it would be invention.                                  |
+| Does not model rent or expense growth           | That is the full hold-case engine (IRR, NPV, equity multiple) the audit proposes. Labelled "at today's rent and costs" rather than implied.               |
+| Does not assume any selling cost                | Commission is negotiated, not published. The figure is a floor and says so; no commission knob exists on the function, so one cannot be quietly supplied. |
+| Does not ask the user for a hold period         | The 5/10/20 snapshots already exist for the equity chart, so the two read against each other and the change needs no new input.                           |
+
+**Alternatives considered**
+
+| Option                                                                             | Why not                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full strategy lens (Income-first / Balanced / Appreciation-led) changing the score | What the audit actually recommends, and still open. It needs a `score_version` bump, spec §10 changes, recalibration against real Ontario properties and the "Income fundamentals" rename — weeks, and a decision of its own. |
+| A declared "max monthly contribution" input                                        | Adds a field and a persisted value to answer a question the derived figure already answers without asking. Revisit if users ask to model reserves.                                                                            |
+| Compute it client-side beside the equity curve                                     | The equity curve is slider-live; cash flow on the live report is not (it comes straight from the API). A client-side break-even would mix live paydown with stale cash flow — one number describing two scenarios.            |
+
+**Known limit.** Because selling costs are excluded, the gap between the reported floor and a
+real break-even is exactly the owner's own cost of selling — on a $730k property a 4–5%
+commission is roughly $30k, which over a ten-year hold is around 0.4pp of annual growth. The
+report says the figure is a minimum; it cannot say by how much.
+
+**Revisit if** a local appreciation series is connected — the report could then place the required
+rate against what the area has actually done, which is the single thing that would make this figure
+actionable rather than merely honest.
+
+---
+
+### D-063 · The live report's sliders recompute every financing-dependent metric
+
+**Chosen.** `ReportPage` now derives its metrics by feeding the API's NOI-stable values through
+`computeDemoMetrics` and then `enrichMetrics`, so a slider move recomputes the mortgage payment,
+cash flow, DSCR, cash-on-cash, break-even rent, cash-to-close, LTT, OSFI, the equity curve and
+break-even appreciation. `useInvestorReport` already did exactly this for its own live path; the
+page was duplicating the wiring and got it wrong.
+
+NOI, cap rate and GRM are **not** financing-dependent — they divide by price, not by the loan — so
+they pass through as the engine calculated them. The deal score still does not move: sliders
+explore the numbers, they do not re-grade the deal (D-037).
+
+**Why.** `enrichMetrics` spreads the API's metrics through untouched, so cash-to-close, LTT and the
+equity curve tracked the sliders while cash flow and DSCR stayed at whatever financing was
+submitted. Dragging down payment from 20% to 50% produced a page showing a 50%-down cash-to-close
+beside a 20%-down cash flow, with nothing saying the two described different scenarios. The comment
+above the code claimed all of them were live, and the demo routes — which call `computeDemoMetrics`
+— genuinely were, so live and demo disagreed. No test covered slider-driven recomputation on the
+live path, which is why it survived.
+
+**The prerequisite, found on the way in, and the reason this is one change and not two.** The
+client calculator divided the annual rate by twelve. That is the US convention; the Interest Act
+requires semi-annual compounding for Canadian fixed-rate mortgages, and the calc engine has always
+done it correctly. On the Vaughan property the client said $3,342.48/mo against the engine's
+$3,326.64 — $15.84 a month, $4,751 over the amortization — and the client was wrong. Making the
+report recompute locally _without_ fixing that would have switched every metric onto the wrong
+convention: live but wrong, which is worse than stale but right. Fixed first, and both calibration
+mortgages are now pinned against the engine's values with the annual/12 answer asserted absent.
+
+**Verification that the recompute is faithful.** With the conventions aligned, the client
+reproduces the engine exactly on the test fixture — municipal LTT $10,323, cash to close $169,776,
+cash flow −$1,493.31, DSCR 0.5511. A test asserts the page shows the engine's figures at the
+submitted financing, so the recompute cannot silently shift the numbers merely by loading.
+
+**A fixture that had been hiding a second inconsistency.** `INVESTOR_ANALYSIS` described a Toronto
+property (55 Front St, M5J) with `lttMunicipal: 0`, a $2,600 payment and −$800 cash flow — none of
+which that property could produce. The page had therefore been showing Toronto's municipal LTT in
+its bracket table while omitting it from cash to close. The fixture now carries the engine's own
+figures, and the D-039 double-count guard asserts against both the old double-count and the new
+one that the extra LTT could create.
+
+**Alternatives considered**
+
+| Option                                                    | Why not                                                                                                                                                                |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Re-run the analysis through the API on each slider move   | What `useInvestorReport` does for its own live path, but `/r/:token` is a shared report a viewer may not own; re-running would mutate stored analysis on their behalf. |
+| Label the sliders exploratory and leave the metrics stale | Honest, and smaller, but spec §6 promises live recalculation on every slider move, and the mixed-scenario page is the actual defect.                                   |
+| Keep the API's LTT rather than recomputing it             | The LTT table was always client-computed, so the total disagreeing with the table was the inconsistency. Recomputing both makes the section agree with itself.         |
+| Take break-even appreciation from the API                 | It depends on every slider. Held at the submitted financing it would describe a different scenario from the cash flow printed beside it — the bug, reintroduced.       |
+| Leave the mortgage convention alone for now               | It is the load-bearing input. Recomputing on top of it would have spread a wrong payment across every live metric.                                                     |
+
+**Known limit, deliberately accepted.** Break-even appreciation now exists twice — `hold_case.py`
+and `computeBreakEvenAppreciation` — which is the drift D-054 and D-055 record. The mitigation is a
+test pinning the TypeScript result against the Python regression floors (1.91% / 1.45% / 0.75%),
+so the two cannot diverge silently. The same tripwire now covers the mortgage payment, which had
+already drifted before anyone noticed.

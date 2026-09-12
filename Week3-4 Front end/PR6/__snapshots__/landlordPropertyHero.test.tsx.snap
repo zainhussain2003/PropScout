@@ -1370,7 +1370,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
             class="mono tabular"
             style="font-weight: 600; color: var(--fail);"
           >
-            −$2,550
+            −$2,542
             /mo
           </span>
         </div>

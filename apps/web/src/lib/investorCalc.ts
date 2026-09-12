@@ -20,6 +20,7 @@ import type {
   LTTRow,
   OSFIResult,
   EquityDataPoint,
+  HoldCaseRow,
   ExpenseBreakdown,
   ComputedInvestorMetrics,
   InvestmentMetrics,
@@ -212,13 +213,32 @@ export function computeOSFI(
  * Standard amortisation — monthly payment for a fixed-rate mortgage.
  * Uses simple monthly compounding (consistent with the Python calc engine).
  */
+/**
+ * Nominal annual Canadian mortgage rate to its monthly equivalent.
+ *
+ * The Interest Act requires semi-annual compounding for Canadian fixed-rate
+ * mortgages, so the monthly equivalent is the sixth root of the semi-annual
+ * factor — NOT the annual rate divided by twelve. Dividing by twelve is the US
+ * convention and overstates the payment: on $583,920 at 4.79% over 25 years it
+ * gives $3,342.48/mo against the correct $3,326.64, which is $190 a year and
+ * $4,751 over the amortization.
+ *
+ * Mirrors `_monthly_rate` in services/calc-engine/calculations/mortgage.py.
+ * The two implementations must agree; `investorCalc.test.ts` pins this one
+ * against the calc engine's known values.
+ */
+function monthlyRate(annualRate: number): number {
+  if (annualRate === 0) return 0
+  return Math.pow(1 + annualRate / 2, 1 / 6) - 1
+}
+
 export function computeMonthlyPayment(
   principal: number,
   annualRate: number,
   years: number
 ): number {
   if (principal <= 0) return 0
-  const r = annualRate / 12
+  const r = monthlyRate(annualRate)
   const n = years * 12
   if (r === 0) return principal / n
   return (principal * r) / (1 - Math.pow(1 + r, -n))
@@ -232,7 +252,7 @@ function remainingBalance(
   years: number,
   monthsElapsed: number
 ): number {
-  const r = annualRate / 12
+  const r = monthlyRate(annualRate)
   const n = years * 12
   if (r === 0) return Math.max(0, principal - (principal / n) * monthsElapsed)
   const pmt = computeMonthlyPayment(principal, annualRate, years)
@@ -313,6 +333,63 @@ export function computeExpenses(
   return { taxes: annualTaxes, insurance, maintenance, vacancy, condo, management, total }
 }
 
+// ── Break-even appreciation ────────────────────────────────────────────────────
+
+/**
+ * Minimum annual price growth needed to return the cash a hold consumes, at
+ * 5/10/20 years. Mirrors `services/calc-engine/calculations/hold_case.py`.
+ *
+ * Recomputed here rather than taken from the API because it depends on every
+ * financing slider — down payment, rate, amortization and the resulting cash
+ * flow. A figure held at the submitted financing while the numbers beside it
+ * moved would describe a different scenario from the rest of the page.
+ *
+ * SELLING COSTS ARE EXCLUDED, so every result is a floor: realtor commission is
+ * negotiated rather than published in Ontario, so the model stops at the
+ * mortgage discharge and the report says "at least". See D-062.
+ *
+ * Two implementations of one calculation is the drift risk D-054 and D-055
+ * record; `investorCalc.test.ts` pins this against the calc engine's regression
+ * values so they cannot diverge silently.
+ */
+export function computeBreakEvenAppreciation(
+  price: number,
+  principal: number,
+  mortgageRate: number,
+  amortizationYears: number,
+  monthlyCashFlow: number,
+  totalCashInvested: number,
+  snapshotYears: readonly number[] = [5, 10, 20]
+): HoldCaseRow[] {
+  if (price <= 0) return []
+
+  // Only a shortfall is money the buyer has to find. A surplus is deliberately
+  // not credited back — that would let strong rent flatter the required rate.
+  const monthlyContribution = monthlyCashFlow < 0 ? -monthlyCashFlow : 0
+
+  return snapshotYears.map((year) => {
+    const balance =
+      year >= amortizationYears
+        ? 0
+        : Math.max(0, remainingBalance(principal, mortgageRate, amortizationYears, year * 12))
+
+    const cumulativeContribution = monthlyContribution * 12 * year
+    const totalCashIn = totalCashInvested + cumulativeContribution
+    const breakEvenSalePrice = totalCashIn + balance
+
+    return {
+      year,
+      cashInvested: totalCashInvested,
+      cumulativeContribution,
+      totalCashIn,
+      mortgageBalance: balance,
+      principalRepaid: principal - balance,
+      breakEvenSalePrice,
+      breakEvenAnnualRate: Math.pow(breakEvenSalePrice / price, 1 / year) - 1,
+    }
+  })
+}
+
 // ── Enrich API metrics ─────────────────────────────────────────────────────────
 
 /**
@@ -359,6 +436,14 @@ export function enrichMetrics(
     listing.yearBuilt,
     financing.includeManagementFee
   )
+  const holdCase = computeBreakEvenAppreciation(
+    listing.price,
+    principal,
+    financing.mortgageRate,
+    financing.amortizationYears,
+    metrics.cashFlowMonthly,
+    totalCashInvested
+  )
 
   return {
     ...metrics,
@@ -366,6 +451,7 @@ export function enrichMetrics(
     ltt,
     osfi,
     equityCurve,
+    holdCase,
     grossRentAnnual,
     totalCashInvested,
     principal,

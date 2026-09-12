@@ -36,6 +36,9 @@ from calculations.investment import (  # noqa: E402
     calculate_cash_flow_monthly,
 )
 from calculations.deal_score import calculate_deal_score  # noqa: E402
+from calculations.hold_case import (  # noqa: E402
+    calculate_break_even_appreciation,
+)
 from constants.rates import get_maintenance_rate  # noqa: E402
 
 # ── Shared financing ───────────────────────────────────────────────
@@ -502,3 +505,54 @@ def test_matrix_regression_approved_cells():
     for flag_id, mode, tier in expected:
         actual = get_flag_tier(flag_id, mode)
         assert actual == tier, f"{flag_id}[{mode}]: expected {tier}, got {actual}"
+
+
+# ── Vaughan: break-even appreciation ───────────────────────────────
+
+
+def test_vaughan_break_even_appreciation() -> None:
+    """
+    Vaughan break-even growth: ~1.91% at 5yr, ~1.45% at 10yr, ~0.75% at 20yr.
+
+    These are exact known values for the calibration property at its calibrated
+    −$2,126.82/mo cash flow, and they EXCLUDE the costs of selling (commission
+    is not a published rate), so each one is a floor. They encode the product
+    claim that a long hold can absorb a monthly shortfall: the same property
+    needs well over twice the annual growth over five years that it needs over
+    twenty.
+
+    If this fails, the arithmetic changed — not the property. Re-derive
+    deliberately; never edit the expected values to match new output.
+    """
+    maintenance_rate = get_maintenance_rate(VAUGHAN["year_built"])
+    principal = VAUGHAN["price"] * (1 - DOWN_PCT)
+    monthly_mortgage = calculate_monthly_payment(principal, RATE, AMORT)
+    cf = calculate_cash_flow_monthly(
+        monthly_rent=VAUGHAN["rent_mid"],
+        mortgage_payment=monthly_mortgage,
+        annual_taxes=VAUGHAN["annual_taxes"],
+        insurance_value=VAUGHAN["price"],
+        condo_fee_monthly=VAUGHAN["condo_fee_monthly"],
+        maintenance_rate=maintenance_rate,
+        property_value=VAUGHAN["price"],
+        include_management=False,
+    )
+
+    rows = calculate_break_even_appreciation(
+        purchase_price=VAUGHAN["price"],
+        down_payment_pct=DOWN_PCT,
+        annual_rate=RATE,
+        amortization_years=AMORT,
+        monthly_cash_flow=cf,
+        is_toronto=VAUGHAN["toronto"],
+    )
+    by_year = {row["year"]: row for row in rows}
+
+    assert abs(by_year[5]["break_even_annual_rate"] - 0.0191) < 0.0005
+    assert abs(by_year[10]["break_even_annual_rate"] - 0.0145) < 0.0005
+    assert abs(by_year[20]["break_even_annual_rate"] - 0.0075) < 0.0005
+
+    # Cash actually required over a 20-year hold — the figure the report must
+    # show beside the growth rate, so a reader sees the liquidity demand and
+    # not just the reassuringly small percentage.
+    assert abs(by_year[20]["total_cash_in"] - 669_890) < 50

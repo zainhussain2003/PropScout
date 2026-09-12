@@ -189,6 +189,36 @@ export interface NeighbourhoodStats {
   areaLabel: string
 }
 
+/**
+ * Break-even economics for one hold period, from the calc engine
+ * (`calculations/hold_case.py`).
+ *
+ * `breakEvenAnnualRate` is the annual price growth required to return every
+ * dollar the hold consumes — down payment, purchase closing costs and every
+ * monthly shortfall — after selling costs and discharging the mortgage. It is
+ * NOT a return: at this rate the buyer gets their money back and nothing more,
+ * and the model credits no return on the cash while it is tied up.
+ *
+ * Held at today's rent and costs: no rent growth, expense growth, vacancy,
+ * capital work or renewal-rate shock. Report it as arithmetic, never a forecast.
+ */
+export interface HoldCaseRow {
+  /** Hold period in years — 5, 10 and 20, matching the equity chart. */
+  year: number
+  /** Down payment plus purchase closing costs. */
+  cashInvested: number
+  /** Total shortfall funded over the hold; 0 when cash flow is not negative. */
+  cumulativeContribution: number
+  /** cashInvested + cumulativeContribution. */
+  totalCashIn: number
+  mortgageBalance: number
+  principalRepaid: number
+  /** Sale price that returns totalCashIn exactly. */
+  breakEvenSalePrice: number
+  /** Required annual growth as a decimal (0.042 = 4.2%); may be negative. */
+  breakEvenAnnualRate: number
+}
+
 export interface Analysis {
   id: string
   token: string // share token for /r/[token]
@@ -223,6 +253,11 @@ export interface Analysis {
   comparableSalesAreSample?: boolean
   hasSanityWarnings: boolean
   sunScout: SunScoutResult | null
+  /**
+   * Break-even appreciation per hold period. Optional: analyses stored before
+   * this shipped don't carry it; null when the calc engine did not return it.
+   */
+  holdCase?: HoldCaseRow[] | null
   /** Geocoded subject-property coordinates — enables the real MiniMap.
    * Optional: analyses stored before 2026-07-01 don't carry it; null when
    * geocoding failed. */
@@ -410,6 +445,12 @@ export interface ComputedInvestorMetrics extends InvestmentMetrics {
   ltt: LTTResult
   osfi: OSFIResult
   equityCurve: EquityDataPoint[]
+  /**
+   * Break-even appreciation recomputed from the current slider state, so it
+   * always describes the same scenario as the cash flow shown beside it.
+   * Mirrors the calc engine's `hold_case.py`; parity is pinned by test.
+   */
+  holdCase: HoldCaseRow[]
   grossRentAnnual: number
   totalCashInvested: number
   principal: number

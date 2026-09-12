@@ -110,23 +110,32 @@ const SALE_LISTING: Listing = {
 const INVESTOR_ANALYSIS: Analysis = {
   ...ANALYSIS,
   mode: 'investor',
+  // Self-consistent with the calc engine for this listing: 55 Front St is a
+  // TORONTO property (M5J), so a $729,900 purchase owes municipal LTT as well
+  // as provincial. These are the engine's own figures for 20% down at 4.79%
+  // over 25 years on NOI $22,000 — the client recomputes the financing-
+  // dependent ones from the sliders and must reproduce exactly these at the
+  // submitted financing. The fixture previously carried a $2,600 payment,
+  // −$800 cash flow and zero municipal LTT, none of which this property could
+  // produce, which hid the fact that the page showed Toronto LTT in its
+  // bracket table but omitted it from cash-to-close.
   metrics: {
-    cashFlowMonthly: -800,
-    cashFlowAnnual: -9600,
+    cashFlowMonthly: -1493.31,
+    cashFlowAnnual: -17919.68,
     capRate: 0.045,
-    cashOnCashReturn: -0.02,
-    dscr: 1.05,
+    cashOnCashReturn: -0.105549,
+    dscr: 0.5511,
     grm: 18,
     noi: 22000,
-    mortgagePaymentMonthly: 2600,
+    mortgagePaymentMonthly: 3326.64,
     downPayment: 145980,
     mortgageAmount: 583920,
     amortizationYears: 25,
     mortgageRate: 0.0479,
     breakEvenRent: 3200,
-    closingCostsTotal: 13473,
+    closingCostsTotal: 23796,
     lttProvincial: 11073,
-    lttMunicipal: 0,
+    lttMunicipal: 10323,
     hasSanityWarnings: false,
   },
   // One 5-pt red flag is applied: subtotal 70 → stored total 65 → display round(65×100/95)=68.
@@ -579,9 +588,13 @@ describe('ReportPage — for-rent landlord hero honesty', () => {
     expect(screen.getByText(/— parking · not provided/)).toBeInTheDocument()
     expect(screen.queryByText(/Built \d{4}/)).not.toBeInTheDocument()
     expect(screen.queryByText(/^0 parking$/)).not.toBeInTheDocument()
-    // The API's $13,473 closing total already includes $11,073 provincial LTT.
-    expect(screen.getAllByText('$159,453').length).toBeGreaterThan(0)
+    // The API's $23,796 closing total already includes $11,073 provincial and
+    // $10,323 municipal LTT (Toronto), so cash to close is
+    // $145,980 + $23,796 = $169,776. The guard this test exists for is that
+    // neither LTT is added a second time on top of that total (D-039).
+    expect(screen.getAllByText('$169,776').length).toBeGreaterThan(0)
     expect(screen.queryByText('$170,526')).not.toBeInTheDocument()
+    expect(screen.queryByText('$191,172')).not.toBeInTheDocument()
     expect(screen.getByText('Other closing costs (est.)')).toBeInTheDocument()
     expect(screen.getByText('$2,400')).toBeInTheDocument()
   })
@@ -610,5 +623,83 @@ describe('ReportPage — for-rent landlord hero honesty', () => {
     expect(screen.queryByText(/bath bath/)).not.toBeInTheDocument()
     // Purchase-transaction section hidden without a sale price
     expect(screen.queryByText(/on closing day/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('ReportPage — live financing sliders recompute every dependent metric', () => {
+  beforeEach(() => {
+    getAnalysisByToken.mockReset()
+    listOverrides.mockReset()
+    listOverrides.mockResolvedValue([])
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+    })
+  })
+
+  /** The page's full text — figures are split across nested nodes. */
+  function pageText(): string {
+    return document.body.textContent ?? ''
+  }
+
+  it('reproduces the API figures at the submitted financing', async () => {
+    // The recompute must not shift the numbers merely by loading the page. The
+    // client and the calc engine now share the Canadian semi-annual convention,
+    // so at 20% down the client reproduces the engine's own -$1,493.31 cash
+    // flow and 0.55x DSCR exactly.
+    renderReport()
+    await waitFor(() => expect(pageText()).toContain('−$1,494'))
+    expect(pageText()).toContain('0.55×')
+  })
+
+  it('moves cash flow and DSCR when down payment changes, not just cash-to-close', async () => {
+    // The defect this pins: ReportPage called enrichMetrics alone, which spreads
+    // the API metrics through untouched. Cash-to-close and the equity curve
+    // moved with the slider while cash flow and DSCR stayed at the submitted
+    // financing, so the page showed a 50%-down cash-to-close beside a 20%-down
+    // cash flow. The code comment claimed all of them were live.
+    renderReport()
+    await waitFor(() => expect(pageText()).toContain('−$1,494'))
+
+    fireEvent.change(await screen.findByLabelText('Down payment'), {
+      target: { value: '50' },
+    })
+
+    // Engine values for 50% down at 4.79% over 25 years on NOI $22,000.
+    await waitFor(() => expect(pageText()).toContain('−$246'))
+    expect(pageText()).toContain('0.88×')
+    expect(pageText()).not.toContain('−$1,494')
+  })
+
+  it('moves break-even appreciation with the sliders too', async () => {
+    // Break-even depends on down payment, rate, amortization and the resulting
+    // cash flow. Left at the API value it would describe a different scenario
+    // from every number beside it — the reason it is recomputed client-side.
+    renderReport()
+    const card = await screen.findByTestId('break-even-appreciation')
+    const before = card.textContent ?? ''
+
+    fireEvent.change(await screen.findByLabelText('Down payment'), {
+      target: { value: '50' },
+    })
+
+    await waitFor(() => {
+      const card2 = screen.getByTestId('break-even-appreciation')
+      expect(card2.textContent ?? '').not.toBe(before)
+    })
+  })
+
+  it('does not re-grade the deal score when financing changes', async () => {
+    // One source of truth: sliders explore the numbers, they do not re-score.
+    renderReport()
+    const slider = await screen.findByLabelText('Down payment')
+    const score = await screen.findByText('68')
+
+    fireEvent.change(slider, { target: { value: '50' } })
+
+    // Wait for the recompute to land, then confirm the score did not follow it.
+    await waitFor(() => expect(pageText()).toContain('−$246'))
+    expect(score).toBeInTheDocument()
+    expect(screen.getByText('68')).toBeInTheDocument()
   })
 })

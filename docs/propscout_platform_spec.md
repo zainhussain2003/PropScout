@@ -249,8 +249,46 @@ Calculated outputs:
 - GRM — Gross Rent Multiplier = purchase price / annual gross rent
 - Break-even rent = all monthly expenses combined
 - Equity build at 5, 10, and 20 years (mortgage paydown + 3% appreciation, user-adjustable)
+- Break-even appreciation at 5, 10, and 20 years — the minimum annual price growth required to return all cash the hold consumes, before the costs of selling
 
 Maintenance reserve by build year: post-2010 at 0.5%/yr, 1980–2010 at 1.0%/yr, pre-1980 at 1.5%/yr.
+
+**Break-even appreciation** (`calculations/hold_case.py`) answers the question a buyer facing
+negative cash flow actually asks: how much price growth makes this not a loss? For each hold
+period:
+
+```
+cash in   = down payment + purchase closing costs + cumulative monthly shortfall
+cash out  = sale price − remaining mortgage balance
+sale price at break-even = cash in + balance
+required annual rate     = (sale price / purchase price) ^ (1 / years) − 1
+```
+
+**Selling costs are excluded, which makes every figure a floor.** Realtor commission is not a
+regulated or published rate in Ontario — the commonly quoted 5% is a negotiable convention — and
+sale-side legal fees are not published either. Rather than invent a figure that materially moves
+the answer, the model stops at the mortgage discharge and reports the growth needed to return the
+cash _before_ the costs of selling. The real break-even is higher by whatever the owner's own
+selling costs turn out to be, and the report must say "at least". Same treatment as the SunScout
+obstruction model (D-019), which reports a floor on shade rather than assuming unknown building
+heights.
+
+Rules this figure is presented under:
+
+- **It never touches the deal score.** Appreciation is a scenario, not an earned point (§10a).
+- **A surplus is not credited.** Positive cash flow contributes nothing to cash in, so the
+  required rate is never flattered by strong rent.
+- **A negative result is shown as negative** — a property whose paydown outruns its costs can
+  fall in value and still return the cash, and that is a real outcome, not a floor at zero.
+- **The cash is shown beside the rate.** A long hold can produce a small percentage while
+  demanding hundreds of thousands in contributions; the rate alone would mislead.
+- **No achievability claim.** There is no local appreciation series connected (D-058), so the
+  report states the required rate and stops.
+- **Always presented as a minimum**, with the exclusion of selling costs stated, never as an
+  exact break-even.
+- **Today's rent and costs, held flat.** No rent growth, expense growth, vacancy, capital work
+  or renewal shock, and no credit for what the cash could have earned elsewhere. It is a
+  break-even, not a return, and must not be presented as a forecast.
 
 **4. Rental comps engine** (all tiers)
 

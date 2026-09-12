@@ -156,6 +156,25 @@ class SunScoutResponse(BaseModel):
     sun_scout: SunScoutOutput | None
 
 
+class HoldCaseOutput(BaseModel):
+    """
+    Break-even economics for one hold period (calculations/hold_case.py).
+
+    Reports what price growth the hold must deliver to return the cash it
+    consumes. Deliberately not part of the deal score — appreciation is a
+    scenario, not an earned point (spec §10, docs/DECISIONS.md D-037).
+    """
+
+    year: int
+    cash_invested: float
+    cumulative_contribution: float
+    total_cash_in: float
+    mortgage_balance: float
+    principal_repaid: float
+    break_even_sale_price: float
+    break_even_annual_rate: float
+
+
 class AnalysisOutput(BaseModel):
     """Full analysis result returned to the Fastify API."""
 
@@ -164,3 +183,5 @@ class AnalysisOutput(BaseModel):
     risk_flags: list[dict[str, object]]
     has_sanity_warnings: bool
     sun_scout: SunScoutOutput | None = None
+    # Defaults to empty so an older stored analysis deserialises unchanged.
+    hold_case: list[HoldCaseOutput] = []
