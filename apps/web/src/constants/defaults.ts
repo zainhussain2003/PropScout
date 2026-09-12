@@ -14,6 +14,8 @@ export const PROPERTY_COST_ESTIMATES = {
   INSURANCE_RATE_ANNUAL: 0.0035, // mirrors INSURANCE_RATE in Python
   // calc engine — keep in sync if
   // calibration changes
+  VACANCY_ALLOWANCE: 0.05, // mirrors VACANCY_ALLOWANCE in the calc engine
+  MANAGEMENT_FEE: 0.08, // mirrors MANAGEMENT_FEE in the calc engine
 } as const
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {

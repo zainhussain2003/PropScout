@@ -2191,9 +2191,13 @@ cash flow, DSCR, cash-on-cash, break-even rent, cash-to-close, LTT, OSFI, the eq
 break-even appreciation. `useInvestorReport` already did exactly this for its own live path; the
 page was duplicating the wiring and got it wrong.
 
-NOI, cap rate and GRM are **not** financing-dependent — they divide by price, not by the loan — so
-they pass through as the engine calculated them. The deal score still does not move: sliders
-explore the numbers, they do not re-grade the deal (D-037).
+GRM is **not** financing-dependent — it divides by price, not by the loan — so it passes through as
+the engine calculated it.
+
+> **Corrected by D-067.** This entry originally said the same of NOI and cap rate. That holds for
+> the down payment, the rate and the amortization, but not for the management-fee toggle, which is
+> an operating expense inside NOI. This change therefore left that one desynced; D-067 fixes it. The deal score still does not move: sliders
+> explore the numbers, they do not re-grade the deal (D-037).
 
 **Why.** `enrichMetrics` spreads the API's metrics through untouched, so cash-to-close, LTT and the
 equity curve tracked the sliders while cash flow and DSCR stayed at whatever financing was
@@ -2407,3 +2411,56 @@ the old code showed that text too. Verified by negative control — restoring
 | Say "we've emailed you" instead of "if that address…" | A stronger claim than Supabase's response supports, and it turns the form into an account-enumeration oracle.                |
 | Validate the address against the users table first    | Same enumeration problem, plus a new endpoint, to save a wasted email.                                                       |
 | Leave validation to the browser's `type="email"`      | Does nothing on a programmatic click and gives no message; the inline error is what a locked-out user needs.                 |
+
+---
+
+### D-067 · The management fee changes NOI, because that is what it is
+
+**Chosen.** The calc engine echoes `management_fee_included` — the state it actually used — and the
+report restates NOI by exactly the fee when the user's toggle disagrees with it. Cap rate follows
+NOI, and every metric derived from NOI (cash flow, DSCR, cash-on-cash, break-even rent) follows
+with it. The expense table is unchanged; it was already right.
+
+**Why.** Audit finding R-01. `computeExpenses` recomputes the expense rows in the browser from the
+live toggle, while NOI comes from the backend, which ran with management **off** by default and
+never reported which state it used. Ticking "Include 8% management fee" therefore added the fee to
+the expense rows and moved nothing else: on the reviewer's figures, $22,020.50 of expenses beside
+an NOI of $7,139.50 on $27,000 gross rent — a **$2,160 contradiction, exactly 8% of gross rent**.
+A reader summing the rows could not arrive at the NOI printed beside them, which is the arithmetic
+the product sells.
+
+**This is partly a regression I introduced.** D-063 made the sliders recompute every
+financing-dependent metric and stated that "NOI, cap rate and GRM are NOT financing-dependent —
+they divide by price, not by the loan." True of the down payment, the rate and the amortization;
+false of the management toggle, which is an operating expense inside NOI. So the slider fix left
+this one desynced and the claim in D-063 is wrong as written.
+
+**The invariant, now asserted.** Gross rent minus every expense row equals NOI. It holds because
+the engine deducts vacancy from income while the table lists it as an expense — algebraically the
+same — so the two presentations are interchangeable _only_ while they agree about management. A
+test pins the identity for both toggle states and both baseline states, which makes this class of
+drift a test failure rather than a reading exercise.
+
+**NOI is adjusted, not re-derived.** Only the one term that changed is added or removed. The full
+NOI formula stays in the calc engine, so this does not become a third place where the same
+arithmetic lives (D-054, D-055).
+
+**A correction to the earlier triage.** This item entered the working list as "the expense table
+implies NOI of $20,652 against the engine's $22,000, a $1,348 gap". That figure was wrong: it came
+from a test fixture that paired a hardcoded NOI with an estimated tax from a different property.
+Re-derived from the real calibration inputs, the table reconciles to the cent with management off.
+The defect is real but it is the management fee specifically, not a general mismatch.
+
+**Alternatives considered**
+
+| Option                                                      | Why not                                                                                                                                               |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hide the management row unless the saved NOI included it    | Keeps the page consistent by removing a control the spec asks for (§6, "management fee 8%, toggleable"), and the reader still cannot model it.        |
+| Re-run the analysis through the API when the toggle changes | Correct, but the toggle is an exploration control and `/r/:token` is a shared report a viewer may not own — the same reason D-063 recomputes locally. |
+| Recompute NOI from its parts in TypeScript                  | A third implementation of the NOI formula. Adjusting by the single changed term needs no duplicate of the whole calculation.                          |
+| Infer the baseline from the default instead of echoing it   | `include_management_fee` defaults to false today, so it would work — until a request carries it, at which point the page is silently wrong again.     |
+| Leave it and document the discrepancy                       | It is a number contradicting another number on the same screen, which is the failure mode this codebase keeps finding (D-004, D-039, D-058).          |
+
+**Known limit.** The restatement assumes the fee is 8% of gross rent in both layers;
+`PROPERTY_COST_ESTIMATES.MANAGEMENT_FEE` now mirrors the engine's `MANAGEMENT_FEE` and the
+reconciliation test fails if they diverge, but they are still two constants rather than one source.

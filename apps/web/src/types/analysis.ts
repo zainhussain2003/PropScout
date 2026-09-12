@@ -68,6 +68,16 @@ export interface InvestmentMetrics {
 
   // Costs
   breakEvenRent: number
+  /**
+   * Whether the 8% management fee is inside `noi`. The report recomputes its
+   * expense table in the browser, so without this it could show a management
+   * row that NOI does not include — the expense breakdown then cannot be
+   * reconciled with the NOI printed beside it (audit R-01).
+   *
+   * Optional: analyses saved before this shipped do not carry it, and absent
+   * reads as false, which matches the engine's default.
+   */
+  managementFeeIncluded?: boolean
   closingCostsTotal: number
   lttProvincial: number
   lttMunicipal: number // Toronto only
