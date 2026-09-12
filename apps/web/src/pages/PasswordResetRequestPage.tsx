@@ -4,16 +4,54 @@
  *   State 2 (submitted) — sent confirmation with "Back to sign in" primary
  * Route: /auth/reset
  * Design source: auth-stubs.jsx::PasswordResetRequest
+ *
+ * The submit button used to be `onClick={() => setSubmitted(true)}` — it showed
+ * "Reset link sent" without calling anything, so someone locked out of their
+ * account was told an email was on its way that was never sent. The service
+ * function and the confirm page at /auth/reset/confirm were both already
+ * working; only this call was missing.
+ *
+ * The confirmation deliberately does not say whether the address exists. That
+ * is Supabase's behaviour and the right one: a reset form that distinguishes
+ * "sent" from "no such account" is an account-enumeration oracle.
  */
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { StubState } from '../components/states/StubState'
+import { resetPasswordForEmail } from '../lib/services/authService'
+
+/** Enough to catch a typo, without reimplementing address validation. */
+function looksLikeEmail(value: string): boolean {
+  const trimmed = value.trim()
+  return trimmed.length >= 5 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+}
 
 export function PasswordResetRequestPage(): JSX.Element {
   const navigate = useNavigate()
   const [submitted, setSubmitted] = useState(false)
   const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(): Promise<void> {
+    if (!looksLikeEmail(email)) {
+      setError('Enter the email address you signed up with')
+      return
+    }
+    setError('')
+    setLoading(true)
+    const result = await resetPasswordForEmail(email.trim())
+    setLoading(false)
+    // A real failure (auth unavailable, rate limited) must surface. Showing
+    // "check your inbox" on an error is what made this page lie in the first
+    // place, so the confirmation is only reached when the send succeeded.
+    if (result.error != null) {
+      setError(result.error)
+      return
+    }
+    setSubmitted(true)
+  }
 
   // ── State 2: sent confirmation ────────────────────────────────────
   if (submitted) {
@@ -64,16 +102,21 @@ export function PasswordResetRequestPage(): JSX.Element {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setError('')
+            }}
             className="pr-input"
             placeholder="you@example.com"
           />
+          {error && <span style={{ fontSize: 13, color: 'var(--fail)' }}>{error}</span>}
           <button
             className="btn btn-primary"
             style={{ justifyContent: 'center' }}
-            onClick={() => setSubmitted(true)}
+            onClick={() => void handleSubmit()}
+            disabled={loading}
           >
-            Send reset link
+            {loading ? 'Sending…' : 'Send reset link'}
           </button>
         </div>
       </div>

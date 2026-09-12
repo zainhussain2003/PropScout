@@ -8,9 +8,20 @@
  * Tests assert the key headline appears and the primary CTA button is present.
  */
 
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+
+// The reset-request page had no test that it called anything, which is how it
+// shipped showing "Reset link sent." from a bare setState. Mocked here so the
+// call itself can be asserted.
+// Only resetPasswordForEmail is replaced — the rest of the module is real, so
+// MagicLinkConfirmedPage keeps its onAuthStateChange subscription.
+const resetPasswordForEmail = vi.fn()
+vi.mock('../../apps/web/src/lib/services/authService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../apps/web/src/lib/services/authService')>()),
+  resetPasswordForEmail: (email: string) => resetPasswordForEmail(email),
+}))
 
 import { MagicLinkSentPage } from '../../apps/web/src/pages/MagicLinkSentPage'
 import { MagicLinkConfirmedPage } from '../../apps/web/src/pages/MagicLinkConfirmedPage'
@@ -56,6 +67,11 @@ describe('MagicLinkConfirmedPage', () => {
 // ── PasswordResetRequestPage ───────────────────────────────────────────────────
 
 describe('PasswordResetRequestPage', () => {
+  beforeEach(() => {
+    resetPasswordForEmail.mockReset()
+    resetPasswordForEmail.mockResolvedValue({ error: null })
+  })
+
   it('renders "Forgot your password?" headline', () => {
     wrap(<PasswordResetRequestPage />)
     expect(screen.getByText('Forgot your password?')).toBeInTheDocument()
@@ -64,6 +80,90 @@ describe('PasswordResetRequestPage', () => {
   it('renders the "Send reset link" primary CTA', () => {
     wrap(<PasswordResetRequestPage />)
     expect(screen.getByText('Send reset link')).toBeInTheDocument()
+  })
+
+  it('actually sends the reset email', async () => {
+    // THE missing test. The button was `onClick={() => setSubmitted(true)}`, so
+    // someone locked out of their account was told a link was on its way and
+    // none was sent. Asserting the confirmation text alone would still pass
+    // against that bug — the call is what matters.
+    wrap(<PasswordResetRequestPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: { value: 'locked.out@example.com' },
+    })
+    fireEvent.click(screen.getByText('Send reset link'))
+
+    await waitFor(() => {
+      expect(resetPasswordForEmail).toHaveBeenCalledWith('locked.out@example.com')
+    })
+    expect(await screen.findByText('Reset link sent.')).toBeInTheDocument()
+  })
+
+  it('trims whitespace before sending', async () => {
+    wrap(<PasswordResetRequestPage />)
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: { value: '  user@example.com  ' },
+    })
+    fireEvent.click(screen.getByText('Send reset link'))
+
+    await waitFor(() => {
+      expect(resetPasswordForEmail).toHaveBeenCalledWith('user@example.com')
+    })
+  })
+
+  it('does not claim a link was sent when the send fails', async () => {
+    // The failure that made the old page a lie: reaching the confirmation
+    // regardless of outcome. A real error (auth unavailable, rate limited)
+    // must be visible instead.
+    resetPasswordForEmail.mockResolvedValue({ error: 'Email rate limit exceeded' })
+    wrap(<PasswordResetRequestPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: { value: 'user@example.com' },
+    })
+    fireEvent.click(screen.getByText('Send reset link'))
+
+    expect(await screen.findByText('Email rate limit exceeded')).toBeInTheDocument()
+    expect(screen.queryByText('Reset link sent.')).not.toBeInTheDocument()
+  })
+
+  it('rejects an address that cannot be one, without calling the service', async () => {
+    wrap(<PasswordResetRequestPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: { value: 'not-an-email' },
+    })
+    fireEvent.click(screen.getByText('Send reset link'))
+
+    expect(
+      await screen.findByText('Enter the email address you signed up with')
+    ).toBeInTheDocument()
+    expect(resetPasswordForEmail).not.toHaveBeenCalled()
+    expect(screen.queryByText('Reset link sent.')).not.toBeInTheDocument()
+  })
+
+  it('shows progress and blocks a double send while in flight', async () => {
+    let release: (v: { error: null }) => void = () => {}
+    resetPasswordForEmail.mockReturnValue(
+      new Promise<{ error: null }>((resolve) => {
+        release = resolve
+      })
+    )
+    wrap(<PasswordResetRequestPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: { value: 'user@example.com' },
+    })
+    fireEvent.click(screen.getByText('Send reset link'))
+
+    const button = await screen.findByText('Sending…')
+    expect(button).toBeDisabled()
+    fireEvent.click(button)
+    expect(resetPasswordForEmail).toHaveBeenCalledTimes(1)
+
+    release({ error: null })
+    expect(await screen.findByText('Reset link sent.')).toBeInTheDocument()
   })
 })
 

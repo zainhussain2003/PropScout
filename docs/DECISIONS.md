@@ -2360,3 +2360,50 @@ copy of the same JWT block; `/me`, both billing routes and the PDF route still c
 should migrate, which is a refactor rather than part of this fix. And the honest consequence of
 this change is a capability removed from anonymous users — if that matters, the answer is letting a
 signed-in user claim an analysis they created, not loosening the check.
+
+---
+
+### D-066 · The password reset form sends the email
+
+**Chosen.** `PasswordResetRequestPage` calls `resetPasswordForEmail`. The confirmation is shown
+only when the send succeeds; a failure surfaces the error; an address that cannot be one is
+rejected before any call; the button shows progress and cannot be double-submitted.
+
+**Why.** The submit handler was `onClick={() => setSubmitted(true)}`. It rendered "Reset link
+sent. If that address is in our system, you'll get an email shortly" without calling anything, so
+a user locked out of their account was told help was on the way and nothing happened. They would
+wait, check spam, and try again — with the same result. It is the smallest fix on the audit list
+and the most directly harmful thing still outstanding after the P0s, which is why the
+counter-review put it second.
+
+**Wire rather than remove, because the rest of the chain already worked.** `resetPasswordForEmail`
+existed and was correct. `/auth/reset/confirm` was fully wired — it calls `updatePassword`,
+validates length and match, and surfaces errors. Only this one call was missing, so wiring it
+completes a working feature rather than exposing a half-built one. Removing the form would have
+stranded the confirm page with no way to reach it.
+
+**The confirmation deliberately does not say whether the address exists.** "If that address is in
+our system" is kept verbatim. Supabase returns success either way, and a reset form that
+distinguishes "sent" from "no such account" is an account-enumeration oracle. The honest-looking
+alternative ("we've emailed you") would be a stronger claim than the product can make.
+
+**Errors are not swallowed into the confirmation.** Reaching the success state regardless of
+outcome is precisely what made the page lie, so `{ error }` from the service now blocks it. A rate
+limit or an unconfigured auth client is visible instead of being reported as a sent email.
+
+**What the test does, and what the old test did not.** The two existing tests asserted the
+headline and the button label — both passed against the broken page, because a page that renders
+the right words and does nothing satisfies them. The new test asserts `resetPasswordForEmail` was
+**called with the typed address**, which no assertion on the confirmation text can substitute for:
+the old code showed that text too. Verified by negative control — restoring
+`onClick={() => setSubmitted(true)}` fails five of the six.
+
+**Alternatives considered**
+
+| Option                                                | Why not                                                                                                                      |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Remove the form until auth is finished                | Auth is finished; only this call was absent. Removing it would orphan a working confirm page and a working service function. |
+| Show the confirmation regardless, and log failures    | The defect exactly. A user cannot act on a server-side log.                                                                  |
+| Say "we've emailed you" instead of "if that address…" | A stronger claim than Supabase's response supports, and it turns the form into an account-enumeration oracle.                |
+| Validate the address against the users table first    | Same enumeration problem, plus a new endpoint, to save a wasted email.                                                       |
+| Leave validation to the browser's `type="email"`      | Does nothing on a programmatic click and gives no message; the inline error is what a locked-out user needs.                 |
