@@ -335,6 +335,25 @@ describe('saveAnalysis', () => {
     expect(result).toBe('deadbeefdeadbeefdeadbeefdeadbeef')
   })
 
+  it('persists a listing snapshot so a later re-scrape cannot rewrite the report', async () => {
+    // Without this the report renders whatever the listings row says TODAY,
+    // while its stored metrics are frozen at analysis time.
+    const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
+    const analysisChain = makeQueryChain({ data: null, error: null })
+    mockFrom.mockReturnValueOnce(listingChain).mockReturnValueOnce(analysisChain)
+
+    await saveAnalysis(makeAnalysis(), makeListing(), null)
+
+    const insertPayload = (analysisChain.insert as jest.Mock).mock.calls[0][0] as {
+      market_data: { listingSnapshot: { price: number | null; id: string } }
+    }
+    expect(insertPayload.market_data.listingSnapshot).toBeTruthy()
+    expect(insertPayload.market_data.listingSnapshot.price).toBe(makeListing().price)
+    // Carries the row id it was written against, so the snapshot is traceable
+    // back to the listing even after that row changes.
+    expect(insertPayload.market_data.listingSnapshot.id).toBe('listing-uuid-123')
+  })
+
   it('persists sunScout inside market_data', async () => {
     const listingChain = makeQueryChain({ data: { id: 'listing-uuid-123' }, error: null })
     const analysisChain = makeQueryChain({ data: null, error: null })
@@ -492,6 +511,166 @@ describe('getAnalysisByToken', () => {
       scraped_at: new Date().toISOString(),
     }
   }
+
+  // ── The listing snapshot ────────────────────────────────────────────────────
+  //
+  // `listings` rows upsert on source_url, so re-analysing the same URL
+  // overwrites the row every already-issued share link points at. Without a
+  // snapshot the report renders today's price beside a cap rate, cash flow and
+  // LTT computed from a different one.
+
+  it('renders the listing the analysis was computed from, not a later re-scrape', async () => {
+    // The row now says $650,000 because someone re-analysed the same URL after
+    // a price drop. This share link was issued when it was $729,900, and its
+    // stored metrics are the $729,900 ones.
+    const rescrapedRow = { ...makeValidListingRow(), price: 650_000, annual_taxes: 2_900 }
+    const chain = makeQueryChain({
+      data: {
+        id: 'analysis-uuid',
+        user_id: null,
+        listing_id: 'listing-uuid',
+        report_mode: 'investment',
+        financing_params: null,
+        rental_estimate: null,
+        market_data: {
+          listingSnapshot: {
+            id: 'listing-uuid',
+            url: 'https://example.com/listing',
+            listingType: 'for-sale',
+            address: '5702-5 Buttermill Ave',
+            city: 'Vaughan',
+            province: 'ON',
+            postalCode: 'L4K5W4',
+            price: 729_900,
+            rentMonthly: null,
+            beds: 3,
+            baths: 2,
+            sqft: 950,
+            propertyType: 'condo',
+            annualTaxes: 3_326,
+            taxesKnown: true,
+            condoFeeMonthly: 761,
+            condoFeeKnown: true,
+            yearBuilt: 2018,
+            yearBuiltKnown: true,
+            parkingSpots: 1,
+            photos: [],
+            description: null,
+            daysOnMarket: null,
+          },
+        },
+        calculated_metrics: null,
+        deal_score: 12,
+        risk_flags: [],
+        ai_narrative: null,
+        pdf_url: null,
+        share_token: 'snaptoken1',
+        share_expires_at: null,
+        created_at: new Date().toISOString(),
+        listings: rescrapedRow,
+      },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getAnalysisByToken('snaptoken1')
+
+    expect(result).not.toBeNull()
+    expect(result!.listing.price).toBe(729_900)
+    expect(result!.listing.annualTaxes).toBe(3_326)
+    // The live row's values must not leak through.
+    expect(result!.listing.price).not.toBe(650_000)
+  })
+
+  it('falls back to the joined listing when an older analysis has no snapshot', async () => {
+    // Analyses saved before snapshots existed still have to render, and the
+    // live row is the best answer available for them.
+    const chain = makeQueryChain({
+      data: {
+        id: 'analysis-uuid',
+        user_id: null,
+        listing_id: 'listing-uuid',
+        report_mode: 'investment',
+        financing_params: null,
+        rental_estimate: null,
+        market_data: { dealScore: null },
+        calculated_metrics: null,
+        deal_score: 12,
+        risk_flags: [],
+        ai_narrative: null,
+        pdf_url: null,
+        share_token: 'legacysnap1',
+        share_expires_at: null,
+        created_at: new Date().toISOString(),
+        listings: makeValidListingRow(),
+      },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getAnalysisByToken('legacysnap1')
+
+    expect(result).not.toBeNull()
+    expect(result!.listing.price).toBe(729_900)
+  })
+
+  it('still renders when the listing row is gone but a snapshot survives', async () => {
+    // listing_id is ON DELETE SET NULL, so the join can return nothing. The
+    // snapshot means an issued report outlives its listing row.
+    const chain = makeQueryChain({
+      data: {
+        id: 'analysis-uuid',
+        user_id: null,
+        listing_id: null,
+        report_mode: 'investment',
+        financing_params: null,
+        rental_estimate: null,
+        market_data: {
+          listingSnapshot: {
+            id: 'listing-uuid',
+            url: 'https://example.com/listing',
+            listingType: 'for-sale',
+            address: '5702-5 Buttermill Ave',
+            city: 'Vaughan',
+            province: 'ON',
+            postalCode: 'L4K5W4',
+            price: 729_900,
+            rentMonthly: null,
+            beds: 3,
+            baths: 2,
+            sqft: 950,
+            propertyType: 'condo',
+            annualTaxes: 3_326,
+            taxesKnown: true,
+            condoFeeMonthly: 761,
+            condoFeeKnown: true,
+            yearBuilt: 2018,
+            yearBuiltKnown: true,
+            parkingSpots: 1,
+            photos: [],
+            description: null,
+            daysOnMarket: null,
+          },
+        },
+        calculated_metrics: null,
+        deal_score: 12,
+        risk_flags: [],
+        ai_narrative: null,
+        pdf_url: null,
+        share_token: 'orphansnap1',
+        share_expires_at: null,
+        created_at: new Date().toISOString(),
+        listings: null,
+      },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getAnalysisByToken('orphansnap1')
+
+    expect(result).not.toBeNull()
+    expect(result!.listing.address).toBe('5702-5 Buttermill Ave')
+  })
 
   it('returns null when token is not found in DB', async () => {
     const chain = makeQueryChain({

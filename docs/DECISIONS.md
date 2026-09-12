@@ -2519,3 +2519,53 @@ That trades an infinite wait for a false failure, which is the worse error.
 seconds (scrape, calc engine, narrative). It is generous rather than tuned; if the pipeline gets
 slower the bound needs revisiting, and the test that asserts polling continues right up to the
 bound is what will catch it.
+
+---
+
+### D-069 · A report renders the listing it was computed from
+
+**Chosen.** `saveAnalysis` and `updateAnalysisByToken` store the listing as `listingSnapshot`
+inside `market_data`, and `getAnalysisByToken` renders that snapshot in preference to the joined
+`listings` row. Analyses saved before this fall back to the join.
+
+**Why.** `listings` rows upsert on `source_url` (D-028 made that deliberate for scraped listings:
+re-analysing the same page should not create a duplicate row). But `analyses.listing_id` is a
+foreign key and `getAnalysisByToken` selects `'*, listings(*)'`, so the report rendered whatever
+that row says **now**, while `calculated_metrics`, `deal_score`, `risk_flags` and the narrative are
+frozen at analysis time.
+
+So: someone analyses a listing at $729,900 and shares the link. The price drops, anyone re-analyses
+the same URL, and the row is overwritten. The original report now shows **$650,000 in its header
+and chips beside a cap rate, cash flow, DSCR and land-transfer tax computed from $729,900** — with
+nothing on the page indicating the two disagree. Beds, taxes, condo fee, photos and year built
+move the same way. It needs no malice and no bug: it is the normal path for any property analysed
+twice, which is exactly what a price-drop watcher does.
+
+**The snapshot goes in `market_data`, not a new column.** That jsonb blob is already where
+`sunScout`, `holdCase`, `schools` and `comparableSales` live, so this needs no migration — and
+migrations are a human gate (D-068 has the same constraint). The trade is that the snapshot is not
+queryable as columns; nothing queries listings through analyses today, and if that changes it
+argues for a proper `analysis_listings` table rather than for reading live rows again.
+
+**A second thing it fixes.** `analyses.listing_id` is `ON DELETE SET NULL`, so a deleted listing
+made `getAnalysisByToken` return null and an issued share link 404. With a snapshot the report
+outlives its listing row, which is what a point-in-time report should do.
+
+**What this does not do.** It does not tell the reader the live listing has since changed. That
+would be genuinely useful — "this listing was updated after your report was made" — but it needs a
+comparison and a definition of what counts as a change, and it is a feature rather than the
+correctness fix. Deliberately out of scope; noted rather than silently skipped.
+
+**Alternatives considered**
+
+| Option                                                        | Why not                                                                                                                                         |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Insert a new `listings` row per analysis instead of upserting | Reverses D-028's deduplication and multiplies rows for every re-analysis of the same page; the rental-comp and dedupe indexes assume otherwise. |
+| Version the listings table (`valid_from` / `valid_to`)        | The correct long-term answer and a real schema change — human-gated, and much larger than the defect.                                           |
+| Copy only price into the analysis                             | Taxes, condo fee, beds, year built and photos all feed the metrics or the page. Half a snapshot is a subtler version of the same contradiction. |
+| Show the live row and flag it as changed                      | Presents figures the analysis never used as though they were its inputs, and the flag would have to explain away the whole page.                |
+| Re-run the analysis when the listing has changed              | Silently rewrites a report someone already read and shared, and on a share link the viewer may not own it.                                      |
+
+**Known limit.** Existing analyses have no snapshot and keep the old behaviour — there is no
+backfill, because the data to snapshot retrospectively is exactly the data that was overwritten.
+They degrade to the current join, which is the best answer that still exists for them.

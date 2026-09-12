@@ -277,6 +277,11 @@ export async function saveAnalysis(
       financing_params: null,
       rental_estimate: analysis.rentalComps ?? null,
       market_data: {
+        // The listing exactly as it was analysed. `listings` rows upsert on
+        // source_url, so re-analysing the same URL overwrites the row this
+        // analysis points at — and the report would then render today's price
+        // beside metrics computed from a different one. See getAnalysisByToken.
+        listingSnapshot: { ...listing, id: listingId },
         dealScore: analysis.dealScore,
         sunScout: analysis.sunScout,
         holdCase: analysis.holdCase ?? null,
@@ -341,13 +346,22 @@ export async function getAnalysisByToken(
       }
     }
 
-    if (row.listings == null) {
+    // Render the listing this analysis was computed FROM, not the current
+    // state of the row it points at. `listings` upserts on source_url, so a
+    // later analysis of the same URL rewrites price, taxes, photos and beds
+    // underneath every share link already issued against it — the report would
+    // then show a price its own cap rate, cash flow and LTT never used.
+    //
+    // Analyses saved before snapshots existed fall back to the joined row,
+    // which remains the best available answer for them.
+    const snapshot = (row.market_data as { listingSnapshot?: Listing } | null)?.listingSnapshot
+    if (snapshot == null && row.listings == null) {
       return null
     }
 
     return {
       analysis: rowToAnalysis(row),
-      listing: rowToListing(row.listings),
+      listing: snapshot ?? rowToListing(row.listings as ListingRow),
     }
   } catch (err) {
     console.error('[supabaseService] getAnalysisByToken: unexpected error', err)
@@ -965,7 +979,11 @@ export async function updateAnalysisStatus(
  * completed pipeline output. Matches by share_token so the token from
  * POST /scrape is preserved end-to-end.
  */
-export async function updateAnalysisByToken(token: string, analysis: Analysis): Promise<void> {
+export async function updateAnalysisByToken(
+  token: string,
+  analysis: Analysis,
+  listing: Listing | null = null
+): Promise<void> {
   const modeMap: Record<ReportMode, string> = {
     investor: 'investment',
     personal: 'personal',
@@ -979,6 +997,9 @@ export async function updateAnalysisByToken(token: string, analysis: Analysis): 
       report_mode: modeMap[analysis.mode],
       rental_estimate: analysis.rentalComps ?? null,
       market_data: {
+        // See saveAnalysis: the report must render the listing it was computed
+        // from, not whatever a later scrape wrote over that row.
+        listingSnapshot: listing,
         dealScore: analysis.dealScore,
         sunScout: analysis.sunScout,
         holdCase: analysis.holdCase ?? null,
