@@ -68,12 +68,15 @@ describe('routes', () => {
     expect(screen.queryByText(/back to propscout/i)).not.toBeInTheDocument()
   })
 
-  it('/account renders AccountPage — "Saved analyses" heading present', () => {
+  it('/account renders AccountPage — asks a signed-out visitor to sign in', () => {
+    // No AuthProvider here, so the route is visited signed out. The account
+    // shell belongs to a session; without one the page offers the sign-in
+    // instead of rendering "Saved analyses" over a usage it could not load.
     render(
       <MemoryRouter initialEntries={['/account']}>
         <AccountPage />
       </MemoryRouter>
     )
-    expect(screen.getAllByText(/saved analyses/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/sign in to see your account/i)).toBeInTheDocument()
   })
 })
