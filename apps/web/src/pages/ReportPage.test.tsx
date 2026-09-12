@@ -201,7 +201,14 @@ describe('ReportPage — risk-flag overrides', () => {
     listOverrides.mockReset()
     addOverride.mockReset()
     removeOverride.mockReset()
-    getAnalysisByToken.mockResolvedValue({ analysis: ANALYSIS, listing: LISTING })
+    // canOverride is the API's answer to "does this viewer own the analysis".
+    // These tests exercise the owner's controls, so they say so explicitly —
+    // holding the share token is not ownership.
+    getAnalysisByToken.mockResolvedValue({
+      analysis: ANALYSIS,
+      listing: LISTING,
+      canOverride: true,
+    })
     addOverride.mockResolvedValue(undefined)
     removeOverride.mockResolvedValue(undefined)
   })
@@ -263,7 +270,11 @@ describe('ReportPage — risk-flag overrides', () => {
   })
 
   it('shows the backend deal score and does NOT re-derive it on live dismiss (one source of truth)', async () => {
-    getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+      canOverride: true,
+    })
     listOverrides.mockResolvedValue([])
     renderReport()
 
@@ -701,5 +712,66 @@ describe('ReportPage — live financing sliders recompute every dependent metric
     await waitFor(() => expect(pageText()).toContain('−$246'))
     expect(score).toBeInTheDocument()
     expect(screen.getByText('68')).toBeInTheDocument()
+  })
+})
+
+describe('ReportPage — a share-link recipient cannot change risk flags', () => {
+  beforeEach(() => {
+    getAnalysisByToken.mockReset()
+    listOverrides.mockReset()
+    addOverride.mockReset()
+    removeOverride.mockReset()
+    listOverrides.mockResolvedValue([])
+  })
+
+  it('hides Dismiss when the API says this viewer is not the owner', async () => {
+    // The defect: canOverride was inferred as `token != null`, so every
+    // recipient of a share link got a working Dismiss button — and the API
+    // accepted the write, changing the owner's stored deal score on re-run.
+    // The API now decides ownership; the page must not second-guess it.
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+      canOverride: false,
+    })
+    renderReport()
+
+    // The flag itself is still shown — a recipient is meant to read the report.
+    const flags = await screen.findAllByText(/Possible undisclosed basement unit/i)
+    expect(flags.length).toBeGreaterThanOrEqual(1)
+
+    // But nothing offers to change it.
+    expect(screen.queryByRole('button', { name: /dismiss/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /restore/i })).not.toBeInTheDocument()
+    expect(addOverride).not.toHaveBeenCalled()
+  })
+
+  it('hides Dismiss when an older API omits canOverride entirely', async () => {
+    // Absent must read as false. Defaulting to true would reopen the hole for
+    // anyone running a frontend newer than their API.
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+    })
+    renderReport()
+
+    await screen.findAllByText(/Possible undisclosed basement unit/i)
+    expect(screen.queryByRole('button', { name: /dismiss/i })).not.toBeInTheDocument()
+  })
+
+  it('still shows a persisted dismissal to a recipient, read-only', async () => {
+    // A flag the OWNER dismissed stays visibly dismissed for everyone — that is
+    // part of the report's content. The recipient simply cannot restore it.
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+      canOverride: false,
+    })
+    listOverrides.mockResolvedValue(['flag-basement'])
+    renderReport()
+
+    await screen.findAllByText(/Possible undisclosed basement unit/i)
+    expect(screen.queryByRole('button', { name: /restore/i })).not.toBeInTheDocument()
+    expect(removeOverride).not.toHaveBeenCalled()
   })
 })

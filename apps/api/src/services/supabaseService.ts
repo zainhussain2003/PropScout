@@ -739,6 +739,30 @@ export async function addToWaitlist(email: string, province: string): Promise<vo
  * Look up the analysis row id for a share token.
  * Internal helper for the flag_overrides functions.
  */
+/**
+ * The analysis behind a share token, with whoever owns it.
+ *
+ * `userId` is null for an analysis created without a session — a real flow
+ * (`createPendingAnalysis` sets no user, and `saveAnalysis` accepts null and
+ * gives those rows a 30-day expiry). A null owner means NOBODY can prove
+ * ownership of that analysis, because the share token is a bearer capability
+ * handed to every viewer. Callers that mutate must treat null as "refuse",
+ * never as "unowned, so anyone may write".
+ */
+export async function getAnalysisOwnerByToken(
+  token: string
+): Promise<{ analysisId: string; userId: string | null } | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('id, user_id')
+    .eq('share_token', token)
+    .maybeSingle()
+
+  if (error != null || data == null) return null
+  const row = data as { id: string; user_id: string | null }
+  return { analysisId: row.id, userId: row.user_id }
+}
+
 async function getAnalysisIdByToken(token: string): Promise<string | null> {
   const { data, error } = await db()
     .from('analyses')

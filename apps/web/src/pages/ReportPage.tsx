@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
+import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
 import {
@@ -1055,6 +1056,9 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [dark, setDark] = useState(false)
+  // Server-decided: false until the API says this viewer owns the analysis.
+  const [canOverride, setCanOverride] = useState(false)
+  const { session } = useAuth()
 
   useEffect(() => {
     if (!token) {
@@ -1062,18 +1066,19 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       setLoading(false)
       return
     }
-    void getAnalysisByToken(token)
+    void getAnalysisByToken(token, session?.access_token ?? null)
       .then((result) => {
         if (result == null) {
           setNotFound(true)
         } else {
           setAnalysis(result.analysis)
           setListing(result.listing)
+          setCanOverride(result.canOverride === true)
         }
       })
       .catch(() => setLoadFailed(true))
       .finally(() => setLoading(false))
-  }, [token])
+  }, [token, session])
 
   const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
   const onToggleFlag = useCallback(
@@ -1085,7 +1090,11 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   )
   const flagOverrides: FlagOverrideControls = {
     overrides,
-    canOverride: token != null,
+    // The API decides this from the caller's session. Holding the share token
+    // is NOT ownership — it is the capability the owner hands to viewers — so
+    // inferring `token != null` put a Dismiss button in front of every
+    // recipient and let them rewrite the owner's dismissals.
+    canOverride,
     onToggle: onToggleFlag,
   }
 

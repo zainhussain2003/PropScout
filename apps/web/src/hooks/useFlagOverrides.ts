@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { listOverrides, addOverride, removeOverride } from '../lib/services/overrideService'
+import { useAuth } from './useAuth'
 
 interface UseFlagOverridesResult {
   overrides: Set<string>
@@ -24,6 +25,8 @@ interface UseFlagOverridesResult {
 const NOOP = (): Promise<void> => Promise.resolve()
 
 export function useFlagOverrides(token: string | null): UseFlagOverridesResult {
+  // Writes are owner-only server-side, so the session has to travel with them.
+  const { session } = useAuth()
   const [overrides, setOverrides] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +62,7 @@ export function useFlagOverrides(token: string | null): UseFlagOverridesResult {
         return next
       })
       try {
-        await addOverride(token!, flagId)
+        await addOverride(token!, flagId, session?.access_token ?? null)
         setError(null)
       } catch (err) {
         setOverrides((prev) => {
@@ -70,7 +73,7 @@ export function useFlagOverrides(token: string | null): UseFlagOverridesResult {
         setError(err instanceof Error ? err.message : 'Could not save dismissal.')
       }
     },
-    [token, isLive]
+    [token, isLive, session]
   )
 
   const undismiss = useCallback(
@@ -82,7 +85,7 @@ export function useFlagOverrides(token: string | null): UseFlagOverridesResult {
         return next
       })
       try {
-        await removeOverride(token!, flagId)
+        await removeOverride(token!, flagId, session?.access_token ?? null)
         setError(null)
       } catch (err) {
         setOverrides((prev) => {
@@ -93,7 +96,7 @@ export function useFlagOverrides(token: string | null): UseFlagOverridesResult {
         setError(err instanceof Error ? err.message : 'Could not un-dismiss flag.')
       }
     },
-    [token, isLive]
+    [token, isLive, session]
   )
 
   return {

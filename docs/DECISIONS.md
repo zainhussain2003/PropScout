@@ -2298,3 +2298,65 @@ distinction as D-052 (an empty result is not an absent source) and D-059 (no ine
 "Marcus Reilly", and filter chips over the fake rows) — they were pinning the defect in place.
 They now assert the honest states and that each fabricated string is absent, so a future reviewer
 reading only the tests cannot conclude the fixtures were load-bearing.
+
+---
+
+### D-065 · A share token is a viewing capability, not proof of ownership
+
+**Chosen.** Writes to `/analysis/:token/overrides` now require a session whose user owns the
+analysis: 401 without one, 403 when the caller is not the owner. Reads stay token-scoped. `GET
+/analysis/:token` accepts optional auth and returns `canOverride`, and the report renders the
+Dismiss/Restore controls only when it is true. An analysis with no owner is never writable.
+
+**Why.** This was the last open P0. The route's own docstring described the defect as the design:
+_"Anyone with the share token can manage overrides for that analysis — same trust model as viewing
+the report."_ But viewing and rewriting are not the same trust model. A dismissal is forwarded to
+the calc engine on the next `POST /analysis`, which drops that flag's deduction — so a recipient
+could change the **stored deal score** of someone else's property analysis. The report's own
+comments call the score "one source of truth"; this let a third party edit it.
+
+**Why an unowned analysis is refused rather than open.** `createPendingAnalysis` sets no user and
+`saveAnalysis` accepts `userId: null` — anonymous analyses are a real flow, and they get a 30-day
+expiry where owned ones never expire. For those, nobody _can_ prove authorship: the only
+credential is the token every viewer holds. Treating "no owner" as "unowned, so anyone may write"
+would have preserved the hole for exactly the analyses least able to defend themselves. The cost is
+that an anonymous user cannot dismiss flags on their own report — accepted, because the alternative
+is an authorization check that anyone can satisfy.
+
+**401 and 403 are not interchangeable here.** Authentication is checked _before_ the analysis is
+looked up, so an unauthenticated prober gets 401 for real and fake tokens alike and learns nothing
+about which tokens exist. And a non-owner gets the same 403 whether the analysis belongs to someone
+else or to nobody — distinguishing them would tell a link-holder whether the report has an account
+behind it.
+
+**RLS could not have done this.** `flag_overrides` has row-level security enabled, but the API
+holds the service-role key, which bypasses it. The check has to be in the route; the RLS only
+protects against direct client access.
+
+**A bug in the first implementation, caught by the test rather than review.** The guard originally
+returned `reply.code(401).send(...)` and the handler branched on `denied != null`. `send()`
+resolved to `undefined`, `undefined != null` is false, and so the route **sent a 401 and then
+performed the write anyway**. The test caught it only because it asserted the service call had not
+happened, not merely the status code — a 403 that still writes is the original defect with a better
+status code. The guard now returns a plain `Denial` value and the handler sends it, so an
+authorization gate never depends on a framework's return-value semantics.
+
+**Verified by negative control**, not just by passing: with the server guard bypassed 10 API tests
+fail; with the client's `canOverride` reverted to the old `token != null`, 3 report tests fail.
+
+**Alternatives considered**
+
+| Option                                                        | Why not                                                                                                                                        |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keep writes open but scope them per viewer                    | Every viewer's private dismissal set is a bigger feature than the P0 needs, and the owner's score would still be the thing being argued about. |
+| A second secret "edit token" alongside the share token        | Invents a credential system when sessions already exist, and the edit token would leak the same way the share token does.                      |
+| Enforce with RLS instead                                      | Impossible as deployed: the service-role key bypasses RLS.                                                                                     |
+| Let the client keep deciding `canOverride`                    | The client cannot know ownership without asking, and a client-side gate is decoration — the API was accepting the write regardless.            |
+| Allow writes on unowned analyses so anonymous users keep them | That is the vulnerability, restricted to the analyses with no owner to protect them.                                                           |
+| Return 403 for unknown tokens too, for symmetry               | Would confirm to a prober that authentication was the only thing standing between them and the analysis; 401-before-lookup reveals less.       |
+
+**Known limits.** `resolveUser` was extracted because overrides would have been the fifth inlined
+copy of the same JWT block; `/me`, both billing routes and the PDF route still carry their own and
+should migrate, which is a refactor rather than part of this fix. And the honest consequence of
+this change is a capability removed from anonymous users — if that matters, the answer is letting a
+signed-in user claim an analysis they created, not loosening the check.

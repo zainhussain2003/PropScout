@@ -338,16 +338,36 @@ export async function postWaitlist(email: string, province: string): Promise<voi
 export interface GetAnalysisResult {
   analysis: Analysis
   listing: import('../../types/property').Listing
+  /**
+   * Whether THIS viewer may change risk flags — true only when the caller's
+   * session owns the analysis. The API decides it; the report must not infer
+   * it from merely holding the share token, which is what let a recipient
+   * rewrite someone else's dismissals. Absent on an older API build, which
+   * reads as false: hiding a control the server would refuse is the safe
+   * default.
+   */
+  canOverride?: boolean
 }
 
 /**
  * Fetch a saved analysis by its share token.
  * Returns null if not found or expired.
+ *
+ * Pass `accessToken` when signed in: the report is readable without it (that
+ * is what a share link is for), but ownership — and therefore whether the
+ * dismiss controls appear — can only be established with a session.
  */
-export async function getAnalysisByToken(token: string): Promise<GetAnalysisResult | null> {
+export async function getAnalysisByToken(
+  token: string,
+  accessToken: string | null = null
+): Promise<GetAnalysisResult | null> {
   let response: Response
   try {
-    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`)
+    const headers: Record<string, string> = {}
+    if (accessToken != null && accessToken !== '') {
+      headers['Authorization'] = `Bearer ${accessToken}`
+    }
+    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`, { headers })
   } catch {
     throw new ApiRequestError(
       'NETWORK_ERROR',
