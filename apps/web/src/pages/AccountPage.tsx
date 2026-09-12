@@ -9,44 +9,27 @@
 
 import type { ReactNode } from 'react'
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/shared/Icon'
 import type { IconName } from '../components/shared/Icon'
 import { Wordmark } from '../components/shared/Wordmark'
 import { Footer } from '../components/shared/Footer'
-import { VerdictPill } from '../components/shared/VerdictPill'
 import { useAuth } from '../hooks/useAuth'
+import { useAccount } from '../hooks/useAccount'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { startCheckout, openBillingPortal } from '../lib/services/billingService'
+import { FREE_TIER } from '../constants/tiers'
 
 // ── Domain types ──────────────────────────────────────────────────────
 
 type TierKey = 'free' | 'pro' | 'professional'
 type TabKey = 'saved' | 'profile' | 'plan' | 'notifications'
-type AnalysisKind = 'investor' | 'personal' | 'tenant' | 'landlord'
-type ToneName = 'pass' | 'caution' | 'fail'
-type FilterKey = 'all' | AnalysisKind
 
 interface TierDetail {
   label: string
   color: string
   priceLine: string
   cycleNote: string
-}
-
-interface SavedAnalysis {
-  id: string
-  kind: AnalysisKind
-  address: string
-  city: string
-  score: number
-  verdict: string
-  tone: ToneName
-  savedAgo: string
-  opens: number
-  ask: string
-  metricLabel: string
-  metricValue: string
 }
 
 interface UsageItem {
@@ -56,183 +39,42 @@ interface UsageItem {
   sub: string | null
 }
 
-interface InvoiceRow {
-  date: string
-  desc: string
-  amt: string
-  status: string
-}
-
-// ── Mock data (ported from account-app.jsx + account-views.jsx) ───────
-
-const USER = {
-  name: 'Marcus Reilly',
-  email: 'marcus.reilly@example.com',
-  avatarInitials: 'MR',
-  joined: 'March 2026',
-}
-
+// `cycleNote` carried "Renews May 24, 2026" for both paid tiers — a date
+// belonging to nobody, shown as though it were the user's own renewal. Stripe
+// holds the real one, and the billing portal is one click away, so the note
+// points there instead of naming a day.
+//
+// The free note said "3 reports/mo" while FREE_TIER.MONTHLY_ANALYSIS_LIMIT is
+// 10 and CLAUDE.md says 10. It now reads from the constant so the page cannot
+// contradict it. Which number is CORRECT, and enforcing it server-side, is a
+// separate open decision (R-02 in the audit counter-review) — this only stops
+// the product stating two different allowances.
 const TIER_DETAILS: Record<TierKey, TierDetail> = {
   free: {
     label: 'Free',
     color: 'var(--muted)',
     priceLine: '$0/mo',
-    cycleNote: 'Resets monthly · 3 reports/mo',
+    cycleNote: `Resets monthly · ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} analyses/mo`,
   },
   pro: {
     label: 'Investor Pro',
     color: 'var(--accent)',
     priceLine: '$10/mo',
-    cycleNote: 'Renews May 24, 2026',
+    cycleNote: 'Renewal date in your billing portal',
   },
   professional: {
     label: 'Professional',
     color: 'var(--accent)',
     priceLine: '$59/mo',
-    cycleNote: 'Renews May 24, 2026',
+    cycleNote: 'Renewal date in your billing portal',
   },
-}
-
-const SAVED_ANALYSES: SavedAnalysis[] = [
-  {
-    id: 'a1',
-    kind: 'investor',
-    address: 'Unit 5702 · 5 Buttermill Ave',
-    city: 'Vaughan, ON',
-    score: 9,
-    verdict: 'Hard pass',
-    tone: 'fail',
-    savedAgo: '3 hours ago',
-    opens: 4,
-    ask: '$729,900',
-    metricLabel: 'Cash flow',
-    metricValue: '−$1,833/mo',
-  },
-  {
-    id: 'a2',
-    kind: 'investor',
-    address: '146 East 19th Street',
-    city: 'Hamilton, ON',
-    score: 84,
-    verdict: 'Strong deal',
-    tone: 'pass',
-    savedAgo: 'Yesterday',
-    opens: 2,
-    ask: '$449,000',
-    metricLabel: 'Cash flow',
-    metricValue: '+$539/mo',
-  },
-  {
-    id: 'a3',
-    kind: 'tenant',
-    address: 'Unit 3705 · 28 Charles St E',
-    city: 'Toronto, ON',
-    score: 58,
-    verdict: 'Negotiate',
-    tone: 'caution',
-    savedAgo: '2 days ago',
-    opens: 6,
-    ask: '$2,150/mo',
-    metricLabel: 'Target',
-    metricValue: '$1,950–2,000',
-  },
-  {
-    id: 'a4',
-    kind: 'personal',
-    address: '248 Mountcrest Avenue',
-    city: 'Burlington, ON',
-    score: 76,
-    verdict: 'Worth pursuing',
-    tone: 'pass',
-    savedAgo: '4 days ago',
-    opens: 3,
-    ask: '$875,000',
-    metricLabel: 'Monthly cost',
-    metricValue: '$5,180/mo',
-  },
-  {
-    id: 'a5',
-    kind: 'landlord',
-    address: 'Unit 3208 · 88 Harbour Street',
-    city: 'Toronto, ON',
-    score: 42,
-    verdict: 'Rent too high',
-    tone: 'caution',
-    savedAgo: 'Last week',
-    opens: 1,
-    ask: '$3,400/mo',
-    metricLabel: 'Days listed',
-    metricValue: '38 days',
-  },
-  {
-    id: 'a6',
-    kind: 'investor',
-    address: '128 Spadina Road',
-    city: 'Toronto, ON',
-    score: 22,
-    verdict: 'Do not buy',
-    tone: 'fail',
-    savedAgo: 'Last week',
-    opens: 2,
-    ask: '$1.49M',
-    metricLabel: 'Cap rate',
-    metricValue: '1.4%',
-  },
-  {
-    id: 'a7',
-    kind: 'personal',
-    address: '17 Linden Avenue',
-    city: 'Oakville, ON',
-    score: 68,
-    verdict: 'Worth pursuing',
-    tone: 'pass',
-    savedAgo: '2 weeks ago',
-    opens: 5,
-    ask: '$1.18M',
-    metricLabel: 'Monthly cost',
-    metricValue: '$6,420/mo',
-  },
-  {
-    id: 'a8',
-    kind: 'tenant',
-    address: '42 Wellesley St E #1107',
-    city: 'Toronto, ON',
-    score: 72,
-    verdict: 'Sign at asking',
-    tone: 'pass',
-    savedAgo: '3 weeks ago',
-    opens: 1,
-    ask: '$2,400/mo',
-    metricLabel: 'Target',
-    metricValue: '$2,300–2,400',
-  },
-]
-
-const KIND_LABEL: Record<AnalysisKind, string> = {
-  investor: 'Investment',
-  personal: 'Personal buy',
-  tenant: 'Tenant view',
-  landlord: 'Landlord view',
-}
-
-const KIND_COLOR: Record<AnalysisKind, string> = {
-  investor: 'var(--accent)',
-  personal: 'var(--pass)',
-  tenant: 'var(--caution)',
-  landlord: 'var(--ink)',
 }
 
 const NAV_ITEMS: { k: TabKey; label: string; icon: IconName; count?: number }[] = [
-  { k: 'saved', label: 'Saved analyses', icon: 'doc', count: SAVED_ANALYSES.length },
+  { k: 'saved', label: 'Saved analyses', icon: 'doc' },
   { k: 'profile', label: 'Profile', icon: 'house' },
   { k: 'plan', label: 'Plan & billing', icon: 'chart' },
   { k: 'notifications', label: 'Notifications', icon: 'flag' },
-]
-
-const INVOICES: InvoiceRow[] = [
-  { date: 'May 24, 2026', desc: 'Investor Pro · monthly', amt: '$10.00', status: 'Paid' },
-  { date: 'Apr 24, 2026', desc: 'Investor Pro · monthly', amt: '$10.00', status: 'Paid' },
-  { date: 'Mar 24, 2026', desc: 'Investor Pro · monthly', amt: '$10.00', status: 'Paid' },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -391,161 +233,24 @@ function SettingsToggle({ defaultValue }: SettingsToggleProps): JSX.Element {
   )
 }
 
-// ── ReportCard ────────────────────────────────────────────────────────
-
-interface ReportCardProps {
-  item: SavedAnalysis
-}
-
-function ReportCard({ item }: ReportCardProps): JSX.Element {
-  return (
-    <a
-      href={`#report/${item.id}`}
-      className="card col"
-      style={{
-        padding: 0,
-        overflow: 'hidden',
-        textDecoration: 'none',
-        color: 'inherit',
-        transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.borderColor = 'var(--line-strong)'
-        e.currentTarget.style.boxShadow = '0 12px 32px -16px rgba(14,19,32,.25)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'none'
-        e.currentTarget.style.borderColor = 'var(--line)'
-        e.currentTarget.style.boxShadow = 'var(--shadow-card)'
-      }}
-    >
-      {/* Photo strip */}
-      <div className="photo-ph" style={{ height: 130, position: 'relative' }}>
-        <span>
-          {item.kind} · {item.city.split(',')[0].toLowerCase()}
-        </span>
-        {/* Kind pill */}
-        <span
-          className="mono"
-          style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            fontSize: 10,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            padding: '4px 10px',
-            borderRadius: 999,
-            background: 'var(--surface)',
-            color: KIND_COLOR[item.kind],
-            border: '1px solid var(--line)',
-          }}
-        >
-          {KIND_LABEL[item.kind]}
-        </span>
-        {/* Score badge */}
-        <span
-          className={`score-badge ${item.tone}`}
-          style={{ position: 'absolute', top: 12, right: 12 }}
-        >
-          {item.score}
-        </span>
-      </div>
-
-      {/* Card body */}
-      <div className="col" style={{ padding: 20, gap: 14 }}>
-        <div className="col" style={{ gap: 2 }}>
-          <div className="serif" style={{ fontSize: 19, lineHeight: 1.2, color: 'var(--ink)' }}>
-            {item.address}
-          </div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-            {item.city} · {item.ask}
-          </div>
-        </div>
-
-        <div
-          className="row"
-          style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10 }}
-        >
-          <div className="col" style={{ gap: 2 }}>
-            <span
-              className="mono"
-              style={{
-                fontSize: 9,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--muted)',
-              }}
-            >
-              {item.metricLabel}
-            </span>
-            <span
-              className="mono tabular"
-              style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}
-            >
-              {item.metricValue}
-            </span>
-          </div>
-          <VerdictPill tone={item.tone} label={item.verdict} />
-        </div>
-
-        <div className="divider" />
-
-        <div
-          className="row"
-          style={{ justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)' }}
-        >
-          <span className="row" style={{ gap: 6 }}>
-            <Icon name="dot" size={9} /> Saved {item.savedAgo}
-          </span>
-          <span className="row" style={{ gap: 6 }}>
-            Opened {item.opens}× · open <Icon name="arrow" size={11} />
-          </span>
-        </div>
-      </div>
-    </a>
-  )
-}
-
 // ── SavedAnalysesView ─────────────────────────────────────────────────
 
 interface SavedAnalysesViewProps {
-  tier: string
+  tier: TierKey
   onUpgrade: () => void
 }
 
 function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Element {
-  const [filter, setFilter] = useState<FilterKey>('all')
-  const [search, setSearch] = useState('')
+  const { analysesThisMonth, loading } = useAccount()
+  const navigate = useNavigate()
 
-  const freeLimit = 10
-  const remaining = freeLimit - SAVED_ANALYSES.length
-
-  const filtered = SAVED_ANALYSES.filter((a) => {
-    if (filter !== 'all' && a.kind !== filter) return false
-    if (
-      search &&
-      !a.address.toLowerCase().includes(search.toLowerCase()) &&
-      !a.city.toLowerCase().includes(search.toLowerCase())
-    ) {
-      return false
-    }
-    return true
-  })
-
-  const FILTER_OPTIONS: { k: FilterKey; label: string }[] = [
-    { k: 'all', label: `All · ${SAVED_ANALYSES.length}` },
-    { k: 'investor', label: 'Investment' },
-    { k: 'personal', label: 'Personal' },
-    { k: 'tenant', label: 'Tenant' },
-    { k: 'landlord', label: 'Landlord' },
-  ]
-
+  // There is no save-to-account feature yet: the "Save" control on a report
+  // opens sign-in or the upgrade modal, and no endpoint lists a user's
+  // analyses. So this is "not available", NOT "you haven't saved any" — the
+  // second implies the user could have and didn't (the distinction D-052 draws
+  // between an empty result and an absent source).
   return (
     <div className="col" style={{ gap: 28 }}>
-      {/* Header */}
       <div
         className="row"
         style={{
@@ -558,113 +263,39 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
         <div className="col" style={{ gap: 6 }}>
           <h1 className="serif">Saved analyses</h1>
           <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-            {tier === 'free' ? (
-              <>
-                You've saved{' '}
-                <span className="tabular" style={{ color: 'var(--ink)' }}>
-                  {SAVED_ANALYSES.length} of {freeLimit}
-                </span>{' '}
-                on the free plan · {remaining} slot{remaining === 1 ? '' : 's'} left
-              </>
+            {loading ? (
+              <>Loading your usage…</>
+            ) : analysesThisMonth == null ? (
+              <>We couldn&rsquo;t load your usage just now.</>
             ) : (
-              <>Unlimited saved analyses · sorted by most recent</>
+              <>
+                You&rsquo;ve run{' '}
+                <span className="tabular" style={{ color: 'var(--ink)' }}>
+                  {analysesThisMonth}
+                </span>{' '}
+                {analysesThisMonth === 1 ? 'analysis' : 'analyses'} this month
+                {tier === 'free' && <> · the free plan allows {FREE_TIER.MONTHLY_ANALYSIS_LIMIT}</>}
+              </>
             )}
           </p>
         </div>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => navigate('/')}>
           <Icon name="plus" size={13} /> Analyze new listing
         </button>
       </div>
 
-      {/* Controls: filter chips + search */}
-      <div className="row gap-12" style={{ flexWrap: 'wrap', justifyContent: 'space-between' }}>
-        {/* Filter chips */}
-        <div
-          className="row"
-          style={{
-            gap: 4,
-            padding: 4,
-            borderRadius: 999,
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-          }}
-        >
-          {FILTER_OPTIONS.map((f) => (
-            <button
-              key={f.k}
-              onClick={() => setFilter(f.k)}
-              className="mono"
-              style={{
-                background: filter === f.k ? 'var(--ink)' : 'transparent',
-                color: filter === f.k ? 'var(--bg)' : 'var(--ink-2)',
-                fontSize: 11,
-                letterSpacing: '0.06em',
-                padding: '7px 12px',
-                borderRadius: 999,
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 500,
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search */}
-        <div
-          className="row"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-            padding: '8px 14px',
-            borderRadius: 999,
-            gap: 8,
-            minWidth: 260,
-          }}
-        >
-          <Icon name="search" size={13} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search address or city"
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontFamily: 'inherit',
-              fontSize: 13,
-              color: 'var(--ink)',
-            }}
-          />
-        </div>
+      <div
+        className="card col"
+        style={{ padding: 48, alignItems: 'center', textAlign: 'center', gap: 12 }}
+      >
+        <h3 className="serif">Saving reports to your account isn&rsquo;t available yet.</h3>
+        <p style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 460 }}>
+          Every report you run gets a share link that stays live for 30 days — keep that link and
+          you can reopen the report from anywhere. A permanent library here is still being built.
+        </p>
       </div>
 
-      {/* Card grid or empty state */}
-      {filtered.length === 0 ? (
-        <div
-          className="card col"
-          style={{ padding: 48, alignItems: 'center', textAlign: 'center', gap: 12 }}
-        >
-          <h3 className="serif">Nothing matches that filter.</h3>
-          <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-            Try clearing the search or switching to "All".
-          </p>
-        </div>
-      ) : (
-        <div
-          className="grid-1col-mobile"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
-        >
-          {filtered.map((a) => (
-            <ReportCard key={a.id} item={a} />
-          ))}
-        </div>
-      )}
-
-      {/* Upgrade nudge — shown when free tier is near limit */}
-      {tier === 'free' && SAVED_ANALYSES.length >= freeLimit - 2 && (
+      {tier === 'free' && (
         <div
           className="card row"
           style={{
@@ -677,21 +308,10 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
           }}
         >
           <div className="col" style={{ gap: 6 }}>
-            <span
-              className="mono"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: 'var(--accent)',
-              }}
-            >
-              {remaining} of {freeLimit} slots remaining
-            </span>
-            <h3 className="serif">Save unlimited analyses on Investor Pro.</h3>
+            <h3 className="serif">Investor Pro unlocks the full report.</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-2)', maxWidth: 540 }}>
-              Plus full evidence-based verdicts, financing sliders, branded PDF export, and the
-              portfolio tracker.
+              Full evidence-based verdicts, financing sliders and branded PDF export. The portfolio
+              tracker ships with the saved library.
             </p>
           </div>
           <button onClick={onUpgrade} className="btn btn-accent">
@@ -706,6 +326,8 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
 // ── ProfileView ───────────────────────────────────────────────────────
 
 function ProfileView(): JSX.Element {
+  const { identity, loading } = useAccount()
+
   return (
     <div className="col" style={{ gap: 28 }}>
       <div className="col" style={{ gap: 6 }}>
@@ -715,17 +337,33 @@ function ProfileView(): JSX.Element {
         </p>
       </div>
 
-      {/* Identity */}
+      {/* Identity — the signed-in user's own, or an honest blank. Never a
+          placeholder that reads as a real name. */}
       <SettingsCard title="Identity">
         <SettingsRow label="Name" hint="Used on PDF exports + shareable reports">
-          <SettingsInput defaultValue={USER.name} />
+          {identity?.name != null ? (
+            <SettingsInput defaultValue={identity.name} />
+          ) : (
+            <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
+              {loading ? 'Loading…' : 'Not set'}
+            </span>
+          )}
         </SettingsRow>
         <SettingsRow label="Email" hint="Login + verification + report-share notifications">
-          <SettingsInput defaultValue={USER.email} />
+          <span className="mono" style={{ fontSize: 13, color: 'var(--ink)' }}>
+            {identity?.email ?? (loading ? 'Loading…' : 'Not signed in')}
+          </span>
         </SettingsRow>
         <SettingsRow label="Member since">
           <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
-            {USER.joined}
+            {identity?.createdAt != null
+              ? new Date(identity.createdAt).toLocaleDateString('en-CA', {
+                  month: 'long',
+                  year: 'numeric',
+                })
+              : loading
+                ? 'Loading…'
+                : '—'}
           </span>
         </SettingsRow>
       </SettingsCard>
@@ -961,51 +599,20 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
         </div>
       </SettingsCard>
 
-      {/* Invoices — pro only */}
+      {/* Invoices — Stripe is the record of what was charged.
+          This card used to render three hardcoded "Paid · $10.00" rows, which
+          showed a payment history to users who had never paid. Stripe's portal
+          is the only honest source, and "Manage plan" above already opens it. */}
       {!isFree && (
         <SettingsCard
           title="Invoices"
           subtitle="Stripe sends a copy to your email after every charge."
         >
-          <div className="col" style={{ padding: '8px 0 16px' }}>
-            {INVOICES.map((inv, i) => (
-              <div
-                key={inv.date}
-                className="row"
-                style={{
-                  justifyContent: 'space-between',
-                  padding: '14px 24px',
-                  borderBottom: i < INVOICES.length - 1 ? '1px solid var(--line)' : 'none',
-                  fontSize: 13,
-                  gap: 12,
-                }}
-              >
-                <div className="col" style={{ gap: 2 }}>
-                  <span style={{ color: 'var(--ink)' }}>{inv.desc}</span>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    {inv.date}
-                  </span>
-                </div>
-                <div className="row gap-12" style={{ alignItems: 'center' }}>
-                  <span className="mono tabular" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-                    {inv.amt}
-                  </span>
-                  <span
-                    className="chip"
-                    style={{
-                      background: 'color-mix(in oklab, var(--pass) 10%, transparent)',
-                      color: 'var(--pass)',
-                      borderColor: 'color-mix(in oklab, var(--pass) 30%, transparent)',
-                    }}
-                  >
-                    {inv.status}
-                  </span>
-                  <button className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 11 }}>
-                    PDF
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="col" style={{ padding: '8px 24px 24px', gap: 10 }}>
+            <p style={{ fontSize: 13, color: 'var(--muted)', maxWidth: 520 }}>
+              Your full billing history, receipts and payment method live in the Stripe billing
+              portal. Open it with <span style={{ color: 'var(--ink)' }}>Manage plan</span> above.
+            </p>
           </div>
         </SettingsCard>
       )}
@@ -1090,6 +697,7 @@ interface AccountTopNavProps {
 }
 
 function AccountTopNav({ dark, onToggleDark, tier }: AccountTopNavProps): JSX.Element {
+  const { identity } = useAccount()
   const tierKey = safeTierKey(tier)
   const t = TIER_DETAILS[tierKey]
 
@@ -1150,11 +758,13 @@ function AccountTopNav({ dark, onToggleDark, tier }: AccountTopNavProps): JSX.El
                 flexShrink: 0,
               }}
             >
-              {USER.avatarInitials}
+              {identity?.initials ?? '—'}
             </span>
             <span className="col" style={{ alignItems: 'flex-start', gap: 0, fontSize: 13 }}>
               <span style={{ color: 'var(--ink)', fontWeight: 500 }}>
-                {USER.name.split(' ')[0]}
+                {/* First name when the user set one, else the email local part.
+                    Never a stand-in name. */}
+                {identity?.name?.split(' ')[0] ?? identity?.email?.split('@')[0] ?? 'Account'}
               </span>
               <span
                 style={{
@@ -1348,12 +958,7 @@ export function AccountPage(): JSX.Element {
       view = <NotificationsView />
       break
     default:
-      view = (
-        <SavedAnalysesView
-          tier={tier as 'free' | 'pro' | 'professional' | 'team'}
-          onUpgrade={handleUpgrade}
-        />
-      )
+      view = <SavedAnalysesView tier={safeTierKey(tier)} onUpgrade={handleUpgrade} />
   }
 
   return (
