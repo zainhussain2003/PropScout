@@ -33,7 +33,7 @@ import type {
   PersonalSchools,
   PersonalSchool,
 } from '../types/personal'
-import type { LandlordProperty } from '../types/landlord'
+import type { LandlordProperty, LandlordRentComps } from '../types/landlord'
 import {
   FINANCING_DEFAULTS,
   PROPERTY_COST_ESTIMATES,
@@ -791,5 +791,38 @@ export function shimToTenantSchools(schools: SchoolsResult): TenantSchools {
     elementary: schools.elementary.map(toTenantSchool),
     middle: schools.middle.map(toTenantSchool),
     high: schools.high.map(toTenantSchool),
+  }
+}
+
+/**
+ * Rent comparables for the landlord report, from what the API actually has.
+ *
+ * The API returns an AGGREGATE — low / mid / high are the 25th / 50th / 75th
+ * percentiles of comparable asking rents (spec §6), plus a count and
+ * confidence. It does not return individual listings. The demo fixture
+ * (`LL_RENT_COMPS`) carries eight invented units with numbers and
+ * "rented · 7d" statuses under a card titled "Your building · live"; routing
+ * real traffic to a page that still read that fixture would have shown a
+ * landlord eight fabricated units in a building they do not own, labelled
+ * live. That was the audit's L-02.
+ *
+ * So `liveListings` is empty here, deliberately, and the section renders that
+ * as an absent source rather than an empty result (D-052). It fills in when
+ * the API returns individual comps (product-audit roadmap, phase 3).
+ *
+ * Returns null when the analysis has no comps at all, so the page can say so
+ * instead of positioning a rent against nothing.
+ */
+export function shimToLandlordRentComps(analysis: Analysis): LandlordRentComps | null {
+  const comps = analysis.rentalComps
+  if (comps == null || comps.mid <= 0) return null
+  return {
+    buildingP25: comps.low,
+    buildingP50: comps.mid,
+    buildingP75: comps.high,
+    // The aggregate is already the FSA (or widened-radius) figure; there is no
+    // separate building-level series to distinguish it from.
+    fsaP50: comps.mid,
+    liveListings: [],
   }
 }

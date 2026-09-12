@@ -82,11 +82,16 @@ describe('LandlordRentPositioningSection', () => {
     expect(slider).toBeTruthy()
   })
 
-  it('slider has correct min ($2,500), max ($3,800), and step (25)', () => {
+  it('slider bounds follow the comparable range, not fixed dollars', () => {
+    // The bounds used to be hardcoded to 2,500–3,800 — the demo condo's
+    // neighbourhood — so a real $1,800 basement or $5,500 house could not be
+    // represented at all. They now bracket the P25–P75 range (2,950–3,350 in
+    // the fixture) with room to explore either side.
     const { container } = renderSection()
     const slider = container.querySelector('input[type="range"]') as HTMLInputElement
-    expect(slider.min).toBe('2500')
-    expect(slider.max).toBe('3800')
+    expect(Number(slider.min)).toBeLessThan(2_950)
+    expect(Number(slider.max)).toBeGreaterThan(3_350)
+    expect(Number(slider.min)).toBeGreaterThanOrEqual(0)
     expect(slider.step).toBe('25')
   })
 

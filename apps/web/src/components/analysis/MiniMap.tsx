@@ -1,6 +1,7 @@
 /**
  * MiniMap — real Mapbox GL JS map when a token + subject coordinates exist,
- * design-faithful SVG placeholder otherwise.
+ * design-faithful SVG placeholder otherwise. The placeholder carries only the
+ * pins it is given; it never invents comp prices.
  *
  * The real map mounts via mapboxGlService (lazy mapbox-gl import, subject
  * ink pin, accent comp markers). Any failure — no token, no coordinates, no
@@ -144,20 +145,15 @@ export function MiniMap({
       }
     : { minLat: 43.4, maxLat: 43.9, minLng: -79.8, maxLng: -79.2 }
 
-  // HTML-overlay pin positions as percentages (design demo positions, or
-  // real pins projected into the bounding box)
-  const overlayPins: Array<{ x: number; y: number; n: string }> = hasPins
-    ? pins.map((pin) => {
-        const pos = latLngToXY(pin.lat, pin.lng, bounds, 100, 100)
-        return { x: pos.x, y: pos.y, n: pin.label }
-      })
-    : [
-        { x: 14, y: 40, n: '$2,850' },
-        { x: 72, y: 22, n: '$3,050' },
-        { x: 36, y: 64, n: '$2,750' },
-        { x: 75, y: 68, n: '$3,200' },
-        { x: 58, y: 78, n: '$2,900' },
-      ]
+  // HTML-overlay pin positions as percentages — real pins projected into the
+  // bounding box. With no pins there are no price tags: this placeholder
+  // used to scatter five invented rents ($2,850 … $3,200) around every
+  // report that lacked coordinates, including live ones, so a real address
+  // showed comps that never existed.
+  const overlayPins: Array<{ x: number; y: number; n: string }> = pins.map((pin) => {
+    const pos = latLngToXY(pin.lat, pin.lng, bounds, 100, 100)
+    return { x: pos.x, y: pos.y, n: pin.label }
+  })
 
   return (
     <div

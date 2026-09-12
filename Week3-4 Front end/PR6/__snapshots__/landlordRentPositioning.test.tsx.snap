@@ -3,6 +3,7 @@
 exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
 <section
   class="container tr-section"
+  data-section="01"
 >
   <div
     class="tr-section-head"
@@ -233,8 +234,8 @@ exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
       <input
         aria-label="Asking rent"
         class="scout-slider"
-        max="3800"
-        min="2500"
+        max="5100"
+        min="1750"
         step="25"
         type="range"
         value="3400"
@@ -248,14 +249,14 @@ exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
           style="font-size: 10px; color: var(--muted);"
         >
           $
-          2,500
+          1,750
         </span>
         <span
           class="mono"
           style="font-size: 10px; color: var(--muted);"
         >
           $
-          3,800
+          5,100
         </span>
       </div>
       <div
@@ -536,7 +537,10 @@ exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
   <p
     style="margin-top: 18px; font-size: 13px; color: var(--muted); max-width: 720px;"
   >
-    Every number on this page moves with the slider above. The range comes from the last 60 days of 
+    Every number on this page moves with the slider above.
+     
+    The range comes from the last 60 days of
+     
     <span
       class="tabular"
     >

@@ -22,7 +22,8 @@ interface LandlordPropertyHeroProps {
   askingRent: number
   metrics: ComputedInvestorMetrics
   score: DealScoreData
-  positioning: RentPositioning
+  /** Null when there are no comparables to position the rent against. */
+  positioning: RentPositioning | null
   /** Photo URLs from the scraper; absent for address-entered listings. */
   photoUrls?: string[]
   /** Subject coordinates — renders the real map when there are no photos. */
@@ -45,11 +46,13 @@ export function LandlordPropertyHero({
         ? 'var(--caution)'
         : 'var(--fail)'
 
+  // No comparables reads as a caution, and the gap line is omitted rather
+  // than rendered as "+$0" — zero would be a claim the rent sits on the median.
   const positioningColor =
-    positioning.tone === 'pass'
-      ? 'var(--pass)'
-      : positioning.tone === 'caution'
-        ? 'var(--caution)'
+    positioning == null || positioning.tone === 'caution'
+      ? 'var(--caution)'
+      : positioning.tone === 'pass'
+        ? 'var(--pass)'
         : 'var(--fail)'
 
   const domColor =
@@ -327,15 +330,17 @@ export function LandlordPropertyHero({
                   color: positioningColor,
                 }}
               >
-                {positioning.label}
+                {positioning?.label ?? 'No comparables'}
               </span>
-              <span
-                className="serif tabular"
-                style={{ fontSize: 22, lineHeight: 1, color: positioningColor }}
-              >
-                {positioning.gap >= 0 ? '+' : '−'}
-                {fmtMoney(Math.abs(positioning.gap), { decimals: 0 })}
-              </span>
+              {positioning != null && (
+                <span
+                  className="serif tabular"
+                  style={{ fontSize: 22, lineHeight: 1, color: positioningColor }}
+                >
+                  {positioning.gap >= 0 ? '+' : '−'}
+                  {fmtMoney(Math.abs(positioning.gap), { decimals: 0 })}
+                </span>
+              )}
             </div>
           </div>
 
