@@ -2,6 +2,8 @@ import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Analysis, ReportMode, SchoolsResult, NearbySchool } from '../types/analysis'
 import type { Listing } from '../types/property'
+import { FREE_TIER } from '../constants/tiers'
+import { startOfCurrentMonth } from '../lib/billingMonth'
 
 // Lazy singleton — only created on first DB call so tests can import
 // this module without needing SUPABASE_URL set at load time.
@@ -710,20 +712,22 @@ export async function updateSubscriptionStatus(
 }
 
 /**
- * Count how many analyses the given user has run in the current calendar month.
- * Used to enforce the free tier limit of 10 analyses/month.
- * Returns 0 on error so the analysis is allowed through (fail-open).
+ * Count the analyses the given user has run this calendar month that count
+ * against the free-tier quota (FREE_TIER.MONTHLY_ANALYSIS_LIMIT). Tenant
+ * analyses are excluded: spec §4 makes them unlimited on every tier, so they
+ * neither consume the quota nor appear in the "N analyses this month" figure
+ * the account page shows beside it. The two must agree, so both read this.
+ *
+ * Returns 0 on error so the analysis is allowed through (fail-open): a
+ * database hiccup should not lock a paying-attention user out of a report.
  */
 export async function getMonthlyAnalysisCount(userId: string): Promise<number> {
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
-
   const { count, error } = await db()
     .from('analyses')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .gte('created_at', startOfMonth.toISOString())
+    .not('report_mode', 'in', `(${FREE_TIER.QUOTA_EXEMPT_MODES.join(',')})`)
+    .gte('created_at', startOfCurrentMonth().toISOString())
 
   if (error) {
     console.error('[supabaseService] getMonthlyAnalysisCount error:', error)
@@ -904,6 +908,38 @@ export async function saveListing(
  * Insert a pending analysis row with just the listing_id and share_token.
  * The analyze pipeline fills in the remaining fields later.
  */
+/**
+ * Attribute a pending analysis to the signed-in user who triggered it, and
+ * record the mode they chose. Only an unowned row is claimed — a share link is
+ * not a transfer of ownership, so re-triggering someone else's token neither
+ * re-owns it nor errors (the update matches zero rows).
+ *
+ * Until this existed no analysis was ever attributed to anyone:
+ * createPendingAnalysis writes no user_id and POST /analysis read no session,
+ * so `analyses.user_id` was null on every row, the monthly count was always
+ * zero, and the owner-only override policy (D-065) had nothing to match.
+ */
+export async function claimAnalysisForUser(
+  token: string,
+  userId: string,
+  mode: ReportMode
+): Promise<void> {
+  const modeMap: Record<ReportMode, string> = {
+    investor: 'investment',
+    personal: 'personal',
+    tenant: 'tenant',
+    landlord: 'landlord',
+  }
+  const { error } = await db()
+    .from('analyses')
+    .update({ user_id: userId, report_mode: modeMap[mode] })
+    .eq('share_token', token)
+    .is('user_id', null)
+  if (error != null) {
+    throw new Error(`claimAnalysisForUser failed: ${error.message}`)
+  }
+}
+
 export async function createPendingAnalysis(listingId: string, token: string): Promise<void> {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   const { error } = await db().from('analyses').insert({

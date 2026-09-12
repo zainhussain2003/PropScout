@@ -23,10 +23,10 @@ interface MeReply {
    * previously derived "8 of 10 used" from a hardcoded fixture array, which
    * both invented a history and manufactured scarcity against the free limit.
    *
-   * Reporting the count is NOT enforcing it — nothing rejects an analysis past
-   * the limit yet (`FREE_TIER.MONTHLY_ANALYSIS_LIMIT` is still unreferenced in
-   * the request path). Kept deliberately separate so a display fix is not
-   * mistaken for an entitlement change.
+   * This is the same count POST /analysis checks against
+   * FREE_TIER.MONTHLY_ANALYSIS_LIMIT (D-071): analyses this user triggered
+   * while signed in, excluding tenant mode, which is unlimited. Analyses run
+   * before attribution existed have no user_id and are not in it.
    */
   analysesThisMonth: number
   /** Account creation timestamp from Supabase auth, for "member since". */

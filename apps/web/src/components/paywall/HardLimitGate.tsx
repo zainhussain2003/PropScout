@@ -12,6 +12,12 @@ import { Icon } from '../shared/Icon'
 interface HardLimitGateProps {
   /** Called when the user chooses "Wait it out". */
   onClose: () => void
+  /**
+   * Called when the user chooses "Upgrade now". Optional only for the design
+   * review route in App.tsx; every live mount must wire it — an upgrade
+   * button that does nothing is the inert control D-059 forbids.
+   */
+  onUpgrade?: () => void
   /** Total free analyses allowed per month. */
   monthlyLimit: number
   /** How many analyses the user has used this month. */
@@ -26,6 +32,7 @@ interface HardLimitGateProps {
 
 export function HardLimitGate({
   onClose,
+  onUpgrade,
   monthlyLimit,
   used,
   resetsIn = '32 days',
@@ -190,7 +197,11 @@ export function HardLimitGate({
               </span>
             </div>
             <div className="row gap-10">
-              <button className="btn btn-accent" style={{ padding: '14px 20px', fontSize: 15 }}>
+              <button
+                className="btn btn-accent"
+                style={{ padding: '14px 20px', fontSize: 15 }}
+                onClick={onUpgrade}
+              >
                 Upgrade now <Icon name="arrow" size={14} />
               </button>
               <button
