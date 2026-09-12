@@ -2785,3 +2785,38 @@ landlord demo and the live landlord view are different products, and that is bou
 that had drifted; it does not diff every pixel. A future section added to one page and not the
 other fails the outline; a copy edit inside a shared component cannot diverge, because there is
 one component.
+
+### D-074 · Financing presets are relative to what the analysis ran with
+
+**Chosen.** `FinancingSliders` takes a `base` — the down payment, rate and amortization the
+engine actually used — and expresses its presets against it: "Base" restores it, "OSFI" is the
+B-20 qualifying rate for _that_ rate (`max(rate + 2%, 5.25%)`, from one shared `OSFI_STRESS`
+constant `computeOSFI` also reads), "35% down" changes only the down payment, and "vs Base"
+compares to it. The live report passes the analysis's financing; the demo routes keep the demo
+assumptions by default. Two smaller findings from the same run: the hero printed **"0 sqft"** for
+a size the source did not give (now "— sqft", the D-072 rule), and the OSFI card called a pass at
+GDS 43.7% against a 44% limit _"comfortably under"_ (now states the figure and the margin, and
+calls under two points a thin one).
+
+**Why.** First end-to-end run on production (2026-09-12, Buttermill Ave via the address path).
+Every headline figure reproduced independently — payment, cash flow, DSCR, cash-on-cash, OSFI
+payment and GDS, five-year paydown, break-even appreciation — at the live 4.45% Bank of Canada
+rate the engine had fetched. Then "35% down" was clicked and the payment went from $3,216 to
+$2,703 while the rate label read **4.79% · vs Base +0.00%**: the preset carried a hardcoded
+4.79% from the demo constants, so it silently replaced the rate the report was built on, and the
+"Base" it claimed parity with was a number this analysis never used. The figures after the click
+were internally consistent and wrong for the property.
+
+**Alternatives considered**
+
+| Option                                             | Why not                                                                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Presets change only their named term               | Right for "35% down", but "Base" has to restore something, and "OSFI" is defined relative to a contract rate. |
+| Drop the "vs Base" line                            | It is useful once it compares to the real base; the defect was the constant, not the comparison.              |
+| Keep 4.79% and refetch the live rate in the slider | The analysis already carries the rate it used; the report must not disagree with itself about it (D-054/55).  |
+
+**Also seen, not fixed here.** The analyzing screen says "Fetched listing from Realtor.ca" and
+"Connecting to Realtor.ca…" for an address-entered property (audit J-09). Break-even rent is
+defined as current rent minus current cash flow, which holds the vacancy allowance at today's rent
+rather than the break-even rent — self-consistent with the cash-flow figure beside it, about
+$140/mo low for this property, and a definition question rather than a bug.

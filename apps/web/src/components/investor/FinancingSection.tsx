@@ -9,19 +9,22 @@
  */
 
 import { SectionHead } from '../shared/SectionHead'
-import { FinancingSliders } from './FinancingSliders'
+import { FinancingSliders, type FinancingBase } from './FinancingSliders'
 import type { FinancingInputs } from '../../types/analysis'
 
 export interface FinancingSectionProps {
   price: number
   financing: FinancingInputs
   onFinancingChange: (f: FinancingInputs) => void
+  /** What the analysis ran with; presets are relative to it. See FinancingSliders. */
+  base?: FinancingBase
 }
 
 export function FinancingSection({
   price,
   financing,
   onFinancingChange,
+  base,
 }: FinancingSectionProps): JSX.Element {
   return (
     <section className="container tr-section" data-section="02">
@@ -36,7 +39,12 @@ export function FinancingSection({
         verdict={`${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`}
         tone="caution"
       />
-      <FinancingSliders financing={financing} price={price} onChange={onFinancingChange} />
+      <FinancingSliders
+        financing={financing}
+        price={price}
+        onChange={onFinancingChange}
+        base={base}
+      />
     </section>
   )
 }

@@ -117,6 +117,72 @@ describe('FinancingSliders', () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ downPaymentPct: 0.35 }))
   })
 
+  // ── Presets are relative to what the analysis ran with ──────────────────────
+  //
+  // Found on the first production run (2026-09-12): the engine priced a
+  // Vaughan condo at the live 4.45% Bank of Canada rate; clicking "35% down"
+  // silently moved the rate to a hardcoded 4.79% as well, and "vs Base
+  // +0.00%" then described a rate the report never used.
+
+  describe('presets against a live base', () => {
+    const LIVE_BASE = { downPaymentPct: 0.2, mortgageRate: 0.0445, amortizationYears: 25 }
+    const live = { ...mockFinancingInputs, ...LIVE_BASE }
+
+    it('"35% down" keeps the rate the analysis used', () => {
+      const onChange = vi.fn()
+      render(
+        <FinancingSliders financing={live} price={729900} onChange={onChange} base={LIVE_BASE} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: '35% down' }))
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({ downPaymentPct: 0.35, mortgageRate: 0.0445 })
+      )
+    })
+
+    it('"OSFI" is the qualifying rate for that base, not a constant', () => {
+      const onChange = vi.fn()
+      render(
+        <FinancingSliders financing={live} price={729900} onChange={onChange} base={LIVE_BASE} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'OSFI' }))
+      // max(4.45% + 2%, 5.25%) = 6.45% — what the OSFI card reports for this rate.
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ mortgageRate: 0.0645 }))
+    })
+
+    it('"Base" restores the analysis financing', () => {
+      const onChange = vi.fn()
+      const moved = { ...live, downPaymentPct: 0.5, mortgageRate: 0.08, amortizationYears: 10 }
+      render(
+        <FinancingSliders financing={moved} price={729900} onChange={onChange} base={LIVE_BASE} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Base' }))
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining(LIVE_BASE))
+    })
+
+    it('"vs Base" compares to that base', () => {
+      render(
+        <FinancingSliders
+          financing={{ ...live, mortgageRate: 0.0495 }}
+          price={729900}
+          onChange={vi.fn()}
+          base={LIVE_BASE}
+        />
+      )
+      expect(screen.getByText('vs Base +0.50%')).toBeInTheDocument()
+    })
+
+    it('without a base, presets keep the demo assumptions (4.79%)', () => {
+      const onChange = vi.fn()
+      render(
+        <FinancingSliders financing={mockFinancingInputs} price={729900} onChange={onChange} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: '35% down' }))
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({ downPaymentPct: 0.35, mortgageRate: 0.0479 })
+      )
+    })
+  })
+
   it('management fee toggle has role="switch" with aria-checked=false', () => {
     render(
       <FinancingSliders financing={mockFinancingInputs} price={729900} onChange={defaultOnChange} />
@@ -211,6 +277,23 @@ describe('OSFICard', () => {
   it('matches snapshot', () => {
     const { container } = render(<OSFICard osfi={VAUGHAN_OSFI} financing={mockFinancingInputs} />)
     expect(container.firstChild).toMatchSnapshot()
+  })
+
+  // Found on the first production run: a pass at GDS 43.7% against a 44%
+  // limit read "sits comfortably under the 44% federal threshold".
+  it('does not call a 0.3-point pass comfortable', () => {
+    const tight = { ...VAUGHAN_OSFI, pass: true, gds: 0.437 }
+    render(<OSFICard osfi={tight} financing={mockFinancingInputs} />)
+    const text = document.body.textContent ?? ''
+    expect(text).not.toMatch(/comfortably/)
+    expect(text).toMatch(/43\.7%/)
+    expect(text).toMatch(/thin margin/)
+  })
+
+  it('states the headroom when there is some', () => {
+    const roomy = { ...VAUGHAN_OSFI, pass: true, gds: 0.31 }
+    render(<OSFICard osfi={roomy} financing={mockFinancingInputs} />)
+    expect(document.body.textContent ?? '').toMatch(/13\.0 points of room/)
   })
 })
 

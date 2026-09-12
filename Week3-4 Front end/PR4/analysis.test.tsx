@@ -458,6 +458,23 @@ describe('PropertyHero', () => {
     expect(screen.getByText('Unit 5702 · 5 Buttermill Avenue')).toBeInTheDocument()
   })
 
+  it('never prints "0 sqft" for a size the source did not give', () => {
+    // ListingData carries 0 for an unknown size; a live address-entered
+    // report rendered it as a fact (D-072, production run 2026-09-12).
+    render(
+      <PropertyHero
+        listing={{ ...LISTING, sqft: 0 }}
+        score={VAUGHAN_SCORE}
+        cashFlowMonthly={cashFlowMonthly}
+        capRate={capRate}
+        dscr={dscr}
+      />
+    )
+    const text = document.body.textContent ?? ''
+    expect(text).not.toMatch(/\b0 sqft/)
+    expect(text).toMatch(/— sqft/)
+  })
+
   it('renders the deal score total', () => {
     render(
       <PropertyHero

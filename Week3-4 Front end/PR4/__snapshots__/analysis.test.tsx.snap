@@ -2042,8 +2042,7 @@ exports[`PropertyHero > matches snapshot 1`] = `
                 r="3"
               />
             </svg>
-            950
-             sqft
+            950 sqft
           </span>
           <span
             style="display: inline-flex; align-items: center; gap: 8px;"

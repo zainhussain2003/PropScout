@@ -29,6 +29,7 @@ import type {
 } from '../types/analysis'
 import { DEAL_SCORE } from '../constants/thresholds'
 import { PROPERTY_COST_ESTIMATES } from '../constants/defaults'
+import { OSFI_STRESS } from '../constants/osfi'
 
 // ── Deal score display metadata ────────────────────────────────────────────────
 
@@ -194,7 +195,7 @@ export function computeOSFI(
   assumedIncome: number
 ): OSFIResult {
   const principal = price * (1 - downPaymentPct)
-  const qualifyingRate = Math.max(mortgageRate + 0.02, 0.0525)
+  const qualifyingRate = Math.max(mortgageRate + OSFI_STRESS.BUFFER, OSFI_STRESS.FLOOR)
   const qualifyingPmt = computeMonthlyPayment(principal, qualifyingRate, amortizationYears)
   const monthlyTaxes = annualTaxes / 12
   const gds = (qualifyingPmt + monthlyTaxes + 0.5 * condoFeeMonthly) / (assumedIncome / 12)

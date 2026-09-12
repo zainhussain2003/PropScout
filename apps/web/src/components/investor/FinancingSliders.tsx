@@ -15,29 +15,62 @@
  */
 
 import type { FinancingInputs } from '../../types/analysis'
+import { DEFAULT_FINANCING_INPUTS } from '../../constants/demoData'
+import { OSFI_STRESS } from '../../constants/osfi'
 import { fmtMoney } from '../../lib/investorCalc'
+
+/** The three financing terms a preset is expressed relative to. */
+export type FinancingBase = Pick<
+  FinancingInputs,
+  'downPaymentPct' | 'mortgageRate' | 'amortizationYears'
+>
 
 interface FinancingSlidersProps {
   financing: FinancingInputs
   /** Price of the property — used to show dollar value of down payment */
   price: number
   onChange: (financing: FinancingInputs) => void
+  /**
+   * The financing the analysis was actually computed with. Presets are
+   * expressed against it and "vs Base" compares to it. Defaults to the demo
+   * assumptions, which is right for the demo routes and wrong for a live
+   * report: with a hardcoded 4.79% base, clicking "35% down" on a report the
+   * engine ran at the live 4.45% Bank of Canada rate silently swapped the rate
+   * too, and "vs Base +0.00%" then described a rate the analysis never used.
+   */
+  base?: FinancingBase
 }
 
 // ── Presets ────────────────────────────────────────────────────────────────────
 
-const PRESETS: Array<{ label: string; patch: Partial<FinancingInputs> }> = [
-  { label: 'Base', patch: { downPaymentPct: 0.2, mortgageRate: 0.0479, amortizationYears: 25 } },
-  { label: 'OSFI', patch: { downPaymentPct: 0.2, mortgageRate: 0.0679, amortizationYears: 25 } },
-  {
-    label: '35% down',
-    patch: { downPaymentPct: 0.35, mortgageRate: 0.0479, amortizationYears: 25 },
-  },
-  {
-    label: 'Conservative',
-    patch: { downPaymentPct: 0.2, mortgageRate: 0.0679, amortizationYears: 30 },
-  },
-]
+const DEFAULT_BASE: FinancingBase = {
+  downPaymentPct: DEFAULT_FINANCING_INPUTS.downPaymentPct,
+  mortgageRate: DEFAULT_FINANCING_INPUTS.mortgageRate,
+  amortizationYears: DEFAULT_FINANCING_INPUTS.amortizationYears,
+}
+
+/** OSFI B-20 qualifying rate: the greater of contract + 2% and the 5.25% floor. */
+function osfiQualifyingRate(contractRate: number): number {
+  return Math.max(contractRate + OSFI_STRESS.BUFFER, OSFI_STRESS.FLOOR)
+}
+
+function presetsFor(
+  base: FinancingBase
+): Array<{ label: string; patch: Partial<FinancingInputs> }> {
+  return [
+    { label: 'Base', patch: { ...base } },
+    { label: 'OSFI', patch: { ...base, mortgageRate: osfiQualifyingRate(base.mortgageRate) } },
+    { label: '35% down', patch: { ...base, downPaymentPct: 0.35 } },
+    {
+      label: 'Conservative',
+      patch: {
+        ...base,
+        mortgageRate: osfiQualifyingRate(base.mortgageRate),
+        amortizationYears: 30,
+      },
+    },
+  ]
+}
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -45,8 +78,11 @@ export function FinancingSliders({
   financing,
   price,
   onChange,
+  base = DEFAULT_BASE,
 }: FinancingSlidersProps): JSX.Element {
   const set = (patch: Partial<FinancingInputs>): void => onChange({ ...financing, ...patch })
+  const presets = presetsFor(base)
+  const vsBase = (financing.mortgageRate - base.mortgageRate) * 100
 
   return (
     <div className="card" style={{ padding: 28 }}>
@@ -80,7 +116,7 @@ export function FinancingSliders({
 
         {/* Preset buttons */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {PRESETS.map((p) => (
+          {presets.map((p) => (
             <button
               key={p.label}
               onClick={() => set(p.patch)}
@@ -123,7 +159,7 @@ export function FinancingSliders({
           label="Mortgage rate"
           unit="annual"
           display={`${(financing.mortgageRate * 100).toFixed(2)}%`}
-          secondary={`vs Base ${((financing.mortgageRate - 0.0479) * 100 >= 0 ? '+' : '') + ((financing.mortgageRate - 0.0479) * 100).toFixed(2)}%`}
+          secondary={`vs Base ${(vsBase >= 0 ? '+' : '') + vsBase.toFixed(2)}%`}
           min={2}
           max={10}
           step={0.25}

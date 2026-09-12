@@ -16,3 +16,13 @@ export const INCOME_SLIDER = {
   max: 400_000,
   step: 5_000,
 } as const
+
+/**
+ * OSFI B-20 stress test: qualify at the greater of contract rate + BUFFER and
+ * FLOOR. Shared by computeOSFI and the financing presets so an "OSFI" preset
+ * cannot drift from the qualifying rate the card reports.
+ */
+export const OSFI_STRESS = {
+  BUFFER: 0.02,
+  FLOOR: 0.0525,
+} as const

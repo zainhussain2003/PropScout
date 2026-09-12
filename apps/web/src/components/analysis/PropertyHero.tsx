@@ -187,7 +187,9 @@ export function PropertyHero({
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <Icon name="dot" size={10} />
-                {listing.sqft.toLocaleString('en-CA')} sqft
+                {/* ListingData carries 0 for an unknown size. A live
+                    address-entered report printed "0 sqft" here (D-072). */}
+                {listing.sqft > 0 ? `${listing.sqft.toLocaleString('en-CA')} sqft` : '— sqft'}
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <Icon name="key" size={14} />
