@@ -104,10 +104,10 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 
 | Feature                                             | Free                    | Pro                     | Professional    | Team            |
 | --------------------------------------------------- | ----------------------- | ----------------------- | --------------- | --------------- |
-| Report A — Investment                               | 3/month, limited        | Unlimited, full         | Unlimited, full | Unlimited, full |
-| Report B — Personal purchase                        | 3/month, limited        | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report A — Investment                               | 10/month, limited       | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report B — Personal purchase                        | 10/month, limited       | Unlimited, full         | Unlimited, full | Unlimited, full |
 | Report C — Tenant evaluation                        | Unlimited, no login     | Unlimited               | Unlimited       | Unlimited       |
-| Report D — Landlord rental                          | 3/month, limited        | Unlimited, full         | Unlimited, full | Unlimited, full |
+| Report D — Landlord rental                          | 10/month, limited       | Unlimited, full         | Unlimited, full | Unlimited, full |
 | Rental comps (full — range, map, trend, confidence) | Yes                     | Yes                     | Yes             | Yes             |
 | Full investment metrics                             | All metrics             | All metrics             | All             | All             |
 | Financing scenarios                                 | All scenarios + sliders | All scenarios + sliders | All             | All             |
@@ -1331,7 +1331,7 @@ A working product that can be shared with real users. Every item below is requir
 
 - Supabase auth (email + Google)
 - Stripe subscription tiers
-- Free tier limits enforced (3 analyses/month, blurred locked sections)
+- Free tier limits enforced (10 analyses/month, server-side at POST /analysis — D-071; blurred locked sections)
 - Shareable link generation (UUID token)
 
 **Weeks 8–10: Testing and polish**

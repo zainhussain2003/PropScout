@@ -2254,6 +2254,11 @@ states. `/me` now returns `analysesThisMonth` (using the existing `getMonthlyAna
 `createdAt`. A new `useAccount` hook holds the wiring, and everything it returns is either real or
 null — a null renders as an unknown, never as a plausible value.
 
+> **Correction (D-071).** "Usage comes from a real count" was true of the query and false of the
+> data: at the time of this decision no analysis had ever been attributed to a user (`user_id` was
+> null on every row — see D-071), so the figure was a real query over an empty set and read 0 for
+> everyone. It was still not a fixture, but it was not the user's usage either. D-071 makes it so.
+
 **Why.** This was the audit's first P0 and the counter-review's first implementation step. Three
 separate fabrications were shown to any signed-in user as their own record:
 
@@ -2622,3 +2627,69 @@ in front of the owner rather than decided in a fixture-removal change.
 end / Typical / Upper end" from a P25/P50/P75 the shim sets to low/mid/high — the analysis exposes
 a range, not percentiles, and the labels are a reading of that range rather than a claim of
 percentile precision.
+
+### D-071 · The free tier is ten analyses a month, counted and enforced at the API
+
+**Chosen.** Ten analyses per UTC calendar month for a signed-in free-tier account, enforced in
+`POST /analysis` before the pipeline runs. Tenant mode is exempt (spec §4 makes it unlimited on
+every tier) and Pro, Professional and Team are unlimited. The eleventh request returns
+`402 FREE_LIMIT_REACHED` with `{ used, limit, resetsAt }`, and the analyzing page renders the
+existing `HardLimitGate` from those figures, with a working "Upgrade now" that starts Pro checkout.
+The spec's feature matrix and the landing page said three; both now say ten, and the landing copy
+reads the constant so it cannot drift again. The owner's call (audit list item #4, "go with 10").
+
+**What had to be built first: attribution.** `FREE_TIER.MONTHLY_ANALYSIS_LIMIT` was referenced
+nowhere in a request path — but the deeper reason it could not be enforced was that **no analysis
+was ever attributed to anyone**. `createPendingAnalysis` wrote no `user_id`; `POST /scrape` and
+`POST /analysis` read no session; the browser sent none. Every row in `analyses` had `user_id`
+null. Three things followed:
+
+- `getMonthlyAnalysisCount` existed and was correct, and always returned 0.
+- The account page's "N analyses this month" (D-064) was always 0 — corrected in place above.
+- The owner-only override policy (D-065) had no owners: on the live site, nobody could dismiss a
+  flag on any report, because no report belonged to anyone. That policy was right; this is what
+  makes it apply.
+
+So the browser now sends the session with the trigger, and `claimAnalysisForUser` sets `user_id`
+and the chosen `report_mode` on the row — **only if it is unowned**. A share link is not a transfer
+of ownership; re-triggering someone else's token matches zero rows and steals nothing.
+
+**Order of operations.** Check, then claim, then run. The check happens before the pipeline
+because the pipeline is what costs money (scrape, calc engine, two Claude calls). The claim
+happens before the pipeline so a run that dies mid-way still counts: the quota is on analyses
+_started_. Counting only completions would let a failing upstream hand out free retries.
+
+**The window is the UTC calendar month**, from one helper (`lib/billingMonth.ts`) that both the
+count and the reported `resetsAt` read, so the gate can never show a reset date the count
+disagrees with. Not a rolling 30 days: the account page says "resets monthly", the Stripe cycle is
+monthly, and a rolling window makes "when can I run another one" a question with no plain answer.
+
+**The client sends the session before triggering, and waits for it.** `AuthProvider` reads the
+stored session asynchronously; firing the trigger on mount ran every signed-in user's first report
+as a guest. `AnalyzingPage` now holds until `loading` is false.
+
+**Alternatives considered**
+
+| Option                                           | Why not                                                                                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Three a month, as the spec matrix said           | The owner chose ten. Three was in the spec's matrix and landing copy; ten was in both constants files, CLAUDE.md and the account page. One number had to win and it was their call.    |
+| Enforce at `POST /scrape`                        | The mode is not known yet, so tenant could not be exempted; and scraping a page the user then abandons at the mode modal would burn quota on a report that never ran.                  |
+| Enforce client-side from `/me`                   | The audit's point exactly: "the client should render the server decision". A quota in JavaScript is a suggestion.                                                                      |
+| Count completed analyses only                    | Hands out free retries whenever the pipeline fails, and the row exists either way.                                                                                                     |
+| Attribute at scrape time instead of trigger time | Would also need the session on `/scrape` and `/address`; attributing where the mode is chosen and the cost is incurred needed one change and gives the same ownership.                 |
+| Downgrade an invalid session to guest            | Silently runs an un-ownable, uncounted analysis for someone who believes they are signed in. 401 tells them; the client only sends a token it holds as current.                        |
+| Rolling 30-day window                            | No reset date to print, and "resets monthly" on the account page would be false.                                                                                                       |
+| Meter guests by IP                               | IPs are shared (offices, carriers, VPNs) and trivially rotated. The existing 10 req/min IP rate limit bounds abuse; a per-IP monthly quota would lock out a whole office for one user. |
+
+**Known limits.**
+
+- **Guests are not counted.** The limit is per account; a guest has none. Signing out and running
+  as a guest is therefore a bypass. The spec's answer for guests — "one free analysis with email
+  capture" (§5) — is a separate feature, not built here; when it is, it needs its own gate.
+- **Analyses run before this change have no owner** and are not in anyone's count. There is no
+  backfill because there is nothing to backfill from.
+- **The count is on `created_at`, which is the scrape time, not the trigger time.** A listing
+  scraped on the 31st and triggered on the 1st counts in the earlier month. Rows are created
+  seconds before they are triggered, so this is a boundary curiosity, not a loophole.
+- `HardLimitGate`'s `onUpgrade` is optional only for the design-review mount in `App.tsx`; every
+  live mount must wire it.

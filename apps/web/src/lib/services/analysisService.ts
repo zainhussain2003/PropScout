@@ -21,7 +21,9 @@ export class ApiRequestError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public readonly status: number
+    public readonly status: number,
+    /** Extra fields the API sent beside the error envelope (e.g. quota usage). */
+    public readonly details: Record<string, unknown> = {}
   ) {
     super(message)
     this.name = 'ApiRequestError'
@@ -232,19 +234,52 @@ export async function scrapeUrl(
   throw new ApiRequestError(code, message, response.status)
 }
 
+/** The body of a 402 FREE_LIMIT_REACHED response (D-071). */
+export interface FreeLimitDetails {
+  used: number
+  limit: number
+  /** ISO timestamp of the first instant of next month, UTC. */
+  resetsAt: string
+}
+
+/** Narrow an ApiRequestError to the quota refusal, with its usage figures. */
+export function freeLimitDetails(err: unknown): FreeLimitDetails | null {
+  if (!(err instanceof ApiRequestError) || err.code !== 'FREE_LIMIT_REACHED') return null
+  const { used, limit, resetsAt } = err.details
+  if (typeof used !== 'number' || typeof limit !== 'number' || typeof resetsAt !== 'string') {
+    return null
+  }
+  return { used, limit, resetsAt }
+}
+
 /**
  * POST /analysis — triggers the analysis pipeline for a scraped token.
  * No trailing slash — different call shape from runAnalysis.
  * Returns void; use fetchReport to poll for results.
  *
- * @throws ApiRequestError on non-200 or network error
+ * Pass `accessToken` when signed in. It is what attributes the analysis to the
+ * account (so it counts toward the monthly figure on the account page and the
+ * user can dismiss its flags) and what the free-tier quota is checked against.
+ * Without it the analysis runs as a guest.
+ *
+ * @throws ApiRequestError on non-200 or network error; code FREE_LIMIT_REACHED
+ *   (status 402) carries { used, limit, resetsAt } in `details`.
  */
-export async function triggerAnalysis(token: string, mode: ReportMode): Promise<void> {
+export async function triggerAnalysis(
+  token: string,
+  mode: ReportMode,
+  accessToken: string | null = null
+): Promise<void> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (accessToken != null && accessToken !== '') {
+    headers['Authorization'] = `Bearer ${accessToken}`
+  }
+
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/analysis`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ token, mode }),
     })
   } catch (err) {
@@ -258,14 +293,21 @@ export async function triggerAnalysis(token: string, mode: ReportMode): Promise<
   if (!response.ok) {
     let code = 'TRIGGER_FAILED'
     let message = 'Could not start analysis — please try again.'
+    let details: Record<string, unknown> = {}
     try {
-      const json = (await response.json()) as { code?: string; message?: string }
+      const json = (await response.json()) as Record<string, unknown> & {
+        code?: string
+        message?: string
+      }
       if (json.code) code = json.code
       if (json.message) message = json.message
+      details = Object.fromEntries(
+        Object.entries(json).filter(([key]) => !['code', 'message', 'error'].includes(key))
+      )
     } catch {
       // ignore parse errors
     }
-    throw new ApiRequestError(code, message, response.status)
+    throw new ApiRequestError(code, message, response.status, details)
   }
 }
 
