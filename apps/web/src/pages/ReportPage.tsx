@@ -18,11 +18,8 @@ import {
   computeDemoMetrics,
   noiForManagementState,
   toDealScoreData,
-  computeLTT,
-  computeOSFI,
   fmtMoney,
 } from '../lib/investorCalc'
-import { DEFAULT_HOUSEHOLD_INCOME, INCOME_SLIDER } from '../constants/osfi'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { LockedButton } from '../components/paywall/LockedButton'
@@ -35,18 +32,19 @@ import { Icon } from '../components/shared/Icon'
 import { SectionHead } from '../components/shared/SectionHead'
 import { PropertyHero } from '../components/analysis/PropertyHero'
 import { AIVerdictBlock } from '../components/analysis/AIVerdictBlock'
-import { DealScore as DealScoreWidget } from '../components/analysis/DealScore'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
+import { DealScore as DealScoreWidget } from '../components/analysis/DealScore'
 import { InvestmentMetricsSection } from '../components/investor/InvestmentMetricsSection'
-import { FinancingSliders } from '../components/investor/FinancingSliders'
+import { FinancingSection } from '../components/investor/FinancingSection'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { DueDiligenceSection } from '../components/investor/DueDiligenceSection'
-import { LTTTable } from '../components/investor/LTTTable'
-import { OSFICard } from '../components/investor/OSFICard'
-import { EquityChart } from '../components/investor/EquityChart'
-import { BreakEvenAppreciation } from '../components/investor/BreakEvenAppreciation'
+import { RentalCompsSection } from '../components/investor/RentalCompsSection'
+import { RiskFlagsSection } from '../components/investor/RiskFlagsSection'
+import { CashToCloseSection } from '../components/investor/CashToCloseSection'
+import { OSFISection } from '../components/investor/OSFISection'
+import { EquitySection } from '../components/investor/EquitySection'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { TenantSchoolsSection } from '../components/tenant/TenantSchoolsSection'
 import { shimToTenantSchools, shimToNeighbourhood } from '../lib/reportShims'
@@ -259,371 +257,6 @@ function LoadFailedState(): JSX.Element {
         Try again
       </button>
     </div>
-  )
-}
-
-// ── Rental comps section ──────────────────────────────────────────────────────
-
-interface RentalCompsSectionProps {
-  analysis: Analysis
-  listing: ListingData
-}
-
-function RentalCompsSection({ analysis, listing }: RentalCompsSectionProps): JSX.Element | null {
-  const comps = analysis.rentalComps
-  if (!comps || comps.compCount === 0) return null
-
-  const { low, mid, high, compCount, confidence } = comps
-  const radiusKm = comps.radiusKm ?? null
-
-  return (
-    <section className="container tr-section" data-section="03">
-      <SectionHead
-        n="03"
-        topic="Rental comps"
-        question={
-          <>
-            What can it <em>realistically</em> rent for?
-          </>
-        }
-        verdict={`${compCount} comparable rentals`}
-        tone={confidence === 'high' ? 'pass' : confidence === 'medium' ? 'caution' : 'fail'}
-      />
-
-      <div className="card" style={{ padding: 28 }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 8,
-            alignItems: 'baseline',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <span
-            className="mono"
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-            }}
-          >
-            Market rent range · {compCount} comparable rentals
-            {/* Disclosed, not hidden: when this FSA had no comps the search
-                widened by radius, and comps from a few km away can sit in a
-                different rental market. */}
-            {radiusKm !== null && ` · within ${radiusKm}km, not this postal area`}
-          </span>
-          <span
-            className="mono"
-            style={{
-              fontSize: 11,
-              color:
-                confidence === 'high'
-                  ? 'var(--pass)'
-                  : confidence === 'medium'
-                    ? 'var(--caution)'
-                    : 'var(--fail)',
-            }}
-          >
-            {confidence.charAt(0).toUpperCase() + confidence.slice(1)} confidence
-          </span>
-        </div>
-        <RentalCompsBar low={low} mid={mid} high={high} ask={listing.rentEstimate} />
-      </div>
-    </section>
-  )
-}
-
-// ── Risk flags section ────────────────────────────────────────────────────────
-
-function RiskFlagsSection({
-  listing,
-  flagOverrides,
-}: {
-  listing: ListingData
-  flagOverrides: FlagOverrideControls
-}): JSX.Element {
-  const redFlags = listing.riskFlags.filter((f) => f.tone === 'red')
-  const amberFlags = listing.riskFlags.filter((f) => f.tone === 'amber')
-  // No "−X pts" line here: with the severe gate, score impact is gate + standard
-  // tier, not a single deduction — and re-deriving it on the frontend is exactly
-  // the second computation that drifts from the calc engine. The score itself is
-  // shown (from the backend) in the hero gauge.
-
-  // Ambers are soft warnings — the chip must read caution, not pass-green
-  const verdictTone =
-    redFlags.length > 1
-      ? 'fail'
-      : redFlags.length === 1 || amberFlags.length > 0
-        ? 'caution'
-        : 'caution'
-  const verdictLabel =
-    redFlags.length > 0
-      ? `${redFlags.length} red · ${amberFlags.length} amber`
-      : amberFlags.length > 0
-        ? `${amberFlags.length} amber flag${amberFlags.length > 1 ? 's' : ''}`
-        : 'No wording flags'
-
-  return (
-    <section className="container tr-section" data-section="06">
-      <SectionHead
-        n="06"
-        topic="Risk flags"
-        question={
-          <>
-            What could <em>break</em> this thesis?
-          </>
-        }
-        verdict={verdictLabel}
-        tone={verdictTone}
-      />
-
-      <div className="card col" style={{ padding: 0, overflow: 'hidden' }}>
-        {listing.riskFlags.length === 0 ? (
-          <div
-            style={{
-              padding: 28,
-              display: 'flex',
-              gap: 12,
-              alignItems: 'center',
-              color: 'var(--caution)',
-            }}
-          >
-            <Icon name="flag" size={16} />
-            <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-              No risk language was found in the listing description. This wording scan is not an
-              inspection or a clean bill of health.
-            </span>
-          </div>
-        ) : (
-          listing.riskFlags.map((f) => (
-            <RiskRow
-              key={f.id}
-              tone={f.tone}
-              label={f.label}
-              detail={f.detail}
-              dismissable={flagOverrides.canOverride}
-              dismissed={flagOverrides.overrides.has(f.id)}
-              onToggleDismiss={() => flagOverrides.onToggle(f.id)}
-            />
-          ))
-        )}
-      </div>
-    </section>
-  )
-}
-
-// ── Cash to close section ─────────────────────────────────────────────────────
-
-function CashToCloseSection({
-  metrics,
-  listing,
-  financing,
-}: {
-  metrics: ComputedInvestorMetrics
-  listing: ListingData
-  financing: FinancingInputs
-}): JSX.Element {
-  const lttResult = computeLTT(listing.price, financing.isToronto)
-  const total = metrics.totalCashInvested
-
-  return (
-    <section className="container tr-section" data-section="04">
-      <SectionHead
-        n="04"
-        topic="Cash to close"
-        question={
-          <>
-            What you need in the <em>bank</em> on closing day.
-          </>
-        }
-        verdict={fmtMoney(total)}
-        tone="caution"
-      />
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 16,
-        }}
-      >
-        <LTTTable ltt={lttResult} price={listing.price} toronto={listing.isToronto} />
-
-        <div className="card col" style={{ padding: 24, gap: 16 }}>
-          <div
-            className="mono"
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-            }}
-          >
-            Total cash required
-          </div>
-          {(
-            [
-              { label: 'Down payment', value: metrics.downPayment },
-              { label: 'Provincial LTT', value: metrics.lttProvincial },
-              ...(metrics.lttMunicipal > 0
-                ? [{ label: 'Toronto municipal LTT', value: metrics.lttMunicipal }]
-                : []),
-              {
-                label: 'Other closing costs (est.)',
-                value: metrics.closingCostsTotal - metrics.lttProvincial - metrics.lttMunicipal,
-              },
-            ] as Array<{ label: string; value: number }>
-          ).map((row) => (
-            <div
-              key={row.label}
-              style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}
-            >
-              <span style={{ color: 'var(--ink-2)' }}>{row.label}</span>
-              <span className="mono tabular" style={{ fontWeight: 500 }}>
-                {fmtMoney(row.value)}
-              </span>
-            </div>
-          ))}
-          <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-            <span style={{ fontWeight: 600 }}>Total</span>
-            <span className="mono tabular" style={{ fontWeight: 700, color: 'var(--accent)' }}>
-              {fmtMoney(total)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ── OSFI section ──────────────────────────────────────────────────────────────
-
-function OSFISection({
-  financing,
-  listing,
-}: {
-  financing: FinancingInputs
-  listing: ListingData
-}): JSX.Element {
-  // Income is a live input — the OSFI GDS / qualifying figures recompute on every
-  // change, so a buyer can see whether the property pencils at their real income
-  // instead of the placeholder default.
-  const [income, setIncome] = useState<number>(financing.assumedIncome || DEFAULT_HOUSEHOLD_INCOME)
-
-  const osfi = useMemo(
-    () =>
-      computeOSFI(
-        listing.price,
-        financing.downPaymentPct,
-        financing.mortgageRate,
-        financing.amortizationYears,
-        listing.annualTaxes,
-        listing.condoFeeMonthly,
-        income
-      ),
-    [
-      listing.price,
-      listing.annualTaxes,
-      listing.condoFeeMonthly,
-      financing.downPaymentPct,
-      financing.mortgageRate,
-      financing.amortizationYears,
-      income,
-    ]
-  )
-
-  return (
-    <section className="container tr-section" data-section="05">
-      <SectionHead
-        n="05"
-        topic="OSFI stress test"
-        question={
-          <>
-            Will the bank actually <em>fund</em> this?
-          </>
-        }
-        verdict={
-          osfi.pass ? `Passes at ${fmtMoney(income)} income` : `Fails at ${fmtMoney(income)} income`
-        }
-        tone={osfi.pass ? 'pass' : 'fail'}
-      />
-
-      <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-        <label
-          htmlFor="osfi-income"
-          className="mono"
-          style={{
-            display: 'block',
-            fontSize: 11,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-2)',
-            marginBottom: 12,
-          }}
-        >
-          Your gross household income
-        </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <input
-            id="osfi-income"
-            type="range"
-            min={INCOME_SLIDER.min}
-            max={INCOME_SLIDER.max}
-            step={INCOME_SLIDER.step}
-            value={income}
-            onChange={(e) => setIncome(Number(e.target.value))}
-            aria-label="Gross household income"
-            style={{ flex: 1, accentColor: 'var(--accent)', cursor: 'pointer' }}
-          />
-          <span
-            className="mono tabular"
-            style={{ fontSize: 18, fontWeight: 600, minWidth: 110, textAlign: 'right' }}
-          >
-            {fmtMoney(income)}
-          </span>
-        </div>
-      </div>
-
-      <OSFICard osfi={osfi} financing={financing} income={income} />
-    </section>
-  )
-}
-
-// ── Equity section ────────────────────────────────────────────────────────────
-
-function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.Element {
-  const finalPoint = metrics.equityCurve[metrics.equityCurve.length - 1]
-  const year20Equity = finalPoint?.equity ?? 0
-
-  return (
-    <section className="container tr-section" data-section="07">
-      <SectionHead
-        n="07"
-        topic="Equity build"
-        question={
-          <>
-            What <em>builds</em> over time?
-          </>
-        }
-        verdict={`${fmtMoney(year20Equity)} at year 20`}
-        tone="pass"
-      />
-      <div className="card" style={{ padding: 28 }}>
-        <EquityChart
-          equityCurve={metrics.equityCurve}
-          totalCashInvested={metrics.totalCashInvested}
-        />
-      </div>
-      <BreakEvenAppreciation
-        holdCase={metrics.holdCase}
-        cashFlowMonthly={metrics.cashFlowMonthly}
-      />
-    </section>
   )
 }
 
@@ -1012,27 +645,14 @@ function InvestorReportContent({
       {listingData.price > 0 && (
         <>
           {/* §02 Financing — live sliders; every metric recomputes on drag. */}
-          <section className="container tr-section" data-section="02">
-            <SectionHead
-              n="02"
-              topic="Financing"
-              question={
-                <>
-                  Does the deal <em>pencil</em> at your numbers?
-                </>
-              }
-              verdict={`${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`}
-              tone="caution"
-            />
-            <FinancingSliders
-              financing={financing}
-              price={listingData.price}
-              onChange={setFinancing}
-            />
-          </section>
+          <FinancingSection
+            price={listingData.price}
+            financing={financing}
+            onFinancingChange={setFinancing}
+          />
         </>
       )}
-      <RentalCompsSection analysis={analysis} listing={listingData} />
+      <RentalCompsSection comps={analysis.rentalComps} askingRent={listingData.rentEstimate} />
       {listingData.price > 0 && (
         <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
       )}

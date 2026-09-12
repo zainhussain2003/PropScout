@@ -1125,7 +1125,13 @@ propscout/
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
 │   │       │   │   ├── BreakEvenAppreciation.tsx  # Growth needed to return the cash a hold consumes (D-062)
-│   │       │   │   ├── FinancingSliders.tsx   # Live sliders — every metric recalculates on drag
+│   │       │   │   ├── FinancingSection.tsx   # §02 head + FinancingSliders — shared by demo and live (D-073)
+│       │   │   ├── RentalCompsSection.tsx # §03 — shared by demo and live (D-073)
+│       │   │   ├── CashToCloseSection.tsx # §04 — shared by demo and live (D-073)
+│       │   │   ├── OSFISection.tsx        # §05 with income input — shared by demo and live (D-073)
+│       │   │   ├── RiskFlagsSection.tsx   # §06 — shared by demo and live (D-073)
+│       │   │   ├── EquitySection.tsx      # §07 chart + break-even card — shared by demo and live (D-073)
+│       │   │   ├── FinancingSliders.tsx   # Live sliders — every metric recalculates on drag
 │   │       │   │   ├── OSFICard.tsx
 │   │       │   │   ├── LTTTable.tsx           # Ontario LTT bracket table
 │   │       │   │   ├── EquityChart.tsx        # 20-year line chart with hover tooltip
@@ -1199,7 +1205,7 @@ propscout/
 │   │           ├── LandingPage.tsx            # / — Landing + URL paste home (+ landing.test.tsx)
 │   │           ├── analyzing.tsx              # /analyzing — Scraping progress + manual-entry fallback
 │   │           ├── ReportPage.tsx             # /r/:token — LIVE shareable report, all 4 modes (+ ReportPage.test.tsx)
-│   │           ├── InvestorReport.tsx         # /investor-report — demo route (fixtures)
+│   │           ├── InvestorReport.tsx         # /investor-report — demo route (fixtures; same section components as live, D-073) (+ demoLiveParity.test.tsx)
 │   │           ├── TenantReport.tsx           # /tenant-report — demo route (fixtures)
 │   │           ├── PersonalBuyerPage.tsx      # /personal-report demo + real renderer used by ReportPage for mode=personal
 │   │           ├── LandlordPage.tsx           # /landlord-report — demo route (fixtures)

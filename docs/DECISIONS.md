@@ -2741,3 +2741,47 @@ that had the contract right.
 **Known limits.** A genuine zero (studio, no parking) renders as not provided until the scraper
 proves it. `sqft` and `yearBuilt` were already nullable and are unchanged; `annualTaxes` keeps
 D-053's `> 0` rule, which this decision generalises rather than replaces.
+
+### D-073 · The demo report and the live report render the same sections
+
+**Chosen.** §02–§07 of the investor report — financing, rental comps, cash to close, OSFI, risk
+flags, equity — are single components under `components/investor/`, and both the demo route
+(`/investor-report`) and the live route (`/r/:token`) render them. The demo differs from the live
+report only in where its data comes from. A parity test renders both pages and compares their
+section outlines, and checks the specific things that had drifted.
+
+**Why.** Audit P2 #10: demo/live divergence. Both pages carried their own copy of five sections,
+and copies drift. By the time of this decision the demo — the page prospects are shown first —
+was missing the break-even appreciation card shipped in #32 (D-062); itemised **"Legal fees",
+"Title insurance", a $600 "Home inspection" and "Miscellaneous"** as cash-to-close line items,
+none of which the analysis produces; reported "Passes GDS test" at a household income it never
+showed, where the live page has an income input; and did not disclose a radius-widened comp
+search. Every one of those is a claim the demo made that the product does not. Meanwhile the
+live page asked "Does the deal _pencil_?" and then "Does the deal _pencil_ at your numbers?" as
+consecutive section questions; the demo's distinct "How do the _numbers_ change?" was better and
+both now use it.
+
+**Which copy won.** The live implementation in every case: it is the one that has received
+D-062, D-065 and D-067, and it is the one the customer pays for. Where the demo was better
+(the §02 question) that wording moved into the shared component rather than the demo keeping a
+private one.
+
+**What is deliberately still separate.** The hero, the verdict block and the loading/error
+states differ because their inputs genuinely do (a demo has no share token, no overrides, no
+poll). The landlord and personal-buyer demo routes are not touched here — L-04 records that the
+landlord demo and the live landlord view are different products, and that is bound up with L-03
+(D-070), which is the owner's decision.
+
+**Alternatives considered**
+
+| Option                                                     | Why not                                                                                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Render the demo through `InvestorReportContent` outright   | It needs an `Analysis`, a token, an overrides hook and a session; synthesising all of those for fixtures is a second fixture layer with its own drift.   |
+| Keep the demo's itemised closing costs as "typical" values | They are typical of nothing in particular and the analysis does not compute them; a demo that shows lines the product cannot produce is an overclaim.    |
+| Snapshot-diff the two pages                                | A snapshot pins one page, not the relationship between two; the parity test compares the two renders directly so a change to either shows as their diff. |
+| Delete the demo route                                      | It is the sanctioned marketing surface and the only way to see a full report without an analysis; it is now the same product, which is the point.        |
+
+**Known limit.** The parity test compares section numbers and topics plus the specific contents
+that had drifted; it does not diff every pixel. A future section added to one page and not the
+other fails the outline; a copy edit inside a shared component cannot diverge, because there is
+one component.
