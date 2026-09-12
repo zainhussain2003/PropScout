@@ -619,7 +619,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       // Step 10 — save and return
-      await updateAnalysisByToken(token, analysis)
+      await updateAnalysisByToken(token, analysis, listing)
       return reply.send({ token, analysis })
     } catch (err) {
       fastify.log.error({ err }, 'Unexpected error in POST /analysis')
