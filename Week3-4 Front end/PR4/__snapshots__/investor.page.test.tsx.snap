@@ -2779,6 +2779,11 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                change?
             </h2>
           </div>
+          <span
+            class="verdict-pill caution"
+          >
+            20% down · 4.79%
+          </span>
         </div>
         <div
           class="card"
@@ -3205,9 +3210,9 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             </h2>
           </div>
           <span
-            class="verdict-pill pass"
+            class="verdict-pill caution"
           >
-            Within comp range
+            8 comparable rentals
           </span>
         </div>
         <div
@@ -3217,19 +3222,14 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           <div
             style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: baseline; flex-wrap: wrap; gap: 12px;"
           >
-            <div
-              class="col"
-              style="gap: 4px;"
+            <span
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
             >
-              <span
-                class="mono"
-                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
-              >
-                Market rent range · 
-                8
-                 comparable rentals
-              </span>
-            </div>
+              Market rent range · 
+              8
+               comparable rentals
+            </span>
             <span
               class="mono"
               style="font-size: 11px; color: var(--caution);"
@@ -3436,8 +3436,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </span>
         </div>
         <div
-          class="col"
-          style="gap: 16px;"
+          style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;"
         >
           <div
             class="card"
@@ -3620,196 +3619,77 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             </div>
           </div>
           <div
-            class="card"
-            style="padding: 28px;"
+            class="card col"
+            style="padding: 24px; gap: 16px;"
           >
             <div
-              style="display: flex; justify-content: space-between; margin-bottom: 18px; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+              class="mono"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
             >
-              <div
-                class="col"
-                style="gap: 4px;"
-              >
-                <span
-                  class="mono"
-                  style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
-                >
-                  Closing cost summary
-                </span>
-                <h4
-                  class="serif"
-                  style="font-size: 22px;"
-                >
-                  Total cash required at closing.
-                </h4>
-              </div>
+              Total cash required
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; font-size: 13px;"
+            >
               <span
-                class="serif tabular"
-                style="font-size: 30px; line-height: 1; color: var(--accent);"
+                style="color: var(--ink-2);"
               >
-                $159,453
+                Down payment
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500;"
+              >
+                $145,980
               </span>
             </div>
             <div
-              class="col"
-              style="gap: 0px;"
+              style="display: flex; justify-content: space-between; font-size: 13px;"
             >
-              <div
-                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+              <span
+                style="color: var(--ink-2);"
               >
-                <div
-                  class="col"
-                  style="gap: 2px;"
-                >
-                  <span
-                    style="font-size: 14px; color: var(--ink);"
-                  >
-                    Down payment
-                  </span>
-                  <span
-                    class="mono"
-                    style="font-size: 11px; color: var(--muted);"
-                  >
-                    20% of purchase price
-                  </span>
-                </div>
-                <span
-                  class="mono tabular"
-                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
-                >
-                  $145,980
-                </span>
-              </div>
-              <div
-                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+                Provincial LTT
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500;"
               >
-                <div
-                  class="col"
-                  style="gap: 2px;"
-                >
-                  <span
-                    style="font-size: 14px; color: var(--ink);"
-                  >
-                    Land Transfer Tax
-                  </span>
-                  <span
-                    class="mono"
-                    style="font-size: 11px; color: var(--muted);"
-                  >
-                    Ontario provincial (+ Toronto if applicable)
-                  </span>
-                </div>
-                <span
-                  class="mono tabular"
-                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
-                >
-                  $11,073
-                </span>
-              </div>
-              <div
-                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+                $11,073
+              </span>
+            </div>
+            <div
+              style="display: flex; justify-content: space-between; font-size: 13px;"
+            >
+              <span
+                style="color: var(--ink-2);"
               >
-                <div
-                  class="col"
-                  style="gap: 2px;"
-                >
-                  <span
-                    style="font-size: 14px; color: var(--ink);"
-                  >
-                    Legal fees
-                  </span>
-                  <span
-                    class="mono"
-                    style="font-size: 11px; color: var(--muted);"
-                  >
-                    Estimated — get a quote from a real estate lawyer
-                  </span>
-                </div>
-                <span
-                  class="mono tabular"
-                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
-                >
-                  $1,500
-                </span>
-              </div>
-              <div
-                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+                Other closing costs (est.)
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 500;"
               >
-                <div
-                  class="col"
-                  style="gap: 2px;"
-                >
-                  <span
-                    style="font-size: 14px; color: var(--ink);"
-                  >
-                    Title insurance
-                  </span>
-                  <span
-                    class="mono"
-                    style="font-size: 11px; color: var(--muted);"
-                  >
-                    One-time · protects against title defects
-                  </span>
-                </div>
-                <span
-                  class="mono tabular"
-                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
-                >
-                  $300
-                </span>
-              </div>
-              <div
-                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: 1px solid var(--line); gap: 12px; align-items: flex-start;"
+                $2,400
+              </span>
+            </div>
+            <div
+              style="height: 1px; background: var(--line); margin: 4px 0px;"
+            />
+            <div
+              style="display: flex; justify-content: space-between; font-size: 14px;"
+            >
+              <span
+                style="font-weight: 600;"
               >
-                <div
-                  class="col"
-                  style="gap: 2px;"
-                >
-                  <span
-                    style="font-size: 14px; color: var(--ink);"
-                  >
-                    Home inspection
-                  </span>
-                  <span
-                    class="mono"
-                    style="font-size: 11px; color: var(--muted);"
-                  >
-                    Strongly recommended before waiving condition
-                  </span>
-                </div>
-                <span
-                  class="mono tabular"
-                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
-                >
-                  $600
-                </span>
-              </div>
-              <div
-                style="display: flex; justify-content: space-between; padding: 12px 0px; border-bottom: medium; gap: 12px; align-items: flex-start;"
+                Total
+              </span>
+              <span
+                class="mono tabular"
+                style="font-weight: 700; color: var(--accent);"
               >
-                <div
-                  class="col"
-                  style="gap: 2px;"
-                >
-                  <span
-                    style="font-size: 14px; color: var(--ink);"
-                  >
-                    Miscellaneous
-                  </span>
-                  <span
-                    class="mono"
-                    style="font-size: 11px; color: var(--muted);"
-                  >
-                    Moving costs, minor repairs, utility setup
-                  </span>
-                </div>
-                <span
-                  class="mono tabular"
-                  style="font-weight: 500; color: var(--ink); flex-shrink: 0;"
-                >
-                  $0
-                </span>
-              </div>
+                $159,453
+              </span>
             </div>
           </div>
         </div>
@@ -3857,8 +3737,40 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           <span
             class="verdict-pill fail"
           >
-            Fails GDS test
+            Fails at $125,000 income
           </span>
+        </div>
+        <div
+          class="card"
+          style="padding: 20px; margin-bottom: 16px;"
+        >
+          <label
+            class="mono"
+            for="osfi-income"
+            style="display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 12px;"
+          >
+            Your gross household income
+          </label>
+          <div
+            style="display: flex; align-items: center; gap: 16px;"
+          >
+            <input
+              aria-label="Gross household income"
+              id="osfi-income"
+              max="400000"
+              min="40000"
+              step="5000"
+              style="flex: 1 1 0%; accent-color: var(--accent); cursor: pointer;"
+              type="range"
+              value="125000"
+            />
+            <span
+              class="mono tabular"
+              style="font-size: 18px; font-weight: 600; min-width: 110px; text-align: right;"
+            >
+              $125,000
+            </span>
+          </div>
         </div>
         <div
           class="card col gap-20"
@@ -4054,101 +3966,72 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           style="padding: 0px; overflow: hidden;"
         >
           <div
-            style="padding: 12px 24px; background: color-mix(in oklab, var(--fail) 8%, transparent); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 13px;"
-          >
-            <span
-              style="color: var(--ink-2);"
-            >
-              Total deal score deductions
-            </span>
-            <span
-              class="mono tabular"
-              style="color: var(--fail); font-weight: 600;"
-            >
-              −
-              6
-               pts
-            </span>
-          </div>
-          <div
-            style="border-bottom: 1px solid var(--line); padding: 4px 0px;"
+            style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
           >
             <div
-              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
+              aria-hidden="true"
+              style="width: 4px; background: var(--fail); flex-shrink: 0;"
+            />
+            <div
+              style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
             >
-              <div
-                aria-hidden="true"
-                style="width: 4px; background: var(--fail); flex-shrink: 0;"
-              />
-              <div
-                style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+              <span
+                style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
               >
-                <span
-                  style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
-                >
-                  Condo-fee burden
-                </span>
-                <span
-                  class="mono"
-                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
-                >
-                  $761/mo · 26% of estimated gross rent (threshold 20%)
-                </span>
-              </div>
+                Condo-fee burden
+              </span>
+              <span
+                class="mono"
+                style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
+              >
+                $761/mo · 26% of estimated gross rent (threshold 20%)
+              </span>
             </div>
           </div>
           <div
-            style="border-bottom: 1px solid var(--line); padding: 4px 0px;"
+            style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
           >
             <div
-              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
+              aria-hidden="true"
+              style="width: 4px; background: var(--fail); flex-shrink: 0;"
+            />
+            <div
+              style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
             >
-              <div
-                aria-hidden="true"
-                style="width: 4px; background: var(--fail); flex-shrink: 0;"
-              />
-              <div
-                style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--fail) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+              <span
+                style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
               >
-                <span
-                  style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
-                >
-                  Deeply negative cash flow
-                </span>
-                <span
-                  class="mono"
-                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
-                >
-                  Break-even rent $4,585 vs. market $2,900
-                </span>
-              </div>
+                Deeply negative cash flow
+              </span>
+              <span
+                class="mono"
+                style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
+              >
+                Break-even rent $4,585 vs. market $2,900
+              </span>
             </div>
           </div>
           <div
-            style="border-bottom: medium; padding: 4px 0px;"
+            style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
           >
             <div
-              style="display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-card); opacity: 1;"
+              aria-hidden="true"
+              style="width: 4px; background: var(--caution); flex-shrink: 0;"
+            />
+            <div
+              style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--caution) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
             >
-              <div
-                aria-hidden="true"
-                style="width: 4px; background: var(--caution); flex-shrink: 0;"
-              />
-              <div
-                style="flex: 1 1 0%; padding: 14px 18px; background: color-mix(in oklab, var(--caution) 6%, transparent); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"
+              <span
+                style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
               >
-                <span
-                  style="font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; opacity: 1;"
-                >
-                  Building supply pressure
-                </span>
-                <span
-                  class="mono"
-                  style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
-                >
-                  24 active rentals in same building · trend declining
-                </span>
-              </div>
+                Building supply pressure
+              </span>
+              <span
+                class="mono"
+                style="font-size: 12px; color: var(--ink-2); flex: 1 1 0%; text-align: right; text-decoration: none;"
+              >
+                24 active rentals in same building · trend declining
+              </span>
             </div>
           </div>
         </div>
@@ -4193,145 +4076,386 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                over time?
             </h2>
           </div>
+          <span
+            class="verdict-pill pass"
+          >
+            $1,140,894 at year 20
+          </span>
         </div>
         <div
-          class="card col"
-          style="padding: 28px; gap: 20px;"
+          class="card"
+          style="padding: 28px;"
         >
           <div
-            style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;"
+            class="card col"
+            style="padding: 28px; gap: 20px;"
           >
             <div
-              class="col"
-              style="gap: 4px;"
+              style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;"
             >
-              <span
-                class="mono"
-                style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              <div
+                class="col"
+                style="gap: 4px;"
               >
-                Equity build · 20 yr horizon
-              </span>
-              <h4
-                class="serif"
-                style="font-size: 24px;"
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Equity build · 20 yr horizon
+                </span>
+                <h4
+                  class="serif"
+                  style="font-size: 24px;"
+                >
+                  Where your money sits over time.
+                </h4>
+              </div>
+              <div
+                style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); align-items: center;"
               >
-                Where your money sits over time.
-              </h4>
+                <span
+                  style="display: inline-flex; align-items: center; gap: 8px;"
+                >
+                  <span
+                    style="width: 14px; height: 2px; background: var(--ink); display: inline-block;"
+                  />
+                  Property value
+                </span>
+                <span
+                  style="display: inline-flex; align-items: center; gap: 8px;"
+                >
+                  <span
+                    style="width: 14px; height: 6px; background: color-mix(in oklab, var(--accent) 50%, transparent); border-radius: 2px; display: inline-block;"
+                  />
+                  Your equity
+                </span>
+              </div>
             </div>
             <div
-              style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); align-items: center;"
+              style="position: relative; width: 100%; overflow: hidden;"
             >
-              <span
-                style="display: inline-flex; align-items: center; gap: 8px;"
+              <svg
+                aria-label="20-year equity build chart"
+                preserveAspectRatio="xMidYMid meet"
+                style="width: 100%; height: auto; display: block;"
+                viewBox="0 0 720 280"
+              />
+            </div>
+            <div
+              class="grid-1col-mobile"
+              style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;"
+            >
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
               >
                 <span
-                  style="width: 14px; height: 2px; background: var(--ink); display: inline-block;"
-                />
-                Property value
-              </span>
-              <span
-                style="display: inline-flex; align-items: center; gap: 8px;"
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Year 
+                  5
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 24px; line-height: 1;"
+                >
+                  $331,063
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--pass);"
+                >
+                  +
+                  116
+                  % vs cash in
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
               >
                 <span
-                  style="width: 14px; height: 6px; background: color-mix(in oklab, var(--accent) 50%, transparent); border-radius: 2px; display: inline-block;"
-                />
-                Your equity
-              </span>
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Year 
+                  10
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 24px; line-height: 1;"
+                >
+                  $553,041
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--pass);"
+                >
+                  +
+                  255
+                  % vs cash in
+                </span>
+              </div>
+              <div
+                class="col"
+                style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              >
+                <span
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+                >
+                  Year 
+                  20
+                </span>
+                <span
+                  class="serif tabular"
+                  style="font-size: 24px; line-height: 1;"
+                >
+                  $1,140,894
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 11px; color: var(--pass);"
+                >
+                  +
+                  624
+                  % vs cash in
+                </span>
+              </div>
             </div>
           </div>
-          <div
-            style="position: relative; width: 100%; overflow: hidden;"
+        </div>
+        <div
+          class="card"
+          data-testid="break-even-appreciation"
+          style="padding: 28px; margin-top: 18px;"
+        >
+          <h3
+            style="font-family: "Instrument Serif", Georgia, serif; font-size: 26px; font-weight: 400; margin: 0px; color: var(--ink);"
           >
-            <svg
-              aria-label="20-year equity build chart"
-              preserveAspectRatio="xMidYMid meet"
-              style="width: 100%; height: auto; display: block;"
-              viewBox="0 0 720 280"
-            />
-          </div>
+            What would the market have to 
+            <em>
+              do
+            </em>
+            ?
+          </h3>
+          <p
+            style="margin: 10px 0px 0px; color: var(--muted); max-width: 64ch;"
+          >
+            This property costs you $2,431 a month to hold. Below is the least the price would have to rise each year to get every dollar back — the deposit, the closing costs and every monthly top-up — after paying off the mortgage.
+          </p>
           <div
             class="grid-1col-mobile"
-            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;"
+            style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 22px;"
           >
             <div
-              class="col"
-              style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              style="border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px; min-width: 0px;"
             >
-              <span
-                class="mono"
-                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              <div
+                style="font-family: "Geist Mono", monospace; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);"
               >
-                Year 
+                If you hold 
                 5
-              </span>
-              <span
-                class="serif tabular"
-                style="font-size: 24px; line-height: 1;"
+                 years
+              </div>
+              <div
+                style="font-family: "Geist Mono", monospace; font-size: 34px; color: var(--accent); margin-top: 8px; line-height: 1.1;"
               >
-                $331,063
-              </span>
-              <span
-                class="mono"
-                style="font-size: 11px; color: var(--pass);"
+                2.4%
+              </div>
+              <div
+                style="font-size: 13px; color: var(--muted); margin-top: 2px;"
               >
-                +
-                116
-                % vs cash in
-              </span>
+                a year, at least
+              </div>
+              <dl
+                style="margin: 16px 0px 0px; font-size: 13px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Cash you'd put in
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--ink); white-space: nowrap;"
+                  >
+                    $305,313
+                  </dd>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Mortgage paid down
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--muted); white-space: nowrap;"
+                  >
+                    $68,829
+                  </dd>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Sale price to get even
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--muted); white-space: nowrap;"
+                  >
+                    $820,404
+                  </dd>
+                </div>
+              </dl>
             </div>
             <div
-              class="col"
-              style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              style="border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px; min-width: 0px;"
             >
-              <span
-                class="mono"
-                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              <div
+                style="font-family: "Geist Mono", monospace; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);"
               >
-                Year 
+                If you hold 
                 10
-              </span>
-              <span
-                class="serif tabular"
-                style="font-size: 24px; line-height: 1;"
+                 years
+              </div>
+              <div
+                style="font-family: "Geist Mono", monospace; font-size: 34px; color: var(--accent); margin-top: 8px; line-height: 1.1;"
               >
-                $553,041
-              </span>
-              <span
-                class="mono"
-                style="font-size: 11px; color: var(--pass);"
+                1.9%
+              </div>
+              <div
+                style="font-size: 13px; color: var(--muted); margin-top: 2px;"
               >
-                +
-                255
-                % vs cash in
-              </span>
+                a year, at least
+              </div>
+              <dl
+                style="margin: 16px 0px 0px; font-size: 13px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Cash you'd put in
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--ink); white-space: nowrap;"
+                  >
+                    $451,173
+                  </dd>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Mortgage paid down
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--muted); white-space: nowrap;"
+                  >
+                    $156,037
+                  </dd>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Sale price to get even
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--muted); white-space: nowrap;"
+                  >
+                    $879,056
+                  </dd>
+                </div>
+              </dl>
             </div>
             <div
-              class="col"
-              style="padding: 14px 16px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); gap: 4px;"
+              style="border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px; min-width: 0px;"
             >
-              <span
-                class="mono"
-                style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+              <div
+                style="font-family: "Geist Mono", monospace; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);"
               >
-                Year 
+                If you hold 
                 20
-              </span>
-              <span
-                class="serif tabular"
-                style="font-size: 24px; line-height: 1;"
+                 years
+              </div>
+              <div
+                style="font-family: "Geist Mono", monospace; font-size: 34px; color: var(--accent); margin-top: 8px; line-height: 1.1;"
               >
-                $1,140,894
-              </span>
-              <span
-                class="mono"
-                style="font-size: 11px; color: var(--pass);"
+                1.2%
+              </div>
+              <div
+                style="font-size: 13px; color: var(--muted); margin-top: 2px;"
               >
-                +
-                624
-                % vs cash in
-              </span>
+                a year, at least
+              </div>
+              <dl
+                style="margin: 16px 0px 0px; font-size: 13px;"
+              >
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Cash you'd put in
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--ink); white-space: nowrap;"
+                  >
+                    $742,893
+                  </dd>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Mortgage paid down
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--muted); white-space: nowrap;"
+                  >
+                    $406,534
+                  </dd>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; gap: 12px; padding: 4px 0px; border-top: 1px solid var(--line);"
+                >
+                  <dt
+                    style="color: var(--muted); min-width: 0px;"
+                  >
+                    Sale price to get even
+                  </dt>
+                  <dd
+                    style="margin: 0px; font-family: "Geist Mono", monospace; color: var(--muted); white-space: nowrap;"
+                  >
+                    $920,279
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
+          <p
+            style="margin: 20px 0px 0px; font-size: 13px; color: var(--muted); max-width: 72ch;"
+          >
+            These are minimums, and your real figure is higher: selling a property costs money — commission and legal fees — and we don’t include it, because commission is negotiated rather than published, so we won’t put a number on yours. Getting even is also not the same as earning a return: nothing here credits what that cash could have made elsewhere, and equity cannot be spent until you sell. Figures hold today’s rent and costs flat for the whole period. We don’t have a local price history for this area, so we can’t tell you whether these growth rates are realistic here.
+          </p>
         </div>
       </section>
       <section
