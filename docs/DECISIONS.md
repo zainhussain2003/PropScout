@@ -2464,3 +2464,58 @@ The defect is real but it is the management fee specifically, not a general mism
 **Known limit.** The restatement assumes the fee is 8% of gross rent in both layers;
 `PROPERTY_COST_ESTIMATES.MANAGEMENT_FEE` now mirrors the engine's `MANAGEMENT_FEE` and the
 reconciliation test fails if they diverge, but they are still two constants rather than one source.
+
+---
+
+### D-068 · Polling stops after three minutes and says so honestly
+
+**Chosen.** `AnalyzingPage` bounds its poll loop at three minutes, measured from a timestamp rather
+than a tick count, and then shows a state distinct from the error state: _"This is taking longer
+than it should… the analysis may still finish on its own, or it may have stopped — we can't tell
+from here."_ The user can check again (resumes polling, starts no second analysis) or start over.
+
+**Why it could run forever, which is worse than the audit's framing.** The audit recorded "failed
+analysis can poll forever". The mechanism is that **failure is never recorded at all**:
+`updateAnalysisStatus` in the API is a **no-op**, and `getAnalysisStatus` derives state purely from
+whether `calculated_metrics` is set — null reads as `'pending'`. So the route's four
+`updateAnalysisStatus(token, 'failed')` calls do nothing, the client's `status === 'failed'` branch
+is unreachable, and a run that died server-side leaves a row that says "pending" indefinitely. The
+page polled it every two seconds for as long as the tab stayed open, with a progress bar implying
+work was happening. That is every failure, not an edge case.
+
+**Why the copy does not say "failed".** We stopped checking; we do not know that it failed, and it
+may still complete. "Analysis could not complete" is the existing error state and is a stronger
+claim than the page can support. The two states are separate and a test asserts they never
+substitute for each other.
+
+**Measured in wall-clock, not ticks.** A background tab throttles `setInterval`, so a tick count
+would mean a different real bound depending on whether the user watched the page.
+
+**What is deliberately NOT fixed here: the server half.** The audit's item is "persist analysis
+status **and** bound polling". Persisting it needs a `status` column on `analyses` — the table has
+`created_at` but no status and no `updated_at` — and schema changes are a human gate
+(`humanGatePaths` in `.agent-loop/config.json`, and CLAUDE.md §4). Writing a migration nobody
+applies would add a second unapplied file to the one already sitting in `supabase/migrations`
+(`20260701_add_schools_name_postal_unique.sql`), so the schema would describe something that is not
+true. Tracked separately instead.
+
+**And why not infer staleness from `created_at` server-side.** Tempting, and it needs no migration:
+metrics null plus a row older than N minutes is almost certainly dead. Rejected because a user can
+re-trigger an analysis on an existing token — `triggerAnalysis` runs on every visit to the page —
+so an old row with work genuinely in flight would be reported as timed out while it was running.
+That trades an infinite wait for a false failure, which is the worse error.
+
+**Alternatives considered**
+
+| Option                                              | Why not                                                                                                                               |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Cap the number of polls instead of the elapsed time | A throttled background tab would then wait far longer than three minutes, or a foreground tab far less. The bound must be wall-clock. |
+| Show the error state on timeout                     | Claims the analysis failed. It may be running; we only know we stopped asking.                                                        |
+| Navigate home on timeout                            | Discards the token, so a run that does finish becomes unreachable.                                                                    |
+| Keep polling but slow down (backoff)                | Still unbounded, and a page that quietly polls for an hour is the same defect with a smaller bill.                                    |
+| Infer staleness from `created_at` on the server     | False "timed out" on a legitimate re-trigger. See above.                                                                              |
+
+**Known limit.** Three minutes is a judgement call against a pipeline that takes roughly 25–60
+seconds (scrape, calc engine, narrative). It is generous rather than tuned; if the pipeline gets
+slower the bound needs revisiting, and the test that asserts polling continues right up to the
+bound is what will catch it.
