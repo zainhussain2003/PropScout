@@ -1563,7 +1563,7 @@ exports[`OSFICard > matches snapshot 1`] = `
         class="mono tabular"
         style="font-weight: 500; color: var(--ink);"
       >
-        $4,049/mo
+        $4,014/mo
       </span>
     </div>
     <div
@@ -1578,7 +1578,7 @@ exports[`OSFICard > matches snapshot 1`] = `
         class="mono tabular"
         style="font-weight: 600; color: var(--fail);"
       >
-        45.2%
+        44.9%
       </span>
     </div>
     <div
@@ -1610,7 +1610,7 @@ exports[`OSFICard > matches snapshot 1`] = `
     $125,000
     . Qualifying payment pushes GDS to
      
-    45.2%
+    44.9%
      — above the 44% federal threshold. Standard A-lender financing likely unavailable; alt-lender or higher income required.
   </div>
 </div>

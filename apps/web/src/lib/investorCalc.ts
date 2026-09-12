@@ -212,13 +212,32 @@ export function computeOSFI(
  * Standard amortisation — monthly payment for a fixed-rate mortgage.
  * Uses simple monthly compounding (consistent with the Python calc engine).
  */
+/**
+ * Nominal annual Canadian mortgage rate to its monthly equivalent.
+ *
+ * The Interest Act requires semi-annual compounding for Canadian fixed-rate
+ * mortgages, so the monthly equivalent is the sixth root of the semi-annual
+ * factor — NOT the annual rate divided by twelve. Dividing by twelve is the US
+ * convention and overstates the payment: on $583,920 at 4.79% over 25 years it
+ * gives $3,342.48/mo against the correct $3,326.64, which is $190 a year and
+ * $4,751 over the amortization.
+ *
+ * Mirrors `_monthly_rate` in services/calc-engine/calculations/mortgage.py.
+ * The two implementations must agree; `investorCalc.test.ts` pins this one
+ * against the calc engine's known values.
+ */
+function monthlyRate(annualRate: number): number {
+  if (annualRate === 0) return 0
+  return Math.pow(1 + annualRate / 2, 1 / 6) - 1
+}
+
 export function computeMonthlyPayment(
   principal: number,
   annualRate: number,
   years: number
 ): number {
   if (principal <= 0) return 0
-  const r = annualRate / 12
+  const r = monthlyRate(annualRate)
   const n = years * 12
   if (r === 0) return principal / n
   return (principal * r) / (1 - Math.pow(1 + r, -n))
@@ -232,7 +251,7 @@ function remainingBalance(
   years: number,
   monthsElapsed: number
 ): number {
-  const r = annualRate / 12
+  const r = monthlyRate(annualRate)
   const n = years * 12
   if (r === 0) return Math.max(0, principal - (principal / n) * monthsElapsed)
   const pmt = computeMonthlyPayment(principal, annualRate, years)
