@@ -16,6 +16,7 @@ import { TenantReport } from './TenantReport'
 import {
   enrichMetrics,
   computeDemoMetrics,
+  noiForManagementState,
   toDealScoreData,
   computeLTT,
   computeOSFI,
@@ -902,9 +903,22 @@ function InvestorReportContent({
 
   const metrics: ComputedInvestorMetrics | null = useMemo(() => {
     if (analysis.metrics == null) return null
+    // The management fee is an operating expense inside NOI, not a display
+    // line, so the toggle has to move NOI — and with it cap rate, cash flow,
+    // DSCR, cash-on-cash and break-even rent. Without this the expense table
+    // showed a management row that none of those numbers reflected, and the
+    // rows could not be summed to the NOI beside them (audit R-01).
+    const grossRentAnnual = listingData.rentEstimate * 12
+    const noi = noiForManagementState(
+      analysis.metrics.noi,
+      grossRentAnnual,
+      analysis.metrics.managementFeeIncluded === true,
+      financing.includeManagementFee
+    )
     const stable = {
-      noi: analysis.metrics.noi,
-      capRate: analysis.metrics.capRate,
+      noi,
+      // Cap rate is NOI / price, so it follows NOI rather than being fixed.
+      capRate: listingData.price > 0 ? noi / listingData.price : analysis.metrics.capRate,
       grm: analysis.metrics.grm,
       // The local calculator takes non-tax closing costs and adds the current
       // LTT itself, so strip the engine's LTT to avoid counting it twice (D-039

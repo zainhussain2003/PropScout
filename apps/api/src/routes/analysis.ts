@@ -102,6 +102,7 @@ interface PyInvestmentMetrics {
   amortization_years: number
   mortgage_rate: number
   break_even_rent: number
+  management_fee_included: boolean
   closing_costs_total: number
   ltt_provincial: number
   ltt_municipal: number
@@ -214,6 +215,9 @@ function toMetrics(
     amortizationYears: py.amortization_years,
     mortgageRate: py.mortgage_rate,
     breakEvenRent: py.break_even_rent,
+    // What the engine actually used, so the report's expense rows can be
+    // reconciled against this NOI rather than against a browser-side guess.
+    managementFeeIncluded: py.management_fee_included ?? false,
     closingCostsTotal: py.closing_costs_total,
     lttProvincial: py.ltt_provincial,
     lttMunicipal: py.ltt_municipal,

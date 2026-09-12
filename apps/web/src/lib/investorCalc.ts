@@ -28,6 +28,7 @@ import type {
   ListingData,
 } from '../types/analysis'
 import { DEAL_SCORE } from '../constants/thresholds'
+import { PROPERTY_COST_ESTIMATES } from '../constants/defaults'
 
 // ── Deal score display metadata ────────────────────────────────────────────────
 
@@ -323,11 +324,13 @@ export function computeExpenses(
   yearBuilt: number,
   includeManagementFee: boolean
 ): ExpenseBreakdown {
-  const insurance = price * 0.0035
+  const insurance = price * PROPERTY_COST_ESTIMATES.INSURANCE_RATE_ANNUAL
   const maintenance = price * maintenanceRate(yearBuilt)
-  const vacancy = annualGrossRent * 0.05
+  const vacancy = annualGrossRent * PROPERTY_COST_ESTIMATES.VACANCY_ALLOWANCE
   const condo = condoFeeMonthly * 12
-  const management = includeManagementFee ? annualGrossRent * 0.08 : 0
+  const management = includeManagementFee
+    ? annualGrossRent * PROPERTY_COST_ESTIMATES.MANAGEMENT_FEE
+    : 0
   const total = annualTaxes + insurance + maintenance + vacancy + condo + management
 
   return { taxes: annualTaxes, insurance, maintenance, vacancy, condo, management, total }
@@ -391,6 +394,31 @@ export function computeBreakEvenAppreciation(
 }
 
 // ── Enrich API metrics ─────────────────────────────────────────────────────────
+
+/**
+ * Re-state the engine's NOI for the management toggle the user is looking at.
+ *
+ * The expense table is recomputed in the browser from the live toggle, while
+ * NOI comes from the backend and reflects whatever state the analysis was run
+ * with. When those disagree the page shows an expense total that cannot be
+ * reconciled with the NOI beside it — audit R-01, a $2,160 contradiction on a
+ * $27,000 gross rent, and the arithmetic the product is selling.
+ *
+ * Adjusting by exactly the fee is deliberate: NOI is not re-derived here, so
+ * the engine stays the only place the full NOI formula lives. Only the one
+ * term that changed is added or removed.
+ */
+export function noiForManagementState(
+  apiNoi: number,
+  annualGrossRent: number,
+  usedByEngine: boolean,
+  wantedByUser: boolean
+): number {
+  if (usedByEngine === wantedByUser) return apiNoi
+  const fee = annualGrossRent * PROPERTY_COST_ESTIMATES.MANAGEMENT_FEE
+  // Engine excluded it and the user wants it → NOI falls by the fee.
+  return wantedByUser ? apiNoi - fee : apiNoi + fee
+}
 
 /**
  * Takes the core InvestmentMetrics from the API and enriches it with all the

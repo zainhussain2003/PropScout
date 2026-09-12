@@ -11,6 +11,7 @@ import {
   computeBreakEvenAppreciation,
   computeExpenses,
   computeMonthlyPayment,
+  noiForManagementState,
   fmtMoney,
   fmtPct,
 } from './investorCalc'
@@ -165,5 +166,65 @@ describe('computeBreakEvenAppreciation', () => {
 
   it('returns nothing for a non-positive price', () => {
     expect(computeBreakEvenAppreciation(0, 0, 0.0479, 25, -100, 1_000)).toEqual([])
+  })
+})
+
+// ── The expense table must reconcile with NOI ──────────────────────────────────
+
+describe('expense rows reconcile with NOI', () => {
+  // The invariant: gross rent minus every expense row equals NOI. It holds
+  // because the engine deducts vacancy from income while the table lists it as
+  // an expense — algebraically the same thing — so the two presentations are
+  // interchangeable ONLY while they agree about the management fee.
+  //
+  // Audit R-01: they did not. The table recomputed management from the live
+  // toggle while NOI came from the backend, so ticking the box added $2,160 to
+  // the rows and moved nothing else. A reader could not sum the rows to the NOI
+  // printed beside them — the exact arithmetic the product sells.
+  const PRICE = 729_900
+  const TAXES = 3_326
+  const CONDO_MONTHLY = 761
+  const RENT_MONTHLY = 2_900
+  const YEAR_BUILT = 2020
+  const GROSS = RENT_MONTHLY * 12
+
+  // Engine value for this property with management OFF (services/calc-engine
+  // ::calculate_noi, pinned in tests/test_regression.py).
+  const ENGINE_NOI_NO_MGMT = 14_397.85
+
+  function tableTotal(includeManagement: boolean): number {
+    return computeExpenses(PRICE, TAXES, CONDO_MONTHLY, GROSS, YEAR_BUILT, includeManagement).total
+  }
+
+  it('reconciles with management off', () => {
+    const noi = noiForManagementState(ENGINE_NOI_NO_MGMT, GROSS, false, false)
+    expect(GROSS - tableTotal(false)).toBeCloseTo(noi, 2)
+    expect(noi).toBeCloseTo(ENGINE_NOI_NO_MGMT, 2)
+  })
+
+  it('reconciles with management on', () => {
+    // The case that was broken: the rows gain the fee, so NOI must lose it.
+    const noi = noiForManagementState(ENGINE_NOI_NO_MGMT, GROSS, false, true)
+    expect(GROSS - tableTotal(true)).toBeCloseTo(noi, 2)
+    expect(ENGINE_NOI_NO_MGMT - noi).toBeCloseTo(GROSS * 0.08, 2)
+  })
+
+  it('leaves NOI alone when the toggle matches what the engine used', () => {
+    expect(noiForManagementState(ENGINE_NOI_NO_MGMT, GROSS, false, false)).toBe(ENGINE_NOI_NO_MGMT)
+    expect(noiForManagementState(12_000, GROSS, true, true)).toBe(12_000)
+  })
+
+  it('adds the fee back when the engine included it and the user turns it off', () => {
+    // The mirror case, for an analysis saved with management on.
+    const engineNoiWithMgmt = ENGINE_NOI_NO_MGMT - GROSS * 0.08
+    const noi = noiForManagementState(engineNoiWithMgmt, GROSS, true, false)
+    expect(noi).toBeCloseTo(ENGINE_NOI_NO_MGMT, 2)
+    expect(GROSS - tableTotal(false)).toBeCloseTo(noi, 2)
+  })
+
+  it('the management row is exactly 8% of gross rent', () => {
+    const expenses = computeExpenses(PRICE, TAXES, CONDO_MONTHLY, GROSS, YEAR_BUILT, true)
+    expect(expenses.management).toBeCloseTo(GROSS * 0.08, 2)
+    expect(tableTotal(true) - tableTotal(false)).toBeCloseTo(GROSS * 0.08, 2)
   })
 })

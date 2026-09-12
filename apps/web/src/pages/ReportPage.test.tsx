@@ -775,3 +775,61 @@ describe('ReportPage — a share-link recipient cannot change risk flags', () =>
     expect(removeOverride).not.toHaveBeenCalled()
   })
 })
+
+describe('ReportPage — the management fee moves NOI, not just the expense table', () => {
+  beforeEach(() => {
+    getAnalysisByToken.mockReset()
+    listOverrides.mockReset()
+    listOverrides.mockResolvedValue([])
+    // The fee is 8% of GROSS RENT, so the property needs a rent estimate for
+    // the toggle to mean anything — the base fixture has no comps.
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        rentalComps: {
+          low: 2_700,
+          mid: 2_900,
+          high: 3_200,
+          compCount: 8,
+          confidence: 'medium',
+          postalCode: 'M5J',
+        },
+      },
+      listing: SALE_LISTING,
+      canOverride: true,
+    })
+  })
+
+  it('lowers NOI by exactly the fee when the toggle is turned on', async () => {
+    // Audit R-01. The expense table is recomputed in the browser from this
+    // toggle while NOI came from the backend, so ticking the box used to add
+    // the fee to the rows and move nothing else — the rows could not be summed
+    // to the NOI printed beside them.
+    //
+    // The fixture's NOI is $22,000 on $34,800 gross rent (comps mid $2,900),
+    // so the 8% fee is $2,784 and NOI must fall to $19,216.
+    renderReport()
+    await waitFor(() => expect(pageTextOf()).toContain('$22,000'))
+
+    fireEvent.click(screen.getByRole('switch', { name: /Include 8% management fee/i }))
+
+    await waitFor(() => expect(pageTextOf()).toContain('$19,216'))
+    expect(pageTextOf()).not.toContain('$22,000')
+  })
+
+  it('restores NOI when the toggle is turned back off', async () => {
+    renderReport()
+    const toggle = await screen.findByRole('switch', { name: /Include 8% management fee/i })
+
+    fireEvent.click(toggle)
+    await waitFor(() => expect(pageTextOf()).toContain('$19,216'))
+
+    fireEvent.click(toggle)
+    await waitFor(() => expect(pageTextOf()).toContain('$22,000'))
+  })
+})
+
+/** The page's full text — figures are split across nested nodes. */
+function pageTextOf(): string {
+  return document.body.textContent ?? ''
+}

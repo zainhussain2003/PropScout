@@ -67,6 +67,12 @@ class InvestmentMetricsOutput(BaseModel):
     amortization_years: int
     mortgage_rate: float
     break_even_rent: float
+    # Whether the 8% management fee was included in NOI. Echoed so the report
+    # can reconcile its expense rows against this NOI: the browser recomputes
+    # the expense table and would otherwise add a management fee that none of
+    # the returned metrics reflect (audit R-01 — a $2,160 contradiction on a
+    # $27,000 gross rent). Same reason annual_taxes_used is reported.
+    management_fee_included: bool
     closing_costs_total: float
     ltt_provincial: float
     ltt_municipal: float

@@ -449,6 +449,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         amortization_years=fin.amortization_years,
         mortgage_rate=fin.mortgage_rate,
         break_even_rent=round(break_even_rent, 2),
+        management_fee_included=fin.include_management_fee,
         closing_costs_total=round(closing["total"], 2),
         ltt_provincial=round(closing["ltt_provincial"], 2),
         ltt_municipal=round(closing["ltt_municipal"], 2),
