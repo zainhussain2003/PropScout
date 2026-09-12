@@ -2239,3 +2239,62 @@ and `computeBreakEvenAppreciation` — which is the drift D-054 and D-055 record
 test pinning the TypeScript result against the Python regression floors (1.91% / 1.45% / 0.75%),
 so the two cannot diverge silently. The same tripwire now covers the mortgage payment, which had
 already drifted before anyone noticed.
+
+---
+
+### D-064 · The account page shows the user's own data, or says it has none
+
+**Chosen.** `AccountPage` no longer carries fixture data. Identity comes from the Supabase session
+and `GET /me`; usage comes from a real count; saved analyses and invoices are honest unavailable
+states. `/me` now returns `analysesThisMonth` (using the existing `getMonthlyAnalysisCount`) and
+`createdAt`. A new `useAccount` hook holds the wiring, and everything it returns is either real or
+null — a null renders as an unknown, never as a plausible value.
+
+**Why.** This was the audit's first P0 and the counter-review's first implementation step. Three
+separate fabrications were shown to any signed-in user as their own record:
+
+| Fixture          | What it claimed                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `USER`           | A name, email and join date belonging to nobody ("Marcus Reilly", March 2026).                           |
+| `SAVED_ANALYSES` | Eight analyses with real Toronto and Vaughan addresses, scores, verdicts, "3 hours ago" and open counts. |
+| `INVOICES`       | Three "Investor Pro · monthly · $10.00 · **Paid**" rows — a payment history for users who never paid.    |
+
+**It also drove the paywall, which is what makes it worse than a cosmetic fixture.**
+`remaining = freeLimit - SAVED_ANALYSES.length` rendered "You've saved **8 of 10** on the free plan
+· 2 slots left", and the upgrade nudge fired at `>= freeLimit - 2` — so the invented history
+manufactured scarcity against a limit the user had not touched, and pushed them toward paying for
+it. A fabrication that shapes a purchase decision is a different class of problem from one that
+merely looks untidy.
+
+**Two contradictions found while removing it**
+
+- `TIER_DETAILS.free.cycleNote` said "3 reports/mo" while `FREE_TIER.MONTHLY_ANALYSIS_LIMIT` and
+  `CLAUDE.md` both say 10. It now reads from the constant, so the product cannot state two
+  allowances. **Which number is right, and enforcing it server-side, remains open** (R-02): the
+  limit is still referenced nowhere in the request path, so nothing rejects an analysis past it.
+- Both paid tiers claimed "Renews May 24, 2026". Stripe holds the real renewal date and the billing
+  portal is one click away, so the note points there rather than naming a day.
+
+**Saved analyses say "not available", not "none yet".** There is no save-to-account feature — the
+"Save" control on a report opens sign-in or the upgrade modal — and no endpoint lists a user's
+analyses. "You haven't saved any" would imply the user could have and didn't. The copy instead
+explains that every report keeps a 30-day share link, which is true and actionable. Same
+distinction as D-052 (an empty result is not an absent source) and D-059 (no inert controls).
+
+**Reporting usage is not enforcing it.** `analysesThisMonth` is a display fix. It is noted in the
+`/me` docstring and in this entry so a later reader does not mistake it for an entitlement change.
+
+**Alternatives considered**
+
+| Option                                              | Why not                                                                                                                                      |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build the saved-analyses feature now                | A real feature (endpoint, ownership, pagination, deletion) behind a P0 that is about not lying. The empty state removes the harm today.      |
+| Keep the fixtures behind a `DEMO` flag              | One wrong deploy flag away from showing invented financial history again, and the landing page already has a sanctioned demo surface.        |
+| Render the quota as 0 when `/me` fails              | Zero is a claim that the user has run none. Null has to stay distinguishable from zero, which is why the hook and the route keep them apart. |
+| Fetch invoices from Stripe and render them properly | Right eventually, but it needs a new authenticated endpoint; the portal already shows them and "Manage plan" already opens it.               |
+| Fix the "3 reports/mo" copy by editing the constant | That decides the entitlement question by accident. The display now follows the constant; the decision stays open and visible.                |
+
+**Known limit.** Three integration tests asserted the fabricated content (the Buttermill address,
+"Marcus Reilly", and filter chips over the fake rows) — they were pinning the defect in place.
+They now assert the honest states and that each fabricated string is absent, so a future reviewer
+reading only the tests cannot conclude the fixtures were load-bearing.

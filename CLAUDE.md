@@ -1166,6 +1166,7 @@ propscout/
 │   │       │       └── ScraperPartialInlineState.tsx
 │   │       │
 │   │       ├── hooks/
+│   │       │   ├── useAccount.ts      # Real identity + usage from /me (no fixtures — D-064)
 │   │       │   ├── useAnalysis.ts     # Fetches and manages analysis state
 │   │       │   ├── useAuth.ts         # Auth state and methods
 │   │       │   ├── useTier.ts         # Current user tier + feature access checks
