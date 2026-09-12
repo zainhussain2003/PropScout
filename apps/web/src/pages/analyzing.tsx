@@ -25,6 +25,23 @@ const VALID_MODES: readonly string[] = ['investor', 'personal', 'tenant', 'landl
 
 const POLL_INTERVAL_MS = 2000
 
+/**
+ * How long to keep polling before giving the user back control.
+ *
+ * The pipeline takes roughly 25–60s (scrape, calc engine, narrative), so three
+ * minutes is generous. It needs a bound at all because a failure is currently
+ * indistinguishable from work in progress: `updateAnalysisStatus` in the API is
+ * a no-op, and `getAnalysisStatus` derives state purely from whether
+ * `calculated_metrics` is set — null reads as 'pending'. So a run that died
+ * server-side leaves a row that says "pending" forever, and this page polled it
+ * forever, every two seconds, with a progress bar implying work was happening.
+ *
+ * Measured against a timestamp rather than counting ticks: a background tab
+ * throttles intervals, and a tick count would then mean a different wall-clock
+ * bound depending on whether the user watched.
+ */
+const POLL_TIMEOUT_MS = 3 * 60 * 1000
+
 const STEPS = [
   'Fetched listing from Realtor.ca',
   'Read address, price and unit details',
@@ -115,6 +132,10 @@ export function AnalyzingPage(): JSX.Element {
 
   const [status, setStatus] = useState<PollStatus>(null)
   const [error, setError] = useState<string | null>(null)
+  // Distinct from `error`: we stopped waiting, which is not the same claim as
+  // "it failed". The analysis may still be running server-side.
+  const [stalled, setStalled] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mountedRef = useRef(true)
@@ -138,6 +159,7 @@ export function AnalyzingPage(): JSX.Element {
 
     // Reset on each effect run so StrictMode remounts don't leave it false.
     mountedRef.current = true
+    setStalled(false)
 
     // Demo token — skip the real pipeline and navigate directly to the fixture report.
     if (token === 'demo') {
@@ -161,9 +183,18 @@ export function AnalyzingPage(): JSX.Element {
 
       if (!mountedRef.current) return
 
-      // Step 2 — poll until complete or failed.
+      // Step 2 — poll until complete, failed, or the bound above is reached.
+      const startedAt = Date.now()
       intervalRef.current = setInterval(() => {
         void (async () => {
+          if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+            if (intervalRef.current !== null) {
+              clearInterval(intervalRef.current)
+              intervalRef.current = null
+            }
+            if (mountedRef.current) setStalled(true)
+            return
+          }
           try {
             const result = await fetchReport(token)
             if (!mountedRef.current) return
@@ -216,7 +247,7 @@ export function AnalyzingPage(): JSX.Element {
         intervalRef.current = null
       }
     }
-  }, [token, modeRaw, navigate])
+  }, [token, modeRaw, navigate, attempt])
 
   // Milestone target from the poll status (5 → 30 → 70 → 100). On its own this
   // JUMPS and, worse, sits frozen at 5% for the whole ~25s scrape (status stays
@@ -240,6 +271,59 @@ export function AnalyzingPage(): JSX.Element {
   const label = modeRaw !== null ? modeLabelFor(modeRaw) : 'Analyzing'
 
   // ── Error state ─────────────────────────────────────────────────────────────
+
+  if (stalled) {
+    return (
+      <div>
+        <MiniNav onCancel={handleCancel} />
+        <main className="container" style={{ paddingTop: 80, paddingBottom: 120 }}>
+          <div
+            style={{
+              maxWidth: 520,
+              margin: '0 auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 24,
+              alignItems: 'center',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ color: 'var(--caution)' }}>
+              <Icon name="flag" size={32} />
+            </span>
+            <h2 className="serif" style={{ fontSize: 28 }}>
+              This is taking longer than it should
+            </h2>
+            {/* Deliberately not "it failed" — we stopped checking, and we do
+                not know which. Saying it failed would be a claim the page
+                cannot support; saying nothing and spinning forever was the
+                previous behaviour. */}
+            <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+              We&rsquo;ve stopped checking after three minutes. The analysis may still finish on its
+              own, or it may have stopped — we can&rsquo;t tell from here. Checking again is safe,
+              and it won&rsquo;t start a second analysis.
+            </p>
+            <div className="row gap-12" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button
+                onClick={() => setAttempt((n) => n + 1)}
+                className="btn btn-primary"
+                style={{ padding: '14px 24px' }}
+              >
+                Check again <Icon name="arrow" size={14} />
+              </button>
+              <button
+                onClick={handleCancel}
+                className="btn btn-ghost"
+                style={{ padding: '14px 24px' }}
+              >
+                Start over
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   if (error !== null) {
     return (
