@@ -2,7 +2,7 @@
  * User profile route — GET /me
  *
  * Requires: Authorization: Bearer <supabase_jwt>
- * Returns: { id, email, tier, stripe_customer_id }
+ * Returns: { id, email, tier, stripe_customer_id, analysesThisMonth, createdAt }
  *
  * Creates the user row on first call (upserts) so auth.users and public.users
  * stay in sync without a database trigger.
@@ -10,7 +10,7 @@
 
 import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify'
 import { makeError } from '../types/api'
-import { getUserById, upsertUser } from '../services/supabaseService'
+import { getUserById, upsertUser, getMonthlyAnalysisCount } from '../services/supabaseService'
 import { getSupabase } from '../services/supabaseService'
 
 interface MeReply {
@@ -18,6 +18,19 @@ interface MeReply {
   email: string
   tier: 'free' | 'pro' | 'professional' | 'team'
   stripeCustomerId: string | null
+  /**
+   * Analyses this calendar month. The account page needs a real figure: it
+   * previously derived "8 of 10 used" from a hardcoded fixture array, which
+   * both invented a history and manufactured scarcity against the free limit.
+   *
+   * Reporting the count is NOT enforcing it — nothing rejects an analysis past
+   * the limit yet (`FREE_TIER.MONTHLY_ANALYSIS_LIMIT` is still unreferenced in
+   * the request path). Kept deliberately separate so a display fix is not
+   * mistaken for an entitlement change.
+   */
+  analysesThisMonth: number
+  /** Account creation timestamp from Supabase auth, for "member since". */
+  createdAt: string | null
 }
 
 async function meRoutes(fastify: FastifyInstance): Promise<void> {
@@ -46,6 +59,8 @@ async function meRoutes(fastify: FastifyInstance): Promise<void> {
       email: user.email,
       tier: user.tier,
       stripeCustomerId: user.stripe_customer_id,
+      analysesThisMonth: await getMonthlyAnalysisCount(id),
+      createdAt: authData.user.created_at ?? null,
     }
     return reply.send(result)
   })
