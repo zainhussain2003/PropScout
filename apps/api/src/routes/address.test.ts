@@ -10,13 +10,21 @@
 jest.mock('../services/mapboxService', () => ({
   geocodeAddress: jest.fn(),
 }))
+jest.mock('../services/supabaseService', () => ({
+  saveListing: jest.fn(),
+  createPendingAnalysis: jest.fn(),
+}))
 
 import Fastify, { type FastifyInstance } from 'fastify'
 
 import addressRoutes, { splitUnitPrefix } from './address'
 import { geocodeAddress } from '../services/mapboxService'
+import { saveListing, createPendingAnalysis } from '../services/supabaseService'
+import type { Listing } from '../types/property'
 
 const mockGeocode = geocodeAddress as jest.Mock
+const mockSaveListing = saveListing as jest.Mock
+const mockCreatePending = createPendingAnalysis as jest.Mock
 
 let app: FastifyInstance
 
@@ -168,5 +176,57 @@ describe('POST /address — inputs that must not produce a report', () => {
 
     expect(status).toBe(422)
     expect(body.code).toBe('ADDRESS_NOT_FOUND')
+  })
+})
+
+// ── POST /address/start — what the form did not collect is not a fact ─────────
+//
+// D-072. A blank bathroom field was stored as 0 and the report rendered
+// "0 bath"; parking was always stored as 0 though the form never asks. Null
+// is the API's word for "not provided"; 0 is a claim.
+
+describe('POST /address/start — unknown counts stay unknown', () => {
+  const base = {
+    address: '701 Sheppard Ave W, Toronto',
+    postalCode: 'M3H0B2',
+    city: 'Toronto',
+    lat: 43.7588,
+    lng: -79.422,
+    listingType: 'for-sale',
+    price: 650_000,
+    beds: 2,
+  }
+
+  beforeEach(() => {
+    mockSaveListing.mockResolvedValue('listing-1')
+    mockCreatePending.mockResolvedValue(undefined)
+  })
+
+  function saved(): Omit<Listing, 'id'> {
+    return mockSaveListing.mock.calls[0][0] as Omit<Listing, 'id'>
+  }
+
+  it('stores a blank bathroom count as null, not 0', async () => {
+    const res = await app.inject({ method: 'POST', url: '/start', payload: base })
+    expect(res.statusCode).toBe(200)
+    expect(saved().baths).toBeNull()
+    expect(saved().beds).toBe(2)
+  })
+
+  it('stores parking as null — the form never asks', async () => {
+    await app.inject({ method: 'POST', url: '/start', payload: base })
+    expect(saved().parkingSpots).toBeNull()
+  })
+
+  it('keeps a bathroom count the user did give', async () => {
+    await app.inject({ method: 'POST', url: '/start', payload: { ...base, baths: 1.5 } })
+    expect(saved().baths).toBe(1.5)
+  })
+
+  it('returns the listing it stored, so the mode modal shows the same facts', async () => {
+    const res = await app.inject({ method: 'POST', url: '/start', payload: base })
+    const body = res.json() as { listing: Omit<Listing, 'id'> }
+    expect(body.listing.baths).toBeNull()
+    expect(body.listing.parkingSpots).toBeNull()
   })
 })

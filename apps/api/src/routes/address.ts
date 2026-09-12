@@ -111,8 +111,8 @@ interface StartBody {
   listingType?: ListingType
   price?: number | null
   rentMonthly?: number | null
-  beds?: number
-  baths?: number
+  beds?: number | null
+  baths?: number | null
   sqft?: number | null
   propertyType?: string
   condoFeeMonthly?: number | null
@@ -267,12 +267,15 @@ async function addressRoutes(fastify: FastifyInstance): Promise<void> {
       postalCode: b.postalCode,
       price,
       rentMonthly,
-      beds: b.beds ?? 0,
-      baths: b.baths ?? 0,
+      // What the form did not collect is null, not 0. A blank bathroom field
+      // used to be stored as 0 and rendered "0 bath" on the report — a claim
+      // the user never made (D-072).
+      beds: b.beds ?? null,
+      baths: b.baths ?? null,
       sqft: b.sqft ?? null,
       propertyType: (b.propertyType as Listing['propertyType']) ?? 'condo',
       yearBuilt: null,
-      parkingSpots: 0,
+      parkingSpots: null,
       condoFeeMonthly: b.condoFeeMonthly ?? null,
       condoFeeKnown: b.condoFeeMonthly != null,
       annualTaxes: b.annualTaxes ?? null,
