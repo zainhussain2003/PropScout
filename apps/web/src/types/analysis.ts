@@ -445,6 +445,12 @@ export interface ComputedInvestorMetrics extends InvestmentMetrics {
   ltt: LTTResult
   osfi: OSFIResult
   equityCurve: EquityDataPoint[]
+  /**
+   * Break-even appreciation recomputed from the current slider state, so it
+   * always describes the same scenario as the cash flow shown beside it.
+   * Mirrors the calc engine's `hold_case.py`; parity is pinned by test.
+   */
+  holdCase: HoldCaseRow[]
   grossRentAnnual: number
   totalCashInvested: number
   principal: number

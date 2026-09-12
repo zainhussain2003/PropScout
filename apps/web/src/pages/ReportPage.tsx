@@ -14,6 +14,7 @@ import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
 import {
   enrichMetrics,
+  computeDemoMetrics,
   toDealScoreData,
   computeLTT,
   computeOSFI,
@@ -56,7 +57,6 @@ import type {
   ComputedInvestorMetrics,
   FinancingInputs,
   FlagOverrideControls,
-  HoldCaseRow,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 
@@ -593,13 +593,7 @@ function OSFISection({
 
 // ── Equity section ────────────────────────────────────────────────────────────
 
-function EquitySection({
-  metrics,
-  holdCase,
-}: {
-  metrics: ComputedInvestorMetrics
-  holdCase: HoldCaseRow[] | null
-}): JSX.Element {
+function EquitySection({ metrics }: { metrics: ComputedInvestorMetrics }): JSX.Element {
   const finalPoint = metrics.equityCurve[metrics.equityCurve.length - 1]
   const year20Equity = finalPoint?.equity ?? 0
 
@@ -622,9 +616,10 @@ function EquitySection({
           totalCashInvested={metrics.totalCashInvested}
         />
       </div>
-      {holdCase != null && (
-        <BreakEvenAppreciation holdCase={holdCase} cashFlowMonthly={metrics.cashFlowMonthly} />
-      )}
+      <BreakEvenAppreciation
+        holdCase={metrics.holdCase}
+        cashFlowMonthly={metrics.cashFlowMonthly}
+      />
     </section>
   )
 }
@@ -885,19 +880,42 @@ function InvestorReportContent({
   const verdictEyebrow = `PropScout · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
 
-  // Financing is LIVE: the sliders drive every metric on the page (cash flow,
-  // cap rate, DSCR, cash-to-close, OSFI, equity) via enrichMetrics. The deal
-  // SCORE is NOT recomputed here — it stays the backend value (one source of
-  // truth); sliders explore the numbers, they don't re-grade the deal.
+  // Financing is LIVE: the sliders drive every financing-dependent metric on the
+  // page — mortgage payment, cash flow, DSCR, cash-on-cash, break-even rent,
+  // cash-to-close, OSFI, equity and break-even appreciation.
+  //
+  // This previously called enrichMetrics alone, which spreads the API's metrics
+  // through untouched, so cash flow and DSCR stayed at the submitted financing
+  // while cash-to-close and the equity curve moved. The page then showed a
+  // 50%-down cash-to-close beside a 20%-down cash flow. computeDemoMetrics
+  // recomputes the financing-dependent fields from NOI-stable API values, which
+  // is what useInvestorReport already does for its own live path.
+  //
+  // NOI, cap rate and GRM are NOT financing-dependent (they divide by price, not
+  // by the loan), so they stay as the engine calculated them. The deal SCORE is
+  // not recomputed either — it stays the backend value (one source of truth);
+  // sliders explore the numbers, they don't re-grade the deal.
   const [financing, setFinancing] = useState<FinancingInputs>(() =>
     toFinancingInputs(analysis.metrics, listingData)
   )
 
-  const metrics: ComputedInvestorMetrics | null = useMemo(
-    () =>
-      analysis.metrics != null ? enrichMetrics(analysis.metrics, listingData, financing) : null,
-    [analysis.metrics, listingData, financing]
-  )
+  const metrics: ComputedInvestorMetrics | null = useMemo(() => {
+    if (analysis.metrics == null) return null
+    const stable = {
+      noi: analysis.metrics.noi,
+      capRate: analysis.metrics.capRate,
+      grm: analysis.metrics.grm,
+      // The local calculator takes non-tax closing costs and adds the current
+      // LTT itself, so strip the engine's LTT to avoid counting it twice (D-039
+      // is the same double-count on the cash-to-close card).
+      closingCostsTotal:
+        analysis.metrics.closingCostsTotal -
+        analysis.metrics.lttProvincial -
+        analysis.metrics.lttMunicipal,
+    }
+    const recomputed = computeDemoMetrics(stable, listingData, financing)
+    return enrichMetrics(recomputed, listingData, financing)
+  }, [analysis.metrics, listingData, financing])
 
   // ONE SOURCE OF TRUTH: the deal score comes straight from the calc engine
   // (gated, floored, the lot). The frontend does NOT re-derive it — a second
@@ -1004,9 +1022,7 @@ function InvestorReportContent({
       )}
       {listingData.price > 0 && <OSFISection financing={financing} listing={listingData} />}
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
-      {listingData.price > 0 && (
-        <EquitySection metrics={metrics} holdCase={analysis.holdCase ?? null} />
-      )}
+      {listingData.price > 0 && <EquitySection metrics={metrics} />}
       {/* §08 Neighbourhood — stat tiles + comps + appreciation. Every field is
           data-honest: unknown stats render "—" and empty comps show the "no
           comparable-sales source yet" state (shimToNeighbourhood returns zeros

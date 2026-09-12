@@ -2180,3 +2180,62 @@ report says the figure is a minimum; it cannot say by how much.
 **Revisit if** a local appreciation series is connected — the report could then place the required
 rate against what the area has actually done, which is the single thing that would make this figure
 actionable rather than merely honest.
+
+---
+
+### D-063 · The live report's sliders recompute every financing-dependent metric
+
+**Chosen.** `ReportPage` now derives its metrics by feeding the API's NOI-stable values through
+`computeDemoMetrics` and then `enrichMetrics`, so a slider move recomputes the mortgage payment,
+cash flow, DSCR, cash-on-cash, break-even rent, cash-to-close, LTT, OSFI, the equity curve and
+break-even appreciation. `useInvestorReport` already did exactly this for its own live path; the
+page was duplicating the wiring and got it wrong.
+
+NOI, cap rate and GRM are **not** financing-dependent — they divide by price, not by the loan — so
+they pass through as the engine calculated them. The deal score still does not move: sliders
+explore the numbers, they do not re-grade the deal (D-037).
+
+**Why.** `enrichMetrics` spreads the API's metrics through untouched, so cash-to-close, LTT and the
+equity curve tracked the sliders while cash flow and DSCR stayed at whatever financing was
+submitted. Dragging down payment from 20% to 50% produced a page showing a 50%-down cash-to-close
+beside a 20%-down cash flow, with nothing saying the two described different scenarios. The comment
+above the code claimed all of them were live, and the demo routes — which call `computeDemoMetrics`
+— genuinely were, so live and demo disagreed. No test covered slider-driven recomputation on the
+live path, which is why it survived.
+
+**The prerequisite, found on the way in, and the reason this is one change and not two.** The
+client calculator divided the annual rate by twelve. That is the US convention; the Interest Act
+requires semi-annual compounding for Canadian fixed-rate mortgages, and the calc engine has always
+done it correctly. On the Vaughan property the client said $3,342.48/mo against the engine's
+$3,326.64 — $15.84 a month, $4,751 over the amortization — and the client was wrong. Making the
+report recompute locally _without_ fixing that would have switched every metric onto the wrong
+convention: live but wrong, which is worse than stale but right. Fixed first, and both calibration
+mortgages are now pinned against the engine's values with the annual/12 answer asserted absent.
+
+**Verification that the recompute is faithful.** With the conventions aligned, the client
+reproduces the engine exactly on the test fixture — municipal LTT $10,323, cash to close $169,776,
+cash flow −$1,493.31, DSCR 0.5511. A test asserts the page shows the engine's figures at the
+submitted financing, so the recompute cannot silently shift the numbers merely by loading.
+
+**A fixture that had been hiding a second inconsistency.** `INVESTOR_ANALYSIS` described a Toronto
+property (55 Front St, M5J) with `lttMunicipal: 0`, a $2,600 payment and −$800 cash flow — none of
+which that property could produce. The page had therefore been showing Toronto's municipal LTT in
+its bracket table while omitting it from cash to close. The fixture now carries the engine's own
+figures, and the D-039 double-count guard asserts against both the old double-count and the new
+one that the extra LTT could create.
+
+**Alternatives considered**
+
+| Option                                                    | Why not                                                                                                                                                                |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Re-run the analysis through the API on each slider move   | What `useInvestorReport` does for its own live path, but `/r/:token` is a shared report a viewer may not own; re-running would mutate stored analysis on their behalf. |
+| Label the sliders exploratory and leave the metrics stale | Honest, and smaller, but spec §6 promises live recalculation on every slider move, and the mixed-scenario page is the actual defect.                                   |
+| Keep the API's LTT rather than recomputing it             | The LTT table was always client-computed, so the total disagreeing with the table was the inconsistency. Recomputing both makes the section agree with itself.         |
+| Take break-even appreciation from the API                 | It depends on every slider. Held at the submitted financing it would describe a different scenario from the cash flow printed beside it — the bug, reintroduced.       |
+| Leave the mortgage convention alone for now               | It is the load-bearing input. Recomputing on top of it would have spread a wrong payment across every live metric.                                                     |
+
+**Known limit, deliberately accepted.** Break-even appreciation now exists twice — `hold_case.py`
+and `computeBreakEvenAppreciation` — which is the drift D-054 and D-055 record. The mitigation is a
+test pinning the TypeScript result against the Python regression floors (1.91% / 1.45% / 0.75%),
+so the two cannot diverge silently. The same tripwire now covers the mortgage payment, which had
+already drifted before anyone noticed.
