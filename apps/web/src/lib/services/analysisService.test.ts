@@ -12,6 +12,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
+  freeLimitDetails,
   runAnalysis,
   scrapeUrl,
   triggerAnalysis,
@@ -405,6 +406,54 @@ describe('triggerAnalysis', () => {
       expect(apiErr.status).toBe(500)
       return true
     })
+  })
+
+  // ── Attribution + quota (D-071) ────────────────────────────────────────────
+
+  it('sends the session as a Bearer token so the analysis is attributed', async () => {
+    mockFetchOK({})
+    await triggerAnalysis('test-token', 'investor', 'jwt-1')
+    const init = vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit
+    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer jwt-1')
+  })
+
+  it('sends no Authorization header as a guest', async () => {
+    mockFetchOK({})
+    await triggerAnalysis('test-token', 'investor')
+    const init = vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit
+    expect((init.headers as Record<string, string>)['Authorization']).toBeUndefined()
+  })
+
+  it('402 FREE_LIMIT_REACHED → carries used/limit/resetsAt in details', async () => {
+    mockFetchError(402, {
+      error: true,
+      code: 'FREE_LIMIT_REACHED',
+      message: "You've used all 10 free analyses this month.",
+      used: 10,
+      limit: 10,
+      resetsAt: '2026-10-01T00:00:00.000Z',
+    })
+
+    await expect(triggerAnalysis('test-token', 'investor', 'jwt-1')).rejects.toSatisfy(
+      (err: unknown) => {
+        expect(freeLimitDetails(err)).toEqual({
+          used: 10,
+          limit: 10,
+          resetsAt: '2026-10-01T00:00:00.000Z',
+        })
+        return true
+      }
+    )
+  })
+
+  it('freeLimitDetails is null for any other error, or a malformed quota body', () => {
+    expect(freeLimitDetails(new Error('x'))).toBeNull()
+    expect(freeLimitDetails(new ApiRequestError('NOT_FOUND', 'nf', 404))).toBeNull()
+    // The code alone is not enough: the gate renders these figures.
+    expect(freeLimitDetails(new ApiRequestError('FREE_LIMIT_REACHED', 'x', 402))).toBeNull()
+    expect(
+      freeLimitDetails(new ApiRequestError('FREE_LIMIT_REACHED', 'x', 402, { used: '10' }))
+    ).toBeNull()
   })
 })
 

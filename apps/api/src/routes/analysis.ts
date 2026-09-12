@@ -25,7 +25,14 @@ import {
   fetchRentalComps,
   getFlagOverrides,
   getNearbySchools,
+  getUserById,
+  upsertUser,
+  getMonthlyAnalysisCount,
+  claimAnalysisForUser,
 } from '../services/supabaseService'
+import { resolveUser } from '../lib/requireUser'
+import { startOfNextMonth } from '../lib/billingMonth'
+import { FREE_TIER } from '../constants/tiers'
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
@@ -282,6 +289,45 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       const listing = await getListingByToken(token)
       if (!listing) {
         return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
+      }
+
+      // Step 2b — attribute the analysis and enforce the free-tier quota.
+      //
+      // Signed-in users send their session; guests send nothing. An invalid
+      // token is refused rather than downgraded to guest, because silently
+      // running unattributed would make the report un-ownable (D-065) and
+      // uncounted, and the client only sends a token it believes is current.
+      //
+      // The check runs before the pipeline (which costs money) and the claim
+      // runs before it too, so a run that dies mid-way is still counted —
+      // the quota is on analyses started, not finished. Tenant mode is
+      // exempt (spec §4) and guests are not counted (D-071 known limit).
+      const auth = await resolveUser(req)
+      if (!auth.ok && auth.reason === 'invalid') {
+        return reply
+          .code(401)
+          .send(makeError('UNAUTHORIZED', 'Your session has expired — sign in again.'))
+      }
+      if (auth.ok) {
+        await upsertUser(auth.userId, auth.email)
+        const user = await getUserById(auth.userId)
+        const tier = user?.tier ?? 'free'
+        const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
+        if (tier === 'free' && !exempt) {
+          const used = await getMonthlyAnalysisCount(auth.userId)
+          if (used >= FREE_TIER.MONTHLY_ANALYSIS_LIMIT) {
+            return reply.code(402).send({
+              ...makeError(
+                'FREE_LIMIT_REACHED',
+                `You've used all ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} free analyses this month.`
+              ),
+              used,
+              limit: FREE_TIER.MONTHLY_ANALYSIS_LIMIT,
+              resetsAt: startOfNextMonth().toISOString(),
+            })
+          }
+        }
+        await claimAnalysisForUser(token, auth.userId, mode)
       }
 
       // Step 3 — mark processing

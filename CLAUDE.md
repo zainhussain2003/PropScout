@@ -1245,6 +1245,7 @@ propscout/
 │           │   ├── pdfService.ts            # Puppeteer renders /r/:token → branded PDF (spec §14)
 │           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── lib/
+│           │   ├── billingMonth.ts    # UTC calendar-month window for the free quota (D-071)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint

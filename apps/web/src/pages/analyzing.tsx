@@ -16,7 +16,16 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Wordmark } from '../components/shared/Wordmark'
 import { Icon } from '../components/shared/Icon'
-import { triggerAnalysis, fetchReport, ApiRequestError } from '../lib/services/analysisService'
+import {
+  triggerAnalysis,
+  fetchReport,
+  freeLimitDetails,
+  ApiRequestError,
+  type FreeLimitDetails,
+} from '../lib/services/analysisService'
+import { startCheckout } from '../lib/services/billingService'
+import { HardLimitGate } from '../components/paywall/HardLimitGate'
+import { useAuth } from '../hooks/useAuth'
 import type { ReportMode } from '../types/analysis'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -56,6 +65,23 @@ const STEPS = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 type PollStatus = 'pending' | 'processing' | 'complete' | 'failed' | null
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+/** "12 days" / "1 day" until the quota resets — never "0 days" or negative. */
+function daysUntilLabel(iso: string, now: number = Date.now()): string {
+  const days = Math.max(1, Math.ceil((new Date(iso).getTime() - now) / MS_PER_DAY))
+  return `${days} ${days === 1 ? 'day' : 'days'}`
+}
+
+/** "Oct 1" style label for the reset date, in the user's locale. */
+function shortDateLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+}
 
 function stepState(status: PollStatus, i: number): 'done' | 'active' | 'pending' {
   if (status === 'complete') return 'done'
@@ -129,9 +155,18 @@ export function AnalyzingPage(): JSX.Element {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
   const modeRaw = searchParams.get('mode')
+  // The session is what attributes the analysis to the account and what the
+  // free quota is checked against (D-071). Triggering before it has resolved
+  // would run every signed-in user's first report as a guest.
+  const { session, loading: authLoading } = useAuth()
+  const accessToken = session?.access_token ?? null
 
   const [status, setStatus] = useState<PollStatus>(null)
   const [error, setError] = useState<string | null>(null)
+  // The free-tier quota refusal. Its own state, not `error`: nothing failed,
+  // and the way out is a plan change or a calendar, not "try again".
+  const [limit, setLimit] = useState<FreeLimitDetails | null>(null)
+  const [billingError, setBillingError] = useState<string | null>(null)
   // Distinct from `error`: we stopped waiting, which is not the same claim as
   // "it failed". The analysis may still be running server-side.
   const [stalled, setStalled] = useState(false)
@@ -154,6 +189,7 @@ export function AnalyzingPage(): JSX.Element {
       navigate('/')
       return
     }
+    if (authLoading) return
 
     const mode = modeRaw as ReportMode
 
@@ -170,10 +206,13 @@ export function AnalyzingPage(): JSX.Element {
     const run = async (): Promise<void> => {
       // Step 1 — fire the orchestrator pipeline.
       try {
-        await triggerAnalysis(token, mode)
+        await triggerAnalysis(token, mode, accessToken)
       } catch (err) {
         if (!mountedRef.current) return
-        if (err instanceof ApiRequestError) {
+        const quota = freeLimitDetails(err)
+        if (quota != null) {
+          setLimit(quota)
+        } else if (err instanceof ApiRequestError) {
           setError(err.message)
         } else {
           setError('Something went wrong — please try again.')
@@ -247,7 +286,15 @@ export function AnalyzingPage(): JSX.Element {
         intervalRef.current = null
       }
     }
-  }, [token, modeRaw, navigate, attempt])
+  }, [token, modeRaw, navigate, attempt, authLoading, accessToken])
+
+  const handleUpgrade = (): void => {
+    if (accessToken == null) return
+    setBillingError(null)
+    void startCheckout('pro', accessToken).catch((err: Error) => {
+      setBillingError(err.message)
+    })
+  }
 
   // Milestone target from the poll status (5 → 30 → 70 → 100). On its own this
   // JUMPS and, worse, sits frozen at 5% for the whole ~25s scrape (status stays
@@ -357,6 +404,46 @@ export function AnalyzingPage(): JSX.Element {
             </button>
           </div>
         </main>
+      </div>
+    )
+  }
+
+  // ── Free-tier limit reached ─────────────────────────────────────────────────
+  //
+  // Full-screen gate over the (now idle) progress page. The figures are the
+  // API's, not the client's: `used` is the count it refused on and `resetsAt`
+  // is the start of its next UTC month, so the gate cannot disagree with the
+  // account page about either.
+
+  if (limit != null) {
+    return (
+      <div>
+        <MiniNav onCancel={handleCancel} />
+        <HardLimitGate
+          onClose={handleCancel}
+          onUpgrade={handleUpgrade}
+          monthlyLimit={limit.limit}
+          used={limit.used}
+          resetsIn={daysUntilLabel(limit.resetsAt)}
+          resetDate={shortDateLabel(limit.resetsAt)}
+        />
+        {billingError != null && (
+          <p
+            role="alert"
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              zIndex: 2147483641,
+              color: 'var(--bg)',
+              fontSize: 14,
+            }}
+          >
+            {billingError}
+          </p>
+        )}
       </div>
     )
   }

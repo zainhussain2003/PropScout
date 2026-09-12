@@ -34,6 +34,10 @@ import {
   fetchRentalComps,
   getFlagOverrides,
   getNearbySchools,
+  getSupabase,
+  getUserById,
+  getMonthlyAnalysisCount,
+  claimAnalysisForUser,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -50,6 +54,10 @@ const mockGeocodeAddress = jest.mocked(geocodeAddress)
 const mockGetWalkScore = jest.mocked(getWalkScore)
 const mockGetFlagOverrides = jest.mocked(getFlagOverrides)
 const mockGetNearbySchools = jest.mocked(getNearbySchools)
+const mockGetSupabase = jest.mocked(getSupabase)
+const mockGetUserById = jest.mocked(getUserById)
+const mockMonthlyCount = jest.mocked(getMonthlyAnalysisCount)
+const mockClaim = jest.mocked(claimAnalysisForUser)
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -809,5 +817,207 @@ describe('POST / - schools wiring', () => {
 
     expect(res.statusCode).toBe(200)
     expect((res.json() as { analysis: Analysis }).analysis.schools).toBeNull()
+  })
+})
+
+// ── Free-tier quota + attribution (D-071) ─────────────────────────────────────
+//
+// Before this, no analysis was ever attributed to a user: createPendingAnalysis
+// wrote no user_id and this route read no session. So every row had user_id
+// null, the monthly count was always 0, FREE_TIER.MONTHLY_ANALYSIS_LIMIT was
+// referenced nowhere in the request path, and the owner-only override policy
+// (D-065) had no owner to match.
+
+describe('POST / — free-tier quota and attribution', () => {
+  let app: FastifyInstance
+  const USER_ID = 'user-free'
+  const AUTH = { authorization: 'Bearer session-jwt' }
+
+  /** Make auth.getUser resolve to `userId`, or reject the token when null. */
+  function signedInAs(userId: string | null): void {
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: userId == null ? null : { id: userId, email: 'u@example.com' } },
+          error: userId == null ? { message: 'Invalid JWT' } : null,
+        }),
+      },
+    } as unknown as ReturnType<typeof getSupabase>)
+  }
+
+  function userOnTier(tier: string): void {
+    mockGetUserById.mockResolvedValue({
+      id: USER_ID,
+      email: 'u@example.com',
+      tier,
+      stripe_customer_id: null,
+    } as unknown as Awaited<ReturnType<typeof getUserById>>)
+  }
+
+  function calcEngineCalls(): number {
+    const fetchMock = global.fetch as jest.Mock
+    return fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/analysis/')).length
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockClaim.mockResolvedValue(undefined)
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('attributes the analysis to the signed-in user before running it', async () => {
+    signedInAs(USER_ID)
+    userOnTier('free')
+    mockMonthlyCount.mockResolvedValue(0)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(mockClaim).toHaveBeenCalledWith('test-token', USER_ID, 'investor')
+    // Claim precedes the pipeline: a run that dies mid-way is still counted.
+    const claimOrder = mockClaim.mock.invocationCallOrder[0]
+    const calcOrder = (global.fetch as jest.Mock).mock.invocationCallOrder[0]
+    expect(claimOrder).toBeLessThan(calcOrder)
+  })
+
+  it('refuses the 11th analysis on the free tier with 402 and does not run the pipeline', async () => {
+    signedInAs(USER_ID)
+    userOnTier('free')
+    mockMonthlyCount.mockResolvedValue(10)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(402)
+    const body = res.json() as ApiError & { used: number; limit: number; resetsAt: string }
+    expect(body.code).toBe('FREE_LIMIT_REACHED')
+    expect(body.used).toBe(10)
+    expect(body.limit).toBe(10)
+    expect(new Date(body.resetsAt).getUTCDate()).toBe(1)
+    expect(new Date(body.resetsAt).getTime()).toBeGreaterThan(Date.now())
+    // The load-bearing assertions: nothing was claimed and nothing was run.
+    expect(mockClaim).not.toHaveBeenCalled()
+    expect(calcEngineCalls()).toBe(0)
+    expect(mockSaveAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('allows the 10th analysis (the limit is inclusive of the count, not the index)', async () => {
+    signedInAs(USER_ID)
+    userOnTier('free')
+    mockMonthlyCount.mockResolvedValue(9)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(mockClaim).toHaveBeenCalled()
+  })
+
+  it('never limits tenant mode, which is unlimited on every tier', async () => {
+    signedInAs(USER_ID)
+    userOnTier('free')
+    mockMonthlyCount.mockResolvedValue(10)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'tenant' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(mockMonthlyCount).not.toHaveBeenCalled()
+    // Still attributed — the tenant can own it (overrides, account page).
+    expect(mockClaim).toHaveBeenCalledWith('test-token', USER_ID, 'tenant')
+  })
+
+  it.each(['pro', 'professional', 'team'])('never limits the %s tier', async (tier) => {
+    signedInAs(USER_ID)
+    userOnTier(tier)
+    mockMonthlyCount.mockResolvedValue(500)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(mockMonthlyCount).not.toHaveBeenCalled()
+    expect(mockClaim).toHaveBeenCalled()
+  })
+
+  it('runs a guest analysis unattributed and uncounted', async () => {
+    // Known limit, recorded in D-071: the limit is per account. A guest has no
+    // account to count against; the IP rate limit is the only bound on them.
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(mockClaim).not.toHaveBeenCalled()
+    expect(mockMonthlyCount).not.toHaveBeenCalled()
+  })
+
+  it('refuses an invalid session rather than downgrading it to a guest', async () => {
+    signedInAs(null)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(401)
+    expect(calcEngineCalls()).toBe(0)
+  })
+
+  it('treats a user with no profile row as free tier', async () => {
+    signedInAs(USER_ID)
+    mockGetUserById.mockResolvedValue(null)
+    mockMonthlyCount.mockResolvedValue(10)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(402)
   })
 })

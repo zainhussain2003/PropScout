@@ -31,6 +31,8 @@ import {
   getNearbySchools,
   haversineKm,
   saveListing,
+  getMonthlyAnalysisCount,
+  claimAnalysisForUser,
   SCHOOL_CATCHMENT_NOTE,
 } from './supabaseService'
 import type { Analysis } from '../types/analysis'
@@ -56,6 +58,9 @@ interface QueryChain {
   lte: jest.Mock
   ilike: jest.Mock
   single: jest.Mock
+  update: jest.Mock
+  is: jest.Mock
+  not: jest.Mock
   then: (onFulfilled: (value: ChainResolution) => unknown) => Promise<unknown>
 }
 
@@ -70,13 +75,28 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
     lte: jest.fn(),
     ilike: jest.fn(),
     single: jest.fn(),
+    update: jest.fn(),
+    is: jest.fn(),
+    not: jest.fn(),
     then(onFulfilled) {
       return Promise.resolve(this.__resolve).then(onFulfilled)
     },
   }
   // Every chainable method returns the chain itself
   ;(
-    ['select', 'insert', 'upsert', 'eq', 'gte', 'lte', 'ilike', 'single'] as Array<keyof QueryChain>
+    [
+      'select',
+      'insert',
+      'upsert',
+      'eq',
+      'gte',
+      'lte',
+      'ilike',
+      'single',
+      'update',
+      'is',
+      'not',
+    ] as Array<keyof QueryChain>
   ).forEach((method) => {
     ;(chain[method] as jest.Mock).mockReturnValue(chain)
   })
@@ -1134,5 +1154,75 @@ describe('saveListing — how a listing is keyed', () => {
     )
 
     expect(a).not.toBe(b)
+  })
+})
+
+// ── Free-tier quota: the count and the claim (D-071) ──────────────────────────
+
+describe('getMonthlyAnalysisCount — what counts against the free quota', () => {
+  beforeEach(() => {
+    mockFrom.mockReset()
+  })
+
+  it('counts this user, this UTC month, excluding tenant analyses', async () => {
+    const chain = makeQueryChain({ data: null, error: null })
+    chain.then = (onFulfilled): Promise<unknown> =>
+      Promise.resolve({ count: 7, error: null } as never).then(onFulfilled)
+    mockFrom.mockReturnValue(chain)
+
+    const n = await getMonthlyAnalysisCount('user-1')
+
+    expect(n).toBe(7)
+    expect(mockFrom).toHaveBeenCalledWith('analyses')
+    expect(chain.select).toHaveBeenCalledWith('id', { count: 'exact', head: true })
+    expect(chain.eq).toHaveBeenCalledWith('user_id', 'user-1')
+    // Spec §4: tenant evaluation is unlimited on every tier. If this filter
+    // goes, a tenant's tenth report locks them out of an investor one.
+    expect(chain.not).toHaveBeenCalledWith('report_mode', 'in', '(tenant)')
+    const [column, since] = chain.gte.mock.calls[0] as [string, string]
+    expect(column).toBe('created_at')
+    expect(new Date(since).getUTCDate()).toBe(1)
+    expect(new Date(since).getUTCHours()).toBe(0)
+  })
+
+  it('fails open on a database error', async () => {
+    const chain = makeQueryChain({ data: null, error: null })
+    chain.then = (onFulfilled): Promise<unknown> =>
+      Promise.resolve({ count: null, error: { message: 'boom' } } as never).then(onFulfilled)
+    mockFrom.mockReturnValue(chain)
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    expect(await getMonthlyAnalysisCount('user-1')).toBe(0)
+    spy.mockRestore()
+  })
+})
+
+describe('claimAnalysisForUser — attribution', () => {
+  beforeEach(() => {
+    mockFrom.mockReset()
+  })
+
+  it('sets user_id and the chosen mode on the unowned row for that token', async () => {
+    const chain = makeQueryChain({ data: null, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await claimAnalysisForUser('tok-1', 'user-1', 'investor')
+
+    expect(mockFrom).toHaveBeenCalledWith('analyses')
+    expect(chain.update).toHaveBeenCalledWith({ user_id: 'user-1', report_mode: 'investment' })
+    expect(chain.eq).toHaveBeenCalledWith('share_token', 'tok-1')
+    // A share link is not a transfer of ownership: only an unowned row is
+    // claimed. Without this, re-triggering someone else's token would steal
+    // their analysis and its overrides (D-065).
+    expect(chain.is).toHaveBeenCalledWith('user_id', null)
+  })
+
+  it('throws when the update fails, so the route does not run an unattributed analysis', async () => {
+    const chain = makeQueryChain({ data: null, error: { message: 'nope' } })
+    mockFrom.mockReturnValue(chain)
+
+    await expect(claimAnalysisForUser('tok-1', 'user-1', 'tenant')).rejects.toThrow(
+      'claimAnalysisForUser failed: nope'
+    )
   })
 })

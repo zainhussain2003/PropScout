@@ -40,6 +40,7 @@ import {
 import { VerdictPill } from '../components/shared/VerdictPill'
 import type { ReportMode } from '../types/analysis'
 import { scrapeUrl, ApiRequestError } from '../lib/services/analysisService'
+import { FREE_TIER } from '../constants/tiers'
 import { DEAL_SCORE } from '../constants/thresholds'
 import type { Listing } from '../types/property'
 
@@ -2441,7 +2442,7 @@ function PricingSection(): JSX.Element {
       cta: 'Start free',
       featured: false,
       features: [
-        '3 sale-listing reports / month',
+        `${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} sale-listing reports / month`,
         'Unlimited tenant reports',
         'Full rental comps, confidence shown',
         'Verdict summary',
@@ -2824,8 +2825,8 @@ function CTASection(): JSX.Element {
               marginBottom: 28,
             }}
           >
-            Three free analyses every month. No credit card, no demo call, no team to talk to.
-            You&apos;ll know if the deal is dead in sixty seconds.
+            {FREE_TIER_LIMIT_WORD} free analyses every month. No credit card, no demo call, no team
+            to talk to. You&apos;ll know if the deal is dead in sixty seconds.
           </p>
           <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
             <a
@@ -2867,6 +2868,25 @@ function CTASection(): JSX.Element {
     </section>
   )
 }
+
+// The hero says the allowance in words. Spelled from the constant so a change
+// to the entitlement cannot leave the landing page advertising the old one —
+// which is exactly how it came to say "three" while the API enforced ten.
+const NUMBER_WORDS = [
+  'Zero',
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+] as const
+const FREE_TIER_LIMIT_WORD: string =
+  NUMBER_WORDS[FREE_TIER.MONTHLY_ANALYSIS_LIMIT] ?? String(FREE_TIER.MONTHLY_ANALYSIS_LIMIT)
 
 // ── LandingPage ───────────────────────────────────────────────────────
 
