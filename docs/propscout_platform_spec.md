@@ -1565,11 +1565,11 @@ GLASS_DOOR_PATTERNS = [
 ]
 
 BASEMENT_PATTERNS = [
-    r'lower\s*level',
-    r'basement',
-    r'below\s*grade',
-    r'walk[\s-]?out',
-    r'ground\s*floor\s*unit',
+    r'\blower\s*level\b',
+    r'\bbasement\b',
+    r'\bbelow\s*grade\b',
+    r'\bwalk[\s-]?out\b',
+    r'\bground\s*floor\s*unit\b',
 ]
 
 PARKING_UNCLEAR_PATTERNS = [
@@ -1581,10 +1581,10 @@ PARKING_UNCLEAR_PATTERNS = [
 ]
 
 UNVERIFIED_BEDROOM_PATTERNS = [
-    r'den',
-    r'study',
-    r'flex\s*space',
-    r'home\s*office',
+    r'\bden\b',
+    r'\bstudy\b',
+    r'\bflex\s*space\b',
+    r'\bhome\s*office\b',
     r'can\s*be\s*(used\s*as\s*)?a?\s*bedroom',
     r'convert(ed|ible)\s*(den|office|space)',
 ]
