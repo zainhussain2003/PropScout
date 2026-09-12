@@ -15,6 +15,15 @@ import type { OSFIResult, FinancingInputs } from '../../types/analysis'
 import { VerdictPill } from '../shared/VerdictPill'
 import { fmtPct, fmtMoney } from '../../lib/investorCalc'
 
+/**
+ * Under this much headroom to the 44% GDS limit, "passes" is true but not
+ * reassuring. The live Vaughan run passed at 43.7% and the copy said GDS "sits
+ * comfortably under" the threshold — 0.3 points is not comfortable. Two
+ * points ≈ one 0.25% rate step on the qualifying payment for a typical
+ * purchase.
+ */
+const OSFI_TIGHT_MARGIN = 0.02
+
 interface OSFICardProps {
   osfi: OSFIResult
   financing: FinancingInputs
@@ -132,8 +141,11 @@ export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Elemen
         {osfi.pass ? (
           <>
             Gross household income {fmtMoney(displayIncome)}. At {fmtPct(osfi.qualifyingRate, 2)}{' '}
-            qualifying rate, GDS sits comfortably under the 44% federal threshold — most
-            insured-mortgage products available.
+            qualifying rate, GDS is {fmtPct(osfi.gds, 1)} against the {fmtPct(osfi.threshold, 0)}{' '}
+            federal threshold —{' '}
+            {osfi.threshold - osfi.gds < OSFI_TIGHT_MARGIN
+              ? 'a thin margin; a small rate move or a lower appraisal would fail it.'
+              : `${((osfi.threshold - osfi.gds) * 100).toFixed(1)} points of room.`}
           </>
         ) : (
           <>

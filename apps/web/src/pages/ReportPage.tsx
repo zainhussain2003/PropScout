@@ -531,9 +531,14 @@ function InvestorReportContent({
   // by the loan), so they stay as the engine calculated them. The deal SCORE is
   // not recomputed either — it stays the backend value (one source of truth);
   // sliders explore the numbers, they don't re-grade the deal.
-  const [financing, setFinancing] = useState<FinancingInputs>(() =>
-    toFinancingInputs(analysis.metrics, listingData)
+  // What the engine actually ran with. The sliders start here, and the
+  // presets and "vs Base" are expressed against it — not against the demo's
+  // 4.79%, which a live report at the Bank of Canada rate never used.
+  const baseFinancing = useMemo(
+    () => toFinancingInputs(analysis.metrics, listingData),
+    [analysis.metrics, listingData]
   )
+  const [financing, setFinancing] = useState<FinancingInputs>(baseFinancing)
 
   const metrics: ComputedInvestorMetrics | null = useMemo(() => {
     if (analysis.metrics == null) return null
@@ -649,6 +654,7 @@ function InvestorReportContent({
             price={listingData.price}
             financing={financing}
             onFinancingChange={setFinancing}
+            base={baseFinancing}
           />
         </>
       )}
