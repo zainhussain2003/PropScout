@@ -17,6 +17,10 @@
  *     "unlikely" would be invented.
  *   - It is labelled break-even, not return: the model credits nothing for what
  *     the cash could have earned elsewhere, and the equity stays illiquid.
+ *   - It is a MINIMUM. Selling costs are excluded because realtor commission is
+ *     not a published rate in Ontario, so every figure here is a floor and the
+ *     copy has to say "at least". Presenting it as exact would understate the
+ *     bar, which is the direction that flatters a deal.
  *
  * All figures come from the calc engine (`calculations/hold_case.py`); nothing
  * is recomputed here.
@@ -65,13 +69,13 @@ export function BreakEvenAppreciation({
       <p style={{ margin: '10px 0 0', color: 'var(--muted)', maxWidth: '64ch' }}>
         {running
           ? `This property costs you ${fmtMoney(Math.abs(cashFlowMonthly))} a month to hold. ` +
-            'Below is the annual price growth needed to get every dollar back — the ' +
-            'deposit, the closing costs and every monthly top-up — after selling costs ' +
-            'and paying off the mortgage.'
-          : 'This property covers its own costs. Below is the annual price growth needed ' +
-            'to get your deposit and closing costs back after selling costs and paying ' +
+            'Below is the least the price would have to rise each year to get every ' +
+            'dollar back — the deposit, the closing costs and every monthly top-up — ' +
+            'after paying off the mortgage.'
+          : 'This property covers its own costs. Below is the least the price would have ' +
+            'to move each year to get your deposit and closing costs back after paying ' +
             'off the mortgage. A negative figure means prices could fall that much a ' +
-            'year and you would still break even.'}
+            'year and you would still get your money back.'}
       </p>
 
       <div
@@ -117,7 +121,7 @@ export function BreakEvenAppreciation({
               {fmtRate(row.breakEvenAnnualRate)}
             </div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
-              a year, to break even
+              a year, at least
             </div>
 
             <dl style={{ margin: '16px 0 0', fontSize: 13 }}>
@@ -127,18 +131,20 @@ export function BreakEvenAppreciation({
                 emphasis={row.cumulativeContribution > 0}
               />
               <Line label="Mortgage paid down" value={fmtMoney(row.principalRepaid)} />
-              <Line label="Break-even sale price" value={fmtMoney(row.breakEvenSalePrice)} />
+              <Line label="Sale price to get even" value={fmtMoney(row.breakEvenSalePrice)} />
             </dl>
           </div>
         ))}
       </div>
 
       <p style={{ margin: '20px 0 0', fontSize: 13, color: 'var(--muted)', maxWidth: '72ch' }}>
-        Breaking even means getting your money back, not earning a return — this makes no allowance
-        for what that cash could have earned elsewhere, and property equity cannot be spent until
-        you sell. Figures hold today&rsquo;s rent and costs flat for the whole period, and assume 5%
-        selling commission plus legal fees. We don&rsquo;t have a local price history for this area,
-        so we can&rsquo;t tell you whether these growth rates are realistic here.
+        These are minimums, and your real figure is higher: selling a property costs money —
+        commission and legal fees — and we don&rsquo;t include it, because commission is negotiated
+        rather than published, so we won&rsquo;t put a number on yours. Getting even is also not the
+        same as earning a return: nothing here credits what that cash could have made elsewhere, and
+        equity cannot be spent until you sell. Figures hold today&rsquo;s rent and costs flat for
+        the whole period. We don&rsquo;t have a local price history for this area, so we can&rsquo;t
+        tell you whether these growth rates are realistic here.
       </p>
     </div>
   )

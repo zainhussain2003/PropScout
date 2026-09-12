@@ -249,7 +249,7 @@ Calculated outputs:
 - GRM — Gross Rent Multiplier = purchase price / annual gross rent
 - Break-even rent = all monthly expenses combined
 - Equity build at 5, 10, and 20 years (mortgage paydown + 3% appreciation, user-adjustable)
-- Break-even appreciation at 5, 10, and 20 years — the annual price growth required to return all cash the hold consumes
+- Break-even appreciation at 5, 10, and 20 years — the minimum annual price growth required to return all cash the hold consumes, before the costs of selling
 
 Maintenance reserve by build year: post-2010 at 0.5%/yr, 1980–2010 at 1.0%/yr, pre-1980 at 1.5%/yr.
 
@@ -259,14 +259,19 @@ period:
 
 ```
 cash in   = down payment + purchase closing costs + cumulative monthly shortfall
-cash out  = sale price − selling costs − remaining mortgage balance
-sale price at break-even = (cash in + sale legal fees + balance) / (1 − commission rate)
+cash out  = sale price − remaining mortgage balance
+sale price at break-even = cash in + balance
 required annual rate     = (sale price / purchase price) ^ (1 / years) − 1
 ```
 
-Closed-form, because commission is a fraction of the same sale price — no iteration, so the
-result is deterministic. Selling costs are 5% commission plus a flat legal fee, both unsourced
-placeholders in `constants/rates.py`.
+**Selling costs are excluded, which makes every figure a floor.** Realtor commission is not a
+regulated or published rate in Ontario — the commonly quoted 5% is a negotiable convention — and
+sale-side legal fees are not published either. Rather than invent a figure that materially moves
+the answer, the model stops at the mortgage discharge and reports the growth needed to return the
+cash _before_ the costs of selling. The real break-even is higher by whatever the owner's own
+selling costs turn out to be, and the report must say "at least". Same treatment as the SunScout
+obstruction model (D-019), which reports a floor on shade rather than assuming unknown building
+heights.
 
 Rules this figure is presented under:
 
@@ -279,6 +284,8 @@ Rules this figure is presented under:
   demanding hundreds of thousands in contributions; the rate alone would mislead.
 - **No achievability claim.** There is no local appreciation series connected (D-058), so the
   report states the required rate and stops.
+- **Always presented as a minimum**, with the exclusion of selling costs stated, never as an
+  exact break-even.
 - **Today's rent and costs, held flat.** No rent growth, expense growth, vacancy, capital work
   or renewal shock, and no credit for what the cash could have earned elsewhere. It is a
   break-even, not a return, and must not be presented as a forecast.

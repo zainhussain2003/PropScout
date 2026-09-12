@@ -512,16 +512,17 @@ def test_matrix_regression_approved_cells():
 
 def test_vaughan_break_even_appreciation() -> None:
     """
-    Vaughan break-even growth: ~2.99% at 5yr, ~1.98% at 10yr, ~1.01% at 20yr.
+    Vaughan break-even growth: ~1.91% at 5yr, ~1.45% at 10yr, ~0.75% at 20yr.
 
     These are exact known values for the calibration property at its calibrated
-    −$2,126.82/mo cash flow. They encode the product claim that a long hold can
-    absorb a monthly shortfall: the same property needs three times the annual
-    growth over five years that it needs over twenty.
+    −$2,126.82/mo cash flow, and they EXCLUDE the costs of selling (commission
+    is not a published rate), so each one is a floor. They encode the product
+    claim that a long hold can absorb a monthly shortfall: the same property
+    needs well over twice the annual growth over five years that it needs over
+    twenty.
 
-    If this fails, the arithmetic or the selling-cost constants changed — not
-    the property. Update the constants deliberately and re-derive, never edit
-    the expected values to match new output.
+    If this fails, the arithmetic changed — not the property. Re-derive
+    deliberately; never edit the expected values to match new output.
     """
     maintenance_rate = get_maintenance_rate(VAUGHAN["year_built"])
     principal = VAUGHAN["price"] * (1 - DOWN_PCT)
@@ -547,9 +548,9 @@ def test_vaughan_break_even_appreciation() -> None:
     )
     by_year = {row["year"]: row for row in rows}
 
-    assert abs(by_year[5]["break_even_annual_rate"] - 0.0299) < 0.0005
-    assert abs(by_year[10]["break_even_annual_rate"] - 0.0198) < 0.0005
-    assert abs(by_year[20]["break_even_annual_rate"] - 0.0101) < 0.0005
+    assert abs(by_year[5]["break_even_annual_rate"] - 0.0191) < 0.0005
+    assert abs(by_year[10]["break_even_annual_rate"] - 0.0145) < 0.0005
+    assert abs(by_year[20]["break_even_annual_rate"] - 0.0075) < 0.0005
 
     # Cash actually required over a 20-year hold — the figure the report must
     # show beside the growth rate, so a reader sees the liquidity demand and

@@ -775,8 +775,12 @@ def test_analysis_returns_break_even_appreciation() -> None:
     assert [row["year"] for row in hold_case] == [5, 10, 20]
 
     rates = [row["break_even_annual_rate"] for row in hold_case]
-    assert all(rate > 0 for rate in rates), f"Expected positive required growth: {rates}"
-    assert rates[0] > rates[1] > rates[2], f"Required growth should fall with hold: {rates}"
+    assert all(
+        rate > 0 for rate in rates
+    ), f"Expected positive required growth: {rates}"
+    assert (
+        rates[0] > rates[1] > rates[2]
+    ), f"Required growth should fall with hold: {rates}"
 
     # The cumulative contribution must reconcile with the cash flow reported
     # beside it; a mismatch would mean the two describe different scenarios.

@@ -9,9 +9,22 @@ Deliberately NOT part of the deal score. Appreciation is a scenario input, not
 an earned point (spec §10 and docs/DECISIONS.md D-037: the backend is the sole
 authority for the score, and the score must be reproducible from property and
 financing inputs alone). This module only reports what the arithmetic requires.
+
+SELLING COSTS ARE EXCLUDED, AND THAT MAKES THE RESULT A FLOOR. Realtor
+commission is not a regulated or published rate in Ontario — the commonly
+quoted 5% is a negotiable convention — and sale-side legal fees are not
+published either. Rather than invent a figure that materially moves the answer,
+the model stops at the mortgage discharge and reports the growth needed to
+return the cash BEFORE the costs of selling. The real break-even is higher by
+whatever the owner's own selling costs turn out to be. Every caller must label
+it that way; an unlabelled figure would understate the bar, which is the
+direction that flatters a deal.
+
+Same treatment as the SunScout obstruction model (D-019), which reports "a floor
+on how much shade there is, not a ceiling" rather than assuming heights for
+buildings whose heights are unknown.
 """
 
-from constants.rates import REALTOR_COMMISSION, SALE_LEGAL_FEES
 from .closing_costs import estimate_closing_costs
 from .mortgage import calculate_amortization_schedule
 
@@ -24,23 +37,21 @@ def calculate_break_even_appreciation(
     monthly_cash_flow: float,
     is_toronto: bool = False,
     snapshot_years: tuple[int, ...] = (5, 10, 20),
-    commission_rate: float = REALTOR_COMMISSION,
-    sale_legal_fees: float = SALE_LEGAL_FEES,
 ) -> list[dict[str, float]]:
     """
-    Annual price growth required to return every dollar the hold consumes.
+    Minimum annual price growth needed to return the cash a hold consumes.
 
-    Break-even is defined as recovering all cash put in, not as a profit:
+    Break-even is defined as recovering all cash put in, not as a profit, and
+    excludes the costs of selling (see the module docstring — those are not
+    published figures, so the result is a floor):
 
         cash in  = down payment + purchase closing costs
                    + cumulative monthly shortfall over the hold
-        cash out = sale price - commission - sale legal fees - mortgage balance
+        cash out = sale price - remaining mortgage balance
 
-    Setting them equal and solving for the sale price is closed-form, because
-    commission is a fraction of that same price:
+    Setting them equal gives the sale price directly:
 
-        sale price = (cash in + sale legal fees + mortgage balance)
-                     / (1 - commission rate)
+        sale price = cash in + mortgage balance
 
     The required rate then follows from compounding:
 
@@ -50,12 +61,15 @@ def calculate_break_even_appreciation(
     year and still return the cash invested, which is what a positive-cash-flow
     property with meaningful paydown looks like.
 
-    LIMIT, and the reason the figure is labelled "at today's rent and costs" in
-    the report: `monthly_cash_flow` is held constant for the whole hold. Rent
-    growth, expense growth, vacancy events, capital work and renewal-rate shocks
-    are not modelled. Modelling them is the hold-case engine proposed in
-    docs/product-audit/INVESTOR_METHOD_RESEARCH.md; this function is the
-    deterministic first slice of it and must not be presented as a forecast.
+    Two further limits, both of which mean this is arithmetic and not a forecast:
+
+    - `monthly_cash_flow` is held constant for the whole hold. Rent growth,
+      expense growth, vacancy events, capital work and renewal-rate shocks are
+      not modelled. Modelling them is the hold-case engine proposed in
+      docs/product-audit/INVESTOR_METHOD_RESEARCH.md; this is its first
+      deterministic slice.
+    - No return is credited on the cash while it is committed, and the equity is
+      illiquid until sale. Breaking even is not a return.
 
     Args:
         purchase_price: Total purchase price in dollars.
@@ -71,8 +85,6 @@ def calculate_break_even_appreciation(
             the purchase closing costs that must be recovered).
         snapshot_years: Hold periods to evaluate. Defaults to the same 5/10/20
             the equity chart uses, so the two read against each other.
-        commission_rate: Total selling commission as a decimal of sale price.
-        sale_legal_fees: Flat legal cost on the sale side in dollars.
 
     Returns:
         List of dicts, one per snapshot year, each containing:
@@ -83,13 +95,13 @@ def calculate_break_even_appreciation(
             total_cash_in (float): cash_invested + cumulative_contribution.
             mortgage_balance (float): Principal still owed at the end of the hold.
             principal_repaid (float): Principal retired over the hold.
-            break_even_sale_price (float): Sale price returning total_cash_in.
-            break_even_annual_rate (float): Required annual growth as a decimal
-                (e.g. 0.042 = 4.2%); may be negative.
+            break_even_sale_price (float): Sale price returning total_cash_in,
+                before the costs of selling.
+            break_even_annual_rate (float): Minimum required annual growth as a
+                decimal (e.g. 0.042 = 4.2%); may be negative.
 
     Raises:
-        ValueError: If purchase_price is not positive, or commission_rate is not
-            below 1.0 (at 100% commission no sale price can ever return cash).
+        ValueError: If purchase_price is not positive.
 
     Example:
         >>> rows = calculate_break_even_appreciation(
@@ -104,8 +116,6 @@ def calculate_break_even_appreciation(
     """
     if purchase_price <= 0:
         raise ValueError("Purchase price must be greater than zero")
-    if commission_rate >= 1.0:
-        raise ValueError("Commission rate must be below 1.0")
 
     principal = purchase_price * (1 - down_payment_pct)
     down_payment = purchase_price * down_payment_pct
@@ -141,9 +151,7 @@ def calculate_break_even_appreciation(
         cumulative_contribution = monthly_contribution * 12 * year
         total_cash_in = cash_invested + cumulative_contribution
 
-        break_even_sale_price = (
-            total_cash_in + sale_legal_fees + remaining_balance
-        ) / (1 - commission_rate)
+        break_even_sale_price = total_cash_in + remaining_balance
         break_even_annual_rate = (break_even_sale_price / purchase_price) ** (
             1 / year
         ) - 1

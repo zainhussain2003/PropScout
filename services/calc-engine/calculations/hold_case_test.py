@@ -2,7 +2,6 @@
 
 import pytest
 
-from constants.rates import REALTOR_COMMISSION, SALE_LEGAL_FEES
 from .closing_costs import estimate_closing_costs
 from .hold_case import calculate_break_even_appreciation
 from .mortgage import calculate_amortization_schedule
@@ -44,7 +43,9 @@ def test_break_even_rate_derived_independently() -> None:
     schedule = calculate_amortization_schedule(principal, 0.0479, 25)
     balance = next(e["balance"] for e in schedule if int(e["year"]) == year)
 
-    expected_price = (cash_in + SALE_LEGAL_FEES + balance) / (1 - REALTOR_COMMISSION)
+    # Selling costs are excluded on purpose — commission is not a published
+    # rate, so the figure is a floor (see the module docstring).
+    expected_price = cash_in + balance
     expected_rate = (expected_price / 729_900.0) ** (1 / year) - 1
 
     assert row["total_cash_in"] == pytest.approx(cash_in, abs=0.01)
@@ -56,14 +57,11 @@ def test_break_even_rate_derived_independently() -> None:
 def test_break_even_price_actually_returns_the_cash() -> None:
     """
     The definition, checked as a round trip: selling at the break-even price
-    must leave exactly the cash that went in — no profit, no loss.
+    must leave exactly the cash that went in — no profit, no loss, and before
+    any cost of selling.
     """
     for row in _rows():
-        proceeds = (
-            row["break_even_sale_price"] * (1 - REALTOR_COMMISSION)
-            - SALE_LEGAL_FEES
-            - row["mortgage_balance"]
-        )
+        proceeds = row["break_even_sale_price"] - row["mortgage_balance"]
         assert proceeds == pytest.approx(row["total_cash_in"], abs=0.02)
 
 
@@ -134,12 +132,17 @@ def test_toronto_closing_costs_raise_the_bar() -> None:
         assert t["break_even_annual_rate"] > o["break_even_annual_rate"]
 
 
-def test_higher_commission_raises_the_bar() -> None:
-    """The sensitivity that makes REALTOR_COMMISSION a real assumption."""
-    low = _rows(commission_rate=0.03)
-    high = _rows(commission_rate=0.06)
-    for lo, hi in zip(low, high):
-        assert hi["break_even_annual_rate"] > lo["break_even_annual_rate"]
+def test_result_is_a_floor_excluding_selling_costs() -> None:
+    """
+    The reported break-even price is exactly cash in plus the balance — nothing
+    is deducted for commission or sale legal fees, because neither is a
+    published figure. Any real sale costs money, so the true break-even is
+    strictly higher and this must be presented as a minimum.
+    """
+    for row in _rows():
+        assert row["break_even_sale_price"] == pytest.approx(
+            row["total_cash_in"] + row["mortgage_balance"], abs=0.02
+        )
 
 
 def test_rejects_non_positive_price() -> None:
@@ -147,7 +150,14 @@ def test_rejects_non_positive_price() -> None:
         _rows(purchase_price=0.0)
 
 
-def test_rejects_commission_of_one_or_more() -> None:
-    """At 100% commission no sale price returns cash; the division would blow up."""
-    with pytest.raises(ValueError, match="Commission rate"):
-        _rows(commission_rate=1.0)
+def test_takes_no_selling_cost_parameters() -> None:
+    """
+    There is no commission or sale-fee knob, by design: an unsourced default
+    would move the answer materially, and an optional parameter invites one to
+    be supplied without the report saying so. Selling costs stay out until a
+    confirmed figure exists.
+    """
+    import inspect
+
+    params = set(inspect.signature(calculate_break_even_appreciation).parameters)
+    assert not params & {"commission_rate", "sale_legal_fees", "selling_costs"}

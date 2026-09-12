@@ -13,8 +13,8 @@ const SHORTFALL_ROWS: HoldCaseRow[] = [
     totalCashIn: 287_062,
     mortgageBalance: 515_091,
     principalRepaid: 68_829,
-    breakEvenSalePrice: 845_635,
-    breakEvenAnnualRate: 0.0299,
+    breakEvenSalePrice: 802_153,
+    breakEvenAnnualRate: 0.0191,
   },
   {
     year: 20,
@@ -23,22 +23,22 @@ const SHORTFALL_ROWS: HoldCaseRow[] = [
     totalCashIn: 669_890,
     mortgageBalance: 177_387,
     principalRepaid: 406_533,
-    breakEvenSalePrice: 893_133,
-    breakEvenAnnualRate: 0.0101,
+    breakEvenSalePrice: 847_276,
+    breakEvenAnnualRate: 0.0075,
   },
 ]
 
 describe('BreakEvenAppreciation', () => {
   it('shows the required growth rate for each hold period', () => {
     render(<BreakEvenAppreciation holdCase={SHORTFALL_ROWS} cashFlowMonthly={-2_126.82} />)
-    expect(screen.getByText('3.0%')).toBeInTheDocument()
-    expect(screen.getByText('1.0%')).toBeInTheDocument()
+    expect(screen.getByText('1.9%')).toBeInTheDocument()
+    expect(screen.getByText('0.8%')).toBeInTheDocument()
     expect(screen.getByText(/If you hold 5 years/)).toBeInTheDocument()
     expect(screen.getByText(/If you hold 20 years/)).toBeInTheDocument()
   })
 
   it('shows the cash required beside every rate', () => {
-    // The load-bearing rule: 1.0% a year reads as "fine" until you see that it
+    // The load-bearing rule: 0.8% a year reads as "fine" until you see that it
     // takes $669,890 to get there. A rate must never appear on its own.
     render(<BreakEvenAppreciation holdCase={SHORTFALL_ROWS} cashFlowMonthly={-2_126.82} />)
     expect(screen.getByText('$669,890')).toBeInTheDocument()
@@ -70,9 +70,23 @@ describe('BreakEvenAppreciation', () => {
     expect(text).toMatch(/can.t tell you whether these growth rates are\s+realistic/i)
   })
 
-  it('says break-even is not a return', () => {
+  it('says getting even is not a return', () => {
     render(<BreakEvenAppreciation holdCase={SHORTFALL_ROWS} cashFlowMonthly={-2_126.82} />)
-    expect(screen.getByText(/getting your money back, not earning a return/)).toBeInTheDocument()
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/not the same as earning a return/i)
+  })
+
+  it('presents every rate as a minimum and says selling costs are excluded', () => {
+    // Selling costs are left out because commission is negotiated, not
+    // published. An unlabelled figure would understate the bar — the direction
+    // that flatters a deal — so the page must say so in both places.
+    render(<BreakEvenAppreciation holdCase={SHORTFALL_ROWS} cashFlowMonthly={-2_126.82} />)
+    expect(screen.getAllByText('a year, at least')).toHaveLength(SHORTFALL_ROWS.length)
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/These are minimums, and your real figure is higher/i)
+    expect(text).toMatch(/commission is\s+negotiated rather than published/i)
+    // And it must not claim a commission figure of its own.
+    expect(text).not.toMatch(/\b5%\s*(selling\s*)?commission\b/i)
   })
 
   it('renders nothing when the calc engine returned no hold case', () => {
