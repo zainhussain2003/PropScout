@@ -18,12 +18,31 @@ interface LandlordRentPositioningSectionProps {
   property: LandlordProperty
   askingRent: number
   onRentChange: (rent: number) => void
-  positioning: RentPositioning
-  comps: LandlordRentComps
+  /** Null when there are no comparables to position against. */
+  positioning: RentPositioning | null
+  /** Null when the analysis returned no comparable rentals. */
+  comps: LandlordRentComps | null
+  /**
+   * Where the range came from, for the label — e.g. "8 comparable rentals
+   * within 5 km". Absent on the demo route, whose fixture has no provenance.
+   */
+  compsSource?: string
 }
 
-const SLIDER_MIN = 2500
-const SLIDER_MAX = 3800
+/**
+ * Slider bounds follow the comparable range rather than fixed dollars. The
+ * previous constants were 2,500–3,800 — the demo condo's neighbourhood — so a
+ * real $1,800 basement or $5,500 house could not even be represented on it.
+ * Generous margins either side so the user can explore beyond the comps.
+ */
+function sliderBounds(comps: LandlordRentComps, askingRent: number): { min: number; max: number } {
+  const lo = Math.min(comps.buildingP25, askingRent)
+  const hi = Math.max(comps.buildingP75, askingRent)
+  return {
+    min: Math.max(0, Math.floor((lo * 0.6) / 50) * 50),
+    max: Math.ceil((hi * 1.5) / 50) * 50,
+  }
+}
 
 export function LandlordRentPositioningSection({
   property,
@@ -31,7 +50,39 @@ export function LandlordRentPositioningSection({
   onRentChange,
   positioning,
   comps,
+  compsSource,
 }: LandlordRentPositioningSectionProps): JSX.Element {
+  // No comparables: say so and stop. Positioning a rent against a range that
+  // does not exist would be the fabrication the rest of the report avoids
+  // (D-052 — an empty result is not an absent source, and this is absent).
+  if (comps == null || positioning == null) {
+    return (
+      <section className="container tr-section" data-section="01">
+        <SectionHead
+          n="01"
+          topic="Rent positioning"
+          question={
+            <>
+              Is your rent <em>where the market is</em>?
+            </>
+          }
+          verdict="No comparables"
+          tone="caution"
+        />
+        <div className="card col" style={{ padding: 28, gap: 8 }}>
+          <p style={{ fontSize: 15, color: 'var(--ink)', margin: 0 }}>
+            We couldn&rsquo;t find comparable rentals for this address.
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, maxWidth: '64ch' }}>
+            Rent positioning needs a local range to compare against, and none of our nightly sources
+            returned one here. Your asking rent of {fmtMoney(askingRent)} is shown as entered, not
+            judged.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
   const positioningColor =
     positioning.tone === 'pass'
       ? 'var(--pass)'
@@ -42,8 +93,10 @@ export function LandlordRentPositioningSection({
   const toneLabel = (tone: 'pass' | 'caution' | 'fail'): string =>
     tone === 'pass' ? 'var(--pass)' : tone === 'caution' ? 'var(--caution)' : 'var(--fail)'
 
+  const bounds = sliderBounds(comps, askingRent)
+
   return (
-    <section className="container tr-section">
+    <section className="container tr-section" data-section="01">
       <SectionHead
         n="01"
         topic="Rent positioning"
@@ -103,8 +156,8 @@ export function LandlordRentPositioningSection({
           <input
             type="range"
             className="scout-slider"
-            min={SLIDER_MIN}
-            max={SLIDER_MAX}
+            min={bounds.min}
+            max={bounds.max}
             step={25}
             value={askingRent}
             onChange={(e) => onRentChange(parseFloat(e.target.value))}
@@ -114,10 +167,10 @@ export function LandlordRentPositioningSection({
           {/* Slider endpoints */}
           <div className="row" style={{ justifyContent: 'space-between', marginTop: -8 }}>
             <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
-              ${SLIDER_MIN.toLocaleString()}
+              ${bounds.min.toLocaleString()}
             </span>
             <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
-              ${SLIDER_MAX.toLocaleString()}
+              ${bounds.max.toLocaleString()}
             </span>
           </div>
 
@@ -147,9 +200,12 @@ export function LandlordRentPositioningSection({
           </div>
         </div>
 
-        {/* RIGHT — live building listings */}
-        <div className="card col" style={{ padding: 24, gap: 14 }}>
-          <div className="row" style={{ justifyContent: 'space-between' }}>
+        {/* RIGHT — individual listings, when a source supplies them.
+            The API returns only the aggregate today, so on a live report this
+            is an absent-source state and NOT "0 units" under a "live" label —
+            that heading with fixture rows beneath it was the audit's L-02. */}
+        {comps.liveListings.length === 0 ? (
+          <div className="card col" style={{ padding: 24, gap: 10 }}>
             <span
               className="mono"
               style={{
@@ -159,55 +215,80 @@ export function LandlordRentPositioningSection({
                 color: 'var(--muted)',
               }}
             >
-              Your building · live
+              Individual listings
             </span>
-            <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-              {comps.liveListings.length} units
-            </span>
+            <p style={{ fontSize: 14, color: 'var(--ink)', margin: 0 }}>
+              Not available for this address yet.
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+              The range on the left is built from{' '}
+              {compsSource ?? 'comparable asking rents in the area'}. The individual listings behind
+              it aren&rsquo;t returned yet, so there is nothing to list here — we won&rsquo;t show
+              placeholder units.
+            </p>
           </div>
-
-          <div className="col">
-            {comps.liveListings.map((l, i, arr) => (
-              <div
-                key={l.unit}
+        ) : (
+          <div className="card col" style={{ padding: 24, gap: 14 }}>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span
+                className="mono"
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  padding: '12px 0',
-                  borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
-                  alignItems: 'center',
-                  gap: 12,
+                  fontSize: 10,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
                 }}
               >
-                <div className="col" style={{ gap: 2 }}>
-                  <span style={{ fontSize: 14, fontWeight: 500 }}>
-                    {l.unit}
-                    <span
-                      style={{
-                        color: 'var(--muted)',
-                        fontWeight: 400,
-                        marginLeft: 8,
-                      }}
-                    >
-                      · {l.beds}
+                Your building · live
+              </span>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                {comps.liveListings.length} units
+              </span>
+            </div>
+
+            <div className="col">
+              {comps.liveListings.map((l, i, arr) => (
+                <div
+                  key={l.unit}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    padding: '12px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <div className="col" style={{ gap: 2 }}>
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>
+                      {l.unit}
+                      <span
+                        style={{
+                          color: 'var(--muted)',
+                          fontWeight: 400,
+                          marginLeft: 8,
+                        }}
+                      >
+                        · {l.beds}
+                      </span>
                     </span>
-                  </span>
-                  <span className="mono" style={{ fontSize: 11, color: toneLabel(l.tone) }}>
-                    {l.status}
-                  </span>
+                    <span className="mono" style={{ fontSize: 11, color: toneLabel(l.tone) }}>
+                      {l.status}
+                    </span>
+                  </div>
+                  <div className="col" style={{ alignItems: 'flex-end', gap: 2 }}>
+                    <span className="serif tabular" style={{ fontSize: 16, lineHeight: 1 }}>
+                      {fmtMoney(l.askedAt)}
+                    </span>
+                    <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                      {l.sqft} sqft
+                    </span>
+                  </div>
                 </div>
-                <div className="col" style={{ alignItems: 'flex-end', gap: 2 }}>
-                  <span className="serif tabular" style={{ fontSize: 16, lineHeight: 1 }}>
-                    {fmtMoney(l.askedAt)}
-                  </span>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    {l.sqft} sqft
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Methodology footnote */}
@@ -219,10 +300,21 @@ export function LandlordRentPositioningSection({
           maxWidth: 720,
         }}
       >
-        Every number on this page moves with the slider above. The range comes from the last 60 days
-        of <span className="tabular">{property.compCount}</span> verified rentals in this building —
-        a quarter asked less than the lower end, a quarter asked more than the upper end.
-        Confidence: {property.compConfidence}.
+        Every number on this page moves with the slider above.{' '}
+        {compsSource != null ? (
+          <>
+            The range comes from {compsSource} — asking rents, not signed leases — with a quarter
+            below the lower end and a quarter above the upper end. Confidence:{' '}
+            {property.compConfidence}.
+          </>
+        ) : (
+          <>
+            The range comes from the last 60 days of{' '}
+            <span className="tabular">{property.compCount}</span> verified rentals in this building
+            — a quarter asked less than the lower end, a quarter asked more than the upper end.
+            Confidence: {property.compConfidence}.
+          </>
+        )}
       </p>
     </section>
   )

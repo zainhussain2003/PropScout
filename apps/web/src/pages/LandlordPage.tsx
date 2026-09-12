@@ -56,7 +56,12 @@ import {
 } from '../lib/investorCalc'
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
-import { shimToListingData, shimToNeighbourhood, shimToLandlordProperty } from '../lib/reportShims'
+import {
+  shimToListingData,
+  shimToNeighbourhood,
+  shimToLandlordProperty,
+  shimToLandlordRentComps,
+} from '../lib/reportShims'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
@@ -296,6 +301,31 @@ interface LandlordPageProps {
   listing?: Listing | null
 }
 
+/**
+ * Initial financing for a live report — the analysis's own down payment, rate
+ * and amortization, and the listing's real municipality. Mirrors
+ * ReportPage.toFinancingInputs; kept local so the demo route's fixture default
+ * stays the only place LL_DEFAULT_FINANCING is read.
+ */
+function liveFinancingInputs(analysis: Analysis, listing: Listing): FinancingInputs {
+  const m = analysis.metrics
+  const price = listing.price ?? 0
+  const downPaymentPct =
+    m?.downPayment != null && price > 0
+      ? m.downPayment / price
+      : LL_DEFAULT_FINANCING.downPaymentPct
+  const isToronto =
+    listing.city.toLowerCase().includes('toronto') ||
+    listing.postalCode.toUpperCase().startsWith('M')
+  return {
+    ...LL_DEFAULT_FINANCING,
+    downPaymentPct,
+    mortgageRate: m?.mortgageRate ?? LL_DEFAULT_FINANCING.mortgageRate,
+    amortizationYears: m?.amortizationYears ?? LL_DEFAULT_FINANCING.amortizationYears,
+    isToronto,
+  }
+}
+
 export function LandlordPage({
   tier = 'pro',
   analysis: realAnalysis,
@@ -308,7 +338,13 @@ export function LandlordPage({
   const [showSignIn, setShowSignIn] = useState(false)
 
   const [askingRent, setAskingRent] = useState(realListing?.rentMonthly ?? LL_PROPERTY.askingRent)
-  const [financing, setFinancing] = useState<FinancingInputs>(LL_DEFAULT_FINANCING)
+  // Live financing starts from what the analysis actually used, not the demo
+  // fixture — LL_DEFAULT_FINANCING carries isToronto: true, a 3.49% rate and
+  // 30% down, which would stack Toronto MLTT onto a Vaughan listing and price
+  // its mortgage at a rate the analysis never saw.
+  const [financing, setFinancing] = useState<FinancingInputs>(() =>
+    isReal ? liveFinancingInputs(realAnalysis!, realListing!) : LL_DEFAULT_FINANCING
+  )
 
   // Real property shape for hero/verdict — shimmed when live, fixture when demo
   const property = useMemo(
@@ -381,8 +417,29 @@ export function LandlordPage({
     [realAnalysis?.dealScore, metrics]
   )
 
-  // Rent positioning (updates live with slider)
-  const positioning = useMemo(() => computeRentPositioning(askingRent, LL_RENT_COMPS), [askingRent])
+  // Comparables: the API's aggregate when live, the fixture only on the demo
+  // route. Reading LL_RENT_COMPS unconditionally was the audit's L-02 — eight
+  // invented Harbour Street units under a "Your building · live" heading, for
+  // whatever property the user actually analysed.
+  const comps = useMemo(
+    () => (isReal ? shimToLandlordRentComps(realAnalysis!) : LL_RENT_COMPS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isReal, realAnalysis?.rentalComps]
+  )
+  const compsSource = useMemo(() => {
+    const rc = realAnalysis?.rentalComps
+    if (!isReal || rc == null) return undefined
+    const where =
+      rc.radiusKm != null ? `within ${rc.radiusKm} km` : `in the ${rc.postalCode} postal area`
+    return `${rc.compCount} comparable rental${rc.compCount === 1 ? '' : 's'} ${where}`
+  }, [isReal, realAnalysis?.rentalComps])
+
+  // Rent positioning (updates live with slider); null when there is nothing to
+  // position against.
+  const positioning = useMemo(
+    () => (comps ? computeRentPositioning(askingRent, comps) : null),
+    [askingRent, comps]
+  )
 
   const activeRiskFlags = isReal ? property.riskFlags : LL_PROPERTY.riskFlags
   const redFlags = activeRiskFlags.filter((f) => f.tone === 'red')
@@ -445,6 +502,8 @@ export function LandlordPage({
           askingRent={askingRent}
           positioning={positioning}
           metrics={metrics}
+          narrative={isReal ? (realAnalysis?.narrative ?? null) : null}
+          demo={!isReal}
         />
       )}
 
@@ -454,7 +513,8 @@ export function LandlordPage({
         askingRent={askingRent}
         onRentChange={setAskingRent}
         positioning={positioning}
-        comps={LL_RENT_COMPS}
+        comps={comps}
+        compsSource={compsSource}
       />
 
       {/* §02 Investment metrics */}

@@ -2569,3 +2569,56 @@ correctness fix. Deliberately out of scope; noted rather than silently skipped.
 **Known limit.** Existing analyses have no snapshot and keep the old behaviour — there is no
 backfill, because the data to snapshot retrospectively is exactly the data that was overwritten.
 They degrade to the current join, which is the best answer that still exists for them.
+
+### D-070 · The landlord page renders no fixture when given a real analysis
+
+**Chosen.** `LandlordPage` keeps its demo route unchanged, but every path that showed Harbour
+Street data regardless of props is now driven by the analysis it is given: rent positioning comes
+from `analysis.rentalComps` (via `shimToLandlordRentComps`), the slider bounds derive from that
+range instead of a fixed $2,500–$3,800, the "individual listings" card says the listings are not
+available rather than listing eight invented units under "Your building · live", the verdict hero
+renders the analysis narrative — or, when there is none, a fallback built from the property's own
+numbers — and the Harbour Street prose is gated behind an explicit `demo` prop. Live financing
+inputs are derived from the analysis (real `isToronto`, rate and amortization) instead of the
+demo's Toronto/3.49%/30%-down defaults. When the analysis has no comparables, the section says
+so and the hero has no gap line.
+
+Separately, `MiniMap`'s SVG placeholder no longer scatters five invented rents around the
+subject pin. Every live report without coordinates or a Mapbox token was showing "$2,850 …
+$3,200" comps that never existed; the placeholder now shows only the pins it is given.
+
+**Why.** Audit L-02: the page's props permitted real data but three things read the fixture
+unconditionally, so routing live landlord traffic to it would have promoted a latent P2 to a live
+P1 — a real property's report naming two units in a building it is not in, at rents no one
+measured. The audit's own remedy was "remove fixture dependencies before, or atomically with,
+routing". This is the "before".
+
+**What this deliberately does not do: route live landlord traffic here (L-01).** Two reasons.
+
+1. **L-03 is an open owner decision.** The backend computes the investor acquisition score for
+   every mode. A landlord who already owns the unit is not underwriting a purchase; "cash to
+   close", "OSFI stress test" and "land transfer tax" are the wrong questions, and the 76/100 is
+   an acquisition verdict wearing a landlord label. Routing before that is decided would trade a
+   report that is honestly the investor view for one that looks landlord-specific and is not.
+2. **`LandlordPage` lacks the plumbing the live investor path has gained since it was built** —
+   break-even appreciation (D-062), owner-only flag overrides (D-065), NOI/management-fee
+   reconciliation (D-067) and the D-054/D-055 slider recomputation contract. Routing would
+   regress those for landlord users on the same day it fixed L-01.
+
+So the page is now safe to route; whether to route it, and what a landlord score means, are put
+in front of the owner rather than decided in a fixture-removal change.
+
+**Alternatives considered**
+
+| Option                                                   | Why not                                                                                                                                         |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route live landlord traffic in the same change           | Above — L-03 undecided, and the page would lose D-062/D-065/D-067 behaviour the investor branch already has.                                    |
+| Keep the fixture units as "illustrative" with a caption  | An eight-row table of addresses and rents reads as data whatever the caption says; the audit's complaint was exactly this.                      |
+| Keep the placeholder map's demo pins on demo routes only | Needs a flag threaded through `ListingVisual`, `PropertyHero` and both page heroes for five decorative labels in a map that says "placeholder". |
+| Synthesise `liveListings` from the P25/P50/P75 aggregate | Fabricates individual comps from a summary — the thing this change exists to stop.                                                              |
+| Delete the demo route                                    | It is the design-fidelity reference for the landlord report and the only place the section set can be reviewed end to end today.                |
+
+**Known limit.** With `rentalComps` present the positioning bar still labels its range "Lower
+end / Typical / Upper end" from a P25/P50/P75 the shim sets to low/mid/high — the analysis exposes
+a range, not percentiles, and the labels are a reading of that range rather than a claim of
+percentile precision.

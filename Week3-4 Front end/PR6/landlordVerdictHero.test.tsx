@@ -13,6 +13,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import type { ComponentProps } from 'react'
 import { LandlordVerdictHero } from '../../apps/web/src/components/landlord/LandlordVerdictHero'
 import {
   LL_PROPERTY,
@@ -68,13 +69,15 @@ const HARBOUR_POSITIONING = computeRentPositioning(ASKING_RENT, LL_RENT_COMPS)
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('LandlordVerdictHero', () => {
-  function renderHero() {
+  function renderHero(props: Partial<ComponentProps<typeof LandlordVerdictHero>> = {}) {
     return render(
       <LandlordVerdictHero
         property={LL_PROPERTY}
         askingRent={ASKING_RENT}
         positioning={HARBOUR_POSITIONING}
         metrics={HARBOUR_METRICS}
+        demo
+        {...props}
       />
     )
   }
@@ -141,5 +144,17 @@ describe('LandlordVerdictHero', () => {
     renderHero()
     expect(screen.getByText(/Two comparable 1\+1 units in your building/i)).toBeInTheDocument()
     expect(screen.getByText(/lost rent every day the unit sits empty/i)).toBeInTheDocument()
+  })
+
+  it('never renders the Harbour Street prose off the demo route', () => {
+    // A live report whose narrative did not generate is still a real
+    // property: it gets a fallback built from its own numbers, not two
+    // invented units at $3,050 and $3,100.
+    renderHero({ demo: false, narrative: null })
+    const text = document.body.textContent ?? ''
+    expect(text).not.toMatch(/Two comparable 1\+1 units/)
+    expect(text).not.toContain('$3,050')
+    expect(text).not.toContain('$3,150')
+    expect(text).toMatch(/lost rent every day the unit sits empty/)
   })
 })

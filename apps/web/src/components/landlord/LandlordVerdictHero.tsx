@@ -18,8 +18,31 @@ import { fmtMoney, fmtPct } from '../../lib/investorCalc'
 interface LandlordVerdictHeroProps {
   property: LandlordProperty
   askingRent: number
-  positioning: RentPositioning
+  /** Null when there are no comparables to position the rent against. */
+  positioning: RentPositioning | null
   metrics: ComputedInvestorMetrics
+  /**
+   * The analysis's own verdict prose (deterministic, D-043). When present it
+   * replaces the demo copy below entirely. The demo copy names two Harbour
+   * Street units, $3,050 and $3,100, and a $3,150 target — rendered for a real
+   * property it would be fabricated advice with invented figures.
+   */
+  narrative?: string | null
+  /**
+   * True only on the /landlord-report demo route. The Harbour Street prose
+   * renders solely when this is set; a live report whose narrative failed to
+   * generate gets a fallback built from its own numbers instead.
+   */
+  demo?: boolean
+}
+
+/** First sentence of a narrative, split on real sentence boundaries. */
+function splitNarrative(text: string): { head: string; rest: string } {
+  const parts = text
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .filter((p) => p.length > 0)
+  return { head: parts[0] ?? text, rest: parts.slice(1).join(' ') }
 }
 
 export function LandlordVerdictHero({
@@ -27,7 +50,11 @@ export function LandlordVerdictHero({
   askingRent,
   positioning,
   metrics,
+  narrative = null,
+  demo = false,
 }: LandlordVerdictHeroProps): JSX.Element {
+  const live = narrative != null && narrative.trim() !== ''
+  const split = live ? splitNarrative(narrative) : null
   const dailyVacancyCost = Math.round(askingRent / 30)
   const [expanded, setExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
@@ -121,12 +148,24 @@ export function LandlordVerdictHero({
             } as React.CSSProperties
           }
         >
-          You're{' '}
-          <span style={{ color: 'var(--accent)' }}>
-            {fmtMoney(Math.abs(positioning.gap), { decimals: 0 })}
-          </span>{' '}
-          above the building median, and {property.ownership.daysOnMarket} days on market is telling
-          you exactly what the tenants think of it.
+          {split != null ? (
+            split.head
+          ) : positioning == null ? (
+            <>
+              We couldn&rsquo;t find comparable rentals for this address, so there is no market
+              median to position your ask against.
+            </>
+          ) : (
+            <>
+              You&rsquo;re{' '}
+              <span style={{ color: 'var(--accent)' }}>
+                {fmtMoney(Math.abs(positioning.gap), { decimals: 0 })}
+              </span>{' '}
+              {positioning.gap >= 0 ? 'above' : 'below'} the building median, and{' '}
+              {property.ownership.daysOnMarket} days on market is telling you exactly what the
+              tenants think of it.
+            </>
+          )}
         </div>
 
         {/* Body */}
@@ -143,18 +182,43 @@ export function LandlordVerdictHero({
               zIndex: 1,
             }}
           >
-            Two comparable 1+1 units in your building rented inside 11 days at{' '}
-            <span className="tabular">$3,050</span> and <span className="tabular">$3,100</span>.
-            Dropping your ask to{' '}
-            <span style={{ color: 'var(--accent)' }} className="tabular">
-              $3,150
-            </span>{' '}
-            puts you at the top of the range and probably fills the unit inside two weeks. Holding
-            at <span className="tabular">${askingRent.toLocaleString()}</span> costs you roughly{' '}
-            <span style={{ color: 'var(--accent)' }} className="tabular">
-              {fmtMoney(dailyVacancyCost, { decimals: 0 })}
-            </span>{' '}
-            in lost rent every day the unit sits empty.
+            {split != null && split.rest !== '' ? (
+              split.rest
+            ) : !demo ? (
+              <>
+                {positioning != null && (
+                  <>
+                    Comparable rentals nearby sit around{' '}
+                    <span className="tabular">
+                      {fmtMoney(askingRent - positioning.gap, { decimals: 0 })}
+                    </span>
+                    .{' '}
+                  </>
+                )}
+                Holding at <span className="tabular">${askingRent.toLocaleString()}</span> costs you
+                roughly{' '}
+                <span style={{ color: 'var(--accent)' }} className="tabular">
+                  {fmtMoney(dailyVacancyCost, { decimals: 0 })}
+                </span>{' '}
+                in lost rent every day the unit sits empty.
+              </>
+            ) : (
+              <>
+                Two comparable 1+1 units in your building rented inside 11 days at{' '}
+                <span className="tabular">$3,050</span> and <span className="tabular">$3,100</span>.
+                Dropping your ask to{' '}
+                <span style={{ color: 'var(--accent)' }} className="tabular">
+                  $3,150
+                </span>{' '}
+                puts you at the top of the range and probably fills the unit inside two weeks.
+                Holding at <span className="tabular">${askingRent.toLocaleString()}</span> costs you
+                roughly{' '}
+                <span style={{ color: 'var(--accent)' }} className="tabular">
+                  {fmtMoney(dailyVacancyCost, { decimals: 0 })}
+                </span>{' '}
+                in lost rent every day the unit sits empty.
+              </>
+            )}
           </div>
         )}
 

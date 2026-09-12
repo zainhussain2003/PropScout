@@ -170,3 +170,131 @@ describe('LandlordPage — snapshot', () => {
     expect(document.querySelector('footer')).toBeTruthy()
   })
 })
+
+// ── Group: live mode must not leak demo fixtures ──────────────────────────────
+//
+// LandlordPage accepts real `analysis` + `listing` props, but three things
+// read the Harbour Street fixture regardless: rent positioning was computed
+// from LL_RENT_COMPS, the comp table rendered its eight invented units under
+// "Your building · live", and the verdict hero's prose named "$3,050 and
+// $3,100" and a "$3,150" target. The audit's L-02 said routing real traffic
+// here would activate a P1; these tests are what makes that safe.
+
+import type { Analysis } from '../../apps/web/src/types/analysis'
+import type { Listing } from '../../apps/web/src/types/property'
+
+const LIVE_LISTING: Listing = {
+  id: 'listing-live',
+  url: 'https://www.realtor.ca/real-estate/1/12-maple-st-vaughan',
+  listingType: 'for-rent',
+  address: '12 Maple St, Vaughan, ON L4K 5W4',
+  city: 'Vaughan',
+  province: 'ON',
+  postalCode: 'L4K5W4',
+  price: null,
+  rentMonthly: 2_150,
+  beds: 2,
+  baths: 1,
+  sqft: 800,
+  propertyType: 'condo',
+  yearBuilt: 2016,
+  parkingSpots: 1,
+  condoFeeMonthly: null,
+  condoFeeKnown: false,
+  annualTaxes: null,
+  photos: [],
+  description: null,
+  daysOnMarket: 12,
+}
+
+const LIVE_ANALYSIS: Analysis = {
+  id: 'analysis-live',
+  token: 'live-token',
+  mode: 'landlord',
+  createdAt: '2026-09-01T00:00:00.000Z',
+  metrics: null,
+  dealScore: null,
+  rentalComps: {
+    low: 1_950,
+    mid: 2_100,
+    high: 2_300,
+    compCount: 6,
+    confidence: 'medium',
+    postalCode: 'L4K',
+    radiusKm: 5,
+  },
+  riskFlags: [],
+  narrative:
+    'Your ask of $2,150 sits just above the typical $2,100 for comparable two-bedroom rentals nearby. ' +
+    'Six recent listings within 5 km set that range; holding a small premium is defensible while the unit shows well.',
+  walkScore: null,
+  neighbourhood: null,
+  hasSanityWarnings: false,
+}
+
+function renderLive(overrides: Partial<Analysis> = {}) {
+  return render(
+    <MemoryRouter>
+      <LandlordPage
+        tier="pro"
+        analysis={{ ...LIVE_ANALYSIS, ...overrides }}
+        listing={LIVE_LISTING}
+      />
+    </MemoryRouter>
+  )
+}
+
+describe('LandlordPage — live mode renders the real property, never the fixture', () => {
+  it('shows none of the fixture units or their prose', () => {
+    renderLive()
+    const text = document.body.textContent ?? ''
+    for (const fixture of ['#1208', '#2604', '#3416', '88 Harbour', '$3,050', '$3,100', '$3,150']) {
+      expect(text).not.toContain(fixture)
+    }
+    expect(text).not.toMatch(/Your building · live/)
+    expect(text).not.toMatch(/Two comparable 1\+1 units/)
+  })
+
+  it('positions the rent against the real comparable range', () => {
+    renderLive()
+    const text = document.body.textContent ?? ''
+    // The analysis's own aggregate, and its provenance — asking rents within
+    // a radius, not "verified rentals in this building".
+    expect(text).toContain('6 comparable rentals within 5 km')
+    expect(text).toMatch(/asking rents, not signed leases/)
+    expect(text).not.toMatch(/verified rentals in this building/)
+  })
+
+  it('says individual listings are unavailable rather than listing placeholder units', () => {
+    renderLive()
+    expect(screen.getByText(/Not available for this address yet/)).toBeInTheDocument()
+    expect(screen.queryByText(/units$/)).not.toBeInTheDocument()
+  })
+
+  it('renders the analysis narrative as the verdict, not the demo copy', () => {
+    renderLive()
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('Your ask of $2,150 sits just above the typical $2,100')
+    expect(text).toContain('Six recent listings within 5 km')
+  })
+
+  it('lets the slider reach the real rent instead of clamping to the demo range', () => {
+    const { container } = renderLive()
+    const slider = container.querySelector('input[type="range"]') as HTMLInputElement
+    // $2,150 was below the old hardcoded minimum of $2,500.
+    expect(Number(slider.min)).toBeLessThanOrEqual(2_150)
+    expect(Number(slider.max)).toBeGreaterThanOrEqual(2_300)
+    expect(Number(slider.value)).toBe(2_150)
+  })
+
+  it('states there are no comparables when the analysis returned none', () => {
+    renderLive({ rentalComps: null, narrative: null })
+    const text = document.body.textContent ?? ''
+    expect(screen.getAllByText(/No comparables/i).length).toBeGreaterThanOrEqual(1)
+    expect(text).toMatch(/couldn.t find comparable rentals/i)
+    // And no fixture range or units appear in its place.
+    for (const fixture of ['#1208', '$3,050', '$2,950', '$3,350']) {
+      expect(text).not.toContain(fixture)
+    }
+  })
+})
