@@ -1265,17 +1265,6 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             </span>
             .
           </p>
-          <div
-            class="row gap-12"
-            style="margin-top: 4px;"
-          >
-            <button
-              class="btn btn-ghost"
-              style="padding: 8px 12px; font-size: 12px;"
-            >
-              Adjust assumptions
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -194,9 +194,16 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
       high: Math.round(price * 1.05),
       askingVsMid: 0,
     },
-    defaultDownPct: FINANCING_DEFAULTS.DOWN_PAYMENT_PCT,
-    defaultRate: FINANCING_DEFAULTS.MORTGAGE_RATE,
-    defaultAmort: FINANCING_DEFAULTS.AMORTIZATION_YEARS,
+    // What the engine actually ran with, not the demo defaults. Seen live
+    // (2026-09-12): the analysis priced 12 Prado Court at the 4.45% Bank of
+    // Canada rate and the personal report's cost table said "4.79%" — the
+    // same disagreement D-074 fixed for the investor presets.
+    defaultDownPct:
+      analysis.metrics != null && price > 0
+        ? analysis.metrics.downPayment / price
+        : FINANCING_DEFAULTS.DOWN_PAYMENT_PCT,
+    defaultRate: analysis.metrics?.mortgageRate ?? FINANCING_DEFAULTS.MORTGAGE_RATE,
+    defaultAmort: analysis.metrics?.amortizationYears ?? FINANCING_DEFAULTS.AMORTIZATION_YEARS,
   }
 }
 
@@ -276,6 +283,7 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
     compConfidence: analysis.rentalComps?.confidence ?? 'low',
     market: { cmhcVacancy: 0.03, rentalDOM: 14, rentTrend: 'flat' },
     riskFlags: shimInvestorRiskFlags(analysis.riskFlags),
+    hasDescription: (listing.description ?? '').trim().length > 0,
     chips: buildInvestorChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
   }

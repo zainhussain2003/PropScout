@@ -82,6 +82,17 @@ import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { useTheme } from '../hooks/useTheme'
 
+/** Copy the report URL; the button shows "Link copied" for two seconds. */
+function useCopyLink(): { copied: boolean; copy: () => void } {
+  const [copied, setCopied] = useState(false)
+  const copy = (): void => {
+    void navigator.clipboard.writeText(window.location.href).catch(() => undefined)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return { copied, copy }
+}
+
 // ── Converts LandlordProperty to ListingData for shared investor components ───
 
 function toListing(property: LandlordProperty, currentRent: number): ListingData {
@@ -173,8 +184,9 @@ const LANDLORD_CHECKLIST = [
   { label: 'Confirm building rental ratio and verify CMHC vacancy allowance', critical: false },
 ] as const
 
-function LandlordChecklistSection(): JSX.Element {
+function LandlordChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
+  const share = useCopyLink()
   const [checked, setChecked] = useState<Set<number>>(new Set())
 
   const toggle = useCallback((i: number) => {
@@ -278,12 +290,12 @@ function LandlordChecklistSection(): JSX.Element {
               onClick={() => openUpgradeModal('pdf')}
             />
           ) : (
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={() => onPDF?.()}>
               <Icon name="doc" size={13} /> Export as PDF
             </button>
           )}
-          <button className="btn btn-ghost">
-            <Icon name="link" size={13} /> Share with tenant agent
+          <button className="btn btn-ghost" onClick={share.copy}>
+            <Icon name="link" size={13} /> {share.copied ? 'Link copied' : 'Share link'}
           </button>
         </div>
       </div>
@@ -659,7 +671,9 @@ export function LandlordPage({
         </div>
         {activeRiskFlags.length === 0 && (
           <p style={{ fontSize: 14, color: 'var(--muted)' }}>
-            No risk flags detected for this property.
+            {isReal && (realListing?.description ?? '').trim().length === 0
+              ? 'This property was entered by address, so there is no listing description to scan. Nothing here has been checked for risk language.'
+              : 'No risk language was found in the listing description. This wording scan is not an inspection or a clean bill of health.'}
           </p>
         )}
       </section>
@@ -693,7 +707,7 @@ export function LandlordPage({
       <STRPlaceholderSection listing={listing} />
 
       {/* §11 Landlord checklist */}
-      <LandlordChecklistSection />
+      <LandlordChecklistSection onPDF={pdf.exportPdf} />
 
       <Footer />
       <StickyActionBar

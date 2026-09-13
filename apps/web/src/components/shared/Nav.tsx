@@ -244,9 +244,9 @@ function AccountNav({
           >
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
           </button>
-          <button className="btn btn-ghost" style={{ padding: '10px 14px' }}>
+          <a className="btn btn-ghost" href="/#faq" style={{ padding: '10px 14px' }}>
             <Icon name="link" size={13} /> Help
-          </button>
+          </a>
           {/* User avatar pill */}
           <button
             className="row gap-10"

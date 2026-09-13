@@ -1121,10 +1121,16 @@ const RISK_FLAGS = [
 ]
 
 interface RisksSectionProps {
-  flags?: Array<{ severity: 'red' | 'amber'; label: string; evidence?: string | null }>
+  flags?: Array<{
+    severity: 'red' | 'amber'
+    label: string
+    evidence?: string | null
+  }>
+  /** False for an address-entered property: there is no text to scan. */
+  hasListingText?: boolean
 }
 
-function RisksSection({ flags }: RisksSectionProps): JSX.Element {
+function RisksSection({ flags, hasListingText = true }: RisksSectionProps): JSX.Element {
   // Real flags path: use API data. Demo path (flags undefined): use RISK_FLAGS fixture.
   if (flags !== undefined) {
     const redCount = flags.filter((f) => f.severity === 'red').length
@@ -1153,8 +1159,16 @@ function RisksSection({ flags }: RisksSectionProps): JSX.Element {
           {flags.length === 0 ? (
             <RiskRow
               tone="amber"
-              label="No risk language found in the listing text"
-              detail="A wording check only — not a clean bill of health. Ask the agent about as-is / remediation, water or flood history, and any past grow-op."
+              label={
+                hasListingText
+                  ? 'No risk language found in the listing text'
+                  : 'No listing text to check — entered by address'
+              }
+              detail={
+                hasListingText
+                  ? 'A wording check only — not a clean bill of health. Ask the agent about as-is / remediation, water or flood history, and any past grow-op.'
+                  : 'Nothing has been scanned for risk language. Ask the agent about as-is / remediation, water or flood history, and any past grow-op.'
+              }
             />
           ) : (
             // Render each flag at its TRUE severity (a critical red flag must not
@@ -1240,7 +1254,7 @@ const CHECKLIST_ITEMS = [
   { label: 'Walk the block at three different times of day', critical: false },
 ] as const
 
-function ChecklistSection(): JSX.Element {
+function ChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const [checked, setChecked] = useState<Set<number>>(new Set())
 
@@ -1344,7 +1358,7 @@ function ChecklistSection(): JSX.Element {
               onClick={() => openUpgradeModal('pdf')}
             />
           ) : (
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={() => onPDF?.()}>
               <Icon name="doc" size={13} /> Export checklist as PDF
             </button>
           )}
@@ -1621,8 +1635,11 @@ export function PersonalBuyerPage({
       ) : (
         <SunScoutSection />
       )}
-      <RisksSection flags={isReal ? realAnalysis!.riskFlags : undefined} />
-      <ChecklistSection />
+      <RisksSection
+        flags={isReal ? realAnalysis!.riskFlags : undefined}
+        hasListingText={isReal ? (realListing?.description ?? '').trim().length > 0 : true}
+      />
+      <ChecklistSection onPDF={pdf.exportPdf} />
       <ConversionSection city={isReal ? realListing!.city : 'Burlington'} />
 
       <Footer />

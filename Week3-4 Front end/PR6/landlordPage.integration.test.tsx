@@ -298,3 +298,33 @@ describe('LandlordPage — live mode renders the real property, never the fixtur
     }
   })
 })
+
+// ── No description is not a clean scan ────────────────────────────────────────
+//
+// Audit counter-review: "missing description, extraction failure and a clean
+// result need distinct states". An address-entered property has no listing
+// text; the investor/landlord flags section said "No risk language was found
+// in the listing description" — a scan that never happened (seen on every
+// address-path run on 2026-09-12).
+
+describe('Landlord risk flags — an address-entered property has nothing to scan', () => {
+  it('says there is no listing text instead of claiming a clean scan', () => {
+    renderLive({ riskFlags: [] })
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/no listing description to scan/i)
+    expect(text).not.toMatch(/No risk language was found/)
+  })
+
+  it('still reports a clean scan when there was text to scan', () => {
+    render(
+      <MemoryRouter>
+        <LandlordPage
+          tier="pro"
+          analysis={{ ...LIVE_ANALYSIS, riskFlags: [] }}
+          listing={{ ...LIVE_LISTING, description: 'Bright, quiet, well kept.' }}
+        />
+      </MemoryRouter>
+    )
+    expect(document.body.textContent ?? '').toMatch(/No risk language was found/)
+  })
+})
