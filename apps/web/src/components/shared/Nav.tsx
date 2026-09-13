@@ -7,10 +7,12 @@
 // Dark mode is controlled by data-theme on <html> — toggle by calling onToggleDark.
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from './Icon'
 import { Wordmark } from './Wordmark'
 import { LockedButton } from '../paywall/LockedButton'
 import { usePaywall } from '../paywall/PaywallContext'
+import { useAuth } from '../../hooks/useAuth'
 
 // ── Shared header shell ──────────────────────────────────────────
 
@@ -107,6 +109,12 @@ function ReportNav({
   addressSlug,
 }: ReportNavProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
+  // The nav used to show "Sign in" to everyone — including the signed-in
+  // owner looking at their own report (seen on the first signed-in production
+  // run, 2026-09-12) — and its "Share link" and "Save to account" buttons had
+  // no handler at all. A control that does nothing is a claim (D-059).
+  const { session } = useAuth()
+  const navigate = useNavigate()
   // Slug copy feedback — same 2-second revert pattern as NegotiationSection copy button.
   const [slugCopied, setSlugCopied] = useState(false)
 
@@ -161,25 +169,38 @@ function ReportNav({
           </button>
           {/* Share and Save are duplicated by StickyActionBar on mobile, and
               this row overflowed a 375px viewport. Hidden there, not removed. */}
-          <button className="btn btn-ghost nav-hide-sm" style={{ padding: '10px 14px' }}>
-            <Icon name="link" size={13} /> Share link
+          <button
+            className="btn btn-ghost nav-hide-sm"
+            onClick={handleSlugClick}
+            style={{ padding: '10px 14px' }}
+          >
+            <Icon name="link" size={13} /> {slugCopied ? 'Link copied' : 'Share link'}
           </button>
-          <button className="btn btn-ghost" onClick={onSignIn} style={{ padding: '10px 14px' }}>
-            Sign in
-          </button>
-          <span className="nav-hide-sm">
-            {tier === 'free' ? (
+          {session != null ? (
+            <button
+              className="btn btn-ghost"
+              onClick={() => navigate('/account')}
+              style={{ padding: '10px 14px' }}
+            >
+              Account
+            </button>
+          ) : (
+            <button className="btn btn-ghost" onClick={onSignIn} style={{ padding: '10px 14px' }}>
+              Sign in
+            </button>
+          )}
+          {/* Saving to an account is not a feature yet (D-064). Free tier
+              keeps the locked control, which opens the upgrade explanation;
+              paid tiers get no button rather than one that does nothing. */}
+          {tier === 'free' && (
+            <span className="nav-hide-sm">
               <LockedButton
                 label="Save"
                 icon="plus"
                 onClick={() => openUpgradeModal('portfolio')}
               />
-            ) : (
-              <button className="btn btn-primary" onClick={onSignIn}>
-                Save to account <Icon name="arrow" size={13} />
-              </button>
-            )}
-          </span>
+            </span>
+          )}
         </div>
       </div>
     </header>

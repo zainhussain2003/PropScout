@@ -102,7 +102,8 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             viewBox="0 0 24 24"
             width="13"
           />
-           Share link
+           
+          Share link
         </button>
         <button
           class="btn btn-ghost"
@@ -110,26 +111,6 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
         >
           Sign in
         </button>
-        <span
-          class="nav-hide-sm"
-        >
-          <button
-            class="btn btn-primary"
-          >
-            Save to account 
-            <svg
-              aria-hidden="true"
-              fill="none"
-              height="13"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.6"
-              viewBox="0 0 24 24"
-              width="13"
-            />
-          </button>
-        </span>
       </div>
     </div>
   </header>

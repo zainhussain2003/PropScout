@@ -2877,3 +2877,33 @@ maps rendered once the token variable was separated (D-075).
 
 **Open, operational:** `STRIPE_PRICE_PRO` (and the other tiers) must be set on the API's
 Railway environment before checkout can work; whether the key is live or test is the owner's call.
+
+### D-077 · Report chrome tells the truth about who is looking and what is happening
+
+**Chosen.** The report nav reads the session: a signed-in viewer gets **Account** (to
+`/account`), a visitor gets **Sign in**, and on the live report that button opens the sign-in
+modal instead of calling a no-op. "Share link" copies the URL and says so. Paid tiers get no
+"Save to account" button, because there is nothing to save to (D-064); the free tier keeps the
+locked control that explains the upgrade. The analyzing screen describes what the pipeline is
+_attempting_ — "Looking up rental comps for the area" — not what it has _achieved_, and its
+reassurance strip says three things that are true before the run finishes.
+
+**Why.** Two things from the production runs of 2026-09-12.
+
+The owner opened their own freshly-made report and the nav offered them **"Sign in"**; the
+`ReportPage` passed `onSignIn={() => undefined}`, so it did nothing when clicked, and "Share
+link" beside it had no handler at all. A control that does nothing is a claim (D-059), and a
+sign-in prompt to a signed-in person is a false one.
+
+The analyzing screen announced **"Fetched listing from Realtor.ca"** and **"Connecting to
+Realtor.ca…"** for a property typed in by address (audit J-09), **"Price confirmed"** and
+**"Comps pulled"** on a timer with no signal from the server, **"Rental comps verified"** for
+figures that are asking rents and may be absent, and **"No data leaves your account"** while the
+address goes to the geocoder, the comps and walk-score services and the model. The list still
+advances on elapsed time — that is a progress indicator, not a log — but every line is now true
+of an attempt, and the report says what actually came back.
+
+| Option                                      | Why not                                                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Drive the step list from real server events | Needs persisted job status, which is a migration (BACKLOG); the copy fix removes the false claims now. |
+| Keep "Save to account" as a disabled button | Disabled is still a promise of a feature; the account page already says it does not exist.             |

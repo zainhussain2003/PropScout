@@ -27,6 +27,7 @@ import { usePdfExport } from '../hooks/usePdfExport'
 import { Nav } from '../components/shared/Nav'
 import { Footer } from '../components/shared/Footer'
 import { StickyActionBar } from '../components/shared/StickyActionBar'
+import { SignInModal } from '../components/shared/SignInModal'
 import { ReportSectionRail } from '../components/shared/ReportSectionRail'
 import { Icon } from '../components/shared/Icon'
 import { SectionHead } from '../components/shared/SectionHead'
@@ -697,6 +698,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [dark, setDark] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
   // Server-decided: false until the API says this viewer owns the analysis.
   const [canOverride, setCanOverride] = useState(false)
   const { session } = useAuth()
@@ -798,10 +800,11 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         variant="report"
         dark={dark}
         onToggleDark={handleToggleDark}
-        onSignIn={() => undefined}
+        onSignIn={() => setShowSignIn(true)}
         reportLabel={reportLabel}
         addressSlug={addressSlug}
       />
+      <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
 
       {loading && <LoadingState />}
 

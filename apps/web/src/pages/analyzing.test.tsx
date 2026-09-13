@@ -281,3 +281,43 @@ describe('AnalyzingPage — free-tier quota', () => {
     expect(screen.queryByRole('button', { name: /upgrade now/i })).not.toBeInTheDocument()
   })
 })
+
+// ── The progress screen describes an attempt, not a result (J-09) ──────────────
+
+describe('AnalyzingPage — progress copy makes no claims it cannot know', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    triggerAnalysis.mockReset()
+    fetchReport.mockReset()
+    navigate.mockReset()
+    useAuthMock.mockReturnValue({ session: null, loading: false })
+    triggerAnalysis.mockResolvedValue(undefined)
+    fetchReport.mockResolvedValue({ status: 'processing' })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('names no source, no verification and no privacy guarantee', async () => {
+    // An address-entered property never touched Realtor.ca; comps are asking
+    // rents and may be absent; the address goes to several third parties.
+    renderAnalyzing()
+    await advance(POLL_MS * 2)
+    const text = document.body.textContent ?? ''
+    expect(text).not.toMatch(/Realtor\.ca/)
+    expect(text).not.toMatch(/comps verified/i)
+    expect(text).not.toMatch(/No data leaves/i)
+    expect(text).not.toMatch(/Fetched listing/i)
+    expect(text).not.toMatch(/Price confirmed/i)
+    expect(text).not.toMatch(/Comps pulled/i)
+  })
+
+  it('says what is being attempted', async () => {
+    renderAnalyzing()
+    await advance(POLL_MS * 2)
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/Looking up rental comps for the area/)
+    expect(text).toMatch(/asking rents, not signed leases/)
+  })
+})
