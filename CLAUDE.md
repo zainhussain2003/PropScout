@@ -1166,7 +1166,8 @@ propscout/
 │   │       │   │   ├── TruncatedVerdict.tsx   # AI verdict paragraph 2 blurred
 │   │       │   │   ├── LockedButton.tsx       # Lock-icon button
 │   │       │   │   ├── UpgradeModal.tsx       # 5 feature-specific variants
-│   │       │   │   └── HardLimitGate.tsx      # Full-screen monthly limit blocker
+│   │       │   │   ├── HardLimitGate.tsx      # Full-screen monthly limit blocker
+│   │       │   │   └── TierUnavailableNotice.tsx  # Banner when /me could not confirm the plan (A-10, D-078)
 │   │       │   │
 │   │       │   └── states/            # Error, empty, and gate states
 │   │       │       ├── BlockState.tsx         # Full-page error/gate state
