@@ -659,7 +659,9 @@ export function LandlordPage({
         </div>
         {activeRiskFlags.length === 0 && (
           <p style={{ fontSize: 14, color: 'var(--muted)' }}>
-            No risk flags detected for this property.
+            {isReal && (realListing?.description ?? '').trim().length === 0
+              ? 'This property was entered by address, so there is no listing description to scan. Nothing here has been checked for risk language.'
+              : 'No risk language was found in the listing description. This wording scan is not an inspection or a clean bill of health.'}
           </p>
         )}
       </section>

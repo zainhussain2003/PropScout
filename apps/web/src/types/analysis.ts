@@ -418,6 +418,15 @@ export interface ListingData {
   compConfidence: 'low' | 'medium' | 'high'
   market: MarketData
   riskFlags: InvestorRiskFlag[]
+  /**
+   * Whether the source supplied listing text at all. An address-entered
+   * property has none, and "no risk language was found in the listing
+   * description" would then describe a scan that never happened (audit
+   * counter-review: missing description, extraction failure and a clean
+   * result must not share one sentence). Undefined = unknown → treated as
+   * scanned, for older callers.
+   */
+  hasDescription?: boolean
   chips: string[] // display chips below photos
   photoUrls?: string[]
 }

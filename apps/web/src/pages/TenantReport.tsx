@@ -1228,6 +1228,7 @@ export function TenantReport({
 
   // Shim: when real data is provided, derive TenantListingData from it
   const isReal = !!(realAnalysis && realListing)
+  const hasListingText = (realListing?.description ?? '').trim().length > 0
 
   const tenantListing: TenantListingData | undefined = isReal
     ? shimToTenantListingData(realListing!, realAnalysis!)
@@ -1418,13 +1419,17 @@ export function TenantReport({
           <SectionPlaceholder
             n="02"
             topic="Listing accuracy"
-            verdict="No supported flags"
+            verdict={hasListingText ? 'No supported flags' : 'No listing text'}
             question={
               <>
                 Is the listing <em>honest</em>?
               </>
             }
-            note="No red or amber flags surfaced from this listing's description — a clean scan, not a guarantee. Still confirm the specifics in person."
+            note={
+              hasListingText
+                ? "No red or amber flags surfaced from this listing's description — a clean scan, not a guarantee. Still confirm the specifics in person."
+                : 'This rental was entered by address, so there is no listing description to check. Nothing here has been scanned; confirm the specifics in person.'
+            }
           />
         )
       ) : (

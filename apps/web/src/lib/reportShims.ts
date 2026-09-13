@@ -276,6 +276,7 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
     compConfidence: analysis.rentalComps?.confidence ?? 'low',
     market: { cmhcVacancy: 0.03, rentalDOM: 14, rentTrend: 'flat' },
     riskFlags: shimInvestorRiskFlags(analysis.riskFlags),
+    hasDescription: (listing.description ?? '').trim().length > 0,
     chips: buildInvestorChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
   }

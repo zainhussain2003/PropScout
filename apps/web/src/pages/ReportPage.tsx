@@ -139,6 +139,7 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     compConfidence: analysis.rentalComps?.confidence ?? 'low',
     market: { cmhcVacancy: 0.035, rentalDOM: 18, rentTrend: 'flat' as const },
     riskFlags,
+    hasDescription: (listing.description ?? '').trim().length > 0,
     chips: buildChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
     yearBuiltKnown: listing.yearBuilt != null,
