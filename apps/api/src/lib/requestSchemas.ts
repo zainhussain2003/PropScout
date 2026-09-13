@@ -93,7 +93,10 @@ export const addressStartBody = {
     beds: SMALL_COUNT,
     baths: SMALL_COUNT,
     sqft: { type: ['number', 'null'], minimum: 0, maximum: 1_000_000 },
-    propertyType: SHORT_STRING,
+    propertyType: {
+      type: ['string', 'null'],
+      enum: ['condo', 'townhouse', 'semi-detached', 'detached', 'multiplex', 'commercial', null],
+    },
     condoFeeMonthly: MONEY,
     annualTaxes: MONEY,
   },
