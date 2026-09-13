@@ -38,6 +38,8 @@ import {
   getUserById,
   getMonthlyAnalysisCount,
   claimAnalysisForUser,
+  getAnalysisStatus,
+  getAnalysisByToken,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -58,6 +60,8 @@ const mockGetSupabase = jest.mocked(getSupabase)
 const mockGetUserById = jest.mocked(getUserById)
 const mockMonthlyCount = jest.mocked(getMonthlyAnalysisCount)
 const mockClaim = jest.mocked(claimAnalysisForUser)
+const mockGetStatus = jest.mocked(getAnalysisStatus)
+const mockGetAnalysisByToken = jest.mocked(getAnalysisByToken)
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -1019,5 +1023,198 @@ describe('POST / — free-tier quota and attribution', () => {
     })
 
     expect(res.statusCode).toBe(402)
+  })
+})
+
+// ── Idempotent by token (audit J-11) ──────────────────────────────────────────
+//
+// Reloading /analyzing re-POSTs the same token. Job status is not persisted
+// (D-068), so the route keeps an in-process set of running tokens and treats a
+// finished analysis as an answer, not a request.
+
+describe('POST / — idempotent by token', () => {
+  let app: FastifyInstance
+
+  function calcEngineCalls(): number {
+    const fetchMock = global.fetch as jest.Mock
+    return fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/analysis/')).length
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockClaim.mockResolvedValue(undefined)
+    mockGetStatus.mockResolvedValue('pending')
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('returns a finished analysis as stored, without running anything', async () => {
+    mockGetStatus.mockResolvedValue('complete')
+    const stored = { id: 'a1', token: 'test-token', mode: 'investor', narrative: 'Stored' }
+    mockGetAnalysisByToken.mockResolvedValue({
+      analysis: stored as never,
+      listing: LISTING_FIXTURE,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { analysis: { narrative: string }; cached: boolean }
+    expect(body.analysis.narrative).toBe('Stored')
+    expect(body.cached).toBe(true)
+    expect(calcEngineCalls()).toBe(0)
+    expect(mockSaveAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('does not count or re-claim a finished analysis — the owner at the limit still gets it', async () => {
+    mockGetStatus.mockResolvedValue('complete')
+    mockGetAnalysisByToken.mockResolvedValue({
+      analysis: { id: 'a1', token: 'test-token', mode: 'investor' } as never,
+      listing: LISTING_FIXTURE,
+    })
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', email: 'u@x' } }, error: null }),
+      },
+    } as unknown as ReturnType<typeof getSupabase>)
+    mockGetUserById.mockResolvedValue({ id: 'u1', tier: 'free' } as never)
+    mockMonthlyCount.mockResolvedValue(10)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { authorization: 'Bearer jwt' },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(mockMonthlyCount).not.toHaveBeenCalled()
+    expect(mockClaim).not.toHaveBeenCalled()
+  })
+
+  it('answers 202 to a second trigger while the first is still running, and runs the pipeline once', async () => {
+    // Hold the calc-engine call open so the first request stays in flight.
+    let release: (() => void) | null = null
+    const gate = new Promise<void>((r) => {
+      release = r
+    })
+    ;(global.fetch as jest.Mock).mockImplementation(async () => {
+      await gate
+      return makeCalcResponse(CALC_ENGINE_FIXTURE)
+    })
+
+    const first = app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    // Let the first request reach the calc-engine await.
+    await new Promise((r) => setTimeout(r, 20))
+
+    const second = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(second.statusCode).toBe(202)
+    expect((second.json() as { status: string }).status).toBe('processing')
+
+    // The 202 must not have released the running request's mark.
+    const third = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(third.statusCode).toBe(202)
+
+    release!()
+    const done = await first
+    expect(done.statusCode).toBe(200)
+    expect(calcEngineCalls()).toBe(1)
+
+    // And once finished, the mark is released: a new trigger runs again.
+    const after = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(after.statusCode).toBe(200)
+    expect(calcEngineCalls()).toBe(2)
+  })
+
+  it('releases the mark when the pipeline fails, so a retry can run', async () => {
+    // Fail the calc-engine call only (other fetches — the rate feed — are
+    // non-fatal and would just fall back).
+    let failedOnce = false
+    ;(global.fetch as jest.Mock).mockImplementation(async (url: string) => {
+      if (String(url).endsWith('/analysis/') && !failedOnce) {
+        failedOnce = true
+        throw new Error('engine down')
+      }
+      return makeCalcResponse(CALC_ENGINE_FIXTURE)
+    })
+    const failed = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(failed.statusCode).toBeGreaterThanOrEqual(500)
+
+    const retry = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(retry.statusCode).toBe(200)
+  })
+
+  it('keeps different tokens independent', async () => {
+    let release: (() => void) | null = null
+    const gate = new Promise<void>((r) => {
+      release = r
+    })
+    ;(global.fetch as jest.Mock).mockImplementation(async () => {
+      await gate
+      return makeCalcResponse(CALC_ENGINE_FIXTURE)
+    })
+    const a = app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'tok-a', mode: 'investor' },
+    })
+    await new Promise((r) => setTimeout(r, 20))
+    const b = app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'tok-b', mode: 'investor' },
+    })
+    await new Promise((r) => setTimeout(r, 20))
+    release!()
+    const [ra, rb] = await Promise.all([a, b])
+    expect(ra.statusCode).toBe(200)
+    expect(rb.statusCode).toBe(200)
+    expect(calcEngineCalls()).toBe(2)
   })
 })

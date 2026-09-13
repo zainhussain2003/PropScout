@@ -29,6 +29,8 @@ import {
   upsertUser,
   getMonthlyAnalysisCount,
   claimAnalysisForUser,
+  getAnalysisStatus,
+  getAnalysisByToken,
 } from '../services/supabaseService'
 import { resolveUser } from '../lib/requireUser'
 import { startOfNextMonth } from '../lib/billingMonth'
@@ -53,6 +55,18 @@ import {
 import { estimateValueFromRent } from '../constants/marketCapRates'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
+
+/**
+ * Tokens whose pipeline is running in this process right now (audit J-11).
+ *
+ * Job status is not persisted (D-068), so the database cannot say "in
+ * progress" — only "no metrics yet" or "done". Reloading /analyzing re-POSTs
+ * the same token, and without this every reload started a second scrape,
+ * calc-engine call and two Claude calls, all racing to write the same row.
+ * One API instance serves production, so an in-process set is the honest
+ * scope of the guarantee; a second instance would need the status column.
+ */
+const inFlight = new Set<string>()
 
 // Mortgage rate is overridden per-request by the live Bank of Canada rate
 // (via bankOfCanadaService → calc engine /rates/mortgage). 0.0479 is the
@@ -283,6 +297,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     const mode = modeRaw as ReportMode
+    // Whether THIS request holds the in-flight mark. A request answered 202
+    // because another one holds it must not release the other's mark.
+    let holdsInFlight = false
 
     try {
       // Step 2 — look up listing
@@ -290,6 +307,25 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       if (!listing) {
         return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
       }
+
+      // Step 2a — idempotency by token (audit J-11). A finished analysis is
+      // returned as it was computed; one that is running here is not started
+      // again. Both answers come before the quota check, because a report
+      // the person already has, or already started, is not a new analysis —
+      // and a re-check would refuse the owner's own tenth run.
+      if (inFlight.has(token)) {
+        return reply
+          .code(202)
+          .send({ token, status: 'processing', message: 'Analysis is already running.' })
+      }
+      if ((await getAnalysisStatus(token)) === 'complete') {
+        const stored = await getAnalysisByToken(token)
+        if (stored != null) {
+          return reply.send({ token, analysis: stored.analysis, cached: true })
+        }
+      }
+      inFlight.add(token)
+      holdsInFlight = true
 
       // Step 2b — attribute the analysis and enforce the free-tier quota.
       //
@@ -674,6 +710,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       fastify.log.error({ err }, 'Unexpected error in POST /analysis')
       await updateAnalysisStatus(token, 'failed').catch(() => {})
       return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
+    } finally {
+      if (holdsInFlight) inFlight.delete(token)
     }
   })
 }

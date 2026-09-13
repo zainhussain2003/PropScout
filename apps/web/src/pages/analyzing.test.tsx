@@ -241,9 +241,13 @@ describe('AnalyzingPage — free-tier quota', () => {
     // hardcoded "32 days".
     expect(text).toMatch(/19 days/)
     expect(text).not.toMatch(/32 days/)
-    // It is not an error and polling never starts.
+    // It is not an error and polling never starts: the one fetchReport call
+    // is the reload pre-check (J-11), and no further ones follow.
     expect(screen.queryByText(/Analysis could not complete/i)).not.toBeInTheDocument()
-    expect(fetchReport).not.toHaveBeenCalled()
+    const calls = fetchReport.mock.calls.length
+    expect(calls).toBeLessThanOrEqual(1)
+    await advance(POLL_MS * 5)
+    expect(fetchReport.mock.calls.length).toBe(calls)
   })
 
   it('starts Pro checkout from the gate with the current session', async () => {
@@ -319,5 +323,44 @@ describe('AnalyzingPage — progress copy makes no claims it cannot know', () =>
     const text = document.body.textContent ?? ''
     expect(text).toMatch(/Looking up rental comps for the area/)
     expect(text).toMatch(/asking rents, not signed leases/)
+  })
+})
+
+// ── A reload does not start the pipeline again (J-11) ─────────────────────────
+
+describe('AnalyzingPage — reload is not a re-run', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    triggerAnalysis.mockReset()
+    fetchReport.mockReset()
+    navigate.mockReset()
+    useAuthMock.mockReturnValue({ session: null, loading: false })
+    triggerAnalysis.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('goes straight to a report that already exists without triggering', async () => {
+    fetchReport.mockResolvedValue({ status: 'complete' })
+    renderAnalyzing()
+    await advance(POLL_MS)
+    expect(navigate).toHaveBeenCalledWith('/r/tok-1')
+    expect(triggerAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('triggers when the report is not finished', async () => {
+    fetchReport.mockResolvedValue({ status: 'pending' })
+    renderAnalyzing()
+    await advance(POLL_MS)
+    expect(triggerAnalysis).toHaveBeenCalledTimes(1)
+  })
+
+  it('still triggers when the pre-check itself fails', async () => {
+    fetchReport.mockRejectedValueOnce(new Error('blip')).mockResolvedValue({ status: 'pending' })
+    renderAnalyzing()
+    await advance(POLL_MS)
+    expect(triggerAnalysis).toHaveBeenCalledTimes(1)
   })
 })
