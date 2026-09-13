@@ -223,6 +223,32 @@ describe('POST /address/start — unknown counts stay unknown', () => {
     expect(saved().baths).toBe(1.5)
   })
 
+  it('stores "not sure" as unknown, not condo (D-082)', async () => {
+    // The default used to be 'condo', which added a "condo fee unknown" flag
+    // to every house entered by address.
+    await app.inject({ method: 'POST', url: '/start', payload: { ...base, propertyType: null } })
+    expect(saved().propertyType).toBe('unknown')
+  })
+
+  it('keeps the type the person chose', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/start',
+      payload: { ...base, propertyType: 'detached' },
+    })
+    expect(saved().propertyType).toBe('detached')
+  })
+
+  it('refuses a type that is not one of ours', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/start',
+      payload: { ...base, propertyType: 'castle' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(mockSaveListing).not.toHaveBeenCalled()
+  })
+
   it('returns the listing it stored, so the mode modal shows the same facts', async () => {
     const res = await app.inject({ method: 'POST', url: '/start', payload: base })
     const body = res.json() as { listing: Omit<Listing, 'id'> }

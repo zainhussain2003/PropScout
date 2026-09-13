@@ -80,7 +80,7 @@ function buildChips(listing: Listing): string[] {
   if (listing.sqft) chips.push(`${listing.sqft.toLocaleString('en-CA')} sqft`)
   if (listing.yearBuilt) chips.push(`Built ${listing.yearBuilt}`)
   const pt = listing.propertyType
-  if (pt) chips.push(pt.charAt(0).toUpperCase() + pt.slice(1))
+  if (pt && pt !== 'unknown') chips.push(pt.charAt(0).toUpperCase() + pt.slice(1))
   if (knownCount(listing.parkingSpots) != null) chips.push(`${listing.parkingSpots} parking`)
   if (listing.condoFeeKnown && listing.condoFeeMonthly != null && listing.condoFeeMonthly > 0) {
     chips.push(`$${listing.condoFeeMonthly}/mo condo fee`)

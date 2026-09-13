@@ -402,3 +402,23 @@ describe('POST /scrape — request shape', () => {
     }
   })
 })
+
+// ── Unrecognised property type is unknown, not detached (D-082) ───────────────
+
+describe('POST / — property type the scraper cannot recognise', () => {
+  it('stores unknown rather than guessing detached', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        { ...ONTARIO_FIXTURE, property_type: 'Vacant Land', building_type: null },
+        200
+      )
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+    const body = JSON.parse(res.body) as { listing: { propertyType: string } }
+    expect(body.listing.propertyType).toBe('unknown')
+  })
+})

@@ -360,6 +360,8 @@ export interface ScoreBarData {
   max: number
   trackPercent: number
   fillPercent: number
+  /** A caveat about where the points came from, shown under the bar. */
+  note?: string
 }
 
 /** Pin marker for the MiniMap component. */

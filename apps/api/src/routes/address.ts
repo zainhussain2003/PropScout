@@ -119,7 +119,7 @@ interface StartBody {
   beds?: number | null
   baths?: number | null
   sqft?: number | null
-  propertyType?: string
+  propertyType?: string | null
   condoFeeMonthly?: number | null
   annualTaxes?: number | null
 }
@@ -287,7 +287,10 @@ async function addressRoutes(fastify: FastifyInstance): Promise<void> {
         beds: b.beds ?? null,
         baths: b.baths ?? null,
         sqft: b.sqft ?? null,
-        propertyType: (b.propertyType as Listing['propertyType']) ?? 'condo',
+        // The form asks; "not sure" arrives as null and stays unknown (D-082).
+        // This used to default to 'condo', which flagged every house entered by
+        // address for a missing condo fee.
+        propertyType: (b.propertyType as Listing['propertyType'] | null | undefined) ?? 'unknown',
         yearBuilt: null,
         parkingSpots: null,
         condoFeeMonthly: b.condoFeeMonthly ?? null,

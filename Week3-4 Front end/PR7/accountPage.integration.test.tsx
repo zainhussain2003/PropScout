@@ -243,3 +243,34 @@ describe('AccountPage — ?view=plan', () => {
     expect(screen.getByText(/Locked on free tier/)).toBeInTheDocument()
   })
 })
+
+// ── Profile and notifications carry no inert controls (audit A-03 / A-04) ──────
+//
+// The profile view offered inputs for down payment, income, appreciation and
+// management fee under "used when you first open a report", a "Request export"
+// button and a "Delete account…" button — none saved or did anything. The
+// notifications view showed five toggles, three defaulting ON under "Listings
+// you've asked us to monitor", while no monitoring job exists.
+
+describe('AccountPage — no control claims what it cannot do', () => {
+  it('profile has no inputs, no export button and no delete button', () => {
+    renderWithView('profile')
+    expect(document.querySelectorAll('main input, main select').length).toBe(0)
+    expect(screen.queryByRole('button', { name: /Request export/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Delete account/ })).not.toBeInTheDocument()
+    expect(screen.getAllByText(/Not available yet/).length).toBeGreaterThanOrEqual(2)
+    expect(document.body.textContent ?? '').not.toMatch(/Used when you first open/)
+  })
+
+  it('notifications say nothing is being monitored, and offer no toggles', () => {
+    renderWithView('notifications')
+    expect(document.body.textContent ?? '').toMatch(/does not send any notifications yet/)
+    expect(document.body.textContent ?? '').not.toMatch(/asked us to monitor/)
+    // The old toggles were buttons with no accessible name.
+    const nameless = [...document.querySelectorAll('main button')].filter(
+      (b) => (b.textContent ?? '').trim() === ''
+    )
+    expect(nameless.length).toBe(0)
+    expect(screen.getAllByText(/Not connected/).length).toBe(4)
+  })
+})

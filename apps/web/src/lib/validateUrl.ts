@@ -1,8 +1,13 @@
 /**
- * validateUrl — validates a Realtor.ca or Zillow.ca listing URL.
+ * validateUrl — validates a listing URL PropScout can actually read.
  *
  * Returns null when the URL is valid for PropScout to analyse.
  * Returns a user-facing error string when the URL is invalid or unsupported.
+ *
+ * Realtor.ca only. Zillow.ca used to pass here and then fail in the scraper
+ * (its scraper is deferred — see FUTURE.md), so the page accepted a URL it
+ * could not read and reported the failure as the listing's fault (audit
+ * J-01). The message points at the address path, which works for anything.
  *
  * This is the single canonical implementation; the Hero and ModeModal both
  * import it — never re-implement inline.
@@ -18,17 +23,16 @@ export function validateUrl(raw: string): string | null {
     return "That doesn't look like a valid URL."
   }
 
-  const isKnownSite = /(realtor\.ca|zillow\.ca|zillow\.com)/.test(u)
-  if (!isKnownSite) {
-    return (
-      "That listing source isn't supported yet. " +
-      'We currently read Realtor.ca and Zillow.ca — more sources coming soon.'
-    )
-  }
-
-  // zillow.com is the US site; only zillow.ca is Canadian.
+  // zillow.com is the US site.
   if (/zillow\.com/.test(u) && !/zillow\.ca/.test(u)) {
     return 'This appears to be a US listing. PropScout covers Canadian properties only.'
+  }
+
+  if (!/realtor\.ca/.test(u)) {
+    return (
+      "That listing source isn't supported yet. " +
+      'We read Realtor.ca listings today — or type the address instead.'
+    )
   }
 
   return null
