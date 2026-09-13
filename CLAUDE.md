@@ -1049,7 +1049,7 @@ propscout/
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
 │   ├── DECISIONS.md                   # Decision log — every judgement call + the alternatives rejected
 │   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
-│   ├── BACKLOG.md                     # Work blocked on a person, credential, decision or migration — check before proposing next steps
+│   ├── BACKLOG.md                     # Everything not done, with what each item is blocked on — check before proposing next steps
 │   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
 │   ├── PR10-design-humanization-prompt.md  # PR10 spec — token revision, copy, imagery, founder note
 │   ├── PR10-UI-Tests.md               # PR10 Chrome UI test checklist (token propagation, imagery, dark/mobile)

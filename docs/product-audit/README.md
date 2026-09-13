@@ -42,6 +42,12 @@ Evidence states are **confirmed** (directly observed in code/data), **inferred**
 | [SOURCE_MAP.md](./SOURCE_MAP.md)                                                       | Primary repository evidence used by the cross-product audit.                     |
 | [MASTER_ROADMAP.md](./MASTER_ROADMAP.md)                                               | Proposed order of work, dependencies and acceptance criteria.                    |
 
+## Reconciliation
+
+Every finding here was checked against `master` on **2026-09-12** after PRs #27–#60:
+[`RECONCILIATION_2026-09-12.md`](./RECONCILIATION_2026-09-12.md). What remains is in
+[`docs/BACKLOG.md`](../BACKLOG.md).
+
 ## Review trail
 
 - Independent review: [`docs/audit-review/README.md`](../audit-review/README.md)
