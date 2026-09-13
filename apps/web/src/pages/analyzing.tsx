@@ -209,6 +209,21 @@ export function AnalyzingPage(): JSX.Element {
     }
 
     const run = async (): Promise<void> => {
+      // Step 0 — a reload of this page must not start the pipeline again
+      // (audit J-11). If the report already exists, go to it; the API is
+      // idempotent by token as well, so this is a shortcut, not the guard.
+      try {
+        const existing = await fetchReport(token)
+        if (!mountedRef.current) return
+        if (existing.status === 'complete') {
+          navigate(`/r/${token}`)
+          return
+        }
+      } catch {
+        // A lookup failure is not a reason to refuse to start; the trigger
+        // below reports its own errors.
+      }
+
       // Step 1 — fire the orchestrator pipeline.
       try {
         await triggerAnalysis(token, mode, accessToken)

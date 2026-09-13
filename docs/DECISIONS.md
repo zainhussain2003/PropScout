@@ -2956,3 +2956,29 @@ attribute the tokens read.
 | A React Provider in `App.tsx`                | Every page and page test would need wrapping; the attribute is global anyway.          |
 | Read `data-theme` from the DOM on each mount | What `AccountPage` did; it papers over the landing page's reset and remembers nothing. |
 | OS preference only, no saved choice          | A toggle that forgets is worse than none.                                              |
+
+### D-080 · Triggering an analysis is idempotent by token
+
+**Chosen.** `POST /analysis` treats a finished analysis as an answer and a running one as
+already started. A token whose metrics exist returns the stored report (`cached: true`) without
+running anything and without touching the quota; a token running in this process answers
+`202 processing`; only a token that is neither is claimed, counted and run. The in-flight mark
+is held by the request that set it and released when that request ends, success or failure — a
+request answered 202 never releases another's. The analyzing page also checks for an existing
+report before it triggers, so a reload of a finished run goes straight to `/r/:token`.
+
+**Why.** Audit J-11. Reloading `/analyzing` re-POSTs the same token, and every reload started a
+second scrape, calc-engine call and two Claude calls, all racing to write the same row — and,
+since D-071, would have re-checked the quota against a count that already included the row, so
+an owner at their tenth run could be refused their own report.
+
+**The scope of the guarantee is one process.** Job status is not persisted (D-068), so the
+database can only say "no metrics yet" or "done"; an in-process set is what can honestly be
+promised, and one API instance serves production. A second instance needs the status column in
+`docs/BACKLOG.md`, at which point the set becomes a row-level claim.
+
+| Option                                     | Why not                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Refuse a re-trigger of a finished analysis | The person reloaded; they want the report, not an error.                                         |
+| Client-side guard only                     | A second tab, a retry button or a curl still re-runs the pipeline; the cost is server-side.      |
+| Wait for the running request and return it | Holds a second HTTP request open for a minute; the page polls anyway, so 202 is the right shape. |
