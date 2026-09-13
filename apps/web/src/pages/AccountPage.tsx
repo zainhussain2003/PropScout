@@ -36,7 +36,7 @@ interface TierDetail {
 
 interface UsageItem {
   k: string
-  used: number
+  used: number | null
   cap: number | null
   sub: string | null
 }
@@ -477,17 +477,29 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
   const isFree = tier === 'free'
   const tierKey = safeTierKey(tier)
   const tierDetail = TIER_DETAILS[tierKey]
+  const { analysesThisMonth, loading: usageLoading } = useAccount()
 
+  // Only what is actually measured. This card used to show "2 / 3" analyses,
+  // "8" tenant reports and "8 / 10" saved analyses to every user — fixtures,
+  // found live on the first signed-in production run (2026-09-12) after D-064
+  // had removed the same class of invention from the Saved tab. The one figure
+  // the API counts is quota-consuming analyses (D-071); tenant reports are not
+  // counted because they are unlimited, PDF has no counter, and saved analyses
+  // do not exist as a feature. A row with no measurement shows no number.
   const usageItems: UsageItem[] = [
-    { k: 'Sale-listing analyses', used: 2, cap: isFree ? 3 : null, sub: null },
-    { k: 'Tenant reports', used: 8, cap: null, sub: 'Always unlimited' },
+    {
+      k: 'Sale-listing analyses',
+      used: analysesThisMonth,
+      cap: isFree ? FREE_TIER.MONTHLY_ANALYSIS_LIMIT : null,
+      sub: analysesThisMonth == null && !usageLoading ? 'Usage unavailable right now' : null,
+    },
+    { k: 'Tenant reports', used: null, cap: null, sub: 'Always unlimited · not counted' },
     {
       k: 'PDF exports',
-      used: isFree ? 0 : 5,
+      used: null,
       cap: isFree ? 0 : null,
-      sub: isFree ? 'Locked on free tier' : null,
+      sub: isFree ? 'Locked on free tier' : 'Included',
     },
-    { k: 'Saved analyses', used: 8, cap: isFree ? 10 : null, sub: null },
   ]
 
   return (
@@ -544,7 +556,7 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
               }}
             >
               {isFree
-                ? 'Three sale-listing analyses per month + unlimited tenant reports. Verdict summaries; no PDF.'
+                ? `${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} sale-listing analyses per month + unlimited tenant reports. Verdict summaries; no PDF.`
                 : 'Unlimited analyses · full evidence-based verdicts · financing sliders · PDF export · portfolio tracker.'}
             </span>
           </div>
@@ -604,11 +616,15 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
               >
                 <span style={{ fontSize: 14, color: 'var(--ink)' }}>{u.k}</span>
                 <span className="mono tabular" style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  {u.used}
+                  {u.used == null
+                    ? usageLoading && u.k === 'Sale-listing analyses'
+                      ? '…'
+                      : '—'
+                    : u.used}
                   {u.cap !== null && u.cap > 0 ? ` / ${u.cap}` : u.cap === 0 ? ' · locked' : ''}
                 </span>
               </div>
-              {u.cap !== null && u.cap > 0 && (
+              {u.cap !== null && u.cap > 0 && u.used != null && (
                 <div style={{ height: 4, borderRadius: 999, background: 'var(--line)' }}>
                   <div
                     style={{

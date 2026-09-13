@@ -95,7 +95,12 @@ export async function createCheckoutSession(
 ): Promise<string> {
   const priceId = PRICE_IDS[tier]
   if (!priceId) {
-    throw new Error(`No Stripe price ID configured for tier: ${tier}`)
+    // A missing price ID is configuration, not a crash. As a plain Error it
+    // surfaced as 500 "Could not start checkout — please try again" on the
+    // first signed-in production run (2026-09-12): retrying cannot help, and
+    // the route's honest 503 ("paid plans are not open yet") exists for
+    // exactly this.
+    throw new StripeNotConfiguredError([`STRIPE_PRICE_${tier.toUpperCase()}`])
   }
 
   const session = await getStripe().checkout.sessions.create({

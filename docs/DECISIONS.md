@@ -2845,3 +2845,35 @@ SMTP is required before anyone but the owner signs in.
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | Redirect `/account` to `/` when signed out | Loses the intent; the person navigated to their account and should be offered the way in.           |
 | Keep the shell and change the copy         | A plan chip and a sidebar for someone with no plan is the same false statement in a different font. |
+
+### D-076 · The plan view shows only what is measured
+
+**Chosen.** "This month's usage" on the Plan & billing tab shows one real figure — the
+quota-consuming analyses the API counts (D-071), against the free limit — and puts **no number**
+on tenant reports (unlimited, not counted), PDF exports (no counter exists) or saved analyses
+(not a feature; the row is gone). The free-plan description reads the limit from the constant.
+A missing price ID for a tier now raises `StripeNotConfiguredError`, so "Upgrade" answers 503
+"paid plans are not open yet" rather than 500 "try again".
+
+**Why.** First signed-in production run (2026-09-12). The user had run three analyses that
+day and no tenant reports; the plan tab said **"Sale-listing analyses 2 / 3"**, **"Tenant
+reports 8"**, **"Saved analyses 8 / 10"** and _"Three sale-listing analyses per month"_. These
+were the same fixtures D-064 removed from the Saved tab, missed on this one — invented usage
+against an invented limit, on the page where someone decides whether to pay. And "Upgrade"
+returned 500. The secret key was set (the route's 503 path checks that), so the failure was
+downstream; a missing `STRIPE_PRICE_PRO` threw a plain `Error` and read as a crash. Retrying a
+missing environment variable cannot help; the honest answer already existed one branch up.
+
+**Verified on the same run, for the record.** Attribution (D-071): "1 analysis this month"
+after one signed-in run. Ownership (D-065): the owner sees Dismiss, dismissal persists, a stranger
+on the share link sees the flag struck through with no controls, and an unowned guest report
+offers no controls to anyone. Presets (D-074): OSFI gave 6.45% against a 4.45% base. Real Mapbox
+maps rendered once the token variable was separated (D-075).
+
+| Option                               | Why not                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Count tenant reports and PDFs too    | Nothing counts them today; a number here would be another fixture with a different origin. |
+| Render 0 when usage cannot be loaded | Zero is a claim (D-064); the row says "unavailable" and draws no bar.                      |
+
+**Open, operational:** `STRIPE_PRICE_PRO` (and the other tiers) must be set on the API's
+Railway environment before checkout can work; whether the key is live or test is the owner's call.
