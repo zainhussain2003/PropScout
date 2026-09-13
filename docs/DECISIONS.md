@@ -2907,3 +2907,33 @@ of an attempt, and the report says what actually came back.
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Drive the step list from real server events | Needs persisted job status, which is a migration (BACKLOG); the copy fix removes the false claims now. |
 | Keep "Save to account" as a disabled button | Disabled is still a promise of a feature; the account page already says it does not exist.             |
+
+### D-078 · Auth pages report what the provider said, and an unconfirmed plan is not "free"
+
+**Chosen.** Two audit items, both about the client presenting a guess as an answer.
+
+_A-08 — the magic-link landing page._ `/auth/confirm` reads Supabase's error fragment first
+(`#error=access_denied&error_code=otp_expired&…`) and says what it says — "expired or already
+used; links work once and expire ten minutes after sending" — instead of showing "Signed in
+successfully" on mount and then, six seconds later, guessing "may have expired". Without an
+error it shows "Confirming your link…", checks for a session once as well as subscribing, and only
+after fifteen seconds says it has **not heard back** — which is what it knows — with a way to check
+the account or request a new link.
+
+_A-10 — the tier._ `useTier` now returns a `status` (`signed-out | loading | resolved |
+unavailable`) and retries once. The tier value still falls back to `free` when `/me` fails —
+the gates need a value and the server enforces real entitlements — but `PaywallContext` carries
+the status and a global `TierUnavailableNotice` says "we couldn't confirm your plan; paid features
+may look locked until we can; nothing about your account has changed", with a retry.
+
+**Why.** On the first production sign-in (2026-09-12) an already-used link landed on a page
+that said "You're in · Signed in successfully" for six seconds and then "this link may have
+expired", while the URL carried `otp_expired` the whole time. And a paying user whose `/me` call
+failed would, until now, have been shown locks and upgrade prompts as fact — the placeholder
+`free` was indistinguishable from an answer.
+
+| Option                                                | Why not                                                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Treat an unconfirmed tier as `pro` to avoid upselling | Unlocks free users' UI when the API blips; PDF then fails server-side with no explanation. Still a guess. |
+| Block the whole app until the tier resolves           | A report is readable without knowing the plan; the notice is enough.                                      |
+| Keep a short timer as the expiry signal               | A timer measures the network, not the link; the provider already reports the reason.                      |
