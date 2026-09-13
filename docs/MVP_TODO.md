@@ -524,24 +524,29 @@ All tasks reference spec Section 19.
 
 ## Week 7–8 — Auth, payments, access control
 
-- [ ] Supabase auth — email + password signup
-- [ ] Supabase auth — Google OAuth
-- [ ] User session management (JWT, refresh tokens)
-- [ ] Stripe — Free, Pro ($10), Professional ($59), Team ($299) products created
-- [ ] Stripe — subscription checkout flow
-- [ ] Stripe — webhook handling (subscription created, updated, cancelled)
-- [ ] Tier stored on `users` table, updated via webhook
-- [x] Free tier: 10 analyses/month counter enforced (backend 429 FREE_LIMIT_REACHED via JWT auth + getMonthlyAnalysisCount)
-- [x] Free tier: analysis limit gate screen with upgrade prompt (HardLimitGate wired into AnalyzingPage via limit_gate view)
-- [ ] Free tier: PDF button locked with upgrade prompt
-- [ ] Free tier: SunScout building obstruction locked (Phase 2 — show placeholder)
-- [ ] Free tier: portfolio tracker locked
-- [ ] Free tier: written verdict capped at 1 paragraph
-- [ ] Pro tier: all above unlocked
-- [ ] Shareable link generation (UUID token stored in `analyses.share_token`)
-- [ ] Shareable link viewer (no login, shows full report, 30-day expiry)
+> Reconciled against `master` on 2026-09-12 after the first production runs. Rows marked
+> "verified live" were exercised on propscout.ca that day; rows pointing at `docs/BACKLOG.md`
+> are blocked on the owner. Sign-in is **magic link**, not email + password — the spec's
+> "password signup" line is superseded by the design's auth stubs.
+
+- [x] Supabase auth — magic-link email sign-in (`signInWithEmail` → OTP; `/auth/confirm` lands it). Verified live 2026-09-12. Password reset flow exists (`/auth/reset`); there is no password signup by design.
+- [ ] Supabase auth — Google OAuth — code wired (`signInWithGoogle`), **provider not enabled** in Supabase → `docs/BACKLOG.md`
+- [x] User session management — supabase-js session + `useAuth` provider; sent as Bearer to `/me`, `/analysis`, overrides, billing
+- [ ] Stripe — Free, Pro ($10), Professional ($59), Team ($299) products created — price IDs not on Railway → `docs/BACKLOG.md` (lower priority per owner)
+- [x] Stripe — subscription checkout flow — `POST /billing/checkout` + `startCheckout`; answers 503 "paid plans not open yet" until price IDs exist (D-076)
+- [x] Stripe — webhook handling — `routes/webhooks.ts`, signature verified with `constructEvent` before processing
+- [x] Tier stored on `users` table, updated via webhook — `updateUserTier`
+- [x] Free tier: 10 analyses/month enforced server-side — `POST /analysis` → 402 `FREE_LIMIT_REACHED` before the pipeline runs; tenant exempt (D-071, #40). Attribution verified live 2026-09-12.
+- [x] Free tier: limit gate screen with upgrade prompt — `HardLimitGate` from the API's figures, "Upgrade now" starts checkout (#40)
+- [x] Free tier: PDF button locked with upgrade prompt — `usePdfExport` → `LockedButton`; `GET /analysis/:token/pdf` is Pro-gated server-side
+- [ ] Free tier: SunScout building obstruction locked — Phase 2; panel shows the placeholder for everyone today
+- [x] Free tier: portfolio tracker locked — "Save" `LockedButton` → upgrade modal (`portfolio`); no save feature exists yet (D-064)
+- [x] Free tier: written verdict capped at 1 paragraph — `TruncatedVerdict` ("1 of 3 paragraphs · free tier"). Verified live 2026-09-12.
+- [x] Pro tier: all above unlocked — gates key off `useTier`; an unconfirmed tier is reported, not assumed free (D-078)
+- [x] Shareable link generation — UUID `share_token` on every analysis, 30-day `share_expires_at`
+- [x] Shareable link viewer — `/r/:token`, no login, 410 `EXPIRED` after 30 days; a stranger sees the owner's flag dismissals without controls (D-065). Verified live 2026-09-12.
 - [x] Province waitlist — email capture stored to `waitlist` table with province tag (POST /waitlist + addToWaitlist() + ProvinceGate onSubmit wired)
-- [ ] Guest analysis — 1 free analysis without login, email capture at end
+- [ ] Guest analysis — 1 free analysis without login, email capture at end — **owner decision** → `docs/BACKLOG.md` (guests are currently unlimited and uncounted)
 
 ---
 
@@ -549,23 +554,26 @@ All tasks reference spec Section 19.
 
 ### Testing
 
-- [ ] End-to-end test: paste 20 real Ontario listings, 1 of each property type
-- [ ] Verify calc engine output against manual spreadsheet for each
+> Manual testing is lower priority per the owner (2026-09-12). What was verified on production
+> that day is listed in `docs/BACKLOG.md` under "Manual testing"; the rows below are what remains.
+
+- [ ] End-to-end test: paste 20 real Ontario listings, 1 of each property type — 3 done on 2026-09-12 (Vaughan condo by address, Toronto condo by address, Toronto house by Realtor.ca URL with 3 flags)
+- [x] Verify calc engine output against an independent calculation — every headline figure on the Vaughan calibration run reproduced by hand at the live 4.45% rate (D-074)
 - [ ] Verify rental comps pulling correctly for urban vs rural properties
 - [ ] Verify deal score matches formula for at least 5 test properties
-- [ ] Test all error states (scraper fail, no comps, expired listing, non-Ontario)
-- [ ] Test all tier gates (free limits, PDF gate, portfolio gate)
-- [ ] Test shareable links (generate, view without login, expiry)
-- [ ] Test PDF generation for all 4 report types
+- [ ] Test all error states (scraper fail, no comps, expired listing, non-Ontario) — expired link and no-comps states seen live; scraper-fail and non-Ontario not yet
+- [ ] Test all tier gates (free limits, PDF gate, portfolio gate) — blocked on Stripe price IDs for the paid side
+- [x] Test shareable links (generate, view without login, expiry) — generate + stranger view verified live 2026-09-12; expiry path is API-tested (410)
+- [ ] Test PDF generation for all 4 report types — needs a Pro account
 - [x] Run golden dataset regression suite — 100% on 96-case development corpus (2026-09-07)
 - [ ] Mobile test: scorecard and written verdict on iOS and Android
 
 ### Deploy
 
 - [x] Vercel project connected to GitHub repo (frontend auto-deploy on push)
-- [ ] propscout.ca domain connected to Vercel (A record + CNAME in GoDaddy DNS)
-- [ ] Railway services deployed: Fastify API, Python calc engine, scraping workers
-- [ ] Environment variables set (Supabase URL/key, Stripe keys, Claude API key, Walk Score key, Mapbox token, Google Places key)
+- [x] propscout.ca domain connected to Vercel — serving production as of 2026-09-12
+- [x] Railway services deployed: Fastify API (`propscoutapi-production.up.railway.app`) and Python calc engine (private network; the old public domain is dead — README corrected). Scraping workers: per-listing scrape works via the calc engine; the nightly comps job is the row below.
+- [ ] Environment variables set — Supabase, Anthropic, Walk Score, Mapbox, ScraperAPI confirmed working live 2026-09-12; **Stripe price IDs missing** and `VITE_SUPABASE_ANON_KEY` had to be re-created as a Config variable (D-075) → `docs/BACKLOG.md`
 - [ ] Supabase production database — all migrations run
 - [ ] Nightly rental comps scraper scheduled and confirmed running
 - [ ] Error logging in place (Railway logs minimum — Sentry optional)
