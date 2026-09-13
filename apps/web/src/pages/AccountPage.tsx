@@ -781,9 +781,9 @@ function AccountTopNav({ dark, onToggleDark, tier }: AccountTopNavProps): JSX.El
           <button className="btn btn-ghost" onClick={onToggleDark} style={{ padding: '10px 12px' }}>
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
           </button>
-          <button className="btn btn-ghost" style={{ padding: '10px 14px' }}>
+          <a className="btn btn-ghost" href="/#faq" style={{ padding: '10px 14px' }}>
             <Icon name="link" size={13} /> Help
-          </button>
+          </a>
           {/* User pill */}
           <div
             className="row gap-10"

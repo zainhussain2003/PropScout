@@ -84,6 +84,17 @@ import {
 } from '../lib/reportShims'
 import { useTheme } from '../hooks/useTheme'
 
+/** Copy the report URL; the button shows "Link copied" for two seconds. */
+function useCopyLink(): { copied: boolean; copy: () => void } {
+  const [copied, setCopied] = useState(false)
+  const copy = (): void => {
+    void navigator.clipboard.writeText(window.location.href).catch(() => undefined)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return { copied, copy }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtCAD(n: number): string {
@@ -111,6 +122,7 @@ function TenantPropertyHero({
   mapCenter = null,
 }: TenantPropertyHeroProps): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
+  const share = useCopyLink()
   const listing = listingProp ?? CHARLES_LISTING
   const verdictColor =
     listing.scoreTone === 'pass'
@@ -399,26 +411,23 @@ function TenantPropertyHero({
 
           {/* Actions */}
           <div className="col" style={{ gap: 8 }}>
-            {tier === 'free' ? (
+            {/* Saving to an account is not a feature yet (D-064): the locked
+                control explains the upgrade; paid tiers get no button rather
+                than one that does nothing (D-077). */}
+            {tier === 'free' && (
               <LockedButton
                 label="Save to account"
                 icon="arrow"
                 onClick={() => openUpgradeModal('portfolio')}
               />
-            ) : (
-              <button
-                className="btn btn-primary"
-                style={{ width: '100%', justifyContent: 'center', padding: 14 }}
-              >
-                Save to account <Icon name="arrow" size={14} />
-              </button>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 className="btn btn-ghost"
+                onClick={share.copy}
                 style={{ flex: 1, justifyContent: 'center', padding: '11px 12px', fontSize: 13 }}
               >
-                <Icon name="link" size={13} /> Share
+                <Icon name="link" size={13} /> {share.copied ? 'Link copied' : 'Share'}
               </button>
               {tier === 'free' ? (
                 <LockedButton label="PDF" icon="doc" onClick={() => openUpgradeModal('pdf')} />
@@ -938,7 +947,14 @@ function UnitDetailsSection({
 
 // ── §12 Confirm-before-signing checklist ──────────────────────────────────────
 
-function ConfirmChecklist({ items }: { items: TenantChecklistItem[] }): JSX.Element {
+function ConfirmChecklist({
+  items,
+  onPDF,
+}: {
+  items: TenantChecklistItem[]
+  onPDF?: () => void
+}): JSX.Element {
+  const { tier, openUpgradeModal } = usePaywall()
   const [checked, setChecked] = useState<Set<number>>(new Set())
 
   function toggle(idx: number): void {
@@ -1050,12 +1066,19 @@ function ConfirmChecklist({ items }: { items: TenantChecklistItem[] }): JSX.Elem
             borderTop: '1px solid var(--line)',
           }}
         >
-          <button className="btn btn-primary">
-            <Icon name="doc" size={13} /> Export checklist as PDF
-          </button>
-          <button className="btn btn-ghost">
-            <Icon name="link" size={13} /> Send to my email
-          </button>
+          {/* The PDF is the report's Pro export; there is no email delivery,
+              so the "Send to my email" button that did nothing is gone. */}
+          {tier === 'free' ? (
+            <LockedButton
+              label="Export checklist as PDF"
+              icon="doc"
+              onClick={() => openUpgradeModal('pdf')}
+            />
+          ) : (
+            <button className="btn btn-primary" onClick={() => onPDF?.()}>
+              <Icon name="doc" size={13} /> Export checklist as PDF
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -1652,6 +1675,7 @@ export function TenantReport({
 
       {/* §12 Confirm before signing */}
       <ConfirmChecklist
+        onPDF={pdf.exportPdf}
         items={isReal ? shimToTenantChecklist(realListing!, realAnalysis!) : CHARLES_CHECKLIST}
       />
 

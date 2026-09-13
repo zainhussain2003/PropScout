@@ -1240,7 +1240,7 @@ const CHECKLIST_ITEMS = [
   { label: 'Walk the block at three different times of day', critical: false },
 ] as const
 
-function ChecklistSection(): JSX.Element {
+function ChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const [checked, setChecked] = useState<Set<number>>(new Set())
 
@@ -1344,7 +1344,7 @@ function ChecklistSection(): JSX.Element {
               onClick={() => openUpgradeModal('pdf')}
             />
           ) : (
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={() => onPDF?.()}>
               <Icon name="doc" size={13} /> Export checklist as PDF
             </button>
           )}
@@ -1622,7 +1622,7 @@ export function PersonalBuyerPage({
         <SunScoutSection />
       )}
       <RisksSection flags={isReal ? realAnalysis!.riskFlags : undefined} />
-      <ChecklistSection />
+      <ChecklistSection onPDF={pdf.exportPdf} />
       <ConversionSection city={isReal ? realListing!.city : 'Burlington'} />
 
       <Footer />
