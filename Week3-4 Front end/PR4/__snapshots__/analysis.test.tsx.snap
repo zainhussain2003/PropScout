@@ -2382,6 +2382,11 @@ exports[`PropertyHero > matches snapshot 1`] = `
               style="width: 30%;"
             />
           </div>
+          <p
+            class="scorecard-caption"
+          >
+            4 of these points assume typical days-on-market and flat rents — not measured for this area.
+          </p>
         </div>
         <div
           class="scorecard-row"
