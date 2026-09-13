@@ -3040,3 +3040,21 @@ documented "unknown" value.
 | Infer condo from a non-empty condo fee    | A fee is evidence, not a statement; the form now asks directly and the fee stays a fee.      |
 | Keep `detached` as the row-reader default | The reader cannot know; "more common" is a prior, and the report presents facts.             |
 | Make the type required on the form        | Some people will not know; the honest answer for them is "not provided", not a forced guess. |
+
+### D-086 · "Analyze another listing" goes to the input; the tenant crumb says when, not "refreshed"
+
+**Chosen.** On every report, "Analyze another listing" navigates to `/`. The tenant hero's
+freshness line reads "Analyzed 12 Sep 2026" from `analysis.createdAt` on a live report and
+"Sample report" on the demo. `TenantListingData.analyzedAt` carries the time; the shim sets it.
+The landlord hero's dead `href="#"` is `/`.
+
+**Why.** Audit UI-03. Investor and tenant used `history.back()`, which from a share link left
+the site; personal used a real link to `/`; landlord linked to `#` and did nothing. Four heroes,
+three behaviours, one of them nothing. The tenant crumb also said "Refreshed 3 min ago" on every
+report, live or demo — a live-data claim with nothing behind it (the same class as J-09).
+
+| Option                                      | Why not                                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Keep `history.back()` when there is history | Two behaviours for one label; the label says what it does.                                 |
+| Show the comps' nightly refresh time        | The nightly job's schedule is unconfirmed (BACKLOG §2); the analysis time is what we know. |
+| Drop the freshness line entirely            | When a report was produced is worth a few characters; it just has to be true.              |

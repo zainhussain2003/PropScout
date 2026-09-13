@@ -602,4 +602,6 @@ export interface TenantListingData {
   targetHigh: number
   chips: string[]
   photoUrls?: string[]
+  /** ISO time the analysis was produced; absent on the demo fixture. */
+  analyzedAt?: string
 }

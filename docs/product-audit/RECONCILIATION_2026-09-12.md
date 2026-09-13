@@ -51,7 +51,7 @@ not a defect.
 | S-06   | P1  | One score for all modes                              | 🟡     | Tenant has its own score; personal paused; landlord = L-03 🔒                                      |
 | UI-01  | P1  | Report header Share has no handler                   | ✅     | #48 D-077                                                                                          |
 | UI-02  | P1  | Save to account does not save                        | ✅     | #48, #59                                                                                           |
-| UI-03  | P2  | Breadcrumbs inconsistent; no mode switch             | 🟡     | Mode-switch claim removed #57; breadcrumb polish ⬜                                                |
+| UI-03  | P2  | Breadcrumbs inconsistent; no mode switch             | ✅     | Mode-switch claim removed #57; crumbs #66 D-086                                                    |
 | UI-04  | P2  | Theme page-local, not persisted                      | ✅     | #50 D-079                                                                                          |
 | T-01   | P0  | Share recipient cannot mutate owner state            | ✅     | #34 D-065; verified live                                                                           |
 | T-02   | P1  | Durable processing/failed states                     | 🔒     | Migration — BACKLOG                                                                                |

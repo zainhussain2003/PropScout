@@ -22,6 +22,7 @@
  */
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { usePaywall } from '../components/paywall/PaywallContext'
@@ -99,6 +100,12 @@ function useCopyLink(): { copied: boolean; copy: () => void } {
 
 function fmtCAD(n: number): string {
   return `$${n.toLocaleString('en-CA')}`
+}
+
+function formatAnalyzedAt(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return 'recently'
+  return d.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 // ── TenantPropertyHero ────────────────────────────────────────────────────────
@@ -184,7 +191,11 @@ function TenantPropertyHero({
             style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
             aria-hidden="true"
           />
-          Refreshed 3 min ago
+          {/* Used to read "Refreshed 3 min ago" on every report, live or demo
+              (UI-03). The analysis time is the only freshness fact we have. */}
+          {listing.analyzedAt
+            ? `Analyzed ${formatAnalyzedAt(listing.analyzedAt)}`
+            : 'Sample report'}
         </span>
       </div>
 
@@ -1244,6 +1255,7 @@ export function TenantReport({
   listing: realListing,
   flagOverrides = NO_FLAG_OVERRIDES,
 }: TenantReportProps): JSX.Element {
+  const navigate = useNavigate()
   const { openUpgradeModal } = usePaywall()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
   const { dark, toggle: toggleDark } = useTheme()
@@ -1275,7 +1287,7 @@ export function TenantReport({
       {/* Property hero — passes real listing data when available */}
       <TenantPropertyHero
         dark={dark}
-        onBack={() => window.history.back()}
+        onBack={() => navigate('/')}
         listing={tenantListing}
         onPDF={pdf.exportPdf}
         mapCenter={realAnalysis?.coordinates ?? null}
