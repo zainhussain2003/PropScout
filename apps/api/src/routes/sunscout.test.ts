@@ -143,6 +143,21 @@ describe('POST /:token/sunscout', () => {
     })
 
     expect(res.statusCode).toBe(400)
-    expect((res.json() as ApiError).code).toBe('INVALID_BEARING')
+    // The request schema answers this now (audit API-04), in the API's error
+    // shape; the handler's INVALID_BEARING remains for anything that gets past it.
+    const body = res.json() as ApiError
+    expect(body.error).toBe(true)
+    expect(body.code).toBe('INVALID_REQUEST')
+    expect(body.message).toMatch(/facadeBearing/)
+  })
+
+  it('400s on a non-numeric bearing without reaching the analysis lookup', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/sunscout',
+      payload: { facadeBearing: 'south' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect((res.json() as ApiError).code).toBe('INVALID_REQUEST')
   })
 })

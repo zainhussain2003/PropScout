@@ -11,6 +11,10 @@ import { corsOrigins } from './corsOrigins'
 
 const fastify = Fastify({
   logger: true,
+  // The largest legitimate body is an address-start payload of a dozen
+  // scalars. Fastify's default is 1 MiB; nothing here needs a hundredth of it
+  // (audit API-04).
+  bodyLimit: 64 * 1024,
 })
 
 async function main(): Promise<void> {

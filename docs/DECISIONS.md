@@ -2982,3 +2982,38 @@ promised, and one API instance serves production. A second instance needs the st
 | Refuse a re-trigger of a finished analysis | The person reloaded; they want the report, not an error.                                         |
 | Client-side guard only                     | A second tab, a retry button or a curl still re-runs the pipeline; the cost is server-side.      |
 | Wait for the running request and return it | Holds a second HTTP request open for a minute; the page polls anyway, so 202 is the right shape. |
+
+### D-081 · Schemas decide shape, handlers decide meaning; a flag override must name a flag on the report
+
+**Chosen.** Every public route validates its params and body against a JSON schema
+(`lib/requestSchemas.ts`) before the handler runs: strings are strings with a maximum length and,
+for tokens and flag IDs, a pattern; numbers are finite and in range; unknown properties are
+stripped. A validation failure is answered in the API's one error shape as `400 INVALID_REQUEST`
+with the field named, by a handler registered inside each route plugin so the route tests see
+production's behaviour. The API-wide body limit is 64 KB. And a flag override is accepted only
+for a flag ID the analysis actually raised — otherwise `422 UNKNOWN_FLAG` — checked after
+ownership, so a stranger learns nothing about the report's flags.
+
+**Why.** Audit API-04 and API-05. Handlers defended themselves piecemeal: one checked
+`typeof flagId === 'string'`, another `!token`, a third a bearing's range, and nothing bounded a
+token's length, a URL's length, or a body's size, so a 2 MB "token" reached a database query and
+an object where a string belonged reached a service. Flag IDs were any string, persisted as a
+dismissal — meaningless for a flag the report never had, and a latent dismissal of any flag the
+engine might emit under that id later.
+
+**The division of labour is deliberate.** The schema answers "is this the right shape and
+size"; the handler keeps answering "does this mean anything" with its own codes (`INVALID_MODE`,
+`NOT_FOUND`, `UNKNOWN_FLAG`). Putting the enum for `mode` in the schema would have moved a
+meaning question into a shape error and changed the code clients see for it.
+
+**Fastify's defaults shape two edges, recorded rather than fought.** Its validator coerces
+scalars (a bare `42` becomes `"42"`) and removes unknown properties rather than rejecting them;
+both are fine here because a coerced scalar still has to pass the length and pattern, and a
+stripped property never reaches a service. Its router caps a path parameter at 100 characters
+before any schema runs, so an over-long token is a 404 and the pattern guards the rest.
+
+| Option                                             | Why not                                                                                                             |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Validate against the static `FLAG_LABELS` registry | The engine can emit an id the API only humanises; the report's own flags are the registry that matters.             |
+| Put every check in the schema, drop handler codes  | Clients and tests would see `INVALID_REQUEST` for "mode we do not serve"; that is a meaning, not a shape.           |
+| Reject unknown properties instead of stripping     | Fastify's default is to strip; changing it API-wide for no observed benefit is a behaviour change for its own sake. |

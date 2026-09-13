@@ -53,6 +53,7 @@ import {
   DEFAULT_RENT_MONTHLY,
 } from '../constants/valuation'
 import { estimateValueFromRent } from '../constants/marketCapRates'
+import { applyValidationErrorHandler, analysisTriggerBody } from '../lib/requestSchemas'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -278,442 +279,451 @@ function toDealScore(py: PyDealScore): DealScore {
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post<{ Body: { token?: string; mode?: string } }>('/', async (req, reply) => {
-    const { token, mode: modeRaw } = req.body ?? {}
+  applyValidationErrorHandler(fastify)
 
-    // Step 1 — validate input
-    if (!token) {
-      return reply
-        .code(400)
-        .send(makeError('MISSING_TOKEN', 'A token is required to run analysis.'))
-    }
+  fastify.post<{ Body: { token?: string; mode?: string } }>(
+    '/',
+    { schema: { body: analysisTriggerBody } },
+    async (req, reply) => {
+      const { token, mode: modeRaw } = req.body ?? {}
 
-    if (!modeRaw || !VALID_MODES.includes(modeRaw)) {
-      return reply
-        .code(400)
-        .send(
-          makeError('INVALID_MODE', 'Mode must be one of: investor, personal, tenant, landlord.')
-        )
-    }
-
-    const mode = modeRaw as ReportMode
-    // Whether THIS request holds the in-flight mark. A request answered 202
-    // because another one holds it must not release the other's mark.
-    let holdsInFlight = false
-
-    try {
-      // Step 2 — look up listing
-      const listing = await getListingByToken(token)
-      if (!listing) {
-        return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
-      }
-
-      // Step 2a — idempotency by token (audit J-11). A finished analysis is
-      // returned as it was computed; one that is running here is not started
-      // again. Both answers come before the quota check, because a report
-      // the person already has, or already started, is not a new analysis —
-      // and a re-check would refuse the owner's own tenth run.
-      if (inFlight.has(token)) {
+      // Step 1 — validate input
+      if (!token) {
         return reply
-          .code(202)
-          .send({ token, status: 'processing', message: 'Analysis is already running.' })
+          .code(400)
+          .send(makeError('MISSING_TOKEN', 'A token is required to run analysis.'))
       }
-      if ((await getAnalysisStatus(token)) === 'complete') {
-        const stored = await getAnalysisByToken(token)
-        if (stored != null) {
-          return reply.send({ token, analysis: stored.analysis, cached: true })
+
+      if (!modeRaw || !VALID_MODES.includes(modeRaw)) {
+        return reply
+          .code(400)
+          .send(
+            makeError('INVALID_MODE', 'Mode must be one of: investor, personal, tenant, landlord.')
+          )
+      }
+
+      const mode = modeRaw as ReportMode
+      // Whether THIS request holds the in-flight mark. A request answered 202
+      // because another one holds it must not release the other's mark.
+      let holdsInFlight = false
+
+      try {
+        // Step 2 — look up listing
+        const listing = await getListingByToken(token)
+        if (!listing) {
+          return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
         }
-      }
-      inFlight.add(token)
-      holdsInFlight = true
 
-      // Step 2b — attribute the analysis and enforce the free-tier quota.
-      //
-      // Signed-in users send their session; guests send nothing. An invalid
-      // token is refused rather than downgraded to guest, because silently
-      // running unattributed would make the report un-ownable (D-065) and
-      // uncounted, and the client only sends a token it believes is current.
-      //
-      // The check runs before the pipeline (which costs money) and the claim
-      // runs before it too, so a run that dies mid-way is still counted —
-      // the quota is on analyses started, not finished. Tenant mode is
-      // exempt (spec §4) and guests are not counted (D-071 known limit).
-      const auth = await resolveUser(req)
-      if (!auth.ok && auth.reason === 'invalid') {
-        return reply
-          .code(401)
-          .send(makeError('UNAUTHORIZED', 'Your session has expired — sign in again.'))
-      }
-      if (auth.ok) {
-        await upsertUser(auth.userId, auth.email)
-        const user = await getUserById(auth.userId)
-        const tier = user?.tier ?? 'free'
-        const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
-        if (tier === 'free' && !exempt) {
-          const used = await getMonthlyAnalysisCount(auth.userId)
-          if (used >= FREE_TIER.MONTHLY_ANALYSIS_LIMIT) {
-            return reply.code(402).send({
-              ...makeError(
-                'FREE_LIMIT_REACHED',
-                `You've used all ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} free analyses this month.`
-              ),
-              used,
-              limit: FREE_TIER.MONTHLY_ANALYSIS_LIMIT,
-              resetsAt: startOfNextMonth().toISOString(),
-            })
+        // Step 2a — idempotency by token (audit J-11). A finished analysis is
+        // returned as it was computed; one that is running here is not started
+        // again. Both answers come before the quota check, because a report
+        // the person already has, or already started, is not a new analysis —
+        // and a re-check would refuse the owner's own tenth run.
+        if (inFlight.has(token)) {
+          return reply
+            .code(202)
+            .send({ token, status: 'processing', message: 'Analysis is already running.' })
+        }
+        if ((await getAnalysisStatus(token)) === 'complete') {
+          const stored = await getAnalysisByToken(token)
+          if (stored != null) {
+            return reply.send({ token, analysis: stored.analysis, cached: true })
           }
         }
-        await claimAnalysisForUser(token, auth.userId, mode)
-      }
+        inFlight.add(token)
+        holdsInFlight = true
 
-      // Step 3 — mark processing
-      await updateAnalysisStatus(token, 'processing')
+        // Step 2b — attribute the analysis and enforce the free-tier quota.
+        //
+        // Signed-in users send their session; guests send nothing. An invalid
+        // token is refused rather than downgraded to guest, because silently
+        // running unattributed would make the report un-ownable (D-065) and
+        // uncounted, and the client only sends a token it believes is current.
+        //
+        // The check runs before the pipeline (which costs money) and the claim
+        // runs before it too, so a run that dies mid-way is still counted —
+        // the quota is on analyses started, not finished. Tenant mode is
+        // exempt (spec §4) and guests are not counted (D-071 known limit).
+        const auth = await resolveUser(req)
+        if (!auth.ok && auth.reason === 'invalid') {
+          return reply
+            .code(401)
+            .send(makeError('UNAUTHORIZED', 'Your session has expired — sign in again.'))
+        }
+        if (auth.ok) {
+          await upsertUser(auth.userId, auth.email)
+          const user = await getUserById(auth.userId)
+          const tier = user?.tier ?? 'free'
+          const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
+          if (tier === 'free' && !exempt) {
+            const used = await getMonthlyAnalysisCount(auth.userId)
+            if (used >= FREE_TIER.MONTHLY_ANALYSIS_LIMIT) {
+              return reply.code(402).send({
+                ...makeError(
+                  'FREE_LIMIT_REACHED',
+                  `You've used all ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} free analyses this month.`
+                ),
+                used,
+                limit: FREE_TIER.MONTHLY_ANALYSIS_LIMIT,
+                resetsAt: startOfNextMonth().toISOString(),
+              })
+            }
+          }
+          await claimAnalysisForUser(token, auth.userId, mode)
+        }
 
-      // (The listing description is forwarded to the calc engine in the
-      // payload below — the calc engine runs the full extraction pipeline
-      // (regex + Haiku merge + confidence gating) and applies red-flag
-      // deductions to the deal score. Doing extraction here too would be
-      // duplicate work and the result would be ignored.)
+        // Step 3 — mark processing
+        await updateAnalysisStatus(token, 'processing')
 
-      // Geocode BEFORE the comps lookup and the calc engine call. lat/lng in
-      // property_data is what makes the calc engine's SunScout (sun-path)
-      // branch fire, and the comps search needs it to widen by radius when the
-      // FSA has no rows. Non-fatal: null coords skip SunScout, the real map,
-      // and the geographic comp fallback, but the report still runs.
-      const coords = await geocodeAddress(listing.address)
+        // (The listing description is forwarded to the calc engine in the
+        // payload below — the calc engine runs the full extraction pipeline
+        // (regex + Haiku merge + confidence gating) and applies red-flag
+        // deductions to the deal score. Doing extraction here too would be
+        // duplicate work and the result would be ignored.)
 
-      // Step 4 — fetch rental comps from nightly-scraped rental_listings.
-      // Falls back to a low-confidence estimate from the listing's own rent
-      // (or the price-based proxy) when the FSA has no comps yet.
-      // Coordinates let the search widen by radius when this FSA has no rows —
-      // dense condo FSAs such as Vaughan's L4K had none while dozens of comps
-      // sat within 5km. Without them the report fell back to a gross-yield
-      // proxy and told the user there were no comps for the area.
-      const comps = await fetchRentalComps(listing.postalCode, listing.beds, coords).catch(
-        () => null
-      )
+        // Geocode BEFORE the comps lookup and the calc engine call. lat/lng in
+        // property_data is what makes the calc engine's SunScout (sun-path)
+        // branch fire, and the comps search needs it to widen by radius when the
+        // FSA has no rows. Non-fatal: null coords skip SunScout, the real map,
+        // and the geographic comp fallback, but the report still runs.
+        const coords = await geocodeAddress(listing.address)
 
-      const rentalFallback =
-        listing.rentMonthly ?? Math.round((listing.price ?? 0) * RENT_TO_PRICE_MONTHLY)
-      const rentalForCalc = comps ?? {
-        low: Math.round(rentalFallback * (1 - FALLBACK_RENT_BAND)),
-        mid: rentalFallback,
-        high: Math.round(rentalFallback * (1 + FALLBACK_RENT_BAND)),
-        compCount: 0,
-        confidence: 'low' as const,
-      }
-
-      // Rent plausibility gate (decision 2026-07-01): a mid outside
-      // $500–$10,000/mo means the listing carried no usable rent/price (or a
-      // legacy row stored a unit error) — scoring it would produce confident
-      // garbage. Fail the analysis with a friendly message instead.
-      //
-      // The gate only applies to OBSERVED rents (the listing's own rent or a
-      // comps mid). A for-sale listing with no comps derives its mid from the
-      // asking price (~6% gross-yield proxy) — a $3.5M home legitimately
-      // proxies to >$10k/mo and must not hard-fail (live bug 2026-07-02);
-      // the calc engine's sanity bounds still flag extreme proxy rents. A
-      // rent-less FOR-RENT listing has no price either, so its $0 mid still
-      // fails the gate as designed.
-      const midIsSalePriceProxy =
-        comps == null && listing.rentMonthly == null && (listing.price ?? 0) > 0
-      if (
-        !midIsSalePriceProxy &&
-        (rentalForCalc.mid < RENT_BOUNDS.MIN_MONTHLY || rentalForCalc.mid > RENT_BOUNDS.MAX_MONTHLY)
-      ) {
-        await updateAnalysisStatus(token, 'failed')
-        return reply
-          .code(422)
-          .send(
-            makeError(
-              'RENT_OUT_OF_BOUNDS',
-              'The rent on this listing looks implausible — check the listing or enter details manually.'
-            )
-          )
-      }
-
-      // Step 4b — live mortgage rate (falls back to FINANCING_DEFAULTS.mortgage_rate
-      // when the BoC service is unreachable or returns 'fallback').
-      const liveRate = await getMortgageRate().catch(() => null)
-      const financingForCalc = {
-        ...FINANCING_DEFAULTS,
-        mortgage_rate: liveRate?.rate ?? FINANCING_DEFAULTS.mortgage_rate,
-      }
-
-      // Step 5 — build calc engine payload
-      // For for-rent listings (tenant/landlord modes), listing.price is null.
-      // Estimate value from rent via the per-city cap rate + residual-expense
-      // ratio (NOI / capRate), subtracting actual tax + condo fee when present
-      // so they're never double-counted. Keeps the calc engine able to score.
-      const estimatedPrice =
-        listing.price ??
-        estimateValueFromRent({
-          rentMonthly: listing.rentMonthly ?? DEFAULT_RENT_MONTHLY,
-          city: listing.city,
-          propertyType: listing.propertyType,
-          annualTaxes:
-            listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null,
-          condoFeeMonthly: listing.condoFeeMonthly,
-        })
-
-      // Estimate annual taxes from price + city when the scraper couldn't
-      // find the actual value. Defaulting to 0 understated carrying costs
-      // by $400–800/mo on a typical Ontario property.
-      const annualTaxesForCalc =
-        listing.annualTaxes != null && listing.annualTaxes > 0
-          ? listing.annualTaxes
-          : estimateAnnualTaxes(estimatedPrice, listing.city)
-
-      // Real per-city CMHC vacancy rate — feeds both the deal score's demand
-      // component (calc engine) and the narrative, so they stay consistent.
-      const cmhcVacancyRate = getVacancyRateByCity(listing.city)
-
-      // Flags the user previously dismissed for this analysis — forwarded so a
-      // re-run drops their score deduction. Non-essential: any failure (or a
-      // missing value) defaults to no dismissals; the analysis never fails here.
-      let dismissedFlagIds: string[] = []
-      try {
-        dismissedFlagIds = (await getFlagOverrides(token)) ?? []
-      } catch {
-        dismissedFlagIds = []
-      }
-
-      const calcPayload = {
-        // Forwarded so the calc engine runs the extraction pipeline and
-        // deducts from the deal score for confirmed red flags.
-        description: listing.description ?? null,
-        property_data: {
-          address: listing.address,
-          province: listing.province,
-          price: estimatedPrice,
-          annual_taxes: annualTaxesForCalc,
-          condo_fee_monthly: listing.condoFeeMonthly,
-          condo_fee_known: listing.condoFeeKnown,
-          // The engine's PropertyInput requires integers and uses neither
-          // count in a calculation; 0 here is a schema placeholder, not a
-          // fact — the report renders the nullable Listing, not this payload.
-          beds: listing.beds ?? 0,
-          baths: listing.baths ?? 0,
-          sqft: listing.sqft,
-          year_built: listing.yearBuilt,
-          property_type: listing.propertyType,
-          is_toronto: /^toronto(?:\s|\(|$)/i.test(listing.city.trim()),
-          lat: coords?.lat ?? null,
-          lng: coords?.lng ?? null,
-        },
-        financing: financingForCalc,
-        rental: {
-          low: rentalForCalc.low,
-          mid: rentalForCalc.mid,
-          high: rentalForCalc.high,
-          comp_count: rentalForCalc.compCount,
-          confidence: rentalForCalc.confidence,
-          postal_code: listing.postalCode,
-        },
-        cmhc_vacancy_rate: cmhcVacancyRate,
-        dismissed_flag_ids: dismissedFlagIds,
-        mode,
-      }
-
-      // Step 6 — call calc engine (explicit timeout: survives the public-edge
-      // limit and never hangs undici's default; shares the scrape path's fix).
-      let pyResponse: Response
-      try {
-        pyResponse = await fetch(`${CALC_ENGINE_URL}/analysis/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(calcPayload),
-          signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.ANALYSIS),
-        })
-      } catch (err) {
-        fastify.log.error(
-          { err: serializeError(err), timedOut: isTimeoutError(err) },
-          'Calc engine unreachable'
+        // Step 4 — fetch rental comps from nightly-scraped rental_listings.
+        // Falls back to a low-confidence estimate from the listing's own rent
+        // (or the price-based proxy) when the FSA has no comps yet.
+        // Coordinates let the search widen by radius when this FSA has no rows —
+        // dense condo FSAs such as Vaughan's L4K had none while dozens of comps
+        // sat within 5km. Without them the report fell back to a gross-yield
+        // proxy and told the user there were no comps for the area.
+        const comps = await fetchRentalComps(listing.postalCode, listing.beds, coords).catch(
+          () => null
         )
-        await updateAnalysisStatus(token, 'failed')
-        return reply
-          .code(503)
-          .send(
-            makeError(
-              'CALC_ENGINE_UNAVAILABLE',
-              'Analysis service is temporarily unavailable — try again in a moment.'
-            )
-          )
-      }
 
-      if (!pyResponse.ok) {
-        const raw = await pyResponse.text().catch(() => '')
-        fastify.log.error({ status: pyResponse.status, body: raw }, 'Calc engine returned error')
-        await updateAnalysisStatus(token, 'failed')
+        const rentalFallback =
+          listing.rentMonthly ?? Math.round((listing.price ?? 0) * RENT_TO_PRICE_MONTHLY)
+        const rentalForCalc = comps ?? {
+          low: Math.round(rentalFallback * (1 - FALLBACK_RENT_BAND)),
+          mid: rentalFallback,
+          high: Math.round(rentalFallback * (1 + FALLBACK_RENT_BAND)),
+          compCount: 0,
+          confidence: 'low' as const,
+        }
+
+        // Rent plausibility gate (decision 2026-07-01): a mid outside
+        // $500–$10,000/mo means the listing carried no usable rent/price (or a
+        // legacy row stored a unit error) — scoring it would produce confident
+        // garbage. Fail the analysis with a friendly message instead.
+        //
+        // The gate only applies to OBSERVED rents (the listing's own rent or a
+        // comps mid). A for-sale listing with no comps derives its mid from the
+        // asking price (~6% gross-yield proxy) — a $3.5M home legitimately
+        // proxies to >$10k/mo and must not hard-fail (live bug 2026-07-02);
+        // the calc engine's sanity bounds still flag extreme proxy rents. A
+        // rent-less FOR-RENT listing has no price either, so its $0 mid still
+        // fails the gate as designed.
+        const midIsSalePriceProxy =
+          comps == null && listing.rentMonthly == null && (listing.price ?? 0) > 0
+        if (
+          !midIsSalePriceProxy &&
+          (rentalForCalc.mid < RENT_BOUNDS.MIN_MONTHLY ||
+            rentalForCalc.mid > RENT_BOUNDS.MAX_MONTHLY)
+        ) {
+          await updateAnalysisStatus(token, 'failed')
+          return reply
+            .code(422)
+            .send(
+              makeError(
+                'RENT_OUT_OF_BOUNDS',
+                'The rent on this listing looks implausible — check the listing or enter details manually.'
+              )
+            )
+        }
+
+        // Step 4b — live mortgage rate (falls back to FINANCING_DEFAULTS.mortgage_rate
+        // when the BoC service is unreachable or returns 'fallback').
+        const liveRate = await getMortgageRate().catch(() => null)
+        const financingForCalc = {
+          ...FINANCING_DEFAULTS,
+          mortgage_rate: liveRate?.rate ?? FINANCING_DEFAULTS.mortgage_rate,
+        }
+
+        // Step 5 — build calc engine payload
+        // For for-rent listings (tenant/landlord modes), listing.price is null.
+        // Estimate value from rent via the per-city cap rate + residual-expense
+        // ratio (NOI / capRate), subtracting actual tax + condo fee when present
+        // so they're never double-counted. Keeps the calc engine able to score.
+        const estimatedPrice =
+          listing.price ??
+          estimateValueFromRent({
+            rentMonthly: listing.rentMonthly ?? DEFAULT_RENT_MONTHLY,
+            city: listing.city,
+            propertyType: listing.propertyType,
+            annualTaxes:
+              listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null,
+            condoFeeMonthly: listing.condoFeeMonthly,
+          })
+
+        // Estimate annual taxes from price + city when the scraper couldn't
+        // find the actual value. Defaulting to 0 understated carrying costs
+        // by $400–800/mo on a typical Ontario property.
+        const annualTaxesForCalc =
+          listing.annualTaxes != null && listing.annualTaxes > 0
+            ? listing.annualTaxes
+            : estimateAnnualTaxes(estimatedPrice, listing.city)
+
+        // Real per-city CMHC vacancy rate — feeds both the deal score's demand
+        // component (calc engine) and the narrative, so they stay consistent.
+        const cmhcVacancyRate = getVacancyRateByCity(listing.city)
+
+        // Flags the user previously dismissed for this analysis — forwarded so a
+        // re-run drops their score deduction. Non-essential: any failure (or a
+        // missing value) defaults to no dismissals; the analysis never fails here.
+        let dismissedFlagIds: string[] = []
+        try {
+          dismissedFlagIds = (await getFlagOverrides(token)) ?? []
+        } catch {
+          dismissedFlagIds = []
+        }
+
+        const calcPayload = {
+          // Forwarded so the calc engine runs the extraction pipeline and
+          // deducts from the deal score for confirmed red flags.
+          description: listing.description ?? null,
+          property_data: {
+            address: listing.address,
+            province: listing.province,
+            price: estimatedPrice,
+            annual_taxes: annualTaxesForCalc,
+            condo_fee_monthly: listing.condoFeeMonthly,
+            condo_fee_known: listing.condoFeeKnown,
+            // The engine's PropertyInput requires integers and uses neither
+            // count in a calculation; 0 here is a schema placeholder, not a
+            // fact — the report renders the nullable Listing, not this payload.
+            beds: listing.beds ?? 0,
+            baths: listing.baths ?? 0,
+            sqft: listing.sqft,
+            year_built: listing.yearBuilt,
+            property_type: listing.propertyType,
+            is_toronto: /^toronto(?:\s|\(|$)/i.test(listing.city.trim()),
+            lat: coords?.lat ?? null,
+            lng: coords?.lng ?? null,
+          },
+          financing: financingForCalc,
+          rental: {
+            low: rentalForCalc.low,
+            mid: rentalForCalc.mid,
+            high: rentalForCalc.high,
+            comp_count: rentalForCalc.compCount,
+            confidence: rentalForCalc.confidence,
+            postal_code: listing.postalCode,
+          },
+          cmhc_vacancy_rate: cmhcVacancyRate,
+          dismissed_flag_ids: dismissedFlagIds,
+          mode,
+        }
+
+        // Step 6 — call calc engine (explicit timeout: survives the public-edge
+        // limit and never hangs undici's default; shares the scrape path's fix).
+        let pyResponse: Response
+        try {
+          pyResponse = await fetch(`${CALC_ENGINE_URL}/analysis/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(calcPayload),
+            signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.ANALYSIS),
+          })
+        } catch (err) {
+          fastify.log.error(
+            { err: serializeError(err), timedOut: isTimeoutError(err) },
+            'Calc engine unreachable'
+          )
+          await updateAnalysisStatus(token, 'failed')
+          return reply
+            .code(503)
+            .send(
+              makeError(
+                'CALC_ENGINE_UNAVAILABLE',
+                'Analysis service is temporarily unavailable — try again in a moment.'
+              )
+            )
+        }
+
+        if (!pyResponse.ok) {
+          const raw = await pyResponse.text().catch(() => '')
+          fastify.log.error({ status: pyResponse.status, body: raw }, 'Calc engine returned error')
+          await updateAnalysisStatus(token, 'failed')
+          return reply
+            .code(500)
+            .send(
+              makeError(
+                'CALC_ENGINE_ERROR',
+                'Analysis failed due to an internal error — try again shortly.'
+              )
+            )
+        }
+
+        const pyData = (await pyResponse.json()) as PyAnalysisOutput
+
+        // Step 7 — walk score (uses the coordinates geocoded before the calc call)
+        const walkScore: WalkScoreResult | null = coords
+          ? await getWalkScore(listing.address, coords.lat, coords.lng)
+          : null
+
+        // Step 7b — nearest schools from the schools table (spec: 3 per level,
+        // distance-ranked, catchment NOT verified). Null until the EQAO/Fraser
+        // CSV is loaded or when geocoding failed — the report shows "data
+        // pending", and this lights up the moment the table has rows.
+        let schools: Analysis['schools'] = null
+        if (coords) {
+          try {
+            schools = (await getNearbySchools(coords.lat, coords.lng)) ?? null
+          } catch {
+            schools = null
+          }
+        }
+
+        // Step 7c — nearby amenity distances (Google Places): transit, grocery,
+        // highway on-ramp, pharmacy. Null when no coords / key missing / no results.
+        let nearbyDistances: Analysis['nearbyDistances'] = null
+        if (coords) {
+          try {
+            const d = await getNearbyDistances(coords.lat, coords.lng)
+            nearbyDistances = d.length > 0 ? d : null
+          } catch {
+            nearbyDistances = null
+          }
+        }
+
+        // Step 7d — census stats (StatsCan) for the listing's FSA: median household
+        // income + 5-year population growth. Null when the FSA isn't in the table.
+        let neighbourhoodStats: Analysis['neighbourhoodStats'] = null
+        try {
+          neighbourhoodStats = await getNeighbourhoodStats(listing.postalCode)
+        } catch {
+          neighbourhoodStats = null
+        }
+
+        // Step 7e — comparable recent sales within 1km (spec §7.3). Empty whenever
+        // the provider is unconfigured, out of coverage, or has nothing nearby —
+        // the report then shows its honest "no comparable-sales source" state
+        // rather than estimating a sale price. See docs/DECISIONS.md D-014.
+        let comparableSales: Analysis['comparableSales'] = []
+        let comparableSalesAreSample = false
+        if (coords) {
+          try {
+            const r = await getComparableSalesWithProvenance(coords.lat, coords.lng)
+            comparableSales = r.comps
+            comparableSalesAreSample = r.isSample
+          } catch {
+            comparableSales = []
+          }
+        }
+
+        // Step 8 — assemble deterministic verdict prose from validated inputs.
+        // The Python calc engine returns flag_id (not id) and no label; resolve
+        // human-readable labels here for both the verdict + the UI payload.
+        const resolvedFlags = pyData.risk_flags.map((f) => {
+          const id = String(f.flag_id ?? f.id ?? '')
+          return {
+            id,
+            severity: (f.severity as 'red' | 'amber') ?? 'amber',
+            tier: (f.tier as 'severe' | 'red' | 'amber') ?? 'amber',
+            label: flagLabel(id),
+            evidence: (f.evidence as string | null) ?? null,
+            confidence: Number(f.confidence ?? 0),
+          }
+        })
+
+        const flagLabels = resolvedFlags
+          .map((f) => f.label)
+          .filter(Boolean)
+          .join(', ')
+
+        const narrativeInput: NarrativeInput = {
+          mode,
+          tier: 'free',
+          address: listing.address,
+          price: listing.price,
+          capRate: pyData.metrics.cap_rate,
+          cashFlowMonthly: pyData.metrics.cash_flow_monthly,
+          cashFlowAnnual: pyData.metrics.cash_flow_annual,
+          cashOnCash: pyData.metrics.cash_on_cash_return,
+          dscr: pyData.metrics.dscr,
+          dealScore: pyData.deal_score.total,
+          dealVerdict: pyData.deal_score.verdict,
+          rentMid: rentalForCalc.mid,
+          compCount: rentalForCalc.compCount,
+          rentConfidence: rentalForCalc.confidence,
+          breakEvenRent: pyData.metrics.break_even_rent,
+          condoFeeMonthly: listing.condoFeeMonthly,
+          condoFeeKnown: listing.condoFeeKnown,
+          rentTrend: 'flat',
+          vacancyRate: cmhcVacancyRate,
+          riskFlagSummary: flagLabels || undefined,
+          // Tenant-verdict inputs — without these the tenant prompt saw only $0
+          // asking/range and wrongly concluded "no market data available" even
+          // when §01 showed real comps.
+          askingRent: listing.rentMonthly ?? undefined,
+          rentLow: rentalForCalc.low,
+          rentHigh: rentalForCalc.high,
+          walkScore: walkScore?.walk ?? null,
+          transitScore: walkScore?.transit ?? null,
+        }
+
+        const narrative = await generateNarrative(narrativeInput)
+
+        // Step 9 — assemble Analysis object
+        const analysis: Analysis = {
+          id: token,
+          token,
+          mode,
+          createdAt: new Date().toISOString(),
+          metrics: toMetrics(
+            pyData.metrics,
+            annualTaxesForCalc,
+            listing.annualTaxes == null || listing.annualTaxes <= 0
+          ),
+          dealScore: toDealScore(pyData.deal_score),
+          rentalComps: comps
+            ? {
+                low: comps.low,
+                mid: comps.mid,
+                high: comps.high,
+                compCount: comps.compCount,
+                confidence: comps.confidence,
+                postalCode: listing.postalCode,
+                radiusKm: comps.radiusKm,
+              }
+            : null,
+          riskFlags: resolvedFlags,
+          narrative,
+          walkScore,
+          neighbourhood: null,
+          nearbyDistances,
+          neighbourhoodStats,
+          comparableSales,
+          comparableSalesAreSample,
+          sunScout: toSunScout(pyData.sun_scout),
+          holdCase: toHoldCase(pyData.hold_case),
+          coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
+          schools,
+          hasSanityWarnings: pyData.has_sanity_warnings,
+        }
+
+        // Step 10 — save and return
+        await updateAnalysisByToken(token, analysis, listing)
+        return reply.send({ token, analysis })
+      } catch (err) {
+        fastify.log.error({ err }, 'Unexpected error in POST /analysis')
+        await updateAnalysisStatus(token, 'failed').catch(() => {})
         return reply
           .code(500)
-          .send(
-            makeError(
-              'CALC_ENGINE_ERROR',
-              'Analysis failed due to an internal error — try again shortly.'
-            )
-          )
+          .send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
+      } finally {
+        if (holdsInFlight) inFlight.delete(token)
       }
-
-      const pyData = (await pyResponse.json()) as PyAnalysisOutput
-
-      // Step 7 — walk score (uses the coordinates geocoded before the calc call)
-      const walkScore: WalkScoreResult | null = coords
-        ? await getWalkScore(listing.address, coords.lat, coords.lng)
-        : null
-
-      // Step 7b — nearest schools from the schools table (spec: 3 per level,
-      // distance-ranked, catchment NOT verified). Null until the EQAO/Fraser
-      // CSV is loaded or when geocoding failed — the report shows "data
-      // pending", and this lights up the moment the table has rows.
-      let schools: Analysis['schools'] = null
-      if (coords) {
-        try {
-          schools = (await getNearbySchools(coords.lat, coords.lng)) ?? null
-        } catch {
-          schools = null
-        }
-      }
-
-      // Step 7c — nearby amenity distances (Google Places): transit, grocery,
-      // highway on-ramp, pharmacy. Null when no coords / key missing / no results.
-      let nearbyDistances: Analysis['nearbyDistances'] = null
-      if (coords) {
-        try {
-          const d = await getNearbyDistances(coords.lat, coords.lng)
-          nearbyDistances = d.length > 0 ? d : null
-        } catch {
-          nearbyDistances = null
-        }
-      }
-
-      // Step 7d — census stats (StatsCan) for the listing's FSA: median household
-      // income + 5-year population growth. Null when the FSA isn't in the table.
-      let neighbourhoodStats: Analysis['neighbourhoodStats'] = null
-      try {
-        neighbourhoodStats = await getNeighbourhoodStats(listing.postalCode)
-      } catch {
-        neighbourhoodStats = null
-      }
-
-      // Step 7e — comparable recent sales within 1km (spec §7.3). Empty whenever
-      // the provider is unconfigured, out of coverage, or has nothing nearby —
-      // the report then shows its honest "no comparable-sales source" state
-      // rather than estimating a sale price. See docs/DECISIONS.md D-014.
-      let comparableSales: Analysis['comparableSales'] = []
-      let comparableSalesAreSample = false
-      if (coords) {
-        try {
-          const r = await getComparableSalesWithProvenance(coords.lat, coords.lng)
-          comparableSales = r.comps
-          comparableSalesAreSample = r.isSample
-        } catch {
-          comparableSales = []
-        }
-      }
-
-      // Step 8 — assemble deterministic verdict prose from validated inputs.
-      // The Python calc engine returns flag_id (not id) and no label; resolve
-      // human-readable labels here for both the verdict + the UI payload.
-      const resolvedFlags = pyData.risk_flags.map((f) => {
-        const id = String(f.flag_id ?? f.id ?? '')
-        return {
-          id,
-          severity: (f.severity as 'red' | 'amber') ?? 'amber',
-          tier: (f.tier as 'severe' | 'red' | 'amber') ?? 'amber',
-          label: flagLabel(id),
-          evidence: (f.evidence as string | null) ?? null,
-          confidence: Number(f.confidence ?? 0),
-        }
-      })
-
-      const flagLabels = resolvedFlags
-        .map((f) => f.label)
-        .filter(Boolean)
-        .join(', ')
-
-      const narrativeInput: NarrativeInput = {
-        mode,
-        tier: 'free',
-        address: listing.address,
-        price: listing.price,
-        capRate: pyData.metrics.cap_rate,
-        cashFlowMonthly: pyData.metrics.cash_flow_monthly,
-        cashFlowAnnual: pyData.metrics.cash_flow_annual,
-        cashOnCash: pyData.metrics.cash_on_cash_return,
-        dscr: pyData.metrics.dscr,
-        dealScore: pyData.deal_score.total,
-        dealVerdict: pyData.deal_score.verdict,
-        rentMid: rentalForCalc.mid,
-        compCount: rentalForCalc.compCount,
-        rentConfidence: rentalForCalc.confidence,
-        breakEvenRent: pyData.metrics.break_even_rent,
-        condoFeeMonthly: listing.condoFeeMonthly,
-        condoFeeKnown: listing.condoFeeKnown,
-        rentTrend: 'flat',
-        vacancyRate: cmhcVacancyRate,
-        riskFlagSummary: flagLabels || undefined,
-        // Tenant-verdict inputs — without these the tenant prompt saw only $0
-        // asking/range and wrongly concluded "no market data available" even
-        // when §01 showed real comps.
-        askingRent: listing.rentMonthly ?? undefined,
-        rentLow: rentalForCalc.low,
-        rentHigh: rentalForCalc.high,
-        walkScore: walkScore?.walk ?? null,
-        transitScore: walkScore?.transit ?? null,
-      }
-
-      const narrative = await generateNarrative(narrativeInput)
-
-      // Step 9 — assemble Analysis object
-      const analysis: Analysis = {
-        id: token,
-        token,
-        mode,
-        createdAt: new Date().toISOString(),
-        metrics: toMetrics(
-          pyData.metrics,
-          annualTaxesForCalc,
-          listing.annualTaxes == null || listing.annualTaxes <= 0
-        ),
-        dealScore: toDealScore(pyData.deal_score),
-        rentalComps: comps
-          ? {
-              low: comps.low,
-              mid: comps.mid,
-              high: comps.high,
-              compCount: comps.compCount,
-              confidence: comps.confidence,
-              postalCode: listing.postalCode,
-              radiusKm: comps.radiusKm,
-            }
-          : null,
-        riskFlags: resolvedFlags,
-        narrative,
-        walkScore,
-        neighbourhood: null,
-        nearbyDistances,
-        neighbourhoodStats,
-        comparableSales,
-        comparableSalesAreSample,
-        sunScout: toSunScout(pyData.sun_scout),
-        holdCase: toHoldCase(pyData.hold_case),
-        coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
-        schools,
-        hasSanityWarnings: pyData.has_sanity_warnings,
-      }
-
-      // Step 10 — save and return
-      await updateAnalysisByToken(token, analysis, listing)
-      return reply.send({ token, analysis })
-    } catch (err) {
-      fastify.log.error({ err }, 'Unexpected error in POST /analysis')
-      await updateAnalysisStatus(token, 'failed').catch(() => {})
-      return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
-    } finally {
-      if (holdsInFlight) inFlight.delete(token)
     }
-  })
+  )
 }
 
 export default analysisRoutes

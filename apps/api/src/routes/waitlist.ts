@@ -11,6 +11,7 @@
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
 import { addToWaitlist } from '../services/supabaseService'
+import { applyValidationErrorHandler, waitlistBody } from '../lib/requestSchemas'
 
 interface WaitlistBody {
   email: string
@@ -26,7 +27,9 @@ function isWaitlistBody(body: unknown): body is WaitlistBody {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 async function waitlistRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post('/', async (req, reply) => {
+  applyValidationErrorHandler(fastify)
+
+  fastify.post('/', { schema: { body: waitlistBody } }, async (req, reply) => {
     if (!isWaitlistBody(req.body)) {
       return reply
         .code(400)

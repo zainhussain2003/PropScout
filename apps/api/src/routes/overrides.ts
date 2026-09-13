@@ -46,8 +46,15 @@ import {
   addFlagOverride,
   deleteFlagOverride,
   getAnalysisOwnerByToken,
+  getAnalysisFlagIds,
 } from '../services/supabaseService'
 import { resolveUser } from '../lib/requireUser'
+import {
+  applyValidationErrorHandler,
+  tokenParams,
+  tokenFlagParams,
+  overridePostBody,
+} from '../lib/requestSchemas'
 
 interface TokenParam {
   token: string
@@ -73,7 +80,7 @@ interface PostBody {
  * decides to send, and there is nothing to mistake for "allowed".
  */
 interface Denial {
-  status: 401 | 403 | 404
+  status: 401 | 403 | 404 | 422
   code: string
   message: string
 }
@@ -117,68 +124,103 @@ async function denyUnlessOwner(req: FastifyRequest, token: string): Promise<Deni
   return null
 }
 
-async function overridesRoutes(fastify: FastifyInstance): Promise<void> {
-  // ── GET ────────────────────────────────────────────────────────────────────
-  fastify.get<{ Params: TokenParam }>('/:token/overrides', async (req, reply) => {
-    const { token } = req.params
-    if (!token) {
-      return reply.code(400).send(makeError('MISSING_TOKEN', 'Token is required.'))
+/**
+ * The flag must be one this report raised (audit API-05). A dismissal of a
+ * flag the analysis never had is not an override of anything — it is an
+ * arbitrary string written to the row, and it would count as a dismissal if
+ * the engine ever emitted that id later.
+ */
+async function denyUnlessFlagOnReport(token: string, flagId: string): Promise<Denial | null> {
+  const ids = await getAnalysisFlagIds(token)
+  if (ids == null)
+    return { status: 404, code: 'NOT_FOUND', message: 'Analysis not found for this token.' }
+  if (!ids.has(flagId)) {
+    return {
+      status: 422,
+      code: 'UNKNOWN_FLAG',
+      message: 'That flag is not on this report, so there is nothing to dismiss.',
     }
+  }
+  return null
+}
 
-    const overrides = await getFlagOverrides(token)
-    return reply.send({ overrides })
-  })
+async function overridesRoutes(fastify: FastifyInstance): Promise<void> {
+  applyValidationErrorHandler(fastify)
+
+  // ── GET ────────────────────────────────────────────────────────────────────
+  fastify.get<{ Params: TokenParam }>(
+    '/:token/overrides',
+    { schema: { params: tokenParams } },
+    async (req, reply) => {
+      const { token } = req.params
+      if (!token) {
+        return reply.code(400).send(makeError('MISSING_TOKEN', 'Token is required.'))
+      }
+
+      const overrides = await getFlagOverrides(token)
+      return reply.send({ overrides })
+    }
+  )
 
   // ── POST ───────────────────────────────────────────────────────────────────
-  fastify.post<{ Params: TokenParam; Body: PostBody }>('/:token/overrides', async (req, reply) => {
-    const { token } = req.params
-    const flagId = req.body?.flagId
+  fastify.post<{ Params: TokenParam; Body: PostBody }>(
+    '/:token/overrides',
+    { schema: { params: tokenParams, body: overridePostBody } },
+    async (req, reply) => {
+      const { token } = req.params
+      const flagId = req.body?.flagId
 
-    if (!token) {
-      return reply.code(400).send(makeError('MISSING_TOKEN', 'Token is required.'))
-    }
-    if (!flagId || typeof flagId !== 'string') {
-      return reply
-        .code(400)
-        .send(makeError('MISSING_FLAG_ID', 'flagId is required in the request body.'))
-    }
+      if (!token) {
+        return reply.code(400).send(makeError('MISSING_TOKEN', 'Token is required.'))
+      }
+      if (!flagId || typeof flagId !== 'string') {
+        return reply
+          .code(400)
+          .send(makeError('MISSING_FLAG_ID', 'flagId is required in the request body.'))
+      }
 
-    const denied = await denyUnlessOwner(req, token)
-    if (denied) {
-      return reply.code(denied.status).send(makeError(denied.code, denied.message))
-    }
+      const denied =
+        (await denyUnlessOwner(req, token)) ?? (await denyUnlessFlagOnReport(token, flagId))
+      if (denied) {
+        return reply.code(denied.status).send(makeError(denied.code, denied.message))
+      }
 
-    const ok = await addFlagOverride(token, flagId)
-    if (!ok) {
-      return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found for this token.'))
-    }
+      const ok = await addFlagOverride(token, flagId)
+      if (!ok) {
+        return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found for this token.'))
+      }
 
-    return reply.send({ ok: true })
-  })
+      return reply.send({ ok: true })
+    }
+  )
 
   // ── DELETE ─────────────────────────────────────────────────────────────────
-  fastify.delete<{ Params: TokenFlagParams }>('/:token/overrides/:flagId', async (req, reply) => {
-    const { token, flagId } = req.params
+  fastify.delete<{ Params: TokenFlagParams }>(
+    '/:token/overrides/:flagId',
+    { schema: { params: tokenFlagParams } },
+    async (req, reply) => {
+      const { token, flagId } = req.params
 
-    if (!token) {
-      return reply.code(400).send(makeError('MISSING_TOKEN', 'Token is required.'))
-    }
-    if (!flagId) {
-      return reply.code(400).send(makeError('MISSING_FLAG_ID', 'flagId is required.'))
-    }
+      if (!token) {
+        return reply.code(400).send(makeError('MISSING_TOKEN', 'Token is required.'))
+      }
+      if (!flagId) {
+        return reply.code(400).send(makeError('MISSING_FLAG_ID', 'flagId is required.'))
+      }
 
-    const denied = await denyUnlessOwner(req, token)
-    if (denied) {
-      return reply.code(denied.status).send(makeError(denied.code, denied.message))
-    }
+      const denied = await denyUnlessOwner(req, token)
+      if (denied) {
+        return reply.code(denied.status).send(makeError(denied.code, denied.message))
+      }
 
-    const ok = await deleteFlagOverride(token, flagId)
-    if (!ok) {
-      return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found for this token.'))
-    }
+      const ok = await deleteFlagOverride(token, flagId)
+      if (!ok) {
+        return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found for this token.'))
+      }
 
-    return reply.send({ ok: true })
-  })
+      return reply.send({ ok: true })
+    }
+  )
 }
 
 export default overridesRoutes

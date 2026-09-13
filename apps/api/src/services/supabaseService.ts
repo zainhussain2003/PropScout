@@ -782,6 +782,29 @@ export async function getAnalysisOwnerByToken(
   return { analysisId: row.id, userId: row.user_id }
 }
 
+/**
+ * The flag IDs the report at `token` actually carries (audit API-05). An
+ * override is meaningful only for a flag the analysis raised; anything else is
+ * an arbitrary string persisted against the row. Null when the token is unknown.
+ */
+export async function getAnalysisFlagIds(token: string): Promise<Set<string> | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('risk_flags')
+    .eq('share_token', token)
+    .maybeSingle()
+  if (error != null || data == null) return null
+  const flags = (data as { risk_flags: unknown }).risk_flags
+  const ids = new Set<string>()
+  if (Array.isArray(flags)) {
+    for (const f of flags) {
+      const id = (f as { id?: unknown })?.id
+      if (typeof id === 'string') ids.add(id)
+    }
+  }
+  return ids
+}
+
 async function getAnalysisIdByToken(token: string): Promise<string | null> {
   const { data, error } = await db()
     .from('analyses')

@@ -37,6 +37,11 @@ import { saveListing, createPendingAnalysis } from '../services/supabaseService'
 import type { Listing, ListingType } from '../types/property'
 import { isOntarioPostalCode } from '../constants/provinces'
 import { makeError } from '../types/api'
+import {
+  applyValidationErrorHandler,
+  addressLookupBody,
+  addressStartBody,
+} from '../lib/requestSchemas'
 
 /** FSA first letter → province, for telling a non-Ontario user where they are. */
 const FSA_PROVINCE_MAP: Record<string, string> = {
@@ -120,102 +125,108 @@ interface StartBody {
 }
 
 async function addressRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post<{ Body: AddressBody }>('/', async (req, reply) => {
-    const raw = (req.body?.address ?? '').trim()
+  applyValidationErrorHandler(fastify)
 
-    if (raw.length < MIN_ADDRESS_LENGTH) {
-      return reply
-        .code(422)
-        .send(
-          makeError(
-            'ADDRESS_TOO_SHORT',
-            'That looks too short to be an address — try including the street number and city.'
+  fastify.post<{ Body: AddressBody }>(
+    '/',
+    { schema: { body: addressLookupBody } },
+    async (req, reply) => {
+      const raw = (req.body?.address ?? '').trim()
+
+      if (raw.length < MIN_ADDRESS_LENGTH) {
+        return reply
+          .code(422)
+          .send(
+            makeError(
+              'ADDRESS_TOO_SHORT',
+              'That looks too short to be an address — try including the street number and city.'
+            )
           )
-        )
-    }
+      }
 
-    // Strip any leading unit designator before geocoding — see UNIT_PREFIX.
-    const { unit, street } = splitUnitPrefix(raw)
+      // Strip any leading unit designator before geocoding — see UNIT_PREFIX.
+      const { unit, street } = splitUnitPrefix(raw)
 
-    // Geocode exactly what was typed, restricted to Canada by the service.
-    // An earlier version appended ", Ontario, Canada" to bias the match; that
-    // was worse in both directions. It manufactured confident matches for
-    // nonsense ("qwertyuiop zxcvbn" resolved to a street in Ingleside), and it
-    // made out-of-province addresses unfindable — a Vancouver address returned
-    // "we couldn't find that" instead of reaching the BC waitlist gate below.
-    const query = street
+      // Geocode exactly what was typed, restricted to Canada by the service.
+      // An earlier version appended ", Ontario, Canada" to bias the match; that
+      // was worse in both directions. It manufactured confident matches for
+      // nonsense ("qwertyuiop zxcvbn" resolved to a street in Ingleside), and it
+      // made out-of-province addresses unfindable — a Vancouver address returned
+      // "we couldn't find that" instead of reaching the BC waitlist gate below.
+      const query = street
 
-    let geo: Awaited<ReturnType<typeof geocodeAddress>>
-    try {
-      geo = await geocodeAddress(query)
-    } catch (err) {
-      fastify.log.error({ err }, 'Geocoding failed for address input')
-      return reply
-        .code(503)
-        .send(
-          makeError(
-            'GEOCODER_UNAVAILABLE',
-            'Address lookup is temporarily unavailable — try again in a moment.'
+      let geo: Awaited<ReturnType<typeof geocodeAddress>>
+      try {
+        geo = await geocodeAddress(query)
+      } catch (err) {
+        fastify.log.error({ err }, 'Geocoding failed for address input')
+        return reply
+          .code(503)
+          .send(
+            makeError(
+              'GEOCODER_UNAVAILABLE',
+              'Address lookup is temporarily unavailable — try again in a moment.'
+            )
           )
-        )
-    }
+      }
 
-    if (!geo) {
-      return reply
-        .code(422)
-        .send(
-          makeError(
-            'ADDRESS_NOT_FOUND',
-            "We couldn't find that address. Check the spelling, or add the city and postal code."
+      if (!geo) {
+        return reply
+          .code(422)
+          .send(
+            makeError(
+              'ADDRESS_NOT_FOUND',
+              "We couldn't find that address. Check the spelling, or add the city and postal code."
+            )
           )
-        )
-    }
+      }
 
-    if (geo.relevance < MIN_RELEVANCE) {
-      // A weak match is worse than no match: it produces a real report about the
-      // wrong place, and nothing on the page would look wrong.
-      return reply
-        .code(422)
-        .send(
-          makeError(
-            'ADDRESS_NOT_FOUND',
-            "We couldn't find that address. Check the spelling, or add the city and postal code."
+      if (geo.relevance < MIN_RELEVANCE) {
+        // A weak match is worse than no match: it produces a real report about the
+        // wrong place, and nothing on the page would look wrong.
+        return reply
+          .code(422)
+          .send(
+            makeError(
+              'ADDRESS_NOT_FOUND',
+              "We couldn't find that address. Check the spelling, or add the city and postal code."
+            )
           )
-        )
-    }
+      }
 
-    const postalCode = (geo.postalCode ?? '').replace(/\s+/g, '').toUpperCase()
-    if (postalCode.length < 6) {
-      // A match without a full postal code is a street or neighbourhood centroid,
-      // not a building. Scoring it would attach real numbers to the wrong place.
-      return reply
-        .code(422)
-        .send(
-          makeError(
-            'POSTAL_CODE_NOT_FOUND',
-            'We found that street but not the specific address — add the unit or postal code.'
+      const postalCode = (geo.postalCode ?? '').replace(/\s+/g, '').toUpperCase()
+      if (postalCode.length < 6) {
+        // A match without a full postal code is a street or neighbourhood centroid,
+        // not a building. Scoring it would attach real numbers to the wrong place.
+        return reply
+          .code(422)
+          .send(
+            makeError(
+              'POSTAL_CODE_NOT_FOUND',
+              'We found that street but not the specific address — add the unit or postal code.'
+            )
           )
-        )
-    }
+      }
 
-    if (!isOntarioPostalCode(postalCode)) {
-      const province = FSA_PROVINCE_MAP[postalCode.charAt(0)] ?? 'UNKNOWN'
-      // 200, not an error: this is a supported outcome with its own screen
-      // (the province waitlist), matching how POST /scrape reports it.
-      return reply.send({ ok: false, error: 'PROVINCE_NOT_SUPPORTED', province })
-    }
+      if (!isOntarioPostalCode(postalCode)) {
+        const province = FSA_PROVINCE_MAP[postalCode.charAt(0)] ?? 'UNKNOWN'
+        // 200, not an error: this is a supported outcome with its own screen
+        // (the province waitlist), matching how POST /scrape reports it.
+        return reply.send({ ok: false, error: 'PROVINCE_NOT_SUPPORTED', province })
+      }
 
-    return reply.send({
-      ok: true,
-      // Re-attach the unit so the report shows the address the user actually
-      // typed, and SunScout can infer the floor from it.
-      address: unit ? `${unit} - ${geo.formattedAddress}` : (geo.formattedAddress ?? raw),
-      unit,
-      postalCode,
-      city: geo.city ?? '',
-      coordinates: { lat: geo.lat, lng: geo.lng },
-    })
-  })
+      return reply.send({
+        ok: true,
+        // Re-attach the unit so the report shows the address the user actually
+        // typed, and SunScout can infer the floor from it.
+        address: unit ? `${unit} - ${geo.formattedAddress}` : (geo.formattedAddress ?? raw),
+        unit,
+        postalCode,
+        city: geo.city ?? '',
+        coordinates: { lat: geo.lat, lng: geo.lng },
+      })
+    }
+  )
 
   /**
    * POST /address/start — create an analysis from a confirmed address plus the
@@ -226,76 +237,80 @@ async function addressRoutes(fastify: FastifyInstance): Promise<void> {
    * where the facts came from — a person rather than a listing page — so the
    * whole downstream pipeline is unchanged.
    */
-  fastify.post<{ Body: StartBody }>('/start', async (req, reply) => {
-    const b = req.body ?? {}
+  fastify.post<{ Body: StartBody }>(
+    '/start',
+    { schema: { body: addressStartBody } },
+    async (req, reply) => {
+      const b = req.body ?? {}
 
-    if (!b.address || typeof b.lat !== 'number' || typeof b.lng !== 'number' || !b.postalCode) {
-      return reply
-        .code(400)
-        .send(makeError('MISSING_LOCATION', 'Look the address up again before continuing.'))
-    }
+      if (!b.address || typeof b.lat !== 'number' || typeof b.lng !== 'number' || !b.postalCode) {
+        return reply
+          .code(400)
+          .send(makeError('MISSING_LOCATION', 'Look the address up again before continuing.'))
+      }
 
-    if (!isOntarioPostalCode(b.postalCode)) {
-      return reply
-        .code(422)
-        .send(makeError('PROVINCE_NOT_SUPPORTED', 'PropScout covers Ontario for now.'))
-    }
+      if (!isOntarioPostalCode(b.postalCode)) {
+        return reply
+          .code(422)
+          .send(makeError('PROVINCE_NOT_SUPPORTED', 'PropScout covers Ontario for now.'))
+      }
 
-    const listingType: ListingType = b.listingType === 'for-rent' ? 'for-rent' : 'for-sale'
-    const price = listingType === 'for-sale' ? (b.price ?? null) : null
-    const rentMonthly = listingType === 'for-rent' ? (b.rentMonthly ?? null) : null
+      const listingType: ListingType = b.listingType === 'for-rent' ? 'for-rent' : 'for-sale'
+      const price = listingType === 'for-sale' ? (b.price ?? null) : null
+      const rentMonthly = listingType === 'for-rent' ? (b.rentMonthly ?? null) : null
 
-    if (listingType === 'for-sale' && (price === null || price <= 0)) {
-      return reply
-        .code(422)
-        .send(makeError('PRICE_REQUIRED', 'Enter the asking price so we can run the numbers.'))
-    }
-    if (listingType === 'for-rent' && (rentMonthly === null || rentMonthly <= 0)) {
-      return reply
-        .code(422)
-        .send(makeError('RENT_REQUIRED', 'Enter the monthly rent so we can run the numbers.'))
-    }
+      if (listingType === 'for-sale' && (price === null || price <= 0)) {
+        return reply
+          .code(422)
+          .send(makeError('PRICE_REQUIRED', 'Enter the asking price so we can run the numbers.'))
+      }
+      if (listingType === 'for-rent' && (rentMonthly === null || rentMonthly <= 0)) {
+        return reply
+          .code(422)
+          .send(makeError('RENT_REQUIRED', 'Enter the monthly rent so we can run the numbers.'))
+      }
 
-    const listing: Omit<Listing, 'id'> = {
-      // No source URL: this listing came from a person, not a page. Recording a
-      // fake one would make it indistinguishable from a scraped listing later.
-      url: '',
-      listingType,
-      address: b.address,
-      city: b.city ?? '',
-      province: 'ON',
-      postalCode: b.postalCode,
-      price,
-      rentMonthly,
-      // What the form did not collect is null, not 0. A blank bathroom field
-      // used to be stored as 0 and rendered "0 bath" on the report — a claim
-      // the user never made (D-072).
-      beds: b.beds ?? null,
-      baths: b.baths ?? null,
-      sqft: b.sqft ?? null,
-      propertyType: (b.propertyType as Listing['propertyType']) ?? 'condo',
-      yearBuilt: null,
-      parkingSpots: null,
-      condoFeeMonthly: b.condoFeeMonthly ?? null,
-      condoFeeKnown: b.condoFeeMonthly != null,
-      annualTaxes: b.annualTaxes ?? null,
-      description: null,
-      photos: [],
-      scrapedAt: new Date().toISOString(),
-    }
+      const listing: Omit<Listing, 'id'> = {
+        // No source URL: this listing came from a person, not a page. Recording a
+        // fake one would make it indistinguishable from a scraped listing later.
+        url: '',
+        listingType,
+        address: b.address,
+        city: b.city ?? '',
+        province: 'ON',
+        postalCode: b.postalCode,
+        price,
+        rentMonthly,
+        // What the form did not collect is null, not 0. A blank bathroom field
+        // used to be stored as 0 and rendered "0 bath" on the report — a claim
+        // the user never made (D-072).
+        beds: b.beds ?? null,
+        baths: b.baths ?? null,
+        sqft: b.sqft ?? null,
+        propertyType: (b.propertyType as Listing['propertyType']) ?? 'condo',
+        yearBuilt: null,
+        parkingSpots: null,
+        condoFeeMonthly: b.condoFeeMonthly ?? null,
+        condoFeeKnown: b.condoFeeMonthly != null,
+        annualTaxes: b.annualTaxes ?? null,
+        description: null,
+        photos: [],
+        scrapedAt: new Date().toISOString(),
+      }
 
-    try {
-      const listingId = await saveListing(listing, 'manual')
-      const token = randomUUID()
-      await createPendingAnalysis(listingId, token)
-      return reply.send({ token, listing })
-    } catch (err) {
-      fastify.log.error({ err }, 'Failed to start analysis from address')
-      return reply
-        .code(500)
-        .send(makeError('INTERNAL_ERROR', 'Something went wrong — please try again.'))
+      try {
+        const listingId = await saveListing(listing, 'manual')
+        const token = randomUUID()
+        await createPendingAnalysis(listingId, token)
+        return reply.send({ token, listing })
+      } catch (err) {
+        fastify.log.error({ err }, 'Failed to start analysis from address')
+        return reply
+          .code(500)
+          .send(makeError('INTERNAL_ERROR', 'Something went wrong — please try again.'))
+      }
     }
-  })
+  )
 }
 
 export default addressRoutes
