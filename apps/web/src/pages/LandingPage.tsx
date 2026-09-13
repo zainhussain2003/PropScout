@@ -1640,8 +1640,15 @@ function HeroStaticMap(): JSX.Element | null {
 type ModeStat = [string, string, string]
 
 function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
+  // Sample figures, labelled as such. The personal card used to show an
+  // "FMV band" and a "School rank · Top 8%" — outputs the product does not
+  // produce (no sales feed, Fraser rankings not loaded), presented as if it did.
   return (
-    <div className="row gap-12" style={{ marginTop: 4, flexWrap: 'wrap' }}>
+    <div
+      className="row gap-12"
+      style={{ marginTop: 4, flexWrap: 'wrap' }}
+      aria-label="Example figures from a sample report"
+    >
       {stats.map(([lbl, val, status]) => (
         <div
           key={lbl}
@@ -1685,6 +1692,12 @@ function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
           </div>
         </div>
       ))}
+      <span
+        className="mono"
+        style={{ flexBasis: '100%', fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
+      >
+        EXAMPLE FIGURES FROM A SAMPLE REPORT
+      </span>
     </div>
   )
 }
@@ -1849,11 +1862,11 @@ function ReportsSection(): JSX.Element {
       who: 'Personal buyer',
       tag: 'For sale',
       title: "I'm buying a home to live in",
-      copy: 'True monthly cost of ownership, comparable sales, walk/transit, school catchments. The home you can live in, not just close on.',
+      copy: 'True monthly cost of ownership, walk/transit, nearby schools with EQAO scores, sun exposure. The home you can live in, not just close on.',
       stats: [
         ['Monthly cost', '$4,733', ''],
-        ['FMV band', '$695–745k', 'pass'],
-        ['School rank', 'Top 8%', 'pass'],
+        ['Walk score', '80', 'pass'],
+        ['Sun score', '87 / 100', 'pass'],
       ] as [string, string, string][],
     },
     {
@@ -2171,7 +2184,7 @@ function CoverageSection(): JSX.Element {
     {
       icon: 'house' as const,
       t: 'Schools that matter',
-      d: 'EQAO scores, Fraser Institute percentile, catchment overlays for TDSB and the major Ontario boards. Drive time, not crow flies.',
+      d: 'The nearest schools by board with their EQAO scores and straight-line distance. Catchment boundaries and Fraser rankings are not in yet, and we say so on the report.',
     },
     {
       icon: 'sun' as const,

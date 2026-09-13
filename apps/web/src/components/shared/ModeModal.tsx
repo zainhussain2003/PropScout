@@ -54,8 +54,8 @@ const MODE_OPTIONS: Record<'sale' | 'rent', [ModeOption, ModeOption]> = {
       icon: 'house',
       hints: [
         'True monthly cost of ownership',
-        'Fair-market band from recent sales',
-        'School catchments · walkability',
+        'Nearby schools with EQAO scores · walkability',
+        'Sun exposure, window by window',
       ],
     },
   ],
@@ -703,8 +703,8 @@ export function ModeModal({
               >
                 The numbers that matter for a <em>tenant</em> are different from the numbers a{' '}
                 <em>landlord</em> cares about — even on the same listing. We tailor the whole report
-                to your angle so you&apos;re not reading sections that don&apos;t apply. You can
-                switch later from inside the report.
+                to your angle so you&apos;re not reading sections that don&apos;t apply. To see the
+                other angle, run the same listing again and choose it.
               </p>
             )}
           </div>
