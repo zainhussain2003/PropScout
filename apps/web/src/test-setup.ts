@@ -68,3 +68,12 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
       }) as unknown as MediaQueryList,
   })
 }
+
+// The theme is app-wide and remembered (hooks/useTheme.ts, D-079). A test that
+// toggles it would otherwise leak dark mode into every later render in the
+// same file, so each test starts light with nothing saved.
+import { afterEach } from 'vitest'
+import { resetThemeForTests } from './hooks/useTheme'
+afterEach(() => {
+  resetThemeForTests()
+})

@@ -15,7 +15,7 @@
  * and will be built in PR 4.
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { Nav } from '../components/shared/Nav'
@@ -44,6 +44,7 @@ import { FREE_TIER } from '../constants/tiers'
 import { countLabel, NOT_PROVIDED } from '../lib/listingFacts'
 import { DEAL_SCORE } from '../constants/thresholds'
 import type { Listing } from '../types/property'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -2893,15 +2894,10 @@ const FREE_TIER_LIMIT_WORD: string =
 
 export function LandingPage(): JSX.Element {
   const navigate = useNavigate()
-  const [dark, setDark] = useState(false)
+  const { dark, toggle: toggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [pendingListing, setPendingListing] = useState<ListingPreviewData | null>(null)
-
-  // Apply dark mode via data-theme on <html>
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
-  }, [dark])
 
   const handleOpenModal = (listing: ListingPreviewData): void => {
     setPendingListing(listing)
@@ -2918,7 +2914,7 @@ export function LandingPage(): JSX.Element {
       <Nav
         variant="landing"
         dark={dark}
-        onToggleDark={() => setDark((d) => !d)}
+        onToggleDark={toggleDark}
         onSignIn={() => setShowSignIn(true)}
       />
 

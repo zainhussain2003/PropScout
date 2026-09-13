@@ -1180,6 +1180,7 @@ propscout/
 │   │       │   ├── useAnalysis.ts     # Fetches and manages analysis state
 │   │       │   ├── useAuth.ts         # Auth state and methods
 │   │       │   ├── useTier.ts         # Current user tier + feature access checks
+│   │       │   ├── useTheme.ts + useTheme.test.tsx  # One app-wide theme, saved + OS-preference aware (UI-04, D-079)
 │   │       │   ├── useRentalComps.ts  # Rental comps data and loading state
 │   │       │   ├── usePdfExport.ts + usePdfExport.test.tsx  # Pro-gated §14 PDF download (LockedButton for free)
 │   │       │   └── useSunScout.ts     # Sun hours calculation state
