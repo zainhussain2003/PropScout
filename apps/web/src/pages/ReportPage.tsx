@@ -61,6 +61,7 @@ import type {
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 import { bareCount, knownCount } from '../lib/listingFacts'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Data mappers ──────────────────────────────────────────────────────────────
 
@@ -697,7 +698,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   const [loadFailed, setLoadFailed] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
-  const [dark, setDark] = useState(false)
+  const { dark, toggle: handleToggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
   // Server-decided: false until the API says this viewer owns the analysis.
   const [canOverride, setCanOverride] = useState(false)
@@ -740,14 +741,6 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
     canOverride,
     onToggle: onToggleFlag,
   }
-
-  const handleToggleDark = useCallback(() => {
-    setDark((d) => {
-      const next = !d
-      document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
-      return next
-    })
-  }, [])
 
   // Pro-gated PDF export (spec §14) — shared by the share bar + mobile action bar
   const pdf = usePdfExport(token)

@@ -8,7 +8,7 @@
  */
 
 import type { ReactNode } from 'react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/shared/Icon'
 import type { IconName } from '../components/shared/Icon'
@@ -21,6 +21,7 @@ import { StubState } from '../components/states/StubState'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { startCheckout, openBillingPortal } from '../lib/services/billingService'
 import { FREE_TIER } from '../constants/tiers'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Domain types ──────────────────────────────────────────────────────
 
@@ -947,19 +948,7 @@ function AccountSidebar({ activeTab, onTab, tier }: AccountSidebarProps): JSX.El
 
 export function AccountPage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [dark, setDark] = useState(false)
-
-  // Sync dark state from any prior page that set data-theme
-  useEffect(() => {
-    const current = document.documentElement.getAttribute('data-theme')
-    if (current === 'dark') setDark(true)
-  }, [])
-
-  function handleToggleDark(): void {
-    const newDark = !dark
-    setDark(newDark)
-    document.documentElement.setAttribute('data-theme', newDark ? 'dark' : 'light')
-  }
+  const { dark, toggle: handleToggleDark } = useTheme()
 
   const { session, loading: authLoading } = useAuth()
   const { tier, openUpgradeModal } = usePaywall()

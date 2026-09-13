@@ -82,6 +82,7 @@ import {
   shimToTenantNegotiation,
   shimToListedVsReality,
 } from '../lib/reportShims'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1222,7 +1223,7 @@ export function TenantReport({
 }: TenantReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
-  const [dark, setDark] = useState(false)
+  const { dark, toggle: toggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
 
   // Shim: when real data is provided, derive TenantListingData from it
@@ -1235,12 +1236,6 @@ export function TenantReport({
   const addressSlug = tenantListing
     ? tenantListing.addressLine1.toLowerCase().replace(/[^a-z0-9]+/g, '-')
     : '3705-charles-st-e'
-
-  function toggleDark(): void {
-    const next = !dark
-    setDark(next)
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
-  }
 
   return (
     <div className="report-page-mobile-padding">
