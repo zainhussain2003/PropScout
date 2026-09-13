@@ -269,11 +269,9 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
               </span>
               .
             </p>
-            <div className="row gap-12" style={{ marginTop: 4 }}>
-              <button className="btn btn-ghost" style={{ padding: '8px 12px', fontSize: 12 }}>
-                Adjust assumptions
-              </button>
-            </div>
+            {/* "Adjust assumptions" used to sit here with no handler and no
+                controls behind it; the personal report has no financing
+                sliders yet (BACKLOG). */}
           </div>
         </div>
       </div>

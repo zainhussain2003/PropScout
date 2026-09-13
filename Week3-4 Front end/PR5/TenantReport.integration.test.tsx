@@ -12,7 +12,7 @@
  *   4. Report Nav content
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { TenantReport } from '../../apps/web/src/pages/TenantReport'
@@ -135,10 +135,20 @@ describe('TenantReport — Report Nav', () => {
     expect(slug).toBe(true)
   })
 
-  it('renders a "Save to account" button in the Nav', () => {
+  it('offers no "Save to account" button — saving is not a feature yet (D-064, D-077)', () => {
+    // The page renders as the paid tier here (no PaywallProvider → 'pro'),
+    // where the button used to exist with no handler.
     renderPage()
-    const buttons = screen.getAllByRole('button', { name: /Save to account/i })
-    expect(buttons.length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByRole('button', { name: /Save to account/i })).not.toBeInTheDocument()
+  })
+
+  it('Share copies the link and says so', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+    renderPage()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Share$/ })[0])
+    expect(writeText).toHaveBeenCalledWith(window.location.href)
+    expect((await screen.findAllByText(/Link copied/)).length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders the theme toggle button in the Nav', () => {
