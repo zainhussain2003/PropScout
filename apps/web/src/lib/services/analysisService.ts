@@ -10,7 +10,7 @@
 
 import type { PropertyInput, FinancingInput, RentalInput } from '../../types/api'
 import type { Analysis, ReportMode } from '../../types/analysis'
-import type { Listing } from '../../types/property'
+import type { Listing, PropertyType } from '../../types/property'
 import { withCleanNarrative } from '../narrative'
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001'
@@ -504,8 +504,9 @@ export async function startFromAddress(payload: {
   price: number | null
   rentMonthly: number | null
   beds: number
-  baths: number
+  baths: number | null
   sqft: number | null
+  propertyType: PropertyType | null
   condoFeeMonthly: number | null
   annualTaxes: number | null
 }): Promise<{ token: string; listing: Listing }> {

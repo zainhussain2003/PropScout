@@ -3017,3 +3017,26 @@ before any schema runs, so an over-long token is a 404 and the pattern guards th
 | Validate against the static `FLAG_LABELS` registry | The engine can emit an id the API only humanises; the report's own flags are the registry that matters.             |
 | Put every check in the schema, drop handler codes  | Clients and tests would see `INVALID_REQUEST` for "mode we do not serve"; that is a meaning, not a shape.           |
 | Reject unknown properties instead of stripping     | Fastify's default is to strip; changing it API-wide for no observed benefit is a behaviour change for its own sake. |
+
+### D-082 · A property type the source did not give is "unknown", not condo or detached
+
+**Chosen.** `PropertyType` gains `'unknown'`. The address form asks "What kind of home?" with
+"Not sure" as the default and sends null for it; the API stores `unknown`; the row reader passes
+an empty column through as `unknown`; the scraper's fallback for a type it cannot recognise is
+`unknown`; readers render it as "Property type not provided" and put no chip in the hero. The
+request schema accepts only our six types or null. The form also sends a blank bathroom count as
+null (D-072 had made the API store null, but the form was still sending 0).
+
+**Why.** Audit API-01 and API-03, confirmed open in the reconciliation pass. The address path
+defaulted to `'condo'`, so every house entered by address was flagged "condo fee unknown" and
+rendered with a Condo chip; the row reader defaulted to `'detached'` on the theory that it is
+"the more common Ontario type" — a guess rendered as a fact, the D-072 rule applied to a string.
+The engine branches on `property_type == "condo"` for exactly one thing (that flag); `unknown`
+takes the non-condo path, which is the honest one, and the residual-expense table already had a
+documented "unknown" value.
+
+| Option                                    | Why not                                                                                      |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Infer condo from a non-empty condo fee    | A fee is evidence, not a statement; the form now asks directly and the fee stays a fee.      |
+| Keep `detached` as the row-reader default | The reader cannot know; "more common" is a prior, and the report presents facts.             |
+| Make the type required on the form        | Some people will not know; the honest answer for them is "not provided", not a forced guess. |

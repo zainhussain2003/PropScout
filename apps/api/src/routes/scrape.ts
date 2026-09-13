@@ -97,10 +97,9 @@ function mapPropertyType(raw: string, buildingType?: string | null): PropertyTyp
     return 'multiplex'
   if (lower.includes('commercial')) return 'commercial'
   if (lower.includes('condo') || lower.includes('apartment')) return 'condo'
-  // Unknown — default to 'detached' rather than 'condo' since the latter triggers
-  // the synthetic condo_fee_unknown flag (often a false positive). Detached is the
-  // more common Ontario type and doesn't carry a fee assumption.
-  return 'detached'
+  // Nothing recognisable: say so (D-082). This used to return 'detached' as
+  // the "more common Ontario type" — a guess rendered as a fact.
+  return 'unknown'
 }
 
 function extractCity(address: string): string {

@@ -133,7 +133,8 @@ function rowToListing(row: ListingRow): Listing {
     beds: row.beds,
     baths: row.baths,
     sqft: row.sqft,
-    propertyType: (row.property_type ?? 'detached') as Listing['propertyType'],
+    // A row with no type is not a detached house (D-082).
+    propertyType: (row.property_type ?? 'unknown') as Listing['propertyType'],
     yearBuilt: row.year_built,
     parkingSpots: row.parking_spots,
     condoFeeMonthly: row.condo_fee_monthly,
