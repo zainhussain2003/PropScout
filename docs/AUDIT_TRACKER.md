@@ -4,6 +4,9 @@
 > Refer to this file at the start of every session — it survives chat compaction.
 > Update it in the same commit as the work it describes.
 >
+> Work that is blocked on the owner (decisions, credentials, migrations, real data) lives in
+> `docs/BACKLOG.md`, not here.
+>
 > Legend: ✅ done (with commit) · 🟡 partially done · ⬜ not started · 🔒 blocked on user input
 
 ---

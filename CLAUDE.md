@@ -16,6 +16,7 @@ This file tells you everything you need to know to work effectively on this code
 | `TESTING.md`                 | Test for every feature, week by week — update when new features are added |
 | `SETUP.md`                   | Pre-development checklist — accounts, tooling, CI/CD, legal               |
 | `docs/agent-loop/README.md`  | Claude/Codex worktree, review, claim, and promotion protocol              |
+| `docs/BACKLOG.md`            | What needs the owner: decisions, credentials, migrations, real data       |
 
 ---
 
@@ -1048,6 +1049,7 @@ propscout/
 │   ├── OPENING_PROMPT.md              # Paste into first Claude Code session
 │   ├── DECISIONS.md                   # Decision log — every judgement call + the alternatives rejected
 │   ├── AUDIT_TRACKER.md               # Priority-ordered fix list from June 2026 audit — check at session start
+│   ├── BACKLOG.md                     # Work blocked on a person, credential, decision or migration — check before proposing next steps
 │   ├── FLAG_SEVERITY_MATRIX.md        # Approved per-flag × per-mode severity ruleset (v1) — SEVERE cells need sign-off
 │   ├── PR10-design-humanization-prompt.md  # PR10 spec — token revision, copy, imagery, founder note
 │   ├── PR10-UI-Tests.md               # PR10 Chrome UI test checklist (token propagation, imagery, dark/mobile)
