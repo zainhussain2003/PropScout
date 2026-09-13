@@ -49,8 +49,13 @@ describe('validateUrl', () => {
     expect(result).toContain('Canadian properties only')
   })
 
-  it('does NOT block zillow.ca links', () => {
-    expect(validateUrl('https://www.zillow.ca/for-sale/12345')).toBeNull()
+  it('refuses zillow.ca links, and says to use the address instead', () => {
+    // The Zillow scraper is deferred (FUTURE.md). Accepting the URL here meant
+    // the scrape failed downstream and the user was told the listing could not
+    // be read — as if the listing were the problem (audit J-01).
+    const result = validateUrl('https://www.zillow.ca/for-sale/12345')
+    expect(result).toContain("isn't supported yet")
+    expect(result).toContain('type the address')
   })
 
   // ── valid Canadian listing URLs ───────────────────────────────────
@@ -64,10 +69,6 @@ describe('validateUrl', () => {
     expect(
       validateUrl('https://www.realtor.ca/real-estate/27905412/unit-3705-28-charles-st-e-toronto')
     ).toBeNull()
-  })
-
-  it('accepts a zillow.ca URL', () => {
-    expect(validateUrl('https://www.zillow.ca/for-rent/12345')).toBeNull()
   })
 
   // ── case-insensitive ─────────────────────────────────────────────
