@@ -1257,6 +1257,7 @@ propscout/
 │           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── lib/
 │           │   ├── billingMonth.ts    # UTC calendar-month window for the free quota (D-071)
+│           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint

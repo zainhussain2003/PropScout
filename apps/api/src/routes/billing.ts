@@ -23,6 +23,7 @@ import {
 } from '../services/stripeService'
 import { getUserById } from '../services/supabaseService'
 import { getSupabase } from '../services/supabaseService'
+import { applyValidationErrorHandler, billingCheckoutBody } from '../lib/requestSchemas'
 
 interface BillingCheckoutBody {
   tier: 'pro' | 'professional' | 'team'
@@ -34,8 +35,11 @@ interface BillingCheckoutReply {
 
 async function billingRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /billing/checkout
+  applyValidationErrorHandler(fastify)
+
   fastify.post<{ Body: BillingCheckoutBody; Reply: BillingCheckoutReply }>(
     '/checkout',
+    { schema: { body: billingCheckoutBody } },
     async (req, reply) => {
       const authHeader = req.headers.authorization
       if (!authHeader?.startsWith('Bearer ')) {

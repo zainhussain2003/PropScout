@@ -17,12 +17,16 @@ import { CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
 import { serializeError, isTimeoutError } from '../lib/http'
 import { getAnalysisByToken, updateAnalysisByToken } from '../services/supabaseService'
 import { toSunScout, type PySunScout } from './analysis'
+import { applyValidationErrorHandler, tokenParams, sunscoutBody } from '../lib/requestSchemas'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
 async function sunscoutRoutes(fastify: FastifyInstance): Promise<void> {
+  applyValidationErrorHandler(fastify)
+
   fastify.post<{ Params: { token: string }; Body: { facadeBearing?: number } }>(
     '/:token/sunscout',
+    { schema: { params: tokenParams, body: sunscoutBody } },
     async (req, reply) => {
       const { token } = req.params
       const bearing = req.body?.facadeBearing ?? 180

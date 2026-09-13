@@ -18,53 +18,62 @@ import {
   getAnalysisByToken,
 } from '../services/supabaseService'
 import { generateReportPdf } from '../services/pdfService'
+import { applyValidationErrorHandler, tokenParams } from '../lib/requestSchemas'
 
 const PDF_TIERS = new Set(['pro', 'professional', 'team'])
 
 async function pdfRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.get<{ Params: { token: string } }>('/:token/pdf', async (req, reply) => {
-    const authHeader = req.headers.authorization
-    if (!authHeader?.startsWith('Bearer ')) {
-      return reply.code(401).send(makeError('UNAUTHORIZED', 'Sign in to export PDFs.'))
-    }
+  applyValidationErrorHandler(fastify)
 
-    try {
-      const jwt = authHeader.slice(7)
-      const { data: authData, error: authError } = await getSupabase().auth.getUser(jwt)
-      if (authError || !authData.user) {
-        return reply.code(401).send(makeError('UNAUTHORIZED', 'Invalid or expired session.'))
+  fastify.get<{ Params: { token: string } }>(
+    '/:token/pdf',
+    { schema: { params: tokenParams } },
+    async (req, reply) => {
+      const authHeader = req.headers.authorization
+      if (!authHeader?.startsWith('Bearer ')) {
+        return reply.code(401).send(makeError('UNAUTHORIZED', 'Sign in to export PDFs.'))
       }
 
-      await upsertUser(authData.user.id, authData.user.email ?? '')
-      const user = await getUserById(authData.user.id)
-      if (!user || !PDF_TIERS.has(user.tier)) {
+      try {
+        const jwt = authHeader.slice(7)
+        const { data: authData, error: authError } = await getSupabase().auth.getUser(jwt)
+        if (authError || !authData.user) {
+          return reply.code(401).send(makeError('UNAUTHORIZED', 'Invalid or expired session.'))
+        }
+
+        await upsertUser(authData.user.id, authData.user.email ?? '')
+        const user = await getUserById(authData.user.id)
+        if (!user || !PDF_TIERS.has(user.tier)) {
+          return reply
+            .code(403)
+            .send(makeError('UPGRADE_REQUIRED', 'PDF export is an Investor Pro feature.'))
+        }
+
+        const { token } = req.params
+        const found = await getAnalysisByToken(token)
+        if (!found) {
+          return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
+        }
+
+        const pdf = await generateReportPdf(token)
+        if (pdf == null) {
+          return reply
+            .code(502)
+            .send(makeError('PDF_FAILED', 'Could not generate the PDF — try again in a moment.'))
+        }
+
         return reply
-          .code(403)
-          .send(makeError('UPGRADE_REQUIRED', 'PDF export is an Investor Pro feature.'))
-      }
-
-      const { token } = req.params
-      const found = await getAnalysisByToken(token)
-      if (!found) {
-        return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
-      }
-
-      const pdf = await generateReportPdf(token)
-      if (pdf == null) {
+          .header('Content-Type', 'application/pdf')
+          .header('Content-Disposition', `attachment; filename="propscout-report-${token}.pdf"`)
+          .send(pdf)
+      } catch (err) {
+        fastify.log.error({ err }, 'Unexpected error in GET /analysis/:token/pdf')
         return reply
-          .code(502)
-          .send(makeError('PDF_FAILED', 'Could not generate the PDF — try again in a moment.'))
+          .code(500)
+          .send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
       }
-
-      return reply
-        .header('Content-Type', 'application/pdf')
-        .header('Content-Disposition', `attachment; filename="propscout-report-${token}.pdf"`)
-        .send(pdf)
-    } catch (err) {
-      fastify.log.error({ err }, 'Unexpected error in GET /analysis/:token/pdf')
-      return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
     }
-  })
+  )
 }
 
 export default pdfRoutes

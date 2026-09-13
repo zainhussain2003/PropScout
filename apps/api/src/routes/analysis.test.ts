@@ -1218,3 +1218,51 @@ describe('POST / — idempotent by token', () => {
     expect(calcEngineCalls()).toBe(2)
   })
 })
+
+// ── Request shape (audit API-04) ──────────────────────────────────────────────
+
+describe('POST / — request shape', () => {
+  let app: FastifyInstance
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('rejects a token that is not a share token, before any lookup', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'x'.repeat(5000), mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as ApiError
+    expect(body.code).toBe('INVALID_REQUEST')
+    expect(mockGetListingByToken).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-string token', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: { $ne: null }, mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect((res.json() as ApiError).code).toBe('INVALID_REQUEST')
+  })
+
+  it("keeps the handler's own codes for meaning, not shape", async () => {
+    // A well-formed body with a mode we do not serve is the handler's call.
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'wholesaler' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect((res.json() as ApiError).code).toBe('INVALID_MODE')
+  })
+})

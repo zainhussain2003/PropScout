@@ -14,6 +14,7 @@ import { isOntarioPostalCode } from '../constants/provinces'
 import { RENT_BOUNDS, CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
 import { serializeError, isTimeoutError } from '../lib/http'
 import { saveListing, createPendingAnalysis } from '../services/supabaseService'
+import { applyValidationErrorHandler, scrapeBody } from '../lib/requestSchemas'
 
 // Where to send scrape requests.
 //
@@ -116,162 +117,171 @@ function extractCity(address: string): string {
 }
 
 async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post<{ Body: { url: string } }>('/', async (req, reply) => {
-    try {
-      const { url } = req.body
+  applyValidationErrorHandler(fastify)
 
-      // Step 1 — call the Python scraper. The scrape is slow (ScraperAPI ~25s +
-      // retries), so give it a generous explicit timeout — otherwise the request
-      // is abandoned early (the ~20s prod abort) even though the scrape succeeds.
-      let scraperRes: Response
+  fastify.post<{ Body: { url: string } }>(
+    '/',
+    { schema: { body: scrapeBody } },
+    async (req, reply) => {
       try {
-        scraperRes = await fetch(`${SCRAPER_URL}/scrape`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url }),
-          signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.SCRAPE),
-        })
-      } catch (err) {
-        const timedOut = isTimeoutError(err)
-        fastify.log.error(
-          { err: serializeError(err), timedOut, timeoutMs: CALC_ENGINE_TIMEOUT_MS.SCRAPE },
-          'Scraper fetch failed'
-        )
-        // A genuine scrape timeout means we couldn't read the listing in time —
-        // send the user to manual entry (SCRAPER_FAILED), not a scary 500/503.
-        if (timedOut) {
+        const { url } = req.body
+
+        // Step 1 — call the Python scraper. The scrape is slow (ScraperAPI ~25s +
+        // retries), so give it a generous explicit timeout — otherwise the request
+        // is abandoned early (the ~20s prod abort) even though the scrape succeeds.
+        let scraperRes: Response
+        try {
+          scraperRes = await fetch(`${SCRAPER_URL}/scrape`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+            signal: AbortSignal.timeout(CALC_ENGINE_TIMEOUT_MS.SCRAPE),
+          })
+        } catch (err) {
+          const timedOut = isTimeoutError(err)
+          fastify.log.error(
+            { err: serializeError(err), timedOut, timeoutMs: CALC_ENGINE_TIMEOUT_MS.SCRAPE },
+            'Scraper fetch failed'
+          )
+          // A genuine scrape timeout means we couldn't read the listing in time —
+          // send the user to manual entry (SCRAPER_FAILED), not a scary 500/503.
+          if (timedOut) {
+            return reply
+              .code(422)
+              .send(
+                makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
+              )
+          }
+          return reply
+            .code(503)
+            .send(
+              makeError(
+                'SCRAPER_UNAVAILABLE',
+                'Analysis service temporarily unavailable — try again in a moment.'
+              )
+            )
+        }
+
+        if (scraperRes.status === 422) {
           return reply
             .code(422)
             .send(
               makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
             )
         }
-        return reply
-          .code(503)
-          .send(
-            makeError(
-              'SCRAPER_UNAVAILABLE',
-              'Analysis service temporarily unavailable — try again in a moment.'
+
+        if (!scraperRes.ok) {
+          fastify.log.error({ status: scraperRes.status }, 'Scraper returned unexpected error')
+          return reply
+            .code(503)
+            .send(
+              makeError(
+                'SCRAPER_UNAVAILABLE',
+                'Analysis service temporarily unavailable — try again in a moment.'
+              )
             )
-          )
-      }
+        }
 
-      if (scraperRes.status === 422) {
-        return reply
-          .code(422)
-          .send(
-            makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
-          )
-      }
-
-      if (!scraperRes.ok) {
-        fastify.log.error({ status: scraperRes.status }, 'Scraper returned unexpected error')
-        return reply
-          .code(503)
-          .send(
-            makeError(
-              'SCRAPER_UNAVAILABLE',
-              'Analysis service temporarily unavailable — try again in a moment.'
+        // Reading the body is where a stalled/cut response (edge timeout that sent
+        // headers first) throws — previously OUTSIDE this try, so it surfaced as a
+        // generic 500. Guard it and degrade to manual entry instead.
+        let scraped: ScrapedListingResponse
+        try {
+          scraped = (await scraperRes.json()) as ScrapedListingResponse
+        } catch (err) {
+          fastify.log.error({ err: serializeError(err) }, 'Scraper response body unreadable')
+          return reply
+            .code(422)
+            .send(
+              makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
             )
-          )
-      }
+        }
 
-      // Reading the body is where a stalled/cut response (edge timeout that sent
-      // headers first) throws — previously OUTSIDE this try, so it surfaced as a
-      // generic 500. Guard it and degrade to manual entry instead.
-      let scraped: ScrapedListingResponse
-      try {
-        scraped = (await scraperRes.json()) as ScrapedListingResponse
+        // Step 2 — extract postal code and run province gate
+        const pcMatch = scraped.address.match(/([A-Z][0-9][A-Z])\s*([0-9][A-Z][0-9])/i)
+        if (!pcMatch) {
+          return reply
+            .code(422)
+            .send(
+              makeError('POSTAL_CODE_NOT_FOUND', 'Could not determine province from this listing.')
+            )
+        }
+
+        const postalCode = (pcMatch[1] + pcMatch[2]).toUpperCase()
+        const fsa = postalCode.charAt(0)
+
+        if (!isOntarioPostalCode(postalCode)) {
+          const province = FSA_PROVINCE_MAP[fsa] ?? 'UNKNOWN'
+          return reply.code(200).send({ error: 'PROVINCE_NOT_SUPPORTED', province })
+        }
+
+        // Step 3 — detect partial scrape failure
+        const listingType: ListingType =
+          scraped.listing_type === 'for_rent' ? 'for-rent' : 'for-sale'
+
+        // A for-rent price outside plausible monthly-rent bounds is a scrape/unit
+        // error ($29 or $290,000/mo), not a real rent — null it and route the user
+        // to manual entry rather than scoring garbage downstream.
+        const rentMonthly =
+          listingType === 'for-rent' &&
+          scraped.price >= RENT_BOUNDS.MIN_MONTHLY &&
+          scraped.price <= RENT_BOUNDS.MAX_MONTHLY
+            ? scraped.price
+            : null
+
+        const missingFields: string[] = []
+        if (scraped.sqft == null) missingFields.push('sqft')
+        const hasUsableAnnualTaxes =
+          scraped.taxes_known && scraped.annual_taxes != null && scraped.annual_taxes > 0
+        if (!hasUsableAnnualTaxes) missingFields.push('annual_taxes')
+        if (!scraped.year_built_known) missingFields.push('year_built')
+        if (listingType === 'for-rent' && rentMonthly === null) missingFields.push('rent_monthly')
+        const scraperFailed = missingFields.length > 0
+
+        // Step 4 — map scraper output to Listing type
+        const listing: Omit<Listing, 'id'> = {
+          url: scraped.url,
+          listingType,
+          address: scraped.address,
+          city: extractCity(scraped.address),
+          province: 'ON',
+          postalCode,
+          price: listingType === 'for-sale' ? scraped.price : null,
+          rentMonthly,
+          beds: scraped.beds,
+          baths: scraped.baths,
+          sqft: scraped.sqft,
+          propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
+          yearBuilt: scraped.year_built,
+          // The scraper yields null when the "Total parking spaces" label is
+          // absent; keep that distinction rather than storing 0 (D-072).
+          parkingSpots: scraped.parking_spaces ?? null,
+          condoFeeMonthly: scraped.condo_fee_monthly,
+          condoFeeKnown: scraped.condo_fee_known,
+          annualTaxes: hasUsableAnnualTaxes ? scraped.annual_taxes : null,
+          description: scraped.listing_description,
+          photos: scraped.photo_urls,
+          scrapedAt: new Date().toISOString(),
+        }
+
+        // Step 5 — write to Supabase
+        const listingId = await saveListing(listing, 'realtor_ca')
+        const token = randomUUID()
+        await createPendingAnalysis(listingId, token)
+
+        // Step 6 — return response
+        if (scraperFailed) {
+          return reply.send({ token, listing, scraperFailed: true, missingFields })
+        }
+        return reply.send({ token, listing })
       } catch (err) {
-        fastify.log.error({ err: serializeError(err) }, 'Scraper response body unreadable')
+        fastify.log.error({ err: serializeError(err) }, 'Unexpected error in POST /scrape')
         return reply
-          .code(422)
-          .send(
-            makeError('SCRAPER_FAILED', 'Could not read that listing — enter details manually.')
-          )
+          .code(500)
+          .send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
       }
-
-      // Step 2 — extract postal code and run province gate
-      const pcMatch = scraped.address.match(/([A-Z][0-9][A-Z])\s*([0-9][A-Z][0-9])/i)
-      if (!pcMatch) {
-        return reply
-          .code(422)
-          .send(
-            makeError('POSTAL_CODE_NOT_FOUND', 'Could not determine province from this listing.')
-          )
-      }
-
-      const postalCode = (pcMatch[1] + pcMatch[2]).toUpperCase()
-      const fsa = postalCode.charAt(0)
-
-      if (!isOntarioPostalCode(postalCode)) {
-        const province = FSA_PROVINCE_MAP[fsa] ?? 'UNKNOWN'
-        return reply.code(200).send({ error: 'PROVINCE_NOT_SUPPORTED', province })
-      }
-
-      // Step 3 — detect partial scrape failure
-      const listingType: ListingType = scraped.listing_type === 'for_rent' ? 'for-rent' : 'for-sale'
-
-      // A for-rent price outside plausible monthly-rent bounds is a scrape/unit
-      // error ($29 or $290,000/mo), not a real rent — null it and route the user
-      // to manual entry rather than scoring garbage downstream.
-      const rentMonthly =
-        listingType === 'for-rent' &&
-        scraped.price >= RENT_BOUNDS.MIN_MONTHLY &&
-        scraped.price <= RENT_BOUNDS.MAX_MONTHLY
-          ? scraped.price
-          : null
-
-      const missingFields: string[] = []
-      if (scraped.sqft == null) missingFields.push('sqft')
-      const hasUsableAnnualTaxes =
-        scraped.taxes_known && scraped.annual_taxes != null && scraped.annual_taxes > 0
-      if (!hasUsableAnnualTaxes) missingFields.push('annual_taxes')
-      if (!scraped.year_built_known) missingFields.push('year_built')
-      if (listingType === 'for-rent' && rentMonthly === null) missingFields.push('rent_monthly')
-      const scraperFailed = missingFields.length > 0
-
-      // Step 4 — map scraper output to Listing type
-      const listing: Omit<Listing, 'id'> = {
-        url: scraped.url,
-        listingType,
-        address: scraped.address,
-        city: extractCity(scraped.address),
-        province: 'ON',
-        postalCode,
-        price: listingType === 'for-sale' ? scraped.price : null,
-        rentMonthly,
-        beds: scraped.beds,
-        baths: scraped.baths,
-        sqft: scraped.sqft,
-        propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
-        yearBuilt: scraped.year_built,
-        // The scraper yields null when the "Total parking spaces" label is
-        // absent; keep that distinction rather than storing 0 (D-072).
-        parkingSpots: scraped.parking_spaces ?? null,
-        condoFeeMonthly: scraped.condo_fee_monthly,
-        condoFeeKnown: scraped.condo_fee_known,
-        annualTaxes: hasUsableAnnualTaxes ? scraped.annual_taxes : null,
-        description: scraped.listing_description,
-        photos: scraped.photo_urls,
-        scrapedAt: new Date().toISOString(),
-      }
-
-      // Step 5 — write to Supabase
-      const listingId = await saveListing(listing, 'realtor_ca')
-      const token = randomUUID()
-      await createPendingAnalysis(listingId, token)
-
-      // Step 6 — return response
-      if (scraperFailed) {
-        return reply.send({ token, listing, scraperFailed: true, missingFields })
-      }
-      return reply.send({ token, listing })
-    } catch (err) {
-      fastify.log.error({ err: serializeError(err) }, 'Unexpected error in POST /scrape')
-      return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
     }
-  })
+  )
 }
 
 export default scrapeRoutes

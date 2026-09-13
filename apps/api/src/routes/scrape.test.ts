@@ -386,3 +386,19 @@ describe('POST /scrape — timeout and body-read degrade to SCRAPER_FAILED', () 
     expect(mockSaveListing).not.toHaveBeenCalled()
   })
 })
+
+// ── Request shape (audit API-04) ──────────────────────────────────────────────
+
+describe('POST /scrape — request shape', () => {
+  it('rejects a missing, non-string or oversized url without calling the scraper', async () => {
+    // (A bare number would be coerced to a string by the validator; an object
+    // cannot be.)
+    for (const payload of [{}, { url: { $gt: '' } }, { url: 'x'.repeat(5000) }]) {
+      mockFetch.mockClear()
+      const res = await app.inject({ method: 'POST', url: '/', payload })
+      expect(res.statusCode).toBe(400)
+      expect(JSON.parse(res.body).code).toBe('INVALID_REQUEST')
+      expect(mockFetch).not.toHaveBeenCalled()
+    }
+  })
+})

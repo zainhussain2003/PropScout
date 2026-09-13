@@ -21,11 +21,13 @@ import {
   addFlagOverride,
   deleteFlagOverride,
   getAnalysisOwnerByToken,
+  getAnalysisFlagIds,
   getSupabase,
 } from '../services/supabaseService'
 
 const mockGetFlagOverrides = jest.mocked(getFlagOverrides)
 const mockAddFlagOverride = jest.mocked(addFlagOverride)
+const mockGetAnalysisFlagIds = jest.mocked(getAnalysisFlagIds)
 const mockDeleteFlagOverride = jest.mocked(deleteFlagOverride)
 const mockGetOwner = jest.mocked(getAnalysisOwnerByToken)
 const mockGetSupabase = jest.mocked(getSupabase)
@@ -69,6 +71,8 @@ describe('overrides routes', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    // The report carries the flags the tests dismiss (audit API-05).
+    mockGetAnalysisFlagIds.mockResolvedValue(new Set(['basement_suite', 'shared_laundry']))
   })
 
   // ── GET ──────────────────────────────────────────────────────────────────────
@@ -268,5 +272,91 @@ describe('overrides routes', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.json()).toEqual({ overrides: ['basement_suite'] })
+  })
+})
+
+// ── Shape and registry (audit API-04 / API-05) ────────────────────────────────
+
+describe('overrides routes — request shape and flag registry', () => {
+  let app: FastifyInstance
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+  afterAll(async () => {
+    await app.close()
+  })
+  beforeEach(() => {
+    jest.clearAllMocks()
+    signedInAs(OWNER_ID)
+    ownedBy(OWNER_ID)
+    mockAddFlagOverride.mockResolvedValue(true)
+    mockGetAnalysisFlagIds.mockResolvedValue(new Set(['basement_suite']))
+  })
+
+  it('refuses a flag the report does not carry with 422 UNKNOWN_FLAG, and writes nothing', async () => {
+    // Before this, any string was persisted as a dismissal — and would have
+    // counted as one if the engine ever emitted that id later.
+    const res = await app.inject({
+      method: 'POST',
+      url: '/analysis/abc123/overrides',
+      headers: OWNER_AUTH,
+      payload: { flagId: 'not_a_flag_on_this_report' },
+    })
+    expect(res.statusCode).toBe(422)
+    expect(res.json().code).toBe('UNKNOWN_FLAG')
+    expect(mockAddFlagOverride).not.toHaveBeenCalled()
+  })
+
+  it('checks ownership before the registry — a stranger learns nothing about the flags', async () => {
+    signedInAs('someone-else')
+    const res = await app.inject({
+      method: 'POST',
+      url: '/analysis/abc123/overrides',
+      headers: OWNER_AUTH,
+      payload: { flagId: 'not_a_flag_on_this_report' },
+    })
+    expect(res.statusCode).toBe(403)
+    expect(mockGetAnalysisFlagIds).not.toHaveBeenCalled()
+  })
+
+  it('rejects a flag id that is not an identifier, in the API error shape', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/analysis/abc123/overrides',
+      headers: OWNER_AUTH,
+      payload: { flagId: 'DROP TABLE; --' },
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as { error: boolean; code: string; message: string }
+    expect(body.error).toBe(true)
+    expect(body.code).toBe('INVALID_REQUEST')
+    expect(body.message).toMatch(/flagId/)
+    expect(mockAddFlagOverride).not.toHaveBeenCalled()
+  })
+
+  it('rejects a token that is not a share token before touching the database', async () => {
+    // (A token past Fastify's 100-character param cap never matches a route
+    // at all — a 404 — so the pattern is what guards the 1–100 range.)
+    const res = await app.inject({
+      method: 'GET',
+      url: '/analysis/abc%24123%3Bdrop/overrides',
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('INVALID_REQUEST')
+    expect(mockGetFlagOverrides).not.toHaveBeenCalled()
+  })
+
+  it('strips properties it never asked for, so they cannot reach a service', async () => {
+    // Fastify's validator removes unknown properties rather than rejecting;
+    // either way nothing but flagId gets past the schema.
+    const res = await app.inject({
+      method: 'POST',
+      url: '/analysis/abc123/overrides',
+      headers: OWNER_AUTH,
+      payload: { flagId: 'basement_suite', userId: 'someone-else' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockAddFlagOverride).toHaveBeenCalledWith('abc123', 'basement_suite')
   })
 })
