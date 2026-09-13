@@ -7,6 +7,13 @@ export type PropertyType =
   | 'detached'
   | 'multiplex'
   | 'commercial'
+  /**
+   * The source did not say (D-082). Used to default to 'condo' on the
+   * address path and 'detached' on the row reader, so a house entered by
+   * address was flagged for a missing condo fee and an unknown row read as
+   * detached. Readers render this as "not provided" and nothing branches on it.
+   */
+  | 'unknown'
 
 export type ListingType = 'for-sale' | 'for-rent'
 

@@ -29,17 +29,30 @@
 import { useState } from 'react'
 
 import { Icon } from './Icon'
+import type { PropertyType } from '../../types/property'
 
 export interface AddressDetailsValue {
   listingType: 'for-sale' | 'for-rent'
   price: number | null
   rentMonthly: number | null
   beds: number
-  baths: number
+  /** Null when left blank — never 0 (D-072). */
+  baths: number | null
   sqft: number | null
+  /** Null for "not sure" — never a guessed type (D-082). */
+  propertyType: PropertyType | null
   condoFeeMonthly: number | null
   annualTaxes: number | null
 }
+
+const PROPERTY_TYPE_OPTIONS: Array<{ value: PropertyType | ''; label: string }> = [
+  { value: '', label: 'Not sure' },
+  { value: 'condo', label: 'Condo apartment' },
+  { value: 'townhouse', label: 'Townhouse' },
+  { value: 'semi-detached', label: 'Semi-detached' },
+  { value: 'detached', label: 'Detached house' },
+  { value: 'multiplex', label: 'Duplex / multiplex' },
+]
 
 interface AddressDetailsCardProps {
   /** The address as matched, shown back for confirmation. */
@@ -78,6 +91,7 @@ export function AddressDetailsCard({
   const [sqft, setSqft] = useState('')
   const [condoFee, setCondoFee] = useState('')
   const [taxes, setTaxes] = useState('')
+  const [propertyType, setPropertyType] = useState<PropertyType | ''>('')
   const [touched, setTouched] = useState(false)
 
   const amountValue = parseNumber(amount)
@@ -93,8 +107,9 @@ export function AddressDetailsCard({
       price: listingType === 'for-sale' ? amountValue : null,
       rentMonthly: listingType === 'for-rent' ? amountValue : null,
       beds: bedsValue ?? 0,
-      baths: parseNumber(baths) ?? 0,
+      baths: parseNumber(baths),
       sqft: parseNumber(sqft),
+      propertyType: propertyType === '' ? null : propertyType,
       condoFeeMonthly: parseNumber(condoFee),
       annualTaxes: parseNumber(taxes),
     })
@@ -282,6 +297,26 @@ export function AddressDetailsCard({
             gap: 16,
           }}
         >
+          <div>
+            <label style={labelStyle} htmlFor="ps-type">
+              What kind of home?
+            </label>
+            <select
+              id="ps-type"
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value as PropertyType | '')}
+              style={fieldStyle}
+            >
+              {PROPERTY_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <div style={hintStyle}>
+              Condos carry a fee and a status certificate; houses don&rsquo;t.
+            </div>
+          </div>
           <div>
             <label style={labelStyle} htmlFor="ps-baths">
               Bathrooms

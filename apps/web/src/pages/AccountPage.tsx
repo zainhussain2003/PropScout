@@ -140,102 +140,6 @@ function SettingsRow({ label, hint, children }: SettingsRowProps): JSX.Element {
   )
 }
 
-interface SettingsInputProps {
-  defaultValue: string
-}
-
-function SettingsInput({ defaultValue }: SettingsInputProps): JSX.Element {
-  return (
-    <input
-      defaultValue={defaultValue}
-      style={{
-        padding: '8px 14px',
-        border: '1px solid var(--line)',
-        borderRadius: 10,
-        background: 'var(--bg-elev)',
-        fontFamily: 'inherit',
-        fontSize: 13.5,
-        color: 'var(--ink)',
-        outline: 'none',
-        minWidth: 240,
-      }}
-    />
-  )
-}
-
-interface SelectOption {
-  v: string
-  label: string
-}
-
-interface SettingsSelectProps {
-  options: SelectOption[]
-  defaultValue: string
-}
-
-function SettingsSelect({ options, defaultValue }: SettingsSelectProps): JSX.Element {
-  return (
-    <select
-      defaultValue={defaultValue}
-      style={{
-        padding: '8px 14px',
-        border: '1px solid var(--line)',
-        borderRadius: 10,
-        background: 'var(--bg-elev)',
-        fontFamily: 'inherit',
-        fontSize: 13.5,
-        color: 'var(--ink)',
-        outline: 'none',
-        minWidth: 240,
-      }}
-    >
-      {options.map((o) => (
-        <option key={o.v} value={o.v}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  )
-}
-
-interface SettingsToggleProps {
-  defaultValue: boolean
-}
-
-function SettingsToggle({ defaultValue }: SettingsToggleProps): JSX.Element {
-  const [on, setOn] = useState(defaultValue)
-  return (
-    <button
-      onClick={() => setOn(!on)}
-      style={{
-        width: 40,
-        height: 22,
-        borderRadius: 999,
-        background: on ? 'var(--accent)' : 'var(--line-strong)',
-        border: 'none',
-        cursor: 'pointer',
-        position: 'relative',
-        transition: 'background-color .15s ease',
-      }}
-    >
-      <span
-        style={{
-          position: 'absolute',
-          top: 2,
-          left: on ? 20 : 2,
-          width: 18,
-          height: 18,
-          borderRadius: 999,
-          background: 'var(--surface)',
-          transition: 'left .18s ease',
-          boxShadow: '0 1px 3px rgba(0,0,0,.2)',
-          display: 'block',
-        }}
-      />
-    </button>
-  )
-}
-
 // ── SignedOutState ────────────────────────────────────────────────────
 //
 // /account with no session used to render the full account shell: an
@@ -369,22 +273,18 @@ function ProfileView(): JSX.Element {
     <div className="col" style={{ gap: 28 }}>
       <div className="col" style={{ gap: 6 }}>
         <h1 className="serif">Profile</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-          How PropScout knows you and the defaults we use for your reports.
-        </p>
+        <p style={{ color: 'var(--muted)', fontSize: 14 }}>How PropScout knows you.</p>
       </div>
 
       {/* Identity — the signed-in user's own, or an honest blank. Never a
-          placeholder that reads as a real name. */}
+          placeholder that reads as a real name. The name is shown, not edited:
+          nothing on this page saves it (audit A-03), and it comes from the
+          sign-in provider. */}
       <SettingsCard title="Identity">
-        <SettingsRow label="Name" hint="Used on PDF exports + shareable reports">
-          {identity?.name != null ? (
-            <SettingsInput defaultValue={identity.name} />
-          ) : (
-            <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
-              {loading ? 'Loading…' : 'Not set'}
-            </span>
-          )}
+        <SettingsRow label="Name" hint="From your sign-in provider">
+          <span className="mono" style={{ fontSize: 13, color: 'var(--ink)' }}>
+            {identity?.name ?? (loading ? 'Loading…' : 'Not set')}
+          </span>
         </SettingsRow>
         <SettingsRow label="Email" hint="Login + verification + report-share notifications">
           <span className="mono" style={{ fontSize: 13, color: 'var(--ink)' }}>
@@ -405,60 +305,36 @@ function ProfileView(): JSX.Element {
         </SettingsRow>
       </SettingsCard>
 
-      {/* Default investor assumptions */}
-      <SettingsCard
-        title="Default investor assumptions"
-        subtitle="Used when you first open an Investor or Landlord report. You can override on any single report."
-      >
-        <SettingsRow label="Default down payment" hint="Pre-filled in financing sliders">
-          <SettingsInput defaultValue="20%" />
-        </SettingsRow>
-        <SettingsRow label="Assumed household income" hint="Used in OSFI stress test calculations">
-          <SettingsInput defaultValue="$125,000" />
-        </SettingsRow>
-        <SettingsRow label="Annual appreciation" hint="Used in equity-build projections">
-          <SettingsSelect
-            defaultValue="0.03"
-            options={[
-              { v: '0', label: '0% / yr (flat)' },
-              { v: '0.02', label: '2% / yr (conservative)' },
-              { v: '0.03', label: '3% / yr (default)' },
-              { v: '0.05', label: '5% / yr (optimistic)' },
-            ]}
-          />
+      {/* Saved defaults, data export and account deletion do not exist yet.
+          This card used to offer inputs for down payment, income, appreciation
+          and management fee under "used when you first open a report", a
+          "Request export" button and a "Delete account…" button — none of
+          which did anything (audit A-03). A control that saves nothing is a
+          claim; the honest card says what is and is not available. */}
+      <SettingsCard title="Defaults and account actions" subtitle="What this page cannot do yet.">
+        <SettingsRow
+          label="Saved report defaults"
+          hint="Down payment, income, appreciation and management fee are set on each report's sliders; they are not saved to your account yet."
+        >
+          <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
+            Not available yet
+          </span>
         </SettingsRow>
         <SettingsRow
-          label="Include property management fee"
-          hint="Adds 8% of gross rent to expenses"
+          label="Export your data"
+          hint="Every report you run keeps a share link for 30 days; there is no bulk export yet."
         >
-          <SettingsToggle defaultValue={false} />
-        </SettingsRow>
-      </SettingsCard>
-
-      {/* Danger zone */}
-      <SettingsCard title="Account">
-        <SettingsRow
-          label="Export everything"
-          hint="Download a ZIP of every saved analysis as PDFs"
-        >
-          <button className="btn btn-ghost">
-            <Icon name="doc" size={13} /> Request export
-          </button>
+          <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
+            Not available yet
+          </span>
         </SettingsRow>
         <SettingsRow
           label="Delete account"
-          hint="Permanently delete your data — this cannot be undone"
+          hint="Self-serve deletion is not built yet. Ask through the Help link in the header and we will delete your account and its analyses."
         >
-          <button
-            className="btn"
-            style={{
-              color: 'var(--fail)',
-              border: '1px solid color-mix(in oklab, var(--fail) 30%, transparent)',
-              background: 'transparent',
-            }}
-          >
-            Delete account…
-          </button>
+          <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
+            By request
+          </span>
         </SettingsRow>
       </SettingsCard>
     </div>
@@ -678,39 +554,20 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
 interface NotificationRow {
   k: string
   sub: string
-  enabled: boolean
 }
 
 function NotificationsView(): JSX.Element {
-  const watchRows: NotificationRow[] = [
-    {
-      k: 'Rent-drop alerts',
-      sub: 'Notify when a tracked rental drops price or is re-listed',
-      enabled: true,
-    },
-    {
-      k: 'Comparable sale closes',
-      sub: 'New verified sales within 1km of a saved property',
-      enabled: true,
-    },
-    {
-      k: 'Rate change notifications',
-      sub: 'When the Bank of Canada or our 5-yr fixed average moves',
-      enabled: false,
-    },
-  ]
-
-  const productRows: NotificationRow[] = [
-    {
-      k: 'Weekly market digest',
-      sub: 'Tuesday morning · highlights from your tracked listings',
-      enabled: false,
-    },
-    {
-      k: 'Investor Pro feature drops',
-      sub: 'When new features ship — AirDNA, BC support, etc.',
-      enabled: true,
-    },
+  // No monitoring job exists — not for rent drops, comparable sales, rate
+  // moves or digests — and no preference is stored. This view used to show
+  // toggles for all five, three of them defaulting ON under "Listings you've
+  // asked us to monitor" (audit A-04): a promise of watching that nobody was
+  // doing. The tenant report already says the truth ("Rent-drop alerts are
+  // not connected yet. No monitoring has started for this listing.").
+  const planned: NotificationRow[] = [
+    { k: 'Rent-drop alerts', sub: 'When a tracked rental drops price or is re-listed' },
+    { k: 'Comparable sale closes', sub: 'New verified sales near a saved property' },
+    { k: 'Rate change notifications', sub: 'When the Bank of Canada rate moves' },
+    { k: 'Weekly market digest', sub: 'Highlights from your tracked listings' },
   ]
 
   return (
@@ -718,22 +575,20 @@ function NotificationsView(): JSX.Element {
       <div className="col" style={{ gap: 6 }}>
         <h1 className="serif">Notifications</h1>
         <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-          Choose what PropScout emails you about. Transactional emails always come through.
+          PropScout does not send any notifications yet. The only emails you will get are the
+          sign-in links you ask for.
         </p>
       </div>
 
-      <SettingsCard title="Watch lists" subtitle="Listings you've asked us to monitor.">
-        {watchRows.map((r) => (
+      <SettingsCard
+        title="Planned"
+        subtitle="Nothing here is monitoring anything today. No listing is being watched on your behalf."
+      >
+        {planned.map((r) => (
           <SettingsRow key={r.k} label={r.k} hint={r.sub}>
-            <SettingsToggle defaultValue={r.enabled} />
-          </SettingsRow>
-        ))}
-      </SettingsCard>
-
-      <SettingsCard title="Product">
-        {productRows.map((r) => (
-          <SettingsRow key={r.k} label={r.k} hint={r.sub}>
-            <SettingsToggle defaultValue={r.enabled} />
+            <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
+              Not connected
+            </span>
           </SettingsRow>
         ))}
       </SettingsCard>
@@ -781,9 +636,9 @@ function AccountTopNav({ dark, onToggleDark, tier }: AccountTopNavProps): JSX.El
           <button className="btn btn-ghost" onClick={onToggleDark} style={{ padding: '10px 12px' }}>
             <Icon name={dark ? 'sun' : 'moon'} size={15} />
           </button>
-          <button className="btn btn-ghost" style={{ padding: '10px 14px' }}>
+          <a className="btn btn-ghost" href="/#faq" style={{ padding: '10px 14px' }}>
             <Icon name="link" size={13} /> Help
-          </button>
+          </a>
           {/* User pill */}
           <div
             className="row gap-10"

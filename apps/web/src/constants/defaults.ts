@@ -19,6 +19,7 @@ export const PROPERTY_COST_ESTIMATES = {
 } as const
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  unknown: 'Property type not provided',
   detached: 'Detached',
   'semi-detached': 'Semi-Detached',
   townhouse: 'Townhouse',

@@ -85,7 +85,8 @@ export function UpgradeCard({
         <button className="btn btn-accent" style={{ padding: '12px 20px' }}>
           {ctaLabel} <Icon name="arrow" size={13} />
         </button>
-        <button
+        <a
+          href="/#pricing"
           className="btn btn-ghost"
           style={{
             color: dark ? 'color-mix(in oklab, var(--bg) 70%, transparent)' : 'var(--ink-2)',
@@ -95,7 +96,7 @@ export function UpgradeCard({
           }}
         >
           See what's included
-        </button>
+        </a>
       </div>
 
       <div

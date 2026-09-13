@@ -287,6 +287,7 @@ export function PropertyHero({
                     Component points unavailable from the analysis.
                   </p>
                 )}
+                {bar.note != null && <p className="scorecard-caption">{bar.note}</p>}
               </div>
             ))}
             {score.deductions > 0 && (

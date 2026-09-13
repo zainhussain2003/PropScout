@@ -64,6 +64,9 @@ export const RESIDUAL_EXPENSE_RATIO_BY_TYPE: Record<PropertyType, number> = {
   detached: 0.25,
   multiplex: 0.28,
   commercial: 0.3,
+  // The type the source did not give (D-082): the same mid-table assumption
+  // DEFAULT_RESIDUAL_EXPENSE_RATIO already documented for this case.
+  unknown: 0.24,
 }
 
 /** Used when the property type is unknown. */

@@ -1128,7 +1128,6 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                   <span key={k} style={{ display: 'contents' }}>
                     {[
                       'Realtor.ca',
-                      'Zillow.ca',
                       'Rentals.ca',
                       'Kijiji',
                       'PadMapper',
@@ -1641,8 +1640,15 @@ function HeroStaticMap(): JSX.Element | null {
 type ModeStat = [string, string, string]
 
 function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
+  // Sample figures, labelled as such. The personal card used to show an
+  // "FMV band" and a "School rank · Top 8%" — outputs the product does not
+  // produce (no sales feed, Fraser rankings not loaded), presented as if it did.
   return (
-    <div className="row gap-12" style={{ marginTop: 4, flexWrap: 'wrap' }}>
+    <div
+      className="row gap-12"
+      style={{ marginTop: 4, flexWrap: 'wrap' }}
+      aria-label="Example figures from a sample report"
+    >
       {stats.map(([lbl, val, status]) => (
         <div
           key={lbl}
@@ -1686,6 +1692,12 @@ function ModeStatTiles({ stats }: { stats: ModeStat[] }): JSX.Element {
           </div>
         </div>
       ))}
+      <span
+        className="mono"
+        style={{ flexBasis: '100%', fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
+      >
+        EXAMPLE FIGURES FROM A SAMPLE REPORT
+      </span>
     </div>
   )
 }
@@ -1850,11 +1862,11 @@ function ReportsSection(): JSX.Element {
       who: 'Personal buyer',
       tag: 'For sale',
       title: "I'm buying a home to live in",
-      copy: 'True monthly cost of ownership, comparable sales, walk/transit, school catchments. The home you can live in, not just close on.',
+      copy: 'True monthly cost of ownership, walk/transit, nearby schools with EQAO scores, sun exposure. The home you can live in, not just close on.',
       stats: [
         ['Monthly cost', '$4,733', ''],
-        ['FMV band', '$695–745k', 'pass'],
-        ['School rank', 'Top 8%', 'pass'],
+        ['Walk score', '80', 'pass'],
+        ['Sun score', '87 / 100', 'pass'],
       ] as [string, string, string][],
     },
     {
@@ -1994,7 +2006,7 @@ function HowSection(): JSX.Element {
     {
       n: '01',
       t: 'Paste any URL',
-      d: 'Any Canadian listing URL. We read price, beds, taxes, condo fees, year built, photos — everything the listing exposes, structured.',
+      d: 'A Realtor.ca listing link, or just the address. From a listing we read price, beds, taxes, condo fees, year built, photos — everything it exposes, structured.',
     },
     {
       n: '02',
@@ -2004,14 +2016,14 @@ function HowSection(): JSX.Element {
     {
       n: '03',
       t: 'Read the verdict',
-      d: 'Numbers, comps, risk flags, schools, sun path, and a deterministic written verdict. Under sixty seconds, every time.',
+      d: 'Numbers, comps, risk flags, schools, sun path, and a deterministic written verdict. Usually inside a minute.',
     },
   ]
 
   return (
     <section id="how" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
-        <SectionHeader tag="How it works" title={<>Three steps. Under sixty seconds.</>}>
+        <SectionHeader tag="How it works" title={<>Three steps. Usually inside a minute.</>}>
           No exports, no spreadsheets, no hand-keying square footage. Three steps and the report is
           on your screen, ready to share.
         </SectionHeader>
@@ -2172,7 +2184,7 @@ function CoverageSection(): JSX.Element {
     {
       icon: 'house' as const,
       t: 'Schools that matter',
-      d: 'EQAO scores, Fraser Institute percentile, catchment overlays for TDSB and the major Ontario boards. Drive time, not crow flies.',
+      d: 'The nearest schools by board with their EQAO scores and straight-line distance. Catchment boundaries and Fraser rankings are not in yet, and we say so on the report.',
     },
     {
       icon: 'sun' as const,
@@ -2828,7 +2840,7 @@ function CTASection(): JSX.Element {
             }}
           >
             {FREE_TIER_LIMIT_WORD} free analyses every month. No credit card, no demo call, no team
-            to talk to. You&apos;ll know if the deal is dead in sixty seconds.
+            to talk to. You&apos;ll usually know if the deal is dead inside a minute.
           </p>
           <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
             <a
