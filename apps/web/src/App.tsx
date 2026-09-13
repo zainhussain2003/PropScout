@@ -24,9 +24,10 @@ import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
 import { DevToolbar } from './components/dev/DevToolbar'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
+import { TierUnavailableNotice } from './components/paywall/TierUnavailableNotice'
 
 function AppInner(): JSX.Element {
-  const { tier } = useTier()
+  const { tier, status: tierStatus, refresh: refreshTier } = useTier()
   const [upgradeModal, setUpgradeModal] = useState<string | null>(null)
   const [showHardGate, setShowHardGate] = useState(false)
 
@@ -36,8 +37,11 @@ function AppInner(): JSX.Element {
   const closeHardGate = (): void => setShowHardGate(false)
 
   return (
-    <PaywallContext.Provider value={{ tier, openUpgradeModal, openHardGate }}>
+    <PaywallContext.Provider
+      value={{ tier, tierStatus, refreshTier, openUpgradeModal, openHardGate }}
+    >
       <BrowserRouter>
+        <TierUnavailableNotice />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/analyzing" element={<AnalyzingPage />} />

@@ -53,14 +53,14 @@ describe('MagicLinkSentPage', () => {
 // ── MagicLinkConfirmedPage ─────────────────────────────────────────────────────
 
 describe('MagicLinkConfirmedPage', () => {
-  it('renders "Signed in successfully." headline', () => {
+  // Signed-in is a state the auth client reports, not the page's opening
+  // line. This test used to assert "Signed in successfully." on mount with no
+  // session — the defect (audit A-08). The page's real behaviour is covered in
+  // apps/web/src/pages/MagicLinkConfirmedPage.test.tsx.
+  it('does not claim to have signed anyone in before a session exists', () => {
     wrap(<MagicLinkConfirmedPage />)
-    expect(screen.getByText('Signed in successfully.')).toBeInTheDocument()
-  })
-
-  it('renders a primary CTA button', () => {
-    wrap(<MagicLinkConfirmedPage />)
-    expect(screen.getByRole('button')).toBeInTheDocument()
+    expect(screen.queryByText(/Signed in/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Confirming your link/)).toBeInTheDocument()
   })
 })
 
