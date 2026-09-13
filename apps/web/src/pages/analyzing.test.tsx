@@ -145,6 +145,88 @@ describe('AnalyzingPage — polling is bounded', () => {
   })
 })
 
+// ── One failed poll is not a failed analysis (J-08) ───────────────────────────
+
+describe('AnalyzingPage — a transient poll error does not end the flow', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    triggerAnalysis.mockReset()
+    fetchReport.mockReset()
+    navigate.mockReset()
+    triggerAnalysis.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('keeps polling after one network blip', async () => {
+    // Pre-check, then pending, then a dropped request, then pending again.
+    fetchReport
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValue({ status: 'pending' })
+    renderAnalyzing()
+    await advance(POLL_MS * 4)
+
+    expect(fetchReport.mock.calls.length).toBeGreaterThanOrEqual(4)
+    expect(screen.queryByText(/Analysis could not complete/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument()
+  })
+
+  it('still reaches the report when the blip is followed by completion', async () => {
+    fetchReport
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValue({ status: 'complete' })
+    renderAnalyzing()
+    await advance(POLL_MS * 3)
+
+    expect(navigate).toHaveBeenCalledWith('/r/tok-1')
+  })
+
+  it('gives up after three consecutive failures', async () => {
+    fetchReport
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockRejectedValue(new TypeError('Failed to fetch'))
+    renderAnalyzing()
+    await advance(POLL_MS * 2)
+    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument()
+
+    await advance(POLL_MS * 2)
+    expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument()
+    const callsAtError = fetchReport.mock.calls.length
+    await advance(POLL_MS * 3)
+    expect(fetchReport.mock.calls.length).toBe(callsAtError)
+  })
+
+  it('a successful poll resets the failure count', async () => {
+    fetchReport
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValue({ status: 'pending' })
+    renderAnalyzing()
+    await advance(POLL_MS * 8)
+
+    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument()
+  })
+
+  it('a report that no longer exists is not a blip — goes home at once', async () => {
+    fetchReport
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockRejectedValue(new ApiRequestError('NOT_FOUND', 'Not found', 404))
+    renderAnalyzing()
+    await advance(POLL_MS * 2)
+
+    expect(navigate).toHaveBeenCalledWith('/')
+  })
+})
+
 // ── Free-tier quota (D-071) ───────────────────────────────────────────────────
 
 // Hoisted, so the polling group above runs with it too: no session there,
