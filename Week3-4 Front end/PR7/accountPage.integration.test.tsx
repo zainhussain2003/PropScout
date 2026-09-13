@@ -22,6 +22,7 @@ vi.mock('../../apps/web/src/hooks/useAuth', async (importOriginal) => ({
 }))
 
 import { AccountPage } from '../../apps/web/src/pages/AccountPage'
+import { PaywallContext } from '../../apps/web/src/components/paywall/PaywallContext'
 
 const SIGNED_IN = {
   session: { access_token: 'jwt-1', user: { email: 'owner@example.com', user_metadata: {} } },
@@ -177,5 +178,68 @@ describe('AccountPage — ?view=plan', () => {
     expect(text).not.toMatch(/May 24, 2026/)
     expect(text).not.toMatch(/\$10\.00/)
     expect(screen.queryByText('Paid')).not.toBeInTheDocument()
+  })
+
+  // ── "This month's usage" was a fixture ──────────────────────────────────────
+  //
+  // Found live on the first signed-in production run (2026-09-12), after
+  // D-064 had removed the same class of invention from the Saved tab: the
+  // plan view told a user who had run three analyses that they had used
+  // "2 / 3", had made "8" tenant reports, and had "8 / 10" saved analyses.
+
+  // The context default outside a Provider is 'pro'; the free plan is where
+  // the cap and the fixtures both lived.
+  function renderFreePlan() {
+    return render(
+      <PaywallContext.Provider
+        value={{ tier: 'free', openUpgradeModal: () => undefined, openHardGate: () => undefined }}
+      >
+        <MemoryRouter initialEntries={[{ pathname: '/', search: '?view=plan' }]}>
+          <AccountPage />
+        </MemoryRouter>
+      </PaywallContext.Provider>
+    )
+  }
+
+  it('shows no invented usage figures', () => {
+    renderFreePlan()
+    const text = document.body.textContent ?? ''
+    expect(text).not.toMatch(/2\s*\/\s*3/)
+    expect(text).not.toMatch(/8\s*\/\s*10/)
+    expect(text).not.toMatch(/Three sale-listing/)
+    expect(text).not.toMatch(/Tenant reports\s*8/)
+  })
+
+  it('shows the real monthly count against the real limit', async () => {
+    // A fresh Response per call: the nav and the plan view each read /me,
+    // and a body can only be consumed once.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ analysesThisMonth: 3, createdAt: null }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    )
+    renderFreePlan()
+    await screen.findByText(
+      (_, el) => el?.tagName === 'SPAN' && /^3\s*\/\s*10$/.test(el.textContent ?? '')
+    )
+    expect(document.body.textContent ?? '').toMatch(/10 sale-listing analyses per month/)
+    fetchSpy.mockRestore()
+  })
+
+  it('leaves the count blank, not zero, when usage cannot be loaded', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'))
+    renderFreePlan()
+    expect(await screen.findByText(/Usage unavailable right now/)).toBeInTheDocument()
+    expect(document.body.textContent ?? '').not.toMatch(/0 \/ 10/)
+    fetchSpy.mockRestore()
+  })
+
+  it('does not put a number on things that are not counted', () => {
+    renderFreePlan()
+    expect(screen.getByText(/Always unlimited · not counted/)).toBeInTheDocument()
+    expect(screen.getByText(/Locked on free tier/)).toBeInTheDocument()
   })
 })
