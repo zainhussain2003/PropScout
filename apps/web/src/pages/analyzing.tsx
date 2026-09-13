@@ -51,14 +51,19 @@ const POLL_INTERVAL_MS = 2000
  */
 const POLL_TIMEOUT_MS = 3 * 60 * 1000
 
+// What the pipeline is *doing*, not what it has *achieved*. This screen has no
+// per-step signal from the server — the list advances on elapsed time — so it
+// used to announce "Fetched listing from Realtor.ca" for a property typed in
+// by address, and "Pulled rental comps" before anyone knew whether there were
+// any (audit J-09). Every line here is true of an attempt; the report says
+// what actually came back.
 const STEPS = [
-  'Fetched listing from Realtor.ca',
-  'Read address, price and unit details',
-  'Pulled rental comps for this area',
-  'Detected building and neighbourhood data',
-  'Scanning listing description for flags',
-  'Running investment calculations',
-  'Building evidence-based verdict',
+  'Reading the property details',
+  'Looking up rental comps for the area',
+  'Gathering neighbourhood data',
+  'Scanning the listing description for flags',
+  'Running the calculations',
+  'Writing the verdict',
   'Assembling your report',
 ] as const
 
@@ -647,8 +652,8 @@ export function AnalyzingPage(): JSX.Element {
                 >
                   <span>
                     {status === 'processing' || status === 'complete'
-                      ? 'Listing confirmed'
-                      : 'Fetching listing…'}
+                      ? 'Details received'
+                      : 'Starting…'}
                   </span>
                 </div>
 
@@ -657,12 +662,7 @@ export function AnalyzingPage(): JSX.Element {
                   <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
                     {(
                       [
-                        { txt: 'Listing found', show: status !== null },
-                        { txt: 'Price confirmed', show: status !== null },
-                        {
-                          txt: 'Unit details',
-                          show: status === 'processing' || status === 'complete',
-                        },
+                        { txt: 'Details received', show: status !== null },
                         { txt: label, show: true },
                       ] as { txt: string; show: boolean }[]
                     ).map(({ txt, show }) => (
@@ -699,7 +699,7 @@ export function AnalyzingPage(): JSX.Element {
                       transition: 'color .3s ease',
                     }}
                   >
-                    {status !== null ? 'Reading listing data…' : 'Connecting to Realtor.ca…'}
+                    {status !== null ? 'Working through the details…' : 'Starting the analysis…'}
                   </div>
 
                   <div style={{ fontSize: 13, color: 'var(--muted)' }}>
@@ -750,7 +750,7 @@ export function AnalyzingPage(): JSX.Element {
                   </span>
                   <span style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 500 }}>
                     {status === 'processing' || status === 'complete'
-                      ? 'Comps pulled · analysis in progress'
+                      ? 'Looking up comparable rentals…'
                       : 'Searching the comps database…'}
                   </span>
                 </div>
@@ -770,14 +770,19 @@ export function AnalyzingPage(): JSX.Element {
               marginTop: 12,
             }}
           >
+            {/* Three things that are true before the run finishes. The strip
+                used to say "Realtor.ca · live" (not for an address), "Rental
+                comps verified" (they are asking rents, and there may be none)
+                and "No data leaves your account" (the address goes to the
+                geocoder, the comps and walk-score services and the model). */}
             <span className="row gap-6">
-              <Icon name="check" size={12} /> Realtor.ca · live
+              <Icon name="check" size={12} /> Built for Ontario rules
             </span>
             <span className="row gap-6">
-              <Icon name="check" size={12} /> Rental comps verified
+              <Icon name="check" size={12} /> Comps are asking rents, not signed leases
             </span>
             <span className="row gap-6">
-              <Icon name="check" size={12} /> No data leaves your account
+              <Icon name="check" size={12} /> Every figure is computed before a word is written
             </span>
           </div>
         </div>

@@ -143,7 +143,8 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
                 d="M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1"
               />
             </svg>
-             Share link
+             
+            Share link
           </button>
           <button
             class="btn btn-ghost"
@@ -151,30 +152,6 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
           >
             Sign in
           </button>
-          <span
-            class="nav-hide-sm"
-          >
-            <button
-              class="btn btn-primary"
-            >
-              Save to account 
-              <svg
-                aria-hidden="true"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.6"
-                viewBox="0 0 24 24"
-                width="13"
-              >
-                <path
-                  d="M5 12h14M13 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </span>
         </div>
       </div>
     </header>
@@ -674,7 +651,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 d="M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1"
               />
             </svg>
-             Share link
+             
+            Share link
           </button>
           <button
             class="btn btn-ghost"
@@ -682,30 +660,6 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           >
             Sign in
           </button>
-          <span
-            class="nav-hide-sm"
-          >
-            <button
-              class="btn btn-primary"
-            >
-              Save to account 
-              <svg
-                aria-hidden="true"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.6"
-                viewBox="0 0 24 24"
-                width="13"
-              >
-                <path
-                  d="M5 12h14M13 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </span>
         </div>
       </div>
     </header>
@@ -5901,7 +5855,8 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
                 d="M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1"
               />
             </svg>
-             Share link
+             
+            Share link
           </button>
           <button
             class="btn btn-ghost"
@@ -5909,30 +5864,6 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
           >
             Sign in
           </button>
-          <span
-            class="nav-hide-sm"
-          >
-            <button
-              class="btn btn-primary"
-            >
-              Save to account 
-              <svg
-                aria-hidden="true"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.6"
-                viewBox="0 0 24 24"
-                width="13"
-              >
-                <path
-                  d="M5 12h14M13 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </span>
         </div>
       </div>
     </header>
