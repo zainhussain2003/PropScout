@@ -64,6 +64,7 @@ import type {
 } from '../types/personal'
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Static light score (Phase 2 will compute this from sun-path data) ─────────
 const STATIC_LIGHT_SCORE = 76
@@ -1474,7 +1475,7 @@ export function PersonalBuyerPage({
   listing: realListing,
 }: PersonalBuyerPageProps): JSX.Element {
   const pdf = usePdfExport(realAnalysis?.token ?? null)
-  const [dark, setDark] = useState(false)
+  const { dark, toggle: toggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
 
   const isReal = !!(realAnalysis && realListing)
@@ -1549,13 +1550,7 @@ export function PersonalBuyerPage({
         reportLabel="Personal buyer report"
         addressSlug={addressSlug}
         dark={dark}
-        onToggleDark={() => {
-          setDark((d) => {
-            const next = !d
-            document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
-            return next
-          })
-        }}
+        onToggleDark={toggleDark}
         onSignIn={() => setShowSignIn(true)}
       />
 

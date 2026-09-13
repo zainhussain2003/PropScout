@@ -2937,3 +2937,22 @@ failed would, until now, have been shown locks and upgrade prompts as fact — t
 | Treat an unconfirmed tier as `pro` to avoid upselling | Unlocks free users' UI when the API blips; PDF then fails server-side with no explanation. Still a guess. |
 | Block the whole app until the tier resolves           | A report is readable without knowing the plan; the notice is enough.                                      |
 | Keep a short timer as the expiry signal               | A timer measures the network, not the link; the provider already reports the reason.                      |
+
+### D-079 · The theme belongs to the person, not the page
+
+**Chosen.** One app-wide theme store (`hooks/useTheme.ts`): first use reads the saved choice,
+then the OS `prefers-color-scheme`, then light; every toggle writes `data-theme` on `<html>` and
+saves the choice; every page's toggle calls the same store. Tests reset it between cases.
+
+**Why.** Audit UI-04. Seven pages each held their own `dark` boolean and wrote the attribute
+themselves. The landing page went further and re-applied its own `false` on mount, so navigating
+home from a dark report flipped the whole app to light; a reload always came up light; and a
+person whose OS is dark got a white flash regardless. A module-level store rather than a Provider:
+pages and tests call `useTheme()` without wrapping, and there is exactly one writer of the
+attribute the tokens read.
+
+| Option                                       | Why not                                                                                |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- |
+| A React Provider in `App.tsx`                | Every page and page test would need wrapping; the attribute is global anyway.          |
+| Read `data-theme` from the DOM on each mount | What `AccountPage` did; it papers over the landing page's reset and remembers nothing. |
+| OS preference only, no saved choice          | A toggle that forgets is worse than none.                                              |

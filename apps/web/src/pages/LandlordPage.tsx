@@ -80,6 +80,7 @@ import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSect
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Converts LandlordProperty to ListingData for shared investor components ───
 
@@ -333,7 +334,7 @@ export function LandlordPage({
 }: LandlordPageProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
-  const [dark, setDark] = useState(false)
+  const { dark, toggle: toggleDark } = useTheme()
   const isReal = !!(realAnalysis && realListing)
   const [showSignIn, setShowSignIn] = useState(false)
 
@@ -466,13 +467,7 @@ export function LandlordPage({
         reportLabel="Landlord report"
         addressSlug={addressSlug}
         dark={dark}
-        onToggleDark={() => {
-          setDark((d) => {
-            const next = !d
-            document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
-            return next
-          })
-        }}
+        onToggleDark={toggleDark}
         onSignIn={() => setShowSignIn(true)}
       />
 

@@ -22,7 +22,7 @@
  *   §11  Due diligence checklist  → DueDiligenceSection
  */
 
-import { useState, useCallback, type ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { usePdfExport } from '../hooks/usePdfExport'
@@ -57,6 +57,7 @@ import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSectio
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { fmtMoney } from '../lib/investorCalc'
+import { useTheme } from '../hooks/useTheme'
 
 // ── Demo dataset selection ─────────────────────────────────────────────────────
 
@@ -250,7 +251,7 @@ export function InvestorReport({
 }: InvestorReportProps): JSX.Element {
   const { openUpgradeModal } = usePaywall()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
-  const [dark, setDark] = useState<boolean>(false)
+  const { dark, toggle: handleToggleDark } = useTheme()
   const demoData = getDemoDataset()
 
   // Shim: use real data when provided, fall back to demo fixtures
@@ -267,14 +268,6 @@ export function InvestorReport({
       undefined,
       realAnalysis ?? null // skip internal API call when analysis is preloaded
     )
-
-  const handleToggleDark = useCallback(() => {
-    setDark((d) => {
-      const next = !d
-      document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
-      return next
-    })
-  }, [])
 
   const handleBack = useCallback(() => {
     window.history.back()
