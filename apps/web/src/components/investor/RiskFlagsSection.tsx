@@ -35,7 +35,9 @@ export function RiskFlagsSection({ listing, flagOverrides }: RiskFlagsSectionPro
       ? `${redFlags.length} red · ${amberFlags.length} amber`
       : amberFlags.length > 0
         ? `${amberFlags.length} amber flag${amberFlags.length > 1 ? 's' : ''}`
-        : 'No wording flags'
+        : listing.hasDescription === false
+          ? 'No listing text'
+          : 'No wording flags'
 
   return (
     <section className="container tr-section" data-section="06">
@@ -64,8 +66,9 @@ export function RiskFlagsSection({ listing, flagOverrides }: RiskFlagsSectionPro
           >
             <Icon name="flag" size={16} />
             <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-              No risk language was found in the listing description. This wording scan is not an
-              inspection or a clean bill of health.
+              {listing.hasDescription === false
+                ? 'This property was entered by address, so there is no listing description to scan. Nothing here has been checked for risk language.'
+                : 'No risk language was found in the listing description. This wording scan is not an inspection or a clean bill of health.'}
             </span>
           </div>
         ) : (
