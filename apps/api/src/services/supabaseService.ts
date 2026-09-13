@@ -999,40 +999,80 @@ export async function getListingByToken(token: string): Promise<Listing | null> 
   return rowToListing(row)
 }
 
+export type AnalysisJobStatus = 'pending' | 'processing' | 'complete' | 'failed'
+
 /**
- * Current state of an analysis row. Computed from row state:
- *   - row missing         → null
- *   - calculated_metrics  → 'complete'
- *   - otherwise           → 'pending'
- *
- * 'processing' / 'failed' are not persisted in origin's schema today;
- * callers tolerate them resolving to 'pending'.
+ * Postgres "column does not exist" (42703) or PostgREST's schema-cache
+ * equivalent (PGRST204). Seen only while `20260913_add_analyses_status.sql`
+ * is not yet applied — migrations are a human gate, so the code must run on
+ * either side of it.
  */
-export async function getAnalysisStatus(
-  token: string
-): Promise<'pending' | 'processing' | 'complete' | 'failed' | null> {
-  const { data, error } = await db()
+function isMissingColumn(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code
+  return code === '42703' || code === 'PGRST204'
+}
+
+/**
+ * Current state of an analysis row.
+ *
+ *   - row missing                       → null
+ *   - calculated_metrics set            → 'complete' (authoritative — results exist)
+ *   - status column says failed/processing → that
+ *   - otherwise                         → 'pending'
+ *
+ * Before the status column exists (migration not applied) this degrades to
+ * the old two-state derivation, so a failed run reads as 'pending' until the
+ * analyzing page's wall-clock bound (D-068) — the behaviour this replaces.
+ */
+export async function getAnalysisStatus(token: string): Promise<AnalysisJobStatus | null> {
+  let { data, error } = await db()
     .from('analyses')
-    .select('calculated_metrics')
+    .select('calculated_metrics, status')
     .eq('share_token', token)
     .maybeSingle()
+
+  if (error != null && isMissingColumn(error)) {
+    ;({ data, error } = await db()
+      .from('analyses')
+      .select('calculated_metrics')
+      .eq('share_token', token)
+      .maybeSingle())
+  }
 
   if (error != null) return null
   if (data == null) return null
 
-  const metrics = (data as { calculated_metrics: unknown }).calculated_metrics
-  return metrics == null ? 'pending' : 'complete'
+  const row = data as { calculated_metrics: unknown; status?: unknown }
+  if (row.calculated_metrics != null) return 'complete'
+  if (row.status === 'failed' || row.status === 'processing') return row.status
+  return 'pending'
 }
 
 /**
- * No-op in the merged schema — status is computed on read rather than stored.
- * Kept as an export so HEAD's orchestrator continues to compile.
+ * Record the job state. Non-fatal by design: a status write must never fail
+ * the pipeline it describes. Before the column exists this is a no-op, which
+ * is exactly what it was until 2026-09-13.
  */
 export async function updateAnalysisStatus(
-  _token: string,
-  _status: 'pending' | 'processing' | 'complete' | 'failed'
+  token: string,
+  status: AnalysisJobStatus,
+  failureCode: string | null = null
 ): Promise<void> {
-  // Intentionally a no-op — see getAnalysisStatus.
+  try {
+    const { error } = await db()
+      .from('analyses')
+      .update({
+        status,
+        status_updated_at: new Date().toISOString(),
+        failure_code: status === 'failed' ? failureCode : null,
+      })
+      .eq('share_token', token)
+    if (error != null && !isMissingColumn(error)) {
+      console.error('[supabaseService] updateAnalysisStatus failed:', error)
+    }
+  } catch (err) {
+    console.error('[supabaseService] updateAnalysisStatus threw:', err)
+  }
 }
 
 /**

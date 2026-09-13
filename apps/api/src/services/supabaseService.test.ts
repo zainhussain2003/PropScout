@@ -33,6 +33,8 @@ import {
   saveListing,
   getMonthlyAnalysisCount,
   claimAnalysisForUser,
+  getAnalysisStatus,
+  updateAnalysisStatus,
   SCHOOL_CATCHMENT_NOTE,
 } from './supabaseService'
 import type { Analysis } from '../types/analysis'
@@ -1224,5 +1226,116 @@ describe('claimAnalysisForUser — attribution', () => {
     await expect(claimAnalysisForUser('tok-1', 'user-1', 'tenant')).rejects.toThrow(
       'claimAnalysisForUser failed: nope'
     )
+  })
+})
+
+// ── Job status (J-06 / T-02) ─────────────────────────────────────────────────
+//
+// The status column arrives by a human-applied migration
+// (20260913_add_analyses_status.sql). Both sides of it are exercised here.
+
+/** A chain whose maybeSingle() resolves to the given row, or rejects with a column error first. */
+function statusChain(rows: Array<{ data: unknown; error: unknown }>): {
+  select: jest.Mock
+  update: jest.Mock
+  eq: jest.Mock
+  maybeSingle: jest.Mock
+  then: (onFulfilled: (v: unknown) => unknown) => Promise<unknown>
+} {
+  const queue = [...rows]
+  const chain = {
+    select: jest.fn(),
+    update: jest.fn(),
+    eq: jest.fn(),
+    maybeSingle: jest.fn(async () => queue.shift() ?? { data: null, error: null }),
+    then(onFulfilled: (v: unknown) => unknown): Promise<unknown> {
+      return Promise.resolve(queue.shift() ?? { data: null, error: null }).then(onFulfilled)
+    },
+  }
+  chain.select.mockReturnValue(chain)
+  chain.update.mockReturnValue(chain)
+  chain.eq.mockReturnValue(chain)
+  return chain
+}
+
+describe('getAnalysisStatus', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('results present → complete, whatever the column says', async () => {
+    mockFrom.mockReturnValue(
+      statusChain([{ data: { calculated_metrics: { x: 1 }, status: 'processing' }, error: null }])
+    )
+    expect(await getAnalysisStatus('tok')).toBe('complete')
+  })
+
+  it('reads a persisted failure', async () => {
+    mockFrom.mockReturnValue(
+      statusChain([{ data: { calculated_metrics: null, status: 'failed' }, error: null }])
+    )
+    expect(await getAnalysisStatus('tok')).toBe('failed')
+  })
+
+  it('reads processing', async () => {
+    mockFrom.mockReturnValue(
+      statusChain([{ data: { calculated_metrics: null, status: 'processing' }, error: null }])
+    )
+    expect(await getAnalysisStatus('tok')).toBe('processing')
+  })
+
+  it('falls back to the two-state derivation when the column is missing', async () => {
+    const chain = statusChain([
+      { data: null, error: { code: '42703', message: 'column analyses.status does not exist' } },
+      { data: { calculated_metrics: null }, error: null },
+    ])
+    mockFrom.mockReturnValue(chain)
+    expect(await getAnalysisStatus('tok')).toBe('pending')
+    expect(chain.select).toHaveBeenNthCalledWith(1, 'calculated_metrics, status')
+    expect(chain.select).toHaveBeenNthCalledWith(2, 'calculated_metrics')
+  })
+
+  it('row missing → null', async () => {
+    mockFrom.mockReturnValue(statusChain([{ data: null, error: null }]))
+    expect(await getAnalysisStatus('tok')).toBeNull()
+  })
+})
+
+describe('updateAnalysisStatus', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('writes the status, a timestamp and the failure code', async () => {
+    const chain = statusChain([{ data: null, error: null }])
+    mockFrom.mockReturnValue(chain)
+    await updateAnalysisStatus('tok', 'failed', 'CALC_ENGINE_UNAVAILABLE')
+    expect(chain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'failed', failure_code: 'CALC_ENGINE_UNAVAILABLE' })
+    )
+    expect(chain.eq).toHaveBeenCalledWith('share_token', 'tok')
+  })
+
+  it('clears the failure code when the job is retried', async () => {
+    const chain = statusChain([{ data: null, error: null }])
+    mockFrom.mockReturnValue(chain)
+    await updateAnalysisStatus('tok', 'processing')
+    expect(chain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'processing', failure_code: null })
+    )
+  })
+
+  it('is a silent no-op while the column does not exist', async () => {
+    const chain = statusChain([{ data: null, error: { code: 'PGRST204', message: 'no status' } }])
+    mockFrom.mockReturnValue(chain)
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    await expect(updateAnalysisStatus('tok', 'failed', 'X')).resolves.toBeUndefined()
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  it('never throws — a status write must not fail the pipeline it describes', async () => {
+    mockFrom.mockImplementation(() => {
+      throw new Error('db down')
+    })
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    await expect(updateAnalysisStatus('tok', 'failed', 'X')).resolves.toBeUndefined()
+    spy.mockRestore()
   })
 })

@@ -327,7 +327,11 @@ describe('POST / — analysis orchestrator', () => {
     expect(res.statusCode).toBe(503)
     const body = res.json() as ApiError
     expect(body.code).toBe('CALC_ENGINE_UNAVAILABLE')
-    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith(
+      'test-token',
+      'failed',
+      'CALC_ENGINE_UNAVAILABLE'
+    )
   })
 
   // ── Test 6 ─────────────────────────────────────────────────────────────────
@@ -346,7 +350,11 @@ describe('POST / — analysis orchestrator', () => {
     expect(res.statusCode).toBe(500)
     const body = res.json() as ApiError
     expect(body.code).toBe('CALC_ENGINE_ERROR')
-    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith(
+      'test-token',
+      'failed',
+      'CALC_ENGINE_ERROR'
+    )
   })
 
   // ── Test 7 ─────────────────────────────────────────────────────────────────
@@ -434,7 +442,11 @@ describe('POST / - rent plausibility bounds', () => {
     expect(res.statusCode).toBe(422)
     const body = res.json() as ApiError
     expect(body.code).toBe('RENT_OUT_OF_BOUNDS')
-    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith('test-token', 'failed')
+    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith(
+      'test-token',
+      'failed',
+      'RENT_OUT_OF_BOUNDS'
+    )
     const fetchMock = global.fetch as jest.Mock
     expect(fetchMock).not.toHaveBeenCalled()
   })

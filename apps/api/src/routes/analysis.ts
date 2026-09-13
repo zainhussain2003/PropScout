@@ -428,7 +428,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           (rentalForCalc.mid < RENT_BOUNDS.MIN_MONTHLY ||
             rentalForCalc.mid > RENT_BOUNDS.MAX_MONTHLY)
         ) {
-          await updateAnalysisStatus(token, 'failed')
+          await updateAnalysisStatus(token, 'failed', 'RENT_OUT_OF_BOUNDS')
           return reply
             .code(422)
             .send(
@@ -537,7 +537,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             { err: serializeError(err), timedOut: isTimeoutError(err) },
             'Calc engine unreachable'
           )
-          await updateAnalysisStatus(token, 'failed')
+          await updateAnalysisStatus(token, 'failed', 'CALC_ENGINE_UNAVAILABLE')
           return reply
             .code(503)
             .send(
@@ -551,7 +551,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         if (!pyResponse.ok) {
           const raw = await pyResponse.text().catch(() => '')
           fastify.log.error({ status: pyResponse.status, body: raw }, 'Calc engine returned error')
-          await updateAnalysisStatus(token, 'failed')
+          await updateAnalysisStatus(token, 'failed', 'CALC_ENGINE_ERROR')
           return reply
             .code(500)
             .send(
@@ -712,10 +712,13 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
 
         // Step 10 — save and return
         await updateAnalysisByToken(token, analysis, listing)
+        // Results are what make a row complete (getAnalysisStatus reads
+        // calculated_metrics first); the column just stops saying "processing".
+        await updateAnalysisStatus(token, 'complete')
         return reply.send({ token, analysis })
       } catch (err) {
         fastify.log.error({ err }, 'Unexpected error in POST /analysis')
-        await updateAnalysisStatus(token, 'failed').catch(() => {})
+        await updateAnalysisStatus(token, 'failed', 'INTERNAL_ERROR').catch(() => {})
         return reply
           .code(500)
           .send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))

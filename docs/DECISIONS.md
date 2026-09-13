@@ -3040,3 +3040,26 @@ documented "unknown" value.
 | Infer condo from a non-empty condo fee    | A fee is evidence, not a statement; the form now asks directly and the fee stays a fee.      |
 | Keep `detached` as the row-reader default | The reader cannot know; "more common" is a prior, and the report presents facts.             |
 | Make the type required on the form        | Some people will not know; the honest answer for them is "not provided", not a forced guess. |
+
+### D-087 · Job status is persisted, and the code runs on either side of the migration
+
+**Chosen.** `20260913_add_analyses_status.sql` adds `analyses.status` (pending / processing /
+complete / failed), `status_updated_at` and `failure_code`. `updateAnalysisStatus` — a documented
+no-op since the schema merge — now writes them, with the failure code the route already had
+(`CALC_ENGINE_UNAVAILABLE`, `CALC_ENGINE_ERROR`, `RENT_OUT_OF_BOUNDS`, `INTERNAL_ERROR`); a retry
+clears the code when it marks the row processing; a saved result marks it complete.
+`getAnalysisStatus` reads `calculated_metrics` first (results are authoritative), then the
+column. Both functions detect "column does not exist" (Postgres `42703`, PostgREST `PGRST204`)
+and fall back to the old behaviour — derived two-state status, silent no-op write — so the API
+can deploy before the owner applies the migration and nothing breaks in between.
+
+**Why.** Audit J-06 / T-02: a run that died server-side left a row that read "pending" forever;
+the analyzing page could only say "taking longer than it should" after three minutes (D-068).
+Migrations are a human gate (`docs/agent-loop/POLICY.md`), so the code could not assume the
+column; making it tolerant is what lets this ship now instead of waiting on the gate.
+
+| Option                                            | Why not                                                                                 |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Ship the code only after the migration is applied | Ties a code deploy to a dashboard action nobody can schedule from a PR.                 |
+| Store status inside `market_data` JSON instead    | Avoids the migration but hides a queryable state in a blob; wrong shape for a job flag. |
+| Treat "processing for > N minutes" as failed      | Still worth doing after apply; it is a heuristic and this row is the fact it needs.     |
