@@ -1128,7 +1128,6 @@ function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                   <span key={k} style={{ display: 'contents' }}>
                     {[
                       'Realtor.ca',
-                      'Zillow.ca',
                       'Rentals.ca',
                       'Kijiji',
                       'PadMapper',
@@ -1994,7 +1993,7 @@ function HowSection(): JSX.Element {
     {
       n: '01',
       t: 'Paste any URL',
-      d: 'Any Canadian listing URL. We read price, beds, taxes, condo fees, year built, photos — everything the listing exposes, structured.',
+      d: 'A Realtor.ca listing link, or just the address. From a listing we read price, beds, taxes, condo fees, year built, photos — everything it exposes, structured.',
     },
     {
       n: '02',
@@ -2004,14 +2003,14 @@ function HowSection(): JSX.Element {
     {
       n: '03',
       t: 'Read the verdict',
-      d: 'Numbers, comps, risk flags, schools, sun path, and a deterministic written verdict. Under sixty seconds, every time.',
+      d: 'Numbers, comps, risk flags, schools, sun path, and a deterministic written verdict. Usually inside a minute.',
     },
   ]
 
   return (
     <section id="how" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
-        <SectionHeader tag="How it works" title={<>Three steps. Under sixty seconds.</>}>
+        <SectionHeader tag="How it works" title={<>Three steps. Usually inside a minute.</>}>
           No exports, no spreadsheets, no hand-keying square footage. Three steps and the report is
           on your screen, ready to share.
         </SectionHeader>
@@ -2828,7 +2827,7 @@ function CTASection(): JSX.Element {
             }}
           >
             {FREE_TIER_LIMIT_WORD} free analyses every month. No credit card, no demo call, no team
-            to talk to. You&apos;ll know if the deal is dead in sixty seconds.
+            to talk to. You&apos;ll usually know if the deal is dead inside a minute.
           </p>
           <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
             <a
