@@ -50,3 +50,24 @@ describe('weighted score bars', () => {
     expect(input).toEqual(original)
   })
 })
+
+describe('assumed demand points are labelled (audit S-02)', () => {
+  it('says how many demand points rest on unobserved inputs', () => {
+    const bars = scoreBreakdownBars(breakdown)
+    const demand = bars.find((b) => b.label === 'Rental demand')
+    expect(demand?.note).toMatch(/4 of these points assume/)
+    expect(demand?.note).toMatch(/not measured/)
+  })
+
+  it('puts the note on no other component', () => {
+    const bars = scoreBreakdownBars(breakdown)
+    for (const b of bars) {
+      if (b.label !== 'Rental demand') expect(b.note).toBeUndefined()
+    }
+  })
+
+  it('does not caveat a demand score of zero — nothing was awarded', () => {
+    const bars = scoreBreakdownBars({ ...breakdown, demand: 0 })
+    expect(bars.find((b) => b.label === 'Rental demand')?.note).toBeUndefined()
+  })
+})
