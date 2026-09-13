@@ -80,7 +80,7 @@ not a defect.
 | `calculate_break_even_rent` management asymmetry        | ✅     | Router tests kept; D-067                                                |
 | Listing rows overwritten by re-scrape                   | ✅     | #38 D-069                                                               |
 | Evidence labels not applied                             | ➖     | Process note                                                            |
-| Sun obstruction coverage threshold                      | ⬜     | Coverage shown; no suppression threshold — BACKLOG                      |
+| Sun obstruction coverage threshold                      | ✅     | #64 D-085 — below 50% measured, labelled indicative                     |
 | "True monthly cost" ~24% modelled                       | 🟡     | Rows labelled estimate/confirm; headline still "true" — BACKLOG         |
 | Narrative `tier: 'free'` hardcoded                      | ➖     | Inert; truncation is client-side                                        |
 | Agent sharing vs mutable share links                    | ✅     | Links are read-only for recipients (#34)                                |

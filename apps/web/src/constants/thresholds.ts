@@ -34,3 +34,15 @@ export const HOME_SCORE = {
   SEVERE_CEILINGS: [34, 20, 10], // total capped by severe-flag count: 1 / 2 / 3+
   FLOOR: 5, // "always worth something" display floor
 } as const
+
+/**
+ * SunScout building-obstruction coverage (spec §17 Phase 2).
+ *
+ * Share of nearby buildings that had a known height. Below INDICATIVE, the
+ * obstruction result is labelled indicative rather than checked: the shade is
+ * a floor computed from a minority of the skyline. 0.5 is a starting point —
+ * the surroundings dataset has no ground truth to calibrate against yet.
+ */
+export const SUN_OBSTRUCTION_COVERAGE = {
+  INDICATIVE: 0.5,
+} as const

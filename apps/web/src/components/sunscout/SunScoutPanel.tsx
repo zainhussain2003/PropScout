@@ -12,6 +12,7 @@ import { SectionHead } from '../shared/SectionHead'
 import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
 import { recalculateSunScout } from '../../lib/services/sunScoutService'
+import { obstructionCoverage } from '../../lib/sunCoverage'
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
@@ -152,6 +153,10 @@ export function SunScoutPanel({
   }
 
   const max = Math.max(...sunScoutData.monthlyHours, 1)
+  const coverage = obstructionCoverage(
+    sunScoutData.obstructionBuildingsUsed,
+    sunScoutData.obstructionBuildingsUnknown
+  )
 
   return (
     <section className="container tr-section" data-section={sectionNumber}>
@@ -321,7 +326,7 @@ export function SunScoutPanel({
                   marginBottom: 6,
                 }}
               >
-                Real surroundings · checked
+                Real surroundings · {coverage.level === 'indicative' ? 'indicative' : 'checked'}
               </div>
               <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
                 {typeof sunScoutData.hoursLostToBuildings === 'number' &&
@@ -369,11 +374,21 @@ export function SunScoutPanel({
                       margin: '8px 0 0',
                     }}
                   >
-                    Based on {sunScoutData.obstructionBuildingsUsed ?? 0} nearby building
-                    {(sunScoutData.obstructionBuildingsUsed ?? 0) === 1 ? '' : 's'} with a known
-                    height. {sunScoutData.obstructionBuildingsUnknown} more had no height on record
-                    and were left out rather than guessed. This means the calculated shade is a
-                    floor, not a ceiling.
+                    {coverage.level === 'indicative' ? (
+                      <>
+                        Only {coverage.used} of {coverage.used + coverage.unknown} nearby buildings
+                        had a height on record; the rest were left out rather than guessed. Treat
+                        the shade figure as indicative — a floor from a minority of the skyline, not
+                        a measurement of it.
+                      </>
+                    ) : (
+                      <>
+                        Based on {coverage.used} nearby building{coverage.used === 1 ? '' : 's'}{' '}
+                        with a known height. {coverage.unknown} more had no height on record and
+                        were left out rather than guessed. This means the calculated shade is a
+                        floor, not a ceiling.
+                      </>
+                    )}
                   </p>
                 )}
             </div>
