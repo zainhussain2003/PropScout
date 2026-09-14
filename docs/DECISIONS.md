@@ -3200,3 +3200,28 @@ one sentence it must not say when nothing was read. #60 separated "no text"; thi
 | Fail the analysis when extraction fails | The rest of the report is still good; the rule is one section's failure never blanks it. |
 | A column on `analyses`                  | Needs the migration gate; `market_data` already carries per-analysis facts.              |
 | Treat a Haiku failure as `failed`       | Regex flags still fired and still deducted; `partial` tells the truth about both.        |
+
+### D-091 · Pricing sells what exists, and every paywall control does something
+
+**Chosen.** Pricing CTAs are wired: "Start free" opens sign-in (signed out) or goes to the
+account (signed in); "Go Pro" / "Start Professional" open Stripe Checkout for that tier when
+signed in and show the API's answer inline — today the 503 "paid plans are not open yet" (D-076)
+— or open sign-in first; "Talk to us" is a `mailto:` to `VITE_CONTACT_EMAIL` when set and
+otherwise the card says "contact channel not open yet". Features that are not built carry a
+"planned" tag with a dot instead of a check: saved analyses, portfolio tracker, white-label PDF,
+bulk analysis, priority refresh, seats, API access, portfolio reporting, onboarding. The
+`UpgradeModal` "Upgrade now" button starts Pro checkout when signed in, sends a signed-out user to
+the account's sign-in card, shows a failure inline, and is not rendered at all when nothing is
+wired to it. The `HardLimitGate` design-review mount in `App.tsx` renders only in dev builds.
+The "Share or export" feature card no longer says "save to portfolio".
+
+**Why.** Audit J-03 and the paywall rows: the page sold four things that do not exist and had
+five buttons with no handler. The owner ranked paywall work low, which is why this touches no
+prices, tiers or feature sets — it only makes the existing page true. Tagging rather than
+removing keeps the roadmap visible and leaves the build-or-drop decision where it belongs.
+
+| Option                                   | Why not                                                                                 |
+| ---------------------------------------- | --------------------------------------------------------------------------------------- |
+| Remove the unbuilt features from pricing | A product decision (the tiers are priced on them); "planned" is true today either way.  |
+| Hide paid CTAs until price IDs exist     | A visible 503 with a real message is more honest than a page that looks unfinished.     |
+| Hard-code a contact address              | Nobody has chosen one; an env var makes it a 30-second owner action, not a code change. |

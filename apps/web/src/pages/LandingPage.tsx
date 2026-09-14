@@ -45,6 +45,9 @@ import { countLabel, NOT_PROVIDED } from '../lib/listingFacts'
 import { DEAL_SCORE } from '../constants/thresholds'
 import type { Listing } from '../types/property'
 import { useTheme } from '../hooks/useTheme'
+import { useAuth } from '../hooks/useAuth'
+import { startCheckout } from '../lib/services/billingService'
+import type { Tier } from '../types/user'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -2194,7 +2197,7 @@ function CoverageSection(): JSX.Element {
     {
       icon: 'doc' as const,
       t: 'Share or export',
-      d: 'Branded PDF, 30-day shareable link, save to portfolio. Your clients see the verdict without seeing the seams.',
+      d: 'Branded PDF and a 30-day shareable link. Your clients see the verdict without seeing the seams.',
     },
   ]
 
@@ -2446,68 +2449,122 @@ function SunScoutSection(): JSX.Element {
 
 // ── PricingSection ────────────────────────────────────────────────────
 
-function PricingSection(): JSX.Element {
-  const [yearly, setYearly] = useState(false)
+/**
+ * A pricing feature. `planned` marks what is sold but not built (audit J-03):
+ * the row renders with a "planned" tag rather than a bare check mark, so the
+ * page sells what exists and promises the rest honestly.
+ */
+interface PricingFeature {
+  text: string
+  planned?: boolean
+}
 
-  const tiers = [
+/**
+ * Where "Talk to us" goes. Unset until the owner chooses a channel; the card
+ * then says so instead of rendering a button that does nothing.
+ */
+const CONTACT_EMAIL: string = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) ?? ''
+
+function PricingSection({ onSignIn }: { onSignIn: () => void }): JSX.Element {
+  const [yearly, setYearly] = useState(false)
+  const { session } = useAuth()
+  const navigate = useNavigate()
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [checkoutTier, setCheckoutTier] = useState<Tier | null>(null)
+
+  // Free → the account (signed in) or sign-in. Paid → Stripe Checkout for
+  // that tier (signed in) or sign-in first; the API's answer — today a 503
+  // "paid plans are not open yet" until price IDs exist (D-076) — is shown,
+  // not swallowed. These buttons had no handler at all (audit, paywall).
+  const handleCta = (tier: Tier | 'free'): void => {
+    setCheckoutError(null)
+    if (!session) {
+      onSignIn()
+      return
+    }
+    if (tier === 'free') {
+      navigate('/account')
+      return
+    }
+    setCheckoutTier(tier)
+    void startCheckout(tier, session.access_token)
+      .catch((err: Error) => setCheckoutError(err.message))
+      .finally(() => setCheckoutTier(null))
+  }
+
+  const tiers: Array<{
+    name: string
+    tier: Tier | 'free' | 'team'
+    price: number
+    priceSuffix?: string
+    yearlyTotal?: number
+    sub: string
+    cta: string
+    featured: boolean
+    features: PricingFeature[]
+  }> = [
     {
       name: 'Free',
+      tier: 'free',
       price: 0,
       sub: 'For tenants and the merely curious.',
       cta: 'Start free',
       featured: false,
       features: [
-        `${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} sale-listing reports / month`,
-        'Unlimited tenant reports',
-        'Full rental comps, confidence shown',
-        'Verdict summary',
-        'Save your last 10 analyses',
+        { text: `${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} sale-listing reports / month` },
+        { text: 'Unlimited tenant reports' },
+        { text: 'Full rental comps, confidence shown' },
+        { text: 'Verdict summary' },
+        { text: 'Saved analyses in your account', planned: true },
       ],
     },
     {
       name: 'Investor Pro',
+      tier: 'pro',
       price: yearly ? 100 / 12 : 10,
       yearlyTotal: 100,
       sub: 'For the investor running the numbers themselves.',
       cta: 'Go Pro',
       featured: true,
       features: [
-        'Unlimited reports, all four modes',
-        'Full evidence-based verdicts',
-        'Financing sliders · OSFI, 35% down, conservative',
-        'SunScout with building obstruction',
-        'Portfolio tracker · up to 10 properties',
-        'Branded PDF export',
+        { text: 'Unlimited reports, all four modes' },
+        { text: 'Full evidence-based verdicts' },
+        { text: 'Financing sliders · OSFI, 35% down, conservative' },
+        { text: 'SunScout with building obstruction' },
+        { text: 'Portfolio tracker · up to 10 properties', planned: true },
+        { text: 'Branded PDF export' },
       ],
     },
     {
       name: 'Professional',
+      tier: 'professional',
       price: yearly ? 590 / 12 : 59,
       yearlyTotal: 590,
       sub: 'For agents and brokers reporting to clients.',
       cta: 'Start Professional',
       featured: false,
       features: [
-        'Everything in Investor Pro',
-        'White-label PDF with your branding',
-        'Shareable client links',
-        'Bulk URL analysis',
-        'Priority comp data refresh',
+        { text: 'Everything in Investor Pro' },
+        { text: 'White-label PDF with your branding', planned: true },
+        { text: 'Shareable client links' },
+        { text: 'Bulk URL analysis', planned: true },
+        { text: 'Priority comp data refresh', planned: true },
       ],
     },
     {
       name: 'Team / REIT',
+      tier: 'team',
       price: 299,
       priceSuffix: '+',
       sub: 'For syndicates and small REITs.',
       cta: 'Talk to us',
       featured: false,
       features: [
-        'Everything in Professional',
-        '5–20+ multi-user seats',
-        'Read-only API access',
-        'Portfolio-level reporting',
-        'Custom onboarding',
+        { text: 'Everything in Professional' },
+        { text: '5–20+ multi-user seats', planned: true },
+        { text: 'Read-only API access', planned: true },
+        { text: 'Portfolio-level reporting', planned: true },
+        { text: 'Custom onboarding', planned: true },
       ],
     },
   ]
@@ -2663,22 +2720,56 @@ function PricingSection(): JSX.Element {
                   ${t.yearlyTotal} billed yearly
                 </div>
               )}
-              <button
-                className="btn"
-                style={{
-                  background: t.featured ? 'var(--accent)' : 'var(--ink)',
-                  color: t.featured ? 'var(--accent-ink)' : 'var(--bg)',
-                  width: '100%',
-                  justifyContent: 'center',
-                  padding: '14px',
-                }}
-              >
-                {t.cta}
-              </button>
+              {t.tier === 'team' ? (
+                CONTACT_EMAIL ? (
+                  <a
+                    className="btn"
+                    href={`mailto:${CONTACT_EMAIL}?subject=PropScout%20Team`}
+                    style={{
+                      background: 'var(--ink)',
+                      color: 'var(--bg)',
+                      width: '100%',
+                      justifyContent: 'center',
+                      padding: '14px',
+                    }}
+                  >
+                    {t.cta}
+                  </a>
+                ) : (
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'var(--muted)',
+                      padding: '14px 0',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Contact channel not open yet
+                  </div>
+                )
+              ) : (
+                <button
+                  className="btn"
+                  onClick={() => handleCta(t.tier as Tier | 'free')}
+                  disabled={checkoutTier === t.tier}
+                  style={{
+                    background: t.featured ? 'var(--accent)' : 'var(--ink)',
+                    color: t.featured ? 'var(--accent-ink)' : 'var(--bg)',
+                    width: '100%',
+                    justifyContent: 'center',
+                    padding: '14px',
+                  }}
+                >
+                  {checkoutTier === t.tier ? 'Opening checkout…' : t.cta}
+                </button>
+              )}
               <div className="col gap-10" style={{ marginTop: 6 }}>
                 {t.features.map((f) => (
                   <div
-                    key={f}
+                    key={f.text}
                     className="row gap-8"
                     style={{
                       alignItems: 'flex-start',
@@ -2688,16 +2779,52 @@ function PricingSection(): JSX.Element {
                         : 'var(--ink-2)',
                     }}
                   >
-                    <span style={{ color: 'var(--accent)', marginTop: 2 }}>
-                      <Icon name="check" size={14} stroke={2} />
+                    <span
+                      style={{ color: f.planned ? 'var(--muted)' : 'var(--accent)', marginTop: 2 }}
+                    >
+                      <Icon name={f.planned ? 'dot' : 'check'} size={14} stroke={2} />
                     </span>
-                    <span>{f}</span>
+                    <span>
+                      {f.text}
+                      {f.planned && (
+                        <span
+                          className="mono"
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 10,
+                            letterSpacing: '0.12em',
+                            textTransform: 'uppercase',
+                            color: t.featured
+                              ? 'color-mix(in oklab, var(--bg) 60%, transparent)'
+                              : 'var(--muted)',
+                          }}
+                        >
+                          planned
+                        </span>
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           ))}
         </div>
+        {checkoutError !== null && (
+          <div
+            role="alert"
+            style={{
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: 'color-mix(in oklab, var(--caution) 8%, transparent)',
+              border: '1px solid color-mix(in oklab, var(--caution) 35%, transparent)',
+              color: 'var(--ink)',
+              fontSize: 13.5,
+              lineHeight: 1.5,
+            }}
+          >
+            {checkoutError}
+          </div>
+        )}
       </div>
     </section>
   )
@@ -2938,7 +3065,7 @@ export function LandingPage(): JSX.Element {
         <FounderNoteSection />
         <SunScoutSection />
         <HowSection />
-        <PricingSection />
+        <PricingSection onSignIn={() => setShowSignIn(true)} />
         <FAQSection />
         <CTASection />
       </main>

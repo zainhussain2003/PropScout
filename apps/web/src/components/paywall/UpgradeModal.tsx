@@ -55,9 +55,25 @@ interface UpgradeModalProps {
   onClose: () => void
   /** Which feature-specific copy variant to show. Defaults to "generic". */
   feature?: FeatureKey | string
+  /**
+   * What "Upgrade now" does. Without it the button is not rendered — a
+   * control that does nothing is worse than none (audit, paywall).
+   */
+  onUpgrade?: () => void
+  /** Shown under the buttons when the upgrade attempt failed. */
+  error?: string | null
+  /** True while checkout is being opened. */
+  busy?: boolean
 }
 
-export function UpgradeModal({ open, onClose, feature }: UpgradeModalProps): JSX.Element | null {
+export function UpgradeModal({
+  open,
+  onClose,
+  feature,
+  onUpgrade,
+  error = null,
+  busy = false,
+}: UpgradeModalProps): JSX.Element | null {
   const modalRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<Element | null>(null)
 
@@ -274,12 +290,29 @@ export function UpgradeModal({ open, onClose, feature }: UpgradeModalProps): JSX
 
           {/* Action buttons */}
           <div className="col gap-10">
-            <button
-              className="btn btn-accent"
-              style={{ width: '100%', justifyContent: 'center', padding: 16, fontSize: 15 }}
-            >
-              Upgrade now <Icon name="arrow" size={14} />
-            </button>
+            {onUpgrade && (
+              <button
+                className="btn btn-accent"
+                onClick={onUpgrade}
+                disabled={busy}
+                style={{ width: '100%', justifyContent: 'center', padding: 16, fontSize: 15 }}
+              >
+                {busy ? 'Opening checkout…' : 'Upgrade now'} <Icon name="arrow" size={14} />
+              </button>
+            )}
+            {error !== null && (
+              <div
+                role="alert"
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: 'var(--caution)',
+                  textAlign: 'center',
+                }}
+              >
+                {error}
+              </div>
+            )}
             <button
               onClick={onClose}
               className="btn btn-ghost"
