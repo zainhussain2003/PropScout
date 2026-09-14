@@ -714,6 +714,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           annualTaxesEstimated: listing.annualTaxes == null || listing.annualTaxes <= 0,
           cmhcCityMatched: hasVacancyRateForCity(listing.city),
           walkScore,
+          hasSunScout: pyData.sun_scout != null,
           travelTimesRouted:
             nearbyDistances != null && nearbyDistances.length > 0
               ? nearbyDistances.some((d) => d.routed === true)

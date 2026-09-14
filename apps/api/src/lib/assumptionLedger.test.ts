@@ -3,7 +3,12 @@
  * method, and a default is called a default (D-088).
  */
 
-import { buildAssumptionLedger, type LedgerInput, type EngineAssumptions } from './assumptionLedger'
+import {
+  buildAssumptionLedger,
+  withFacadeRow,
+  type LedgerInput,
+  type EngineAssumptions,
+} from './assumptionLedger'
 import type { AssumptionEntry } from '../types/analysis'
 
 const ENGINE: EngineAssumptions = {
@@ -214,6 +219,19 @@ describe('buildAssumptionLedger', () => {
     })
     expect(entry(base({ travelTimesRouted: false }), 'travel_times').basis).toBe('estimate')
     expect(buildAssumptionLedger(base()).find((x) => x.key === 'travel_times')).toBeUndefined()
+  })
+
+  it('the sun model\u2019s south assumption is a default until the user sets the facade', () => {
+    expect(entry(base({ hasSunScout: true }), 'facade')).toMatchObject({
+      basis: 'default',
+      value: 'south (assumed)',
+    })
+    expect(buildAssumptionLedger(base()).find((x) => x.key === 'facade')).toBeUndefined()
+    const rows = withFacadeRow(buildAssumptionLedger(base({ hasSunScout: true })), 270)
+    const f = rows?.find((x) => x.key === 'facade')
+    expect(f).toMatchObject({ basis: 'observed', value: 'west' })
+    expect(rows?.filter((x) => x.key === 'facade').length).toBe(1)
+    expect(withFacadeRow(null, 90)).toBeNull()
   })
 
   it('financing defaults are labelled as the starting case', () => {

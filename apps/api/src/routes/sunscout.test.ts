@@ -105,6 +105,9 @@ describe('POST /:token/sunscout', () => {
     const [token, saved] = mockUpdateAnalysisByToken.mock.calls[0]!
     expect(token).toBe('test-token')
     expect(saved.sunScout?.sunScore).toBe(44)
+    // The stored figures say which facade they are for (D-098).
+    expect(saved.sunScout?.facadeBearing).toBe(90)
+    expect(saved.sunScout?.facadeConfirmed).toBe(true)
   })
 
   it('404s for an unknown token', async () => {

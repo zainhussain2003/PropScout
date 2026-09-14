@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { SunScoutPanel } from './SunScoutPanel'
 import { recalculateSunScout } from '../../lib/services/sunScoutService'
 import type { SunScoutResult } from '../../types/analysis'
@@ -136,5 +136,23 @@ describe('SunScoutPanel — facade direction input', () => {
     expect(screen.getByText(/Only 2 of 30 nearby buildings/i)).toBeInTheDocument()
     // The hours figure is still shown — as a floor, with the caveat next to it.
     expect(screen.getByText(/210 hours/i)).toBeInTheDocument()
+  })
+
+  // ── Inferred vs confirmed facade (D-098) ─────────────────────────────────
+
+  it('labels the facade as assumed until the user sets it, and starts from the stored one', () => {
+    render(<SunScoutPanel sunScout={SOUTH} token="test-token" />)
+    expect(screen.getByText(/Assumed south/i)).toBeInTheDocument()
+    expect((screen.getByLabelText(/facade faces/i) as HTMLSelectElement).value).toBe('180')
+    cleanup()
+
+    render(
+      <SunScoutPanel
+        sunScout={{ ...SOUTH, facadeBearing: 270, facadeConfirmed: true }}
+        token="test-token"
+      />
+    )
+    expect(screen.getByText(/Set by you/i)).toBeInTheDocument()
+    expect((screen.getByLabelText(/facade faces/i) as HTMLSelectElement).value).toBe('270')
   })
 })

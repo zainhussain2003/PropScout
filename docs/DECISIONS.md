@@ -3315,3 +3315,15 @@ token was already in the API for geocoding.
 | Mapbox Matrix API (one call) | Needs the driving/walking split anyway; eight cheap calls are simpler and per-target failures stay isolated. |
 | Google Distance Matrix       | A second billed product for something the existing token covers.                                             |
 | Transit routing              | Mapbox has no transit profile; needs another source (BACKLOG).                                               |
+
+### D-098 · The sun figures say which facade they were computed for
+
+**Chosen.** A SunScout recalculation stores `facadeBearing` and `facadeConfirmed: true` with the
+figures, and refreshes the Sources ledger's "Primary facade" row from "south (assumed) · Default"
+to the chosen direction · Observed ("You — set in the SunScout section"). The panel starts from
+the stored bearing and says "Assumed south · set it if you know" or "Set by you · figures
+recomputed for it". An analysis with a sun model gets the assumed row from the start.
+
+**Why.** Roadmap "SunScout: label inferred vs confirmed". The recalc already persisted the
+figures but not the facade, so a reload showed west-facing numbers under a select that read
+"South" — the stored result contradicted its own label.
