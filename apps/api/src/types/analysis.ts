@@ -87,6 +87,8 @@ export interface WalkScoreResult {
   transit: number | null // 0–100, null if no transit data
   bike: number | null // 0–100, null if no bike data
   description: string // e.g. "Walker's Paradise"
+  /** ISO time the scores were fetched — the report's "as of". Absent on older rows. */
+  fetchedAt?: string
 }
 
 export interface RentalEstimate {

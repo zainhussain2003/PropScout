@@ -713,6 +713,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           annualTaxesUsed: annualTaxesForCalc,
           annualTaxesEstimated: listing.annualTaxes == null || listing.annualTaxes <= 0,
           cmhcCityMatched: hasVacancyRateForCity(listing.city),
+          walkScore,
         })
         const analysis: Analysis = {
           id: token,

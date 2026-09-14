@@ -40,6 +40,14 @@ describe('getWalkScore', () => {
     expect(result!.description).toBe("Walker's Paradise")
   })
 
+  it('stamps the fetch time so the report can say "as of"', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse(FULL_RESPONSE, 200))
+    const before = Date.now()
+    const result = await getWalkScore('1 Front St', 43.64, -79.38)
+    expect(result?.fetchedAt).toBeDefined()
+    expect(Date.parse(result!.fetchedAt!)).toBeGreaterThanOrEqual(before - 1000)
+  })
+
   it('transit and bike absent → transit and bike are null, not 0', async () => {
     const response = { walkscore: 60, description: 'Bikeable' }
     mockFetch.mockResolvedValueOnce(makeFetchResponse(response, 200))

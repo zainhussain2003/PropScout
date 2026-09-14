@@ -303,6 +303,7 @@ export function shimToNeighbourhood(analysis: Analysis): NeighbourhoodData {
     avgIncome: stats?.avgIncome ?? 0,
     popGrowth5y: stats?.popGrowth5y ?? 0,
     walkScore: analysis.walkScore?.walk ?? 0,
+    walkScoreAsOf: analysis.walkScore?.fetchedAt ?? null,
     transitScore: analysis.walkScore?.transit ?? 0,
     bikeScore: analysis.walkScore?.bike ?? 0,
     buildingPermits: 0,

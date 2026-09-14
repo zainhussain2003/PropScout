@@ -65,6 +65,7 @@ export async function getWalkScore(
       transit: data.transit?.score ?? null,
       bike: data.bike?.score ?? null,
       description: data.description ?? '',
+      fetchedAt: new Date().toISOString(),
     }
   } catch (err) {
     console.error(`getWalkScore: error fetching walk score for "${address}":`, err)

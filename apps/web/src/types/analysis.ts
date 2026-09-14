@@ -95,6 +95,8 @@ export interface WalkScoreResult {
   transit: number | null
   bike: number | null
   description: string
+  /** ISO time the scores were fetched; absent on older analyses. */
+  fetchedAt?: string
 }
 
 export type FlagSeverity = 'red' | 'amber'
@@ -483,6 +485,8 @@ export interface NeighbourhoodData {
   avgIncome: number
   popGrowth5y: number
   walkScore: number
+  /** ISO time the Walk Score call was made; null on fixtures and older analyses. */
+  walkScoreAsOf?: string | null
   transitScore: number
   bikeScore: number
   buildingPermits: number // active permits in 1km radius

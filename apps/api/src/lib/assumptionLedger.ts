@@ -59,6 +59,8 @@ export interface LedgerInput {
   annualTaxesEstimated: boolean
   /** Whether the city had its own row in the CMHC table (else the province default). */
   cmhcCityMatched: boolean
+  /** Walk Score result, when the API returned one. */
+  walkScore?: { walk: number; transit: number | null; fetchedAt?: string } | null
 }
 
 /** Year the municipal tax-rate table was last refreshed (constants/propertyTaxRates.ts). */
@@ -280,6 +282,22 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
           ? `${listing.city} row of the table. Feeds the demand part of the score.`
           : `${listing.city} has no CMHC figure on file, so the province-wide default applied. Feeds the demand part of the score.`
         : 'The engine default applied. Feeds the demand part of the score.',
+    })
+  }
+
+  // ── Location scores ───────────────────────────────────────────────────────
+  if (input.walkScore != null) {
+    rows.push({
+      key: 'walk_score',
+      label: 'Walk / Transit Score',
+      value:
+        input.walkScore.transit != null
+          ? `${input.walkScore.walk} / ${input.walkScore.transit}`
+          : `${input.walkScore.walk} / —`,
+      basis: 'published',
+      source: 'Walk Score API',
+      asOf: input.walkScore.fetchedAt ?? input.createdAt,
+      method: 'Fetched for the geocoded address at analysis time; not recomputed on later views.',
     })
   }
 
