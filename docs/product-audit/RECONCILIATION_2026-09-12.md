@@ -30,7 +30,7 @@ not a defect.
 | API-06 | P2  | Listing upsert rewrites issued reports               | ✅     | #38 D-069                                                                                          |
 | J-01   | P1  | "Any Canadian listing URL" / Zillow advertised       | ✅     | #57                                                                                                |
 | J-02   | P1  | Report cards advertise what live does not provide    | 🟡     | Landlord → L-01/L-03 🔒; personal comps copy #57                                                   |
-| J-03   | P1  | Pricing advertises portfolio, white-label, 3D        | 🔒     | Paywall — lower priority per owner; BACKLOG                                                        |
+| J-03   | P1  | Pricing advertises portfolio, white-label, 3D        | ✅     | #71 D-091 — unbuilt rows tagged "planned"; CTAs wired                                              |
 | J-04   | P2  | 2,900-line landing page                              | ⬜     | Maintainability; BACKLOG                                                                           |
 | J-05   | P2  | "Under sixty seconds, every time"                    | ✅     | #57                                                                                                |
 | J-06   | P1  | Status updates are no-ops; failed = pending          | 🟡     | Code #67 D-087; migration awaiting apply — BACKLOG                                                 |
@@ -88,23 +88,23 @@ not a defect.
 
 ## Product-claims table
 
-| Claim                                   | Status | Where                                                                             |
-| --------------------------------------- | ------ | --------------------------------------------------------------------------------- |
-| "Any Canadian listing URL"              | ✅     | #57                                                                               |
-| Zillow.ca supported                     | ✅     | #57                                                                               |
-| Under 60 seconds every time             | ✅     | #57                                                                               |
-| Every number has a source, date, method | ✅     | #68 D-088 — ledger section on every live report; landing claim reworded to match  |
-| Comparable sales for personal buyers    | ✅     | Copy #57; score paused with reason (live)                                         |
-| School catchments                       | ✅     | #57                                                                               |
-| SunScout obstruction / 3D               | 🟡     | Obstruction is live for everyone; "3D" wording — paywall BACKLOG                  |
-| Portfolio tracker / save                | 🟡     | Removed from nav/account as a working control; still on pricing — paywall BACKLOG |
-| Monitoring and alerts                   | ✅     | #55                                                                               |
-| Reset link sent                         | ✅     | #35                                                                               |
-| Mode switch inside report               | ✅     | #57                                                                               |
-| "No flags detected" ambiguity           | ✅     | #60, #70 D-090                                                                    |
-| "Comparable rentals" wording            | ✅     | Live copy says "asking rents, not signed leases"                                  |
-| Free forever tenant report              | ✅     | Tenant exempt from quota #40                                                      |
-| Professional white-label PDF            | 🔒     | Paywall — BACKLOG                                                                 |
+| Claim                                   | Status | Where                                                                            |
+| --------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| "Any Canadian listing URL"              | ✅     | #57                                                                              |
+| Zillow.ca supported                     | ✅     | #57                                                                              |
+| Under 60 seconds every time             | ✅     | #57                                                                              |
+| Every number has a source, date, method | ✅     | #68 D-088 — ledger section on every live report; landing claim reworded to match |
+| Comparable sales for personal buyers    | ✅     | Copy #57; score paused with reason (live)                                        |
+| School catchments                       | ✅     | #57                                                                              |
+| SunScout obstruction / 3D               | ✅     | Obstruction is live for everyone; no "3D" wording remains on the landing page    |
+| Portfolio tracker / save                | ✅     | Removed as a control (#48/#59); tagged planned on pricing (#71)                  |
+| Monitoring and alerts                   | ✅     | #55                                                                              |
+| Reset link sent                         | ✅     | #35                                                                              |
+| Mode switch inside report               | ✅     | #57                                                                              |
+| "No flags detected" ambiguity           | ✅     | #60, #70 D-090                                                                   |
+| "Comparable rentals" wording            | ✅     | Live copy says "asking rents, not signed leases"                                 |
+| Free forever tenant report              | ✅     | Tenant exempt from quota #40                                                     |
+| Professional white-label PDF            | ✅     | Tagged planned on pricing (#71); not sold as built                               |
 
 ## Per-report "field to work on" rows
 

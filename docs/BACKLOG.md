@@ -60,16 +60,13 @@ Ordered by how much a user would notice.
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
 
-## 6. Paywall / pricing (lower priority per owner) **[code, after the decisions above]**
+## 6. Paywall / pricing (lower priority per owner)
 
-| Item                                           | Notes                                                                                                               |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `UpgradeModal` "Upgrade now" has no handler    | Wire to checkout (needs session) or to sign-in.                                                                     |
-| Landing pricing CTAs have no handler           | "Start free" should open sign-in; paid CTAs should go to sign-in → account → Upgrade; "Talk to us" needs a contact. |
-| Pricing lists unbuilt features (J-03)          | Portfolio tracker, white-label PDF, bulk analysis, seats, API access, "SunScout 3D". Mark as planned or remove.     |
-| Feature card: "save to portfolio"              | No save feature (D-064).                                                                                            |
-| Professional white-label PDF                   | Do not sell until built and QA'd.                                                                                   |
-| HardLimitGate design-review mount in `App.tsx` | Passes no `onUpgrade`; fine for review, must not ship as a live mount.                                              |
+Controls and claims were made honest on 2026-09-13 (#71, D-091): every pricing CTA does what it
+says or says why it cannot; unbuilt features carry a "planned" tag; "Talk to us" needs
+`VITE_CONTACT_EMAIL` on Vercel (owner) and says "contact channel not open yet" until then.
+What remains needs the owner: Stripe price IDs (§2), and the decision to build or drop the
+planned rows (portfolio tracker, white-label PDF, bulk analysis, seats, API access).
 
 ## 7. Manual testing (lower priority per owner)
 

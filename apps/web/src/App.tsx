@@ -25,6 +25,8 @@ import { TermsPage } from './pages/TermsPage'
 import { DevToolbar } from './components/dev/DevToolbar'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { TierUnavailableNotice } from './components/paywall/TierUnavailableNotice'
+import { useAuth } from './hooks/useAuth'
+import { startCheckout } from './lib/services/billingService'
 
 function AppInner(): JSX.Element {
   const { tier, status: tierStatus, refresh: refreshTier } = useTier()
@@ -35,6 +37,27 @@ function AppInner(): JSX.Element {
   const closeUpgradeModal = (): void => setUpgradeModal(null)
   const openHardGate = (): void => setShowHardGate(true)
   const closeHardGate = (): void => setShowHardGate(false)
+
+  // "Upgrade now" in the global modal: Stripe Checkout for Pro when signed
+  // in (the API's 503 "paid plans are not open yet" shows as-is until price
+  // IDs exist, D-076); the account's sign-in card when signed out. The
+  // modals sit outside the router, so this is a location change, not a
+  // navigate().
+  const { session } = useAuth()
+  const [upgradeError, setUpgradeError] = useState<string | null>(null)
+  const [upgradeBusy, setUpgradeBusy] = useState(false)
+  const handleUpgrade = (): void => {
+    setUpgradeError(null)
+    if (!session) {
+      closeUpgradeModal()
+      window.location.assign('/account')
+      return
+    }
+    setUpgradeBusy(true)
+    void startCheckout('pro', session.access_token)
+      .catch((err: Error) => setUpgradeError(err.message))
+      .finally(() => setUpgradeBusy(false))
+  }
 
   return (
     <PaywallContext.Provider
@@ -67,10 +90,19 @@ function AppInner(): JSX.Element {
       {/* Global paywall modals — mounted outside the router so they overlay everything */}
       <UpgradeModal
         open={upgradeModal !== null}
-        onClose={closeUpgradeModal}
+        onClose={() => {
+          setUpgradeError(null)
+          closeUpgradeModal()
+        }}
         feature={upgradeModal ?? 'generic'}
+        onUpgrade={handleUpgrade}
+        error={upgradeError}
+        busy={upgradeBusy}
       />
-      {showHardGate && (
+      {/* Design-review mount only (DevToolbar opens it with placeholder
+          figures). The live gate is rendered by the analyzing page with the
+          API's real numbers (D-071) and must never come from here. */}
+      {import.meta.env.DEV && showHardGate && (
         <HardLimitGate onClose={closeHardGate} monthlyLimit={10} used={10} resetsIn="32 days" />
       )}
 

@@ -100,6 +100,12 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 | Annual | —                        | $100/yr                      | $590/yr            | Custom                  |
 | Target | Casual browsers, tenants | Serious individual investors | Agents and brokers | Syndicates, small REITs |
 
+**Presentation rule (D-091).** The landing pricing cards list the matrix below, but any row the
+product has not shipped carries a "planned" tag (saved analyses, portfolio tracker, white-label
+PDF, bulk analysis, priority comp refresh, seats, API access, portfolio-level reporting,
+onboarding). The matrix is the intent; the tag is the status. Remove a tag only when the feature
+is live and QA'd.
+
 ### Feature matrix
 
 | Feature                                             | Free                    | Pro                     | Professional    | Team            |

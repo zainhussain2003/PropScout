@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { LandingPage } from './LandingPage'
 
@@ -29,6 +29,13 @@ vi.mock('react-router-dom', async (importOriginal) => {
   }
 })
 
+const useAuthMock = vi.fn(() => ({ session: null, loading: false }))
+vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuthMock() }))
+const startCheckout = vi.fn()
+vi.mock('../lib/services/billingService', () => ({
+  startCheckout: (tier: string, token: string) => startCheckout(tier, token),
+}))
+
 function renderLanding(): ReturnType<typeof render> {
   return render(
     <MemoryRouter>
@@ -39,6 +46,8 @@ function renderLanding(): ReturnType<typeof render> {
 
 describe('LandingPage', () => {
   beforeEach(() => {
+    useAuthMock.mockReturnValue({ session: null, loading: false })
+    startCheckout.mockReset()
     mockNavigate.mockClear()
     // Reset data-theme
     document.documentElement.removeAttribute('data-theme')
@@ -165,6 +174,61 @@ describe('LandingPage', () => {
     // "How it works" appears in the Nav link and section tag — getAllByText is correct here
     const matches = screen.getAllByText(/how it works/i)
     expect(matches.length).toBeGreaterThan(0)
+  })
+
+  /** The nav has its own "Start free"; the pricing card's is inside #pricing. */
+  function pricingButton(name: RegExp): HTMLElement {
+    const pricing = document.querySelector('#pricing') as HTMLElement
+    return within(pricing).getByRole('button', { name })
+  }
+
+  it('pricing: "Start free" opens sign-in when signed out and goes to the account when signed in', () => {
+    renderLanding()
+    fireEvent.click(pricingButton(/^Start free$/i))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    cleanup()
+
+    useAuthMock.mockReturnValue({ session: { access_token: 'jwt' } as never, loading: false })
+    renderLanding()
+    fireEvent.click(pricingButton(/^Start free$/i))
+    expect(mockNavigate).toHaveBeenCalledWith('/account')
+  })
+
+  it('pricing: a paid CTA starts checkout for that tier when signed in, and shows the API answer', async () => {
+    useAuthMock.mockReturnValue({ session: { access_token: 'jwt' } as never, loading: false })
+    startCheckout.mockRejectedValue(new Error('Paid plans are not open yet.'))
+    renderLanding()
+    fireEvent.click(pricingButton(/^Go Pro$/i))
+    expect(startCheckout).toHaveBeenCalledWith('pro', 'jwt')
+    expect(await screen.findByText(/Paid plans are not open yet/i)).toBeInTheDocument()
+  })
+
+  it('pricing: a paid CTA opens sign-in when signed out instead of doing nothing', () => {
+    renderLanding()
+    fireEvent.click(pricingButton(/^Start Professional$/i))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(startCheckout).not.toHaveBeenCalled()
+  })
+
+  it('pricing: features that are not built are labelled planned; built ones are not', () => {
+    renderLanding()
+    const planned = screen.getAllByText(/^planned$/i).map((n) => n.parentElement?.textContent ?? '')
+    expect(planned.join(' | ')).toMatch(/Portfolio tracker/)
+    expect(planned.join(' | ')).toMatch(/White-label PDF/)
+    expect(planned.join(' | ')).toMatch(/Bulk URL analysis/)
+    expect(planned.join(' | ')).toMatch(/multi-user seats/)
+    expect(planned.join(' | ')).not.toMatch(/Branded PDF export/)
+  })
+
+  it('pricing: "Talk to us" is not a dead button — without a contact channel it says so', () => {
+    renderLanding()
+    expect(screen.queryByRole('button', { name: /Talk to us/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/contact channel/i)).toBeInTheDocument()
+  })
+
+  it('does not advertise saving to a portfolio on the feature cards', () => {
+    renderLanding()
+    expect(screen.queryByText(/save to portfolio/i)).not.toBeInTheDocument()
   })
 
   it('renders the Pricing section', () => {
