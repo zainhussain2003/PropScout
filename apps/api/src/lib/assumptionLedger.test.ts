@@ -207,6 +207,15 @@ describe('buildAssumptionLedger', () => {
     expect(buildAssumptionLedger(base()).find((x) => x.key === 'walk_score')).toBeUndefined()
   })
 
+  it('travel times are published when routed and an estimate when the formula was used', () => {
+    expect(entry(base({ travelTimesRouted: true }), 'travel_times')).toMatchObject({
+      basis: 'published',
+      value: 'routed',
+    })
+    expect(entry(base({ travelTimesRouted: false }), 'travel_times').basis).toBe('estimate')
+    expect(buildAssumptionLedger(base()).find((x) => x.key === 'travel_times')).toBeUndefined()
+  })
+
   it('financing defaults are labelled as the starting case', () => {
     const dp = entry(base(), 'down_payment')
     expect(dp.value).toBe('20%')

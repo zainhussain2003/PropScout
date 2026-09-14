@@ -3294,3 +3294,24 @@ being mistaken for either.
 | ------------------------- | --------------------------------------------------------------------------- |
 | A `checklist_state` table | Migration gate; and whether ticks travel with the share link is a decision. |
 | Keep ticks in the URL     | Leaks progress into the shared link by default.                             |
+
+### D-096 · Nearby-amenity times are routed, and the formula is labelled when it is used
+
+**Chosen.** `mapboxService.routeMinutes(profile, from, to)` calls Mapbox Directions (walking and
+driving); `getNearbyDistances` routes each found amenity and reports `walkMin`, a routed
+`driveMin` and `routed: true`. When the router does not answer, `driveMin` is the old
+straight-line ÷ 30 km/h estimate with `routed: false`, and the report says "~4 min drive,
+straight-line estimate". The Sources ledger gets a "Travel times" row: Published (Mapbox
+Directions, as of the analysis) or Estimate. The tenant location section shows "12 min walk ·
+4 min drive" instead of "km straight-line". Eight Directions calls per analysis (4 targets × 2
+profiles), inside the free tier.
+
+**Why.** Roadmap "Location: routing API": the report printed "min drive" figures that were a
+straight-line distance divided by 30 km/h — a formula presented as a measurement. The Mapbox
+token was already in the API for geocoding.
+
+| Option                       | Why not                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Mapbox Matrix API (one call) | Needs the driving/walking split anyway; eight cheap calls are simpler and per-target failures stay isolated. |
+| Google Distance Matrix       | A second billed product for something the existing token covers.                                             |
+| Transit routing              | Mapbox has no transit profile; needs another source (BACKLOG).                                               |

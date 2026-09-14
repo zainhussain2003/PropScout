@@ -104,3 +104,44 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     return null
   }
 }
+
+// ── Directions ────────────────────────────────────────────────────────────────
+
+export type RouteProfile = 'walking' | 'driving'
+
+/**
+ * Travel time in whole minutes between two points on the road/footpath
+ * network (Mapbox Directions v5), or null — no token, no route, any failure.
+ * The report used to divide a straight-line distance by 30 km/h and call it
+ * "min drive" (D-096).
+ */
+export async function routeMinutes(
+  profile: RouteProfile,
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number }
+): Promise<number | null> {
+  try {
+    const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN ?? ''
+    if (!MAPBOX_TOKEN) return null
+    const coords = `${from.lng},${from.lat};${to.lng},${to.lat}`
+    const url =
+      `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}` +
+      `?access_token=${MAPBOX_TOKEN}&overview=false`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8_000)
+    let res: Response
+    try {
+      res = await fetch(url, { signal: controller.signal })
+    } finally {
+      clearTimeout(timeout)
+    }
+    if (!res.ok) return null
+    const json = (await res.json()) as { routes?: Array<{ duration?: number }> }
+    const seconds = json.routes?.[0]?.duration
+    if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return null
+    return Math.max(1, Math.round(seconds / 60))
+  } catch (err) {
+    console.error(`routeMinutes(${profile}): failed`, err)
+    return null
+  }
+}
