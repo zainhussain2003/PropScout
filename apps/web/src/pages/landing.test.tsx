@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, within, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { LandingPage } from './LandingPage'
 
@@ -31,6 +31,11 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 const useAuthMock = vi.fn(() => ({ session: null, loading: false }))
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuthMock() }))
+const scrapeUrl = vi.fn()
+vi.mock('../lib/services/analysisService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/services/analysisService')>()),
+  scrapeUrl: (url: string) => scrapeUrl(url),
+}))
 const startCheckout = vi.fn()
 vi.mock('../lib/services/billingService', () => ({
   startCheckout: (tier: string, token: string) => startCheckout(tier, token),
@@ -48,6 +53,8 @@ describe('LandingPage', () => {
   beforeEach(() => {
     useAuthMock.mockReturnValue({ session: null, loading: false })
     startCheckout.mockReset()
+    scrapeUrl.mockReset()
+    scrapeUrl.mockImplementation(() => new Promise(() => undefined))
     mockNavigate.mockClear()
     // Reset data-theme
     document.documentElement.removeAttribute('data-theme')
@@ -105,6 +112,33 @@ describe('LandingPage', () => {
   })
 
   // ── Sample listings ───────────────────────────────────────────────
+
+  it('a URL typed after a sample preview is scraped, not routed to the demo (D-102)', async () => {
+    vi.useFakeTimers()
+    try {
+      renderLanding()
+      fireEvent.click(screen.getByRole('button', { name: /Hamilton duplex/i }))
+      // The sample's fake progress finishes and the preview card shows.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000)
+      })
+      expect(screen.getByRole('button', { name: /Try another/i })).toBeInTheDocument()
+
+      const input = screen.getByLabelText(/Listing link or property address/i)
+      fireEvent.change(input, {
+        target: { value: 'https://www.realtor.ca/real-estate/99999999/1-somewhere-st-toronto' },
+      })
+      // Editing the input drops the finished preview…
+      expect(screen.queryByRole('button', { name: /Try another/i })).not.toBeInTheDocument()
+      // …so Analyze goes to the scraper, not the demo modal.
+      fireEvent.click(screen.getByRole('button', { name: /^(Analyze|Open report)$/i }))
+      expect(scrapeUrl).toHaveBeenCalledWith(
+        'https://www.realtor.ca/real-estate/99999999/1-somewhere-st-toronto'
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 
   it('renders the sample listing buttons', () => {
     renderLanding()
