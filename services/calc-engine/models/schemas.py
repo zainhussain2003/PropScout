@@ -219,3 +219,10 @@ class AnalysisOutput(BaseModel):
     hold_case: list[HoldCaseOutput] = []
     # None only for analyses stored before the ledger shipped.
     assumptions: AssumptionsAppliedOutput | None = None
+    # How the description scan went (D-090):
+    #   "ok"      — regex + Haiku both ran
+    #   "partial" — regex ran; the Haiku read failed, so only pattern flags exist
+    #   "failed"  — the pipeline raised; no flags were read
+    #   "no_text" — nothing to scan
+    # None only for analyses stored before this shipped.
+    extraction_status: str | None = None

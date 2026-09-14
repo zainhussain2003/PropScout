@@ -84,6 +84,7 @@ import {
   shimToListedVsReality,
 } from '../lib/reportShims'
 import { useTheme } from '../hooks/useTheme'
+import { scanState, SCAN_VERDICT, SCAN_NOTE, type ScanState } from '../lib/scanState'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -1264,6 +1265,13 @@ export function TenantReport({
   // Shim: when real data is provided, derive TenantListingData from it
   const isReal = !!(realAnalysis && realListing)
   const hasListingText = (realListing?.description ?? '').trim().length > 0
+  // Three things "no flags" can mean (D-090): no text, the scan did not run,
+  // or a clean scan. Only a real analysis carries a status; the demo is 'ok'.
+  const scan = scanState({
+    flagCount: isReal ? realAnalysis!.riskFlags.length : 0,
+    hasDescription: isReal ? hasListingText : true,
+    extractionStatus: isReal ? realAnalysis!.extractionStatus : 'ok',
+  })
 
   const tenantListing: TenantListingData | undefined = isReal
     ? shimToTenantListingData(realListing!, realAnalysis!)
@@ -1454,16 +1462,22 @@ export function TenantReport({
           <SectionPlaceholder
             n="02"
             topic="Listing accuracy"
-            verdict={hasListingText ? 'No supported flags' : 'No listing text'}
+            verdict={
+              scan === 'clean'
+                ? 'No supported flags'
+                : SCAN_VERDICT[scan as Exclude<ScanState, 'flagged'>]
+            }
             question={
               <>
                 Is the listing <em>honest</em>?
               </>
             }
             note={
-              hasListingText
+              scan === 'clean'
                 ? "No red or amber flags surfaced from this listing's description — a clean scan, not a guarantee. Still confirm the specifics in person."
-                : 'This rental was entered by address, so there is no listing description to check. Nothing here has been scanned; confirm the specifics in person.'
+                : scan === 'no_text'
+                  ? 'This rental was entered by address, so there is no listing description to check. Nothing here has been scanned; confirm the specifics in person.'
+                  : `${SCAN_NOTE[scan as Exclude<ScanState, 'flagged'>]} Confirm the specifics in person.`
             }
           />
         )

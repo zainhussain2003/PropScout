@@ -116,6 +116,10 @@ Listing description:
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
 
+class HaikuExtractionError(RuntimeError):
+    """The Haiku call or its JSON parse failed; no flags were read."""
+
+
 def _get_client() -> Anthropic:
     """Return (or lazily create) the shared Anthropic client."""
     global _client  # noqa: PLW0603
@@ -148,7 +152,9 @@ def _strip_markdown(text: str) -> str:
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
-async def extract_flags_with_haiku(description: str) -> dict[str, object]:
+async def extract_flags_with_haiku(
+    description: str, *, raise_on_failure: bool = False
+) -> dict[str, object]:
     """
     Extract structured flags from a listing description using Claude Haiku.
 
@@ -161,10 +167,14 @@ async def extract_flags_with_haiku(description: str) -> dict[str, object]:
     in the deal score — never use raw output directly.
 
     On any error (network, JSON parse, API rate limit), returns an all-false
-    dict with confidence 0 so the pipeline degrades gracefully.
+    dict with confidence 0 so the pipeline degrades gracefully — unless
+    ``raise_on_failure`` is set, in which case a HaikuExtractionError is raised
+    so the caller can record that the scan did not run (an all-false result
+    is otherwise indistinguishable from a clean one).
 
     Args:
         description: Raw listing description text.
+        raise_on_failure: Raise instead of returning empty flags on failure.
 
     Returns:
         Dict mapping each flag_id to its extracted result dict.
@@ -185,6 +195,8 @@ async def extract_flags_with_haiku(description: str) -> dict[str, object]:
         raw = response.content[0].text
     except Exception as exc:  # noqa: BLE001 — non-fatal; degrade gracefully
         logger.error("Haiku extraction API call failed: %s", exc)
+        if raise_on_failure:
+            raise HaikuExtractionError(str(exc)) from exc
         return _empty_flags()
 
     raw = _strip_markdown(raw)
@@ -197,6 +209,8 @@ async def extract_flags_with_haiku(description: str) -> dict[str, object]:
             exc,
             raw,
         )
+        if raise_on_failure:
+            raise HaikuExtractionError(f"JSON parse failed: {exc}") from exc
         return _empty_flags()
 
     # Normalise — ensure all expected flag IDs are present with correct shape

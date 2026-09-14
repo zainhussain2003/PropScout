@@ -8,6 +8,13 @@ import { SectionHead } from '../shared/SectionHead'
 import { Icon } from '../shared/Icon'
 import { RiskRow } from '../analysis/RiskRow'
 import type { ListingData, FlagOverrideControls } from '../../types/analysis'
+import {
+  scanState,
+  SCAN_VERDICT,
+  SCAN_NOTE,
+  PARTIAL_SCAN_WITH_FLAGS,
+  type ScanState,
+} from '../../lib/scanState'
 
 export interface RiskFlagsSectionProps {
   listing: ListingData
@@ -23,6 +30,11 @@ export function RiskFlagsSection({ listing, flagOverrides }: RiskFlagsSectionPro
   // the second computation that drifts from the calc engine. The score itself is
   // shown (from the backend) in the hero gauge.
 
+  const scan = scanState({
+    flagCount: listing.riskFlags.length,
+    hasDescription: listing.hasDescription,
+    extractionStatus: listing.extractionStatus,
+  })
   // Ambers are soft warnings — the chip must read caution, not pass-green
   const verdictTone =
     redFlags.length > 1
@@ -35,9 +47,7 @@ export function RiskFlagsSection({ listing, flagOverrides }: RiskFlagsSectionPro
       ? `${redFlags.length} red · ${amberFlags.length} amber`
       : amberFlags.length > 0
         ? `${amberFlags.length} amber flag${amberFlags.length > 1 ? 's' : ''}`
-        : listing.hasDescription === false
-          ? 'No listing text'
-          : 'No wording flags'
+        : SCAN_VERDICT[scan as Exclude<ScanState, 'flagged'>]
 
   return (
     <section className="container tr-section" data-section="06">
@@ -66,23 +76,36 @@ export function RiskFlagsSection({ listing, flagOverrides }: RiskFlagsSectionPro
           >
             <Icon name="flag" size={16} />
             <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-              {listing.hasDescription === false
-                ? 'This property was entered by address, so there is no listing description to scan. Nothing here has been checked for risk language.'
-                : 'No risk language was found in the listing description. This wording scan is not an inspection or a clean bill of health.'}
+              {SCAN_NOTE[scan as Exclude<ScanState, 'flagged'>]}
             </span>
           </div>
         ) : (
-          listing.riskFlags.map((f) => (
-            <RiskRow
-              key={f.id}
-              tone={f.tone}
-              label={f.label}
-              detail={f.detail}
-              dismissable={flagOverrides?.canOverride ?? false}
-              dismissed={flagOverrides?.overrides.has(f.id) ?? false}
-              onToggleDismiss={() => flagOverrides?.onToggle(f.id)}
-            />
-          ))
+          <>
+            {listing.extractionStatus === 'partial' && (
+              <div
+                style={{
+                  padding: '12px 28px',
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: 'var(--caution)',
+                  borderBottom: '1px solid var(--line)',
+                }}
+              >
+                {PARTIAL_SCAN_WITH_FLAGS}
+              </div>
+            )}
+            {listing.riskFlags.map((f) => (
+              <RiskRow
+                key={f.id}
+                tone={f.tone}
+                label={f.label}
+                detail={f.detail}
+                dismissable={flagOverrides?.canOverride ?? false}
+                dismissed={flagOverrides?.overrides.has(f.id) ?? false}
+                onToggleDismiss={() => flagOverrides?.onToggle(f.id)}
+              />
+            ))}
+          </>
         )}
       </div>
     </section>

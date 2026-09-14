@@ -3166,3 +3166,26 @@ each Default row says what would replace it (a quote, a bill, a refreshed table)
 | Per-figure badges inline in every section       | Fourteen sections to touch and a denser page; one ledger is findable and complete.           |
 | Keep engine constants in the API for the ledger | Two copies drift; the engine already knows what it ran and now says so.                      |
 | Call the CMHC / cap-rate tables "Published"     | Their files say placeholder; the ledger would be lying in the one place it must not.         |
+
+### D-090 · A scan that did not run is reported as such, never as clean
+
+**Chosen.** The engine reports `extraction_status` — `ok`, `partial` (regex ran, the Haiku read
+failed), `failed` (the pipeline raised), `no_text`. `extract_flags_with_haiku` gains
+`raise_on_failure` so the router can tell a failed call from an empty result; the router still
+never fails the analysis over it. The API validates the value and stores it in `market_data`
+(no migration); `lib/scanState.ts` on the web turns flag count + text presence + status into one
+of five states, and every flags section — investor/landlord §06, tenant §02, personal risks —
+reads from it: "Scan did not run" / "Partial scan" with copy that says the section is unchecked,
+and flags from a partial scan carry a note that they came from patterns alone. Reports saved
+before this have no status and read as they did.
+
+**Why.** Audit counter-review, left open after #60: a Haiku failure (no API key, a 429, a JSON
+parse error) returned all-false flags and the report said "No risk language was found" — the
+one sentence it must not say when nothing was read. #60 separated "no text"; this separates
+"did not run".
+
+| Option                                  | Why not                                                                                  |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Fail the analysis when extraction fails | The rest of the report is still good; the rule is one section's failure never blanks it. |
+| A column on `analyses`                  | Needs the migration gate; `market_data` already carries per-analysis facts.              |
+| Treat a Haiku failure as `failed`       | Regex flags still fired and still deducted; `partial` tells the truth about both.        |

@@ -245,6 +245,28 @@ describe('POST / — analysis orchestrator', () => {
     expect(saved.assumptions?.length).toBe(ledger.length)
   })
 
+  it('stores the scan outcome the engine reports, and null when it reports none', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(makeCalcResponse({ ...CALC_ENGINE_FIXTURE, extraction_status: 'partial' }))
+    let res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect((res.json() as { analysis: Analysis }).analysis.extractionStatus).toBe('partial')
+
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(makeCalcResponse({ ...CALC_ENGINE_FIXTURE, extraction_status: 'weird' }))
+    res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect((res.json() as { analysis: Analysis }).analysis.extractionStatus).toBeNull()
+  })
+
   it('an older engine without the echo still yields the non-engine ledger rows', async () => {
     const res = await app.inject({
       method: 'POST',

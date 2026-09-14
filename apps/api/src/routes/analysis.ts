@@ -17,6 +17,7 @@ import type {
   Analysis,
   ReportMode,
   WalkScoreResult,
+  ExtractionStatus,
 } from '../types/analysis'
 import {
   getListingByToken,
@@ -185,9 +186,20 @@ interface PyAnalysisOutput {
   hold_case?: PyHoldCaseRow[] | null
   /** What the engine applied (D-088); absent from an older engine build. */
   assumptions?: EngineAssumptions | null
+  /** Outcome of the description scan (D-090); absent from an older engine build. */
+  extraction_status?: string | null
 }
 
 // ── snake_case → camelCase output transforms ──────────────────────────────────
+
+const EXTRACTION_STATUSES: readonly ExtractionStatus[] = ['ok', 'partial', 'failed', 'no_text']
+
+/** Unknown or missing → null, so an older engine build never invents a status. */
+export function toExtractionStatus(raw: string | null | undefined): ExtractionStatus | null {
+  return raw != null && (EXTRACTION_STATUSES as readonly string[]).includes(raw)
+    ? (raw as ExtractionStatus)
+    : null
+}
 
 export function toHoldCase(py: PyHoldCaseRow[] | null | undefined): Analysis['holdCase'] {
   if (py == null || py.length === 0) return null
@@ -735,6 +747,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           sunScout: toSunScout(pyData.sun_scout),
           holdCase: toHoldCase(pyData.hold_case),
           assumptions,
+          extractionStatus: toExtractionStatus(pyData.extraction_status),
           coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
           schools,
           hasSanityWarnings: pyData.has_sanity_warnings,
