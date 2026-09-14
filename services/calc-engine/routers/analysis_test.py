@@ -816,3 +816,60 @@ def test_hold_case_absent_shortfall_is_not_credited() -> None:
     ]
     strong_rates = [row["break_even_annual_rate"] for row in data["hold_case"]]
     assert all(s < w for s, w in zip(strong_rates, weak_rates))
+
+
+# ── Applied assumptions are reported, not inferred (assumption ledger) ─────────
+
+
+def test_analysis_reports_the_assumptions_it_applied() -> None:
+    """
+    The engine echoes every default it used so the report can show a ledger
+    of sources instead of the API guessing at engine constants.
+    """
+    client = TestClient(app)
+    res = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
+    assert res.status_code == 200
+    a = res.json()["assumptions"]
+
+    assert a["vacancy_allowance"] == 0.05
+    assert a["management_fee"] == 0.08
+    assert a["management_fee_included"] is False
+    assert a["insurance_rate"] == 0.0035
+    # Built 2018 → post-2010 band
+    assert a["maintenance_rate"] == 0.005
+    assert a["maintenance_basis"] == "post_2010"
+    assert a["legal_fees"] == 1500.0
+    assert a["title_insurance"] == 300.0
+    assert a["home_inspection"] == 600.0
+    assert a["down_payment_pct"] == 0.20
+    assert a["mortgage_rate"] == 0.0479
+    assert a["amortization_years"] == 25
+    # No CMHC rate supplied → the engine's own default, and it says so
+    assert a["cmhc_vacancy_rate_supplied"] is False
+    assert a["cmhc_vacancy_rate"] == 0.02
+
+
+def test_analysis_assumptions_track_build_year_and_supplied_vacancy() -> None:
+    client = TestClient(app)
+    payload = {**_HAMILTON_PAYLOAD, "cmhc_vacancy_rate": 0.033}
+    res = client.post("/analysis/", json=payload)
+    assert res.status_code == 200
+    a = res.json()["assumptions"]
+    # Built 1985 → mid band
+    assert a["maintenance_rate"] == 0.010
+    assert a["maintenance_basis"] == "1980_2010"
+    assert a["cmhc_vacancy_rate_supplied"] is True
+    assert a["cmhc_vacancy_rate"] == 0.033
+
+
+def test_analysis_assumptions_unknown_build_year_is_named() -> None:
+    client = TestClient(app)
+    payload = {
+        **_HAMILTON_PAYLOAD,
+        "property_data": {**_HAMILTON_PAYLOAD["property_data"], "year_built": None},
+    }
+    res = client.post("/analysis/", json=payload)
+    assert res.status_code == 200
+    a = res.json()["assumptions"]
+    assert a["maintenance_rate"] == 0.010
+    assert a["maintenance_basis"] == "year_unknown"

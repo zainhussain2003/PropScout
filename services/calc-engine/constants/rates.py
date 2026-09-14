@@ -78,6 +78,26 @@ TITLE_INSURANCE: float = 300.0
 HOME_INSPECTION: float = 600.0
 
 
+def get_maintenance_basis(year_built: int | None) -> str:
+    """
+    Name the build-year band the maintenance reserve was chosen from.
+
+    Args:
+        year_built: Year the property was built, or None if unknown.
+
+    Returns:
+        One of "post_2010", "1980_2010", "pre_1980", or "year_unknown" (which
+        uses the 1980_2010 rate — see get_maintenance_rate).
+    """
+    if year_built is None:
+        return "year_unknown"
+    if year_built >= 2010:
+        return "post_2010"
+    if year_built >= 1980:
+        return "1980_2010"
+    return "pre_1980"
+
+
 def get_maintenance_rate(year_built: int | None) -> float:
     """
     Return the appropriate maintenance reserve rate based on construction year.

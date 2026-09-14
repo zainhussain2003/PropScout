@@ -346,6 +346,27 @@ Investor Pro and above: building obstruction (3D Mapbox data) — accurate shado
 
 Full-width dark section. Three paragraphs. Plain English. Direct. Full prompt spec in Section 12.
 
+**11. Sources — the assumption ledger** (all tiers; D-088)
+
+The last section of every live report. One row per modelled number the report relies on, each
+with a **basis**, a **source**, an **as-of date** where one exists, and a one-sentence
+**method**:
+
+| Basis     | Meaning                                                        | Examples                                                                   |
+| --------- | -------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Observed  | From the listing or the user                                   | Asking rent, published tax, condo fee                                      |
+| Published | A named third-party source with a date                         | Bank of Canada prime (fetch time), nightly comps (count, radius, run time) |
+| Estimate  | A stated PropScout formula over other inputs                   | Tax from the municipal rate table; rent at 0.5% of price; value from rent  |
+| Default   | A starting constant with no external source — labelled as such | Insurance 0.35%, maintenance by build year, legal $1,500, CMHC table       |
+
+The calc engine echoes every default it applied (`assumptions` on its response —
+`models/schemas.py::AssumptionsAppliedOutput`); the API adds what it knows (rate feed source and
+fetch time, comps provenance, tax and value estimation) in `apps/api/src/lib/assumptionLedger.ts`
+and stores the rows with the analysis (`market_data.assumptions`). The section verdict counts the
+defaults ("10 of 13 are defaults"). Rows differ by mode: purchase modes carry financing and closing
+costs; landlord carries operating costs; tenant carries only rent, the value proxy and market
+vacancy. A report saved before 2026-09-13 has no ledger and renders no section.
+
 ---
 
 ## 7. Report B — Personal purchase report

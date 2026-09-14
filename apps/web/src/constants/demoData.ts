@@ -7,7 +7,13 @@
  * Hamilton (146 East 19th): good deal, deal score ~85 / strong_buy
  */
 
-import type { ListingData, NeighbourhoodData, DealScore, SunScoutResult } from '../types/analysis'
+import type {
+  ListingData,
+  NeighbourhoodData,
+  DealScore,
+  SunScoutResult,
+  AssumptionEntry,
+} from '../types/analysis'
 import type { RentalInput } from '../types/api'
 
 // ── Vaughan ────────────────────────────────────────────────────────────────────
@@ -278,3 +284,147 @@ export const DEFAULT_FINANCING_INPUTS = {
   appreciationRate: 0.03,
   assumedIncome: 125000,
 } as const
+
+// ── Demo assumption ledger (D-088) ───────────────────────────────────────────
+//
+// The live report's ledger comes from the API. The demo shows the same
+// section with the same shape so the two routes stay one product (D-073);
+// every row here is labelled as sample data by its date-less "as of".
+
+const SAMPLE_DEFAULT = 'PropScout default — no external source'
+
+export function demoAssumptions(listing: ListingData, rental: RentalInput): AssumptionEntry[] {
+  const rows: AssumptionEntry[] = [
+    {
+      key: 'rent',
+      label: 'Market rent',
+      value: `$${rental.mid.toLocaleString('en-CA')}/mo`,
+      basis: 'published',
+      source: `${rental.compCount} asking rents from the PropScout nightly comps table (sample)`,
+      asOf: null,
+      method: `Median of asking rents with outliers removed; ${rental.confidence} confidence. Asking rents, not signed leases.`,
+    },
+    {
+      key: 'mortgage_rate',
+      label: 'Mortgage rate',
+      value: '4.79%',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method:
+        'Sample report uses the mid-cycle default; the live report reads the Bank of Canada feed.',
+    },
+    {
+      key: 'down_payment',
+      label: 'Down payment',
+      value: '20%',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: 'Starting case; every metric recomputes when the slider moves.',
+    },
+    {
+      key: 'amortization',
+      label: 'Amortization',
+      value: '25 years',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: 'Starting case; adjustable in the financing section.',
+    },
+    {
+      key: 'property_tax',
+      label: 'Property tax',
+      value: `$${listing.annualTaxes.toLocaleString('en-CA')}/yr`,
+      basis: 'observed',
+      source: 'The listing (sample)',
+      asOf: null,
+      method: 'As published on the listing.',
+    },
+  ]
+  if (listing.condoFeeMonthly > 0) {
+    rows.push({
+      key: 'condo_fee',
+      label: 'Condo fee',
+      value: `$${listing.condoFeeMonthly.toLocaleString('en-CA')}/mo`,
+      basis: 'observed',
+      source: 'The listing (sample)',
+      asOf: null,
+      method: 'As published on the listing.',
+    })
+  }
+  const band =
+    listing.yearBuilt >= 2010
+      ? ['0.5% of value', 'built 2010 or later']
+      : listing.yearBuilt >= 1980
+        ? ['1.0% of value', 'built 1980–2009']
+        : ['1.5% of value', 'built before 1980']
+  rows.push(
+    {
+      key: 'insurance',
+      label: 'Insurance',
+      value: '0.35% of value',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method:
+        'Annual premium modelled as a share of the property value. Get a quote to replace it.',
+    },
+    {
+      key: 'maintenance',
+      label: 'Maintenance reserve',
+      value: band[0],
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: `Annual reserve by build year — ${band[1]}. In-unit repairs only for a condo.`,
+    },
+    {
+      key: 'vacancy',
+      label: 'Vacancy allowance',
+      value: '5% of rent',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: 'Deducted from gross rent for turnover between tenants.',
+    },
+    {
+      key: 'management_fee',
+      label: 'Management fee',
+      value: '8% of rent',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: 'Not included unless the toggle in the financing section is on.',
+    },
+    {
+      key: 'legal_fees',
+      label: 'Legal fees',
+      value: '$1,500',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: 'Flat estimate in cash to close; Ontario quotes typically run $1,500–$2,500.',
+    },
+    {
+      key: 'title_insurance',
+      label: 'Title insurance',
+      value: '$300',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method: 'Flat estimate in cash to close.',
+    },
+    {
+      key: 'home_inspection',
+      label: 'Home inspection',
+      value: '$600',
+      basis: 'default',
+      source: SAMPLE_DEFAULT,
+      asOf: null,
+      method:
+        'Flat estimate in cash to close; a condo status-certificate review is usually cheaper.',
+    }
+  )
+  return rows
+}

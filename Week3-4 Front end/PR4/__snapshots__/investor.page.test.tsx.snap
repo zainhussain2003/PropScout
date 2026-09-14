@@ -5429,6 +5429,614 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </div>
         </div>
       </section>
+      <section
+        class="container tr-section"
+        data-section="12"
+      >
+        <div
+          class="tr-section-head"
+          data-section-n="12"
+          data-section-topic="Sources"
+        >
+          <div
+            class="col gap-12"
+            style="max-width: 760px;"
+          >
+            <span
+              class="mono"
+              style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);"
+            >
+              <span
+                style="color: var(--accent);"
+              >
+                § 
+                12
+              </span>
+              <span
+                style="margin-left: 12px; color: var(--muted);"
+              >
+                Sources
+              </span>
+            </span>
+            <h2
+              class="serif"
+              style="text-wrap: balance;"
+            >
+              Where do the numbers 
+              <em>
+                come from
+              </em>
+              ?
+            </h2>
+          </div>
+          <span
+            class="verdict-pill caution"
+          >
+            10 of 13 are defaults
+          </span>
+        </div>
+        <p
+          style="font-size: 14px; color: var(--ink-2); line-height: 1.55; max-width: 680px;"
+        >
+          Every modelled figure behind this report, with what it rests on. A
+           
+          <strong
+            style="color: var(--ink);"
+          >
+            Default
+          </strong>
+           is a starting constant with no external source — replace it with a quote or a bill and the report gets better.
+        </p>
+        <div
+          class="card"
+          style="padding: 0px; overflow: hidden; margin-top: 20px;"
+        >
+          <div
+            style="overflow-x: auto;"
+          >
+            <table
+              style="width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px;"
+            >
+              <thead>
+                <tr
+                  class="mono"
+                  style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); text-align: left;"
+                >
+                  <th
+                    style="padding: 12px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    Number
+                  </th>
+                  <th
+                    style="padding: 12px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    Value
+                  </th>
+                  <th
+                    style="padding: 12px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    Basis
+                  </th>
+                  <th
+                    style="padding: 12px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    Source · method
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Market rent
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    $2,900/mo
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--accent); border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent); white-space: nowrap;"
+                    >
+                      Published
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      8 asking rents from the PropScout nightly comps table (sample)
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Median of asking rents with outliers removed; medium confidence. Asking rents, not signed leases.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Mortgage rate
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    4.79%
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Sample report uses the mid-cycle default; the live report reads the Bank of Canada feed.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Down payment
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    20%
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Starting case; every metric recomputes when the slider moves.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Amortization
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    25 years
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Starting case; adjustable in the financing section.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Property tax
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    $3,326/yr
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--pass); border: 1px solid color-mix(in oklab, var(--pass) 45%, transparent); white-space: nowrap;"
+                    >
+                      Observed
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      The listing (sample)
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      As published on the listing.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Condo fee
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    $761/mo
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--pass); border: 1px solid color-mix(in oklab, var(--pass) 45%, transparent); white-space: nowrap;"
+                    >
+                      Observed
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      The listing (sample)
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      As published on the listing.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Insurance
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    0.35% of value
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Annual premium modelled as a share of the property value. Get a quote to replace it.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Maintenance reserve
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    0.5% of value
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Annual reserve by build year — built 2010 or later. In-unit repairs only for a condo.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Vacancy allowance
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    5% of rent
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Deducted from gross rent for turnover between tenants.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Management fee
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    8% of rent
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Not included unless the toggle in the financing section is on.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Legal fees
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    $1,500
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Flat estimate in cash to close; Ontario quotes typically run $1,500–$2,500.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Title insurance
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    $300
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Flat estimate in cash to close.
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  style="vertical-align: top;"
+                >
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); font-weight: 500; color: var(--ink); white-space: nowrap;"
+                  >
+                    Home inspection
+                  </td>
+                  <td
+                    class="mono"
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--ink);"
+                  >
+                    $600
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line);"
+                  >
+                    <span
+                      class="mono"
+                      style="display: inline-block; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid color-mix(in oklab, var(--muted) 45%, transparent); white-space: nowrap;"
+                    >
+                      Default
+                    </span>
+                  </td>
+                  <td
+                    style="padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;"
+                  >
+                    <div
+                      style="color: var(--ink);"
+                    >
+                      PropScout default — no external source
+                    </div>
+                    <div
+                      style="font-size: 13px;"
+                    >
+                      Flat estimate in cash to close; a condo status-certificate review is usually cheaper.
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
     <footer
       style="background: var(--ink); color: var(--bg); padding: 80px 0px 36px; margin-top: 80px;"

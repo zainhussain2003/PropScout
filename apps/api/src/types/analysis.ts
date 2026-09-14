@@ -246,6 +246,40 @@ export interface Analysis {
    * stored before 2026-07-02 don't carry it; null until the EQAO/Fraser CSV
    * is loaded (empty table) or when geocoding failed. */
   schools?: SchoolsResult | null
+  /**
+   * Every modelled number behind the report with its source, date and method
+   * (D-088). Optional: analyses stored before 2026-09-13 don't carry it.
+   */
+  assumptions?: AssumptionEntry[] | null
+}
+
+// ── Assumption ledger (D-088) ─────────────────────────────────────────────────
+
+/**
+ * Where a number the report relies on came from.
+ *
+ *   observed  — from the listing or the user (a fact about this property)
+ *   published — a named third-party source with a date (Bank of Canada, a
+ *               municipal budget, our nightly comps table)
+ *   estimate  — computed by a stated PropScout formula from other inputs
+ *   default   — a starting constant with no external source behind it; the
+ *               report must say so rather than dress it up
+ */
+export type AssumptionBasis = 'observed' | 'published' | 'estimate' | 'default'
+
+export interface AssumptionEntry {
+  /** Stable id, e.g. "mortgage_rate", "vacancy", "property_tax". */
+  key: string
+  label: string
+  /** Formatted for display: "4.79%", "$1,500", "60 asking rents". */
+  value: string
+  basis: AssumptionBasis
+  /** Who says so — a named source, or "PropScout default" when nobody does. */
+  source: string
+  /** ISO date the value is current as of; null when there is no date to give. */
+  asOf: string | null
+  /** One sentence: how the value is used or derived. */
+  method: string
 }
 
 /**
