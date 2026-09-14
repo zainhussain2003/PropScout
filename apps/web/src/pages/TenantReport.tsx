@@ -87,6 +87,7 @@ import {
 import { useTheme } from '../hooks/useTheme'
 import { scanState, SCAN_VERDICT, SCAN_NOTE, type ScanState } from '../lib/scanState'
 import { useChecklist } from '../hooks/useChecklist'
+import { CompRowsTable } from '../components/analysis/CompRowsTable'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -1422,6 +1423,7 @@ export function TenantReport({
                   · {comps.confidence} confidence
                 </p>
               </div>
+              <CompRowsTable rows={comps.rows} compCount={comps.compCount} />
             </section>
           )
         })()

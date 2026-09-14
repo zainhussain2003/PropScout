@@ -10,6 +10,8 @@
 
 import { SectionHead } from '../shared/SectionHead'
 import { RentalCompsBar } from '../analysis/RentalCompsBar'
+import type { CompRow } from '../../types/analysis'
+import { CompRowsTable } from '../analysis/CompRowsTable'
 
 export interface RentalCompsSectionProps {
   /** The analysis's rental estimate; null or zero comps renders nothing. */
@@ -20,6 +22,8 @@ export interface RentalCompsSectionProps {
     compCount: number
     confidence: 'low' | 'medium' | 'high'
     radiusKm?: number | null
+    /** The comps behind the band (D-099); absent on the demo and older analyses. */
+    rows?: CompRow[]
   } | null
   /** The rent the report is evaluating against the range. */
   askingRent: number
@@ -91,6 +95,10 @@ export function RentalCompsSection({
         </div>
         <RentalCompsBar low={low} mid={mid} high={high} ask={askingRent} />
       </div>
+
+      {/* The comps themselves (D-099): the rows after outlier removal,
+          nearest first when the search used a radius. Sanitised. */}
+      <CompRowsTable rows={comps.rows} compCount={compCount} />
     </section>
   )
 }

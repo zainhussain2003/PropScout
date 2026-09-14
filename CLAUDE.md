@@ -1136,6 +1136,7 @@ propscout/
 │   │       │   │   ├── AIVerdictBlock.tsx     # Dark full-bleed AI verdict card
 │   │       │   │   ├── RiskRow.tsx            # Inline risk flag row
 │   │       │   │   ├── MiniMap.tsx            # Real Mapbox GL JS map (token + coords) with SVG placeholder fallback
+│   │       │   │   ├── CompRowsTable.tsx      # The comps behind a rent band, sanitised — investor §03 + tenant §01 (D-099)
 │   │       │   │   └── PropertyHero.tsx       # Photo grid + chips + address + sticky score card
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report

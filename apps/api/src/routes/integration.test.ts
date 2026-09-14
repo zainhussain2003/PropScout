@@ -219,6 +219,7 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
     })
     mockFetchRentalComps.mockResolvedValue({
       radiusKm: null,
+      rows: [],
       low: 2700,
       mid: 2900,
       high: 3200,

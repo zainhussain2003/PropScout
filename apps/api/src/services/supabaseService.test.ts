@@ -287,6 +287,44 @@ describe('fetchRentalComps', () => {
     expect(result!.high).toBe(3000)
   })
 
+  it('returns the comps behind the band, sanitised and cheapest-first on the FSA path (D-099)', async () => {
+    const chain = makeQueryChain({
+      data: [
+        {
+          rent_monthly: 3100,
+          beds: 3,
+          sqft: 980,
+          postal_code: 'L4K5W4',
+          source: 'rentals_ca',
+          scraped_at: '2026-09-12T06:00:00.000Z',
+          address: '5 Buttermill Ave #1201',
+        },
+        { rent_monthly: 2700, beds: 3, sqft: null, postal_code: 'l4k0a1', source: 'kijiji' },
+        { rent_monthly: 2900, beds: 2, sqft: 900, postal_code: 'L4K1B2', source: 'padmapper' },
+        { rent_monthly: 50000, beds: 3, sqft: 900, postal_code: 'L4K1B2', source: 'padmapper' },
+      ],
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+    const result = await fetchRentalComps('L4K5W4', 3)
+    expect(result).not.toBeNull()
+    const rows = result!.rows
+    // The $50,000 outlier is not in the band, so it is not in the rows either.
+    expect(rows.map((r) => r.rentMonthly)).toEqual([2700, 2900, 3100])
+    expect(rows[0]).toEqual({
+      rentMonthly: 2700,
+      beds: 3,
+      sqft: null,
+      fsa: 'L4K',
+      source: 'kijiji',
+      seenAt: null,
+      distanceKm: null,
+    })
+    expect(rows[2]!.seenAt).toBe('2026-09-12T06:00:00.000Z')
+    // Nothing that identifies the listing leaves the API.
+    for (const r of rows) expect(Object.keys(r)).not.toContain('address')
+  })
+
   it('removes outliers using 1.5x IQR rule', async () => {
     // Sorted: 100 (outlier), 2700, 2800, 2900, 3000, 3100, 50000 (outlier)
     // IQR ≈ 300; bounds ≈ 2250–3550 — 100 and 50000 are removed
