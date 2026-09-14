@@ -164,6 +164,15 @@ export function InvestmentMetricsSection({
 
   const verdictTone = metrics.dscr >= 1.1 ? 'pass' : metrics.dscr >= 1.0 ? 'caution' : 'fail'
 
+  // A for-rent listing has no sale price, so every price-derived tile (cap
+  // rate "on $0", a $0 mortgage payment, cash-on-cash on $0 invested) was
+  // printing nonsense on the live landlord report (2026-09-14). Until the
+  // landlord report has its own method (L-03), show only what the rent and
+  // running costs support and say why the rest is missing.
+  const hasPrice = listing.price > 0
+  const PRICE_FREE_TILES = new Set(['NOI', 'Break-even rent'])
+  const shownTiles = hasPrice ? tiles : tiles.filter((t) => PRICE_FREE_TILES.has(t.label))
+
   return (
     <section className="container tr-section" data-section="01">
       <SectionHead
@@ -174,9 +183,16 @@ export function InvestmentMetricsSection({
             Does the deal <em>pencil</em>?
           </>
         }
-        verdict={verdictLabel}
-        tone={verdictTone}
+        verdict={hasPrice ? verdictLabel : 'Operating view · no purchase price'}
+        tone={hasPrice ? verdictTone : 'caution'}
       />
+      {!hasPrice && (
+        <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 16px' }}>
+          This is a rental listing, so there is no purchase price. Cap rate, cash-on-cash, DSCR,
+          mortgage payment and gross yield need one and are not shown; the figures below rest on the
+          rent and running costs only.
+        </p>
+      )}
 
       {/* 8-tile grid — 4-col desktop, 2-col mobile */}
       <div
@@ -187,7 +203,7 @@ export function InvestmentMetricsSection({
           gap: 14,
         }}
       >
-        {tiles.map((tile) => (
+        {shownTiles.map((tile) => (
           <Metric
             key={tile.label}
             label={tile.label}
