@@ -19,7 +19,7 @@
  *   Conversion                   → "what if you rented it out?" + agent CTA
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
@@ -68,6 +68,7 @@ import { useTheme } from '../hooks/useTheme'
 import { AssumptionLedgerSection } from '../components/investor/AssumptionLedgerSection'
 import { scanState } from '../lib/scanState'
 import type { ExtractionStatus } from '../types/analysis'
+import { useChecklist } from '../hooks/useChecklist'
 
 // ── Static light score (Phase 2 will compute this from sun-path data) ─────────
 const STATIC_LIGHT_SCORE = 76
@@ -1269,18 +1270,18 @@ const CHECKLIST_ITEMS = [
   { label: 'Walk the block at three different times of day', critical: false },
 ] as const
 
-function ChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Element {
+function ChecklistSection({
+  onPDF,
+  storageKey = null,
+}: {
+  onPDF?: () => void
+  /** Share token of a live report — ticks are kept in this browser under it. */
+  storageKey?: string | null
+}): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
-  const [checked, setChecked] = useState<Set<number>>(new Set())
-
-  const toggle = useCallback((i: number) => {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(i)) next.delete(i)
-      else next.add(i)
-      return next
-    })
-  }, [])
+  const { checked, toggle, persisted } = useChecklist<number>(
+    storageKey ? `${storageKey}:buyer-checklist` : null
+  )
 
   const criticalCount = CHECKLIST_ITEMS.filter((i) => i.critical).length
 
@@ -1297,6 +1298,12 @@ function ChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Element {
         verdict={`${CHECKLIST_ITEMS.length} items · ${criticalCount} critical`}
         tone="caution"
       />
+      {persisted && (
+        <p className="mono" style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12 }}>
+          Ticks are kept in this browser for this report — not in your account, not on the shared
+          link.
+        </p>
+      )}
 
       <div className="card" style={{ padding: 28 }}>
         <div className="col">
@@ -1655,7 +1662,7 @@ export function PersonalBuyerPage({
         hasListingText={isReal ? (realListing?.description ?? '').trim().length > 0 : true}
         extractionStatus={isReal ? realAnalysis!.extractionStatus : undefined}
       />
-      <ChecklistSection onPDF={pdf.exportPdf} />
+      <ChecklistSection onPDF={pdf.exportPdf} storageKey={realAnalysis?.token ?? null} />
       {/* §09 Sources — the assumption ledger (D-088); live reports only, the
           demo fixture has no engine run behind it. */}
       {isReal && <AssumptionLedgerSection entries={realAnalysis!.assumptions} sectionNumber="09" />}

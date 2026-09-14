@@ -85,6 +85,7 @@ import {
 } from '../lib/reportShims'
 import { useTheme } from '../hooks/useTheme'
 import { scanState, SCAN_VERDICT, SCAN_NOTE, type ScanState } from '../lib/scanState'
+import { useChecklist } from '../hooks/useChecklist'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -962,21 +963,17 @@ function UnitDetailsSection({
 function ConfirmChecklist({
   items,
   onPDF,
+  storageKey = null,
 }: {
   items: TenantChecklistItem[]
   onPDF?: () => void
+  /** Share token of a live report — ticks are kept in this browser under it. */
+  storageKey?: string | null
 }): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
-  const [checked, setChecked] = useState<Set<number>>(new Set())
-
-  function toggle(idx: number): void {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(idx)) next.delete(idx)
-      else next.add(idx)
-      return next
-    })
-  }
+  const { checked, toggle, persisted } = useChecklist<number>(
+    storageKey ? `${storageKey}:before-you-sign` : null
+  )
 
   const criticalCount = items.filter((it) => it.critical).length
   const doneCount = checked.size
@@ -1007,6 +1004,12 @@ function ConfirmChecklist({
         >
           {doneCount} / {items.length} complete
         </div>
+        {persisted && (
+          <p className="mono" style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12 }}>
+            Ticks are kept in this browser for this report — not in your account, not on the shared
+            link.
+          </p>
+        )}
 
         <div className="col" style={{ gap: 12 }}>
           {items.map((it, i) => (
@@ -1707,6 +1710,7 @@ export function TenantReport({
       {/* §12 Confirm before signing */}
       <ConfirmChecklist
         onPDF={pdf.exportPdf}
+        storageKey={realAnalysis?.token ?? null}
         items={isReal ? shimToTenantChecklist(realListing!, realAnalysis!) : CHARLES_CHECKLIST}
       />
 

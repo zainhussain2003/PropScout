@@ -3266,3 +3266,22 @@ logic and the FAQ, and every landing change went through a 3,000-line diff.
 | ---------------------------- | --------------------------------------------------------------------------------- |
 | Fewer, larger files          | The standard is one component per file; the showcase visuals are separate things. |
 | Move sections under `pages/` | They are components, not routes.                                                  |
+
+### D-095 · Checklist ticks are kept in this browser, per report, and the page says so
+
+**Chosen.** `hooks/useChecklist` keeps a checklist's ticked items in localStorage under
+`propscout:checklist:<share token>:<section>`; all four report checklists (investor due diligence,
+tenant before-you-sign, buyer conditions, landlord prep) use it on live reports and show one line:
+"Ticks are kept in this browser for this report — not in your account, not on the shared link."
+The demo routes pass no key and keep nothing. Storage is best-effort and a corrupt value reads as
+nothing ticked.
+
+**Why.** Roadmap "Checklists: saved progress": every list forgot its ticks on reload, which made
+them decoration. Account-side storage needs a table (human gate) and a product decision about
+sharing; per-browser storage is what can ship now, and the sentence under the list keeps it from
+being mistaken for either.
+
+| Option                    | Why not                                                                     |
+| ------------------------- | --------------------------------------------------------------------------- |
+| A `checklist_state` table | Migration gate; and whether ticks travel with the share link is a decision. |
+| Keep ticks in the URL     | Leaks progress into the shared link by default.                             |

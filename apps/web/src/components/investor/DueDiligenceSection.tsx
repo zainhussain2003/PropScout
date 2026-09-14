@@ -8,8 +8,8 @@
  * and demo reports match.
  */
 
-import { useState, useCallback } from 'react'
 import { SectionHead } from '../shared/SectionHead'
+import { useChecklist } from '../../hooks/useChecklist'
 
 const DUE_DILIGENCE_ITEMS = [
   {
@@ -50,17 +50,15 @@ const DUE_DILIGENCE_ITEMS = [
   },
 ] as const
 
-export function DueDiligenceSection(): JSX.Element {
-  const [checked, setChecked] = useState<Set<string>>(new Set())
+interface DueDiligenceSectionProps {
+  /** Share token of a live report — ticks are kept in this browser under it; omit on the demo. */
+  storageKey?: string | null
+}
 
-  const toggle = useCallback((key: string) => {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }, [])
+export function DueDiligenceSection({ storageKey = null }: DueDiligenceSectionProps): JSX.Element {
+  const { checked, toggle, persisted } = useChecklist<string>(
+    storageKey ? `${storageKey}:due-diligence` : null
+  )
 
   const totalItems = DUE_DILIGENCE_ITEMS.reduce((s, g) => s + g.items.length, 0)
   const doneCount = checked.size
@@ -156,6 +154,12 @@ export function DueDiligenceSection(): JSX.Element {
           </div>
         ))}
       </div>
+      {persisted && (
+        <p className="mono" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>
+          Ticks are kept in this browser for this report — not in your account, not on the shared
+          link.
+        </p>
+      )}
     </section>
   )
 }

@@ -1191,6 +1191,7 @@ propscout/
 │   │       │   ├── useAccount.ts      # Real identity + usage from /me (no fixtures — D-064)
 │   │       │   ├── useAnalysis.ts     # Fetches and manages analysis state
 │   │       │   ├── useAuth.ts         # Auth state and methods
+│   │       │   ├── useChecklist.ts + useChecklist.test.tsx  # Report checklist ticks kept in this browser per share token (D-095)
 │   │       │   ├── useTier.ts         # Current user tier + feature access checks
 │   │       │   ├── useTheme.ts + useTheme.test.tsx  # One app-wide theme, saved + OS-preference aware (UI-04, D-079)
 │   │       │   ├── useRentalComps.ts  # Rental comps data and loading state

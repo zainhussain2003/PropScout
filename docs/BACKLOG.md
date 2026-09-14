@@ -90,7 +90,8 @@ From the four per-report audits' "field to work on" columns, grouped. None start
 - **Location:** routing API for walking/driving times instead of straight-line.
 - **Financing:** rate provenance/date, fixed vs variable, CMHC rules, renewal scenarios, saved
   side-by-side cases; personal-report financing controls.
-- **Checklists:** saved progress, notes, owners, deadlines, attachments.
+- **Checklists:** notes, owners, deadlines, attachments (ticks are kept per browser since #75,
+  D-095; account-side storage would need a table).
 - **SunScout:** ask the user to confirm floor and facade; label inferred vs confirmed inputs.
 - **Equity build:** flat/conservative/stress scenarios with selling costs, tax, capex.
 - **STR:** dated rules snapshot with municipal citations until an official source exists.
