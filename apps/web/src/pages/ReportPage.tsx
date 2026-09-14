@@ -582,7 +582,10 @@ function InvestorReportContent({
   const dealScore: DealScoreData | null =
     analysis.dealScore != null ? toDealScoreData(analysis.dealScore) : null
 
-  const handleBack = useCallback(() => window.history.back(), [])
+  // "Analyze another listing" means the input, not the previous page: from a
+  // share link, history.back() left the site (UI-03).
+  const navigateBack = useNavigate()
+  const handleBack = useCallback(() => navigateBack('/'), [navigateBack])
 
   if (!metrics || !dealScore) {
     return (

@@ -165,4 +165,9 @@ describe('live tenant report facts', () => {
     const checklist = shimToTenantChecklist(LISTING, analysis)
     expect(checklist[0]?.label).toMatch(/every advertised bedroom/i)
   })
+
+  it('carries the analysis time so the hero can say when, not "refreshed 3 min ago"', () => {
+    const data = shimToTenantListingData(LISTING, baseAnalysis(null))
+    expect(data.analyzedAt).toBe('2026-07-07T00:00:00Z')
+  })
 })

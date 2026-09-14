@@ -14,7 +14,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { TenantReport } from '../../apps/web/src/pages/TenantReport'
 import {
   CHARLES_REALITY,
@@ -155,5 +155,31 @@ describe('TenantReport — Report Nav', () => {
     renderPage()
     const toggleBtn = screen.getByRole('button', { name: /Toggle (dark|light) mode/i })
     expect(toggleBtn).toBeInTheDocument()
+  })
+})
+
+// ── Breadcrumb makes no claims it cannot back (UI-03) ─────────────────────────
+
+describe('TenantReport — breadcrumb', () => {
+  it('the demo says it is a sample, not "refreshed 3 min ago"', () => {
+    renderPage()
+    expect(screen.getByText(/Sample report/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Refreshed \d+ min ago/i)).not.toBeInTheDocument()
+  })
+
+  it('"Analyze another listing" goes to the input, not history.back()', () => {
+    const back = vi.spyOn(window.history, 'back')
+    render(
+      <MemoryRouter initialEntries={['/tenant-report']}>
+        <Routes>
+          <Route path="/tenant-report" element={<TenantReport />} />
+          <Route path="/" element={<div>LANDING</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+    fireEvent.click(screen.getByRole('button', { name: /analyze another listing/i }))
+    expect(screen.getByText('LANDING')).toBeInTheDocument()
+    expect(back).not.toHaveBeenCalled()
+    back.mockRestore()
   })
 })
