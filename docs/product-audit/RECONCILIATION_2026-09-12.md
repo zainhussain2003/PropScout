@@ -74,17 +74,17 @@ not a defect.
 
 ## Retained counter-review findings
 
-| Finding                                                 | Status | Where                                                                   |
-| ------------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
-| "No flags detected" conflates no text / failure / clean | 🟡     | No-text state #60; extraction failure still indistinguishable — BACKLOG |
-| `calculate_break_even_rent` management asymmetry        | ✅     | Router tests kept; D-067                                                |
-| Listing rows overwritten by re-scrape                   | ✅     | #38 D-069                                                               |
-| Evidence labels not applied                             | ➖     | Process note                                                            |
-| Sun obstruction coverage threshold                      | ✅     | #64 D-085 — below 50% measured, labelled indicative                     |
-| "True monthly cost" ~24% modelled                       | 🟡     | Rows labelled estimate/confirm; headline still "true" — BACKLOG         |
-| Narrative `tier: 'free'` hardcoded                      | ➖     | Inert; truncation is client-side                                        |
-| Agent sharing vs mutable share links                    | ✅     | Links are read-only for recipients (#34)                                |
-| Rent control (landlord vs tenant)                       | 🔒     | Needs Ontario source — BACKLOG                                          |
+| Finding                                                 | Status | Where                                                           |
+| ------------------------------------------------------- | ------ | --------------------------------------------------------------- |
+| "No flags detected" conflates no text / failure / clean | ✅     | No-text state #60; failed / partial scan #70 D-090              |
+| `calculate_break_even_rent` management asymmetry        | ✅     | Router tests kept; D-067                                        |
+| Listing rows overwritten by re-scrape                   | ✅     | #38 D-069                                                       |
+| Evidence labels not applied                             | ➖     | Process note                                                    |
+| Sun obstruction coverage threshold                      | ✅     | #64 D-085 — below 50% measured, labelled indicative             |
+| "True monthly cost" ~24% modelled                       | 🟡     | Rows labelled estimate/confirm; headline still "true" — BACKLOG |
+| Narrative `tier: 'free'` hardcoded                      | ➖     | Inert; truncation is client-side                                |
+| Agent sharing vs mutable share links                    | ✅     | Links are read-only for recipients (#34)                        |
+| Rent control (landlord vs tenant)                       | 🔒     | Needs Ontario source — BACKLOG                                  |
 
 ## Product-claims table
 
@@ -101,7 +101,7 @@ not a defect.
 | Monitoring and alerts                   | ✅     | #55                                                                               |
 | Reset link sent                         | ✅     | #35                                                                               |
 | Mode switch inside report               | ✅     | #57                                                                               |
-| "No flags detected" ambiguity           | 🟡     | #60; see above                                                                    |
+| "No flags detected" ambiguity           | ✅     | #60, #70 D-090                                                                    |
 | "Comparable rentals" wording            | ✅     | Live copy says "asking rents, not signed leases"                                  |
 | Free forever tenant report              | ✅     | Tenant exempt from quota #40                                                      |
 | Professional white-label PDF            | 🔒     | Paywall — BACKLOG                                                                 |

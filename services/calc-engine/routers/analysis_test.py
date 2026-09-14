@@ -15,6 +15,7 @@ Calibration properties used:
 import sys
 import os
 from unittest.mock import patch, AsyncMock
+from extraction.haiku_extraction import HaikuExtractionError  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -873,3 +874,42 @@ def test_analysis_assumptions_unknown_build_year_is_named() -> None:
     a = res.json()["assumptions"]
     assert a["maintenance_rate"] == 0.010
     assert a["maintenance_basis"] == "year_unknown"
+
+
+# ── The scan's own status is reported (D-090) ──────────────────────────────────
+
+
+def test_extraction_status_no_text_without_a_description() -> None:
+    client = TestClient(app)
+    res = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
+    assert res.status_code == 200
+    assert res.json()["extraction_status"] == "no_text"
+
+
+def test_extraction_status_ok_when_both_passes_run() -> None:
+    client = TestClient(app)
+    payload = {
+        **_VAUGHAN_PAYLOAD,
+        "description": "Bright corner unit, freshly painted.",
+    }
+    with patch(_HAIKU_PATCH, new=AsyncMock(return_value={})):
+        res = client.post("/analysis/", json=payload)
+    assert res.status_code == 200
+    assert res.json()["extraction_status"] == "ok"
+
+
+def test_extraction_status_partial_keeps_regex_flags_when_haiku_fails() -> None:
+    """A failed Haiku read is not a clean scan: status says partial, and the
+    deterministic pattern flags still fire."""
+    client = TestClient(app)
+    payload = {
+        **_VAUGHAN_PAYLOAD,
+        "description": "Sold as-is, where-is. Former grow op, fully remediated.",
+    }
+    with patch(_HAIKU_PATCH, new=AsyncMock(side_effect=HaikuExtractionError("429"))):
+        res = client.post("/analysis/", json=payload)
+    assert res.status_code == 200
+    body = res.json()
+    assert body["extraction_status"] == "partial"
+    ids = {f["flag_id"] for f in body["risk_flags"]}
+    assert "grow_op_history" in ids, ids

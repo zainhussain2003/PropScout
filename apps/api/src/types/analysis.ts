@@ -253,7 +253,18 @@ export interface Analysis {
    * (D-088). Optional: analyses stored before 2026-09-13 don't carry it.
    */
   assumptions?: AssumptionEntry[] | null
+  /** Outcome of the description scan (D-090). Optional: older analyses don't carry it. */
+  extractionStatus?: ExtractionStatus | null
 }
+
+/**
+ * How the listing-description scan went (D-090).
+ *   ok      — regex + Haiku both ran (an empty flag list is a clean scan)
+ *   partial — regex ran; the Haiku read failed, so only pattern flags exist
+ *   failed  — the pipeline raised; nothing was read
+ *   no_text — there was no description to scan
+ */
+export type ExtractionStatus = 'ok' | 'partial' | 'failed' | 'no_text'
 
 // ── Assumption ledger (D-088) ─────────────────────────────────────────────────
 

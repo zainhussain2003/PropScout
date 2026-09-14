@@ -66,6 +66,8 @@ import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
 import { useTheme } from '../hooks/useTheme'
 import { AssumptionLedgerSection } from '../components/investor/AssumptionLedgerSection'
+import { scanState } from '../lib/scanState'
+import type { ExtractionStatus } from '../types/analysis'
 
 // ── Static light score (Phase 2 will compute this from sun-path data) ─────────
 const STATIC_LIGHT_SCORE = 76
@@ -1129,9 +1131,17 @@ interface RisksSectionProps {
   }>
   /** False for an address-entered property: there is no text to scan. */
   hasListingText?: boolean
+  /** Outcome of the scan (D-090); undefined on the demo. */
+  extractionStatus?: ExtractionStatus | null
 }
 
-function RisksSection({ flags, hasListingText = true }: RisksSectionProps): JSX.Element {
+function RisksSection({
+  flags,
+  hasListingText = true,
+  extractionStatus,
+}: RisksSectionProps): JSX.Element {
+  // Three things "no flags" can mean (D-090); only read when the list is empty.
+  const emptyScan = scanState({ flagCount: 0, hasDescription: hasListingText, extractionStatus })
   // Real flags path: use API data. Demo path (flags undefined): use RISK_FLAGS fixture.
   if (flags !== undefined) {
     const redCount = flags.filter((f) => f.severity === 'red').length
@@ -1161,14 +1171,18 @@ function RisksSection({ flags, hasListingText = true }: RisksSectionProps): JSX.
             <RiskRow
               tone="amber"
               label={
-                hasListingText
+                emptyScan === 'clean'
                   ? 'No risk language found in the listing text'
-                  : 'No listing text to check — entered by address'
+                  : emptyScan === 'no_text'
+                    ? 'No listing text to check — entered by address'
+                    : emptyScan === 'failed'
+                      ? 'The listing text could not be scanned'
+                      : 'Only the pattern scan ran — AI read failed'
               }
               detail={
-                hasListingText
+                emptyScan === 'clean'
                   ? 'A wording check only — not a clean bill of health. Ask the agent about as-is / remediation, water or flood history, and any past grow-op.'
-                  : 'Nothing has been scanned for risk language. Ask the agent about as-is / remediation, water or flood history, and any past grow-op.'
+                  : 'Nothing here counts as checked. Ask the agent about as-is / remediation, water or flood history, and any past grow-op.'
               }
             />
           ) : (
@@ -1639,6 +1653,7 @@ export function PersonalBuyerPage({
       <RisksSection
         flags={isReal ? realAnalysis!.riskFlags : undefined}
         hasListingText={isReal ? (realListing?.description ?? '').trim().length > 0 : true}
+        extractionStatus={isReal ? realAnalysis!.extractionStatus : undefined}
       />
       <ChecklistSection onPDF={pdf.exportPdf} />
       {/* §09 Sources — the assumption ledger (D-088); live reports only, the

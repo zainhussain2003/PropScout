@@ -49,7 +49,8 @@ from calculations.deal_score import calculate_deal_score, to_display_score
 from calculations.hold_case import calculate_break_even_appreciation
 from calculations.sanity import sanity_check_metrics
 from extraction.regex_rules import extract_regex_flags
-from extraction.haiku_extraction import extract_flags_with_haiku
+from extraction.haiku_extraction import extract_flags_with_haiku, HaikuExtractionError
+from extraction.haiku_extraction import _empty_flags as empty_haiku_flags
 from extraction.logic_gate import merge_flags, MergedFlag
 from constants.flag_matrix import get_flag_tier
 
@@ -323,10 +324,23 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
 
     dismissed_flags = set(body.dismissed_flag_ids)
 
+    # Three outcomes the report must keep apart (D-090): nothing to scan, a
+    # scan that ran clean, and a scan that did not run. Before this, a Haiku
+    # failure returned empty flags and the report called it a clean scan.
+    extraction_status = "no_text"
+
     if body.description:
+        extraction_status = "ok"
         try:
             regex_flags = extract_regex_flags(body.description)
-            haiku_flags = await extract_flags_with_haiku(body.description)
+            try:
+                haiku_flags = await extract_flags_with_haiku(
+                    body.description, raise_on_failure=True
+                )
+            except HaikuExtractionError as exc:
+                logger.error("Haiku read failed for %s: %s", prop.address, exc)
+                haiku_flags = empty_haiku_flags()
+                extraction_status = "partial"
             merged_flags = merge_flags(regex_flags, haiku_flags, mode=body.mode)
 
             # Active = not dismissed. The per-mode tier decides the impact:
@@ -341,6 +355,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             merged_flags = []
             risk_flag_deductions = 0.0
             severe_flag_count = 0
+            extraction_status = "failed"
 
     # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
     # The calculation uses $0 when condo_fee_monthly is not provided, which may
@@ -505,4 +520,5 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         sun_scout=sun_scout_result,
         hold_case=[HoldCaseOutput(**row) for row in hold_case],
         assumptions=assumptions,
+        extraction_status=extraction_status,
     )
