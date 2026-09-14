@@ -43,6 +43,14 @@ export interface Listing {
    * Nullable in the schema already; the API type used to collapse null to 0.
    */
   beds: number | null
+  /**
+   * True when the source stated the bedroom count — so 0 means a studio, not
+   * a gap (D-092). Absent on rows stored before this shipped and on the
+   * address path (which asks for beds), where the D-072 rule applies alone.
+   */
+  bedsKnown?: boolean
+  /** As bedsKnown, for bathrooms. */
+  bathsKnown?: boolean
   baths: number | null
   sqft: number | null
   propertyType: PropertyType

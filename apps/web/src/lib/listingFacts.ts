@@ -21,15 +21,34 @@
 /** Rendered wherever a count is not provided. */
 export const NOT_PROVIDED = '—'
 
-/** The count when the source provided one, else null. */
-export function knownCount(n: number | null | undefined): number | null {
-  return n != null && Number.isFinite(n) && n > 0 ? n : null
+/**
+ * The count when the source provided one, else null.
+ *
+ * `known` (D-092) is the scraper's statement that the page carried the field:
+ * with it, 0 is a real count (a studio); without it, 0 keeps reading as a gap
+ * for the reasons above.
+ */
+export function knownCount(n: number | null | undefined, known?: boolean): number | null {
+  if (n == null || !Number.isFinite(n)) return null
+  if (n > 0) return n
+  return known === true ? 0 : null
 }
 
 /** "2" or "—". For layouts that append their own unit word. */
-export function bareCount(n: number | null | undefined): string {
-  const k = knownCount(n)
+export function bareCount(n: number | null | undefined, known?: boolean): string {
+  const k = knownCount(n, known)
   return k == null ? NOT_PROVIDED : String(k)
+}
+
+/** "Studio" when the source says zero bedrooms; otherwise like countLabel. */
+export function bedroomLabel(
+  n: number | null | undefined,
+  known: boolean | undefined,
+  opts: { fallback?: string } = {}
+): string {
+  const k = knownCount(n, known)
+  if (k === 0) return 'Studio'
+  return countLabel(n, 'bed', opts)
 }
 
 /**
@@ -51,6 +70,10 @@ export function countLabel(
 export function bedBathLabel(listing: {
   beds: number | null | undefined
   baths: number | null | undefined
+  bedsKnown?: boolean
+  bathsKnown?: boolean
 }): string {
-  return `${bareCount(listing.beds)} bed · ${bareCount(listing.baths)} bath`
+  const beds = knownCount(listing.beds, listing.bedsKnown)
+  const bedPart = beds === 0 ? 'Studio' : `${bareCount(listing.beds, listing.bedsKnown)} bed`
+  return `${bedPart} · ${bareCount(listing.baths, listing.bathsKnown)} bath`
 }

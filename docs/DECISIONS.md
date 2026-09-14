@@ -3200,3 +3200,25 @@ one sentence it must not say when nothing was read. #60 separated "no text"; thi
 | Fail the analysis when extraction fails | The rest of the report is still good; the rule is one section's failure never blanks it. |
 | A column on `analyses`                  | Needs the migration gate; `market_data` already carries per-analysis facts.              |
 | Treat a Haiku failure as `failed`       | Regex flags still fired and still deducted; `partial` tells the truth about both.        |
+
+### D-092 · A stated zero is a studio; an unstated count is a gap
+
+**Chosen.** The scraper reports `beds_known` / `baths_known` — whether the page's dataLayer
+actually carried the field. The API stores a count the page did not carry as null (D-072) and
+keeps a stated 0; `bedsKnown` / `bathsKnown` ride on the `Listing` and therefore on the listing
+snapshot the report renders (D-069), so no `listings` column is needed. `listingFacts.knownCount`
+takes the flag: a known 0 is a count, an unknown 0 is still a gap. Reports render "Studio" for a
+known zero-bedroom unit and "—" for an absent count, in the hero chips, the tenant facts and the
+personal facts table. Rows stored before this and the address path (which asks for beds) carry
+no flag and read exactly as before.
+
+**Why.** BACKLOG §3 "`*_known` flags", planned as a migration: the parser used "0" for a missing
+field, so a genuine studio (`bedrooms: '0'` on Realtor.ca) rendered "— bed". The snapshot already
+carries every fact the report uses; putting the flag there closes the row without the human gate.
+`type_known` from the same row is already covered by D-082 (`'unknown'` is the type's own
+"not stated").
+
+| Option                                 | Why not                                                                    |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| Add `beds_known` columns to `listings` | Needs the migration gate; the snapshot is what renders, and it is JSON.    |
+| Treat 0 from the scraper as a studio   | Rows stored before the flag hold 0 for "absent"; the flag is the evidence. |

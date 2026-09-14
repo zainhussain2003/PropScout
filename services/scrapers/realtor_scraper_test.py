@@ -152,6 +152,8 @@ async def test_building_type_parking_and_above_grade_beds_are_captured() -> None
     assert result.building_type == "Apartment"
     assert result.parking_spaces == 1
     assert result.beds == 2  # above-grade, not the dataLayer '3'
+    assert result.beds_known is True
+    assert result.baths_known is True
 
 
 @pytest.mark.asyncio
@@ -198,6 +200,8 @@ _API_CONTRACT_KEYS = {
     "raw",
     "building_type",
     "parking_spaces",
+    "beds_known",
+    "baths_known",
 }
 
 
@@ -227,3 +231,53 @@ def test_scrape_response_shape_matches_api_contract() -> None:
         raw={},
     )
     assert set(dataclasses.asdict(listing).keys()) == _API_CONTRACT_KEYS
+
+
+# ── A studio is a fact; a missing count is not (D-092) ─────────────────────────
+
+_STUDIO_PAGE = """
+<script>
+dataLayer.push({
+  property: {
+    price: '',
+    leasePrice: '1,900',
+    bedrooms: '0',
+    bathrooms: '1',
+    propertyType: 'Single Family',
+    buildingType: 'Apartment',
+    interiorFloorSpace: '410'
+  }
+});
+</script>
+<script type="application/ld+json">
+{"@type": "Product", "name": "801 - 1 BLOOR STREET E, Toronto, Ontario M4W0A8",
+ "image": [], "offers": {"@type": "Offer"}}
+</script>
+"""
+
+_NO_COUNTS_PAGE = _STUDIO_PAGE.replace("bedrooms: '0',\n", "").replace(
+    "bathrooms: '1',\n", ""
+)
+
+
+@pytest.mark.asyncio
+async def test_studio_is_known_zero_beds_and_missing_counts_are_not() -> None:
+    cm, _client = _client_returning([_FakeResponse(200, _STUDIO_PAGE)])
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "test-key"),
+        patch("realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        studio = await scrape_listing(_URL)
+    assert studio is not None
+    assert studio.beds == 0 and studio.beds_known is True
+    assert studio.baths == 1.0 and studio.baths_known is True
+
+    cm, _client = _client_returning([_FakeResponse(200, _NO_COUNTS_PAGE)])
+    with (
+        patch.object(realtor_scraper, "SCRAPER_API_KEY", "test-key"),
+        patch("realtor_scraper.httpx.AsyncClient", return_value=cm),
+    ):
+        blank = await scrape_listing(_URL)
+    assert blank is not None
+    assert blank.beds == 0 and blank.beds_known is False
+    assert blank.baths_known is False
