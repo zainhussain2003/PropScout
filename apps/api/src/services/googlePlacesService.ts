@@ -29,6 +29,8 @@
  * acceptable — the UI dedupes by name anyway.
  */
 
+import { routeMinutes } from './mapboxService'
+
 const NEARBY_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchNearby'
 
 /** Search radius for school discovery, in metres. */
@@ -160,9 +162,17 @@ export async function getNearbySchools(lat: number, lng: number): Promise<School
 export interface NearbyDistance {
   key: string // 'transit' | 'grocery' | 'highway' | 'pharmacy'
   label: string // display label, e.g. "Nearest transit"
+  /** Straight-line distance, km. */
   distanceKm: number
-  /** Rough driving-time estimate from the straight-line distance (~30 km/h urban). */
+  /**
+   * Driving time in minutes. Routed on the road network (Mapbox Directions)
+   * when `routed` is true; otherwise the old straight-line ÷ 30 km/h estimate.
+   */
   driveMin: number
+  /** Walking time on the footpath network, minutes; null when not routed. */
+  walkMin?: number | null
+  /** True when the times came from a routing engine, not a formula (D-096). */
+  routed?: boolean
 }
 
 // Places API (New) Text Search. Text Search + rankPreference DISTANCE + a
@@ -184,13 +194,13 @@ interface TextSearchResponse {
   places?: Array<{ location?: { latitude?: number; longitude?: number } }>
 }
 
-/** Nearest place matching a text query, as a straight-line distance in km, or null. */
-async function nearestPlaceKm(
+/** Nearest place matching a text query — its location and straight-line km — or null. */
+async function nearestPlace(
   lat: number,
   lng: number,
   key: string,
   target: { query: string }
-): Promise<number | null> {
+): Promise<{ lat: number; lng: number; km: number } | null> {
   try {
     const res = await fetch(TEXT_SEARCH_URL, {
       method: 'POST',
@@ -224,9 +234,9 @@ async function nearestPlaceKm(
     // usable substitute here: it returns nothing at all for these queries.)
     if (km > SEARCH_RADIUS_M / 1000) return null
 
-    return Number(km.toFixed(2))
+    return { lat: loc.latitude, lng: loc.longitude, km: Number(km.toFixed(2)) }
   } catch (err) {
-    console.error(`nearestPlaceKm(${target.query}): failed`, err)
+    console.error(`nearestPlace(${target.query}): failed`, err)
     return null
   }
 }
@@ -245,13 +255,21 @@ export async function getNearbyDistances(lat: number, lng: number): Promise<Near
   }
   const out: NearbyDistance[] = []
   for (const target of DISTANCE_TARGETS) {
-    const km = await nearestPlaceKm(lat, lng, key, target)
-    if (km == null) continue
+    const place = await nearestPlace(lat, lng, key, target)
+    if (place == null) continue
+    // Real travel times when the router answers; the straight-line formula
+    // only as a labelled fallback (D-096).
+    const [walkMin, driveMin] = await Promise.all([
+      routeMinutes('walking', { lat, lng }, place),
+      routeMinutes('driving', { lat, lng }, place),
+    ])
     out.push({
       key: target.key,
       label: target.label,
-      distanceKm: km,
-      driveMin: Math.max(1, Math.round((km / 30) * 60)),
+      distanceKm: place.km,
+      driveMin: driveMin ?? Math.max(1, Math.round((place.km / 30) * 60)),
+      walkMin,
+      routed: driveMin != null,
     })
   }
   return out

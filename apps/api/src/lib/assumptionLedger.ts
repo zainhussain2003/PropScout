@@ -61,6 +61,8 @@ export interface LedgerInput {
   cmhcCityMatched: boolean
   /** Walk Score result, when the API returned one. */
   walkScore?: { walk: number; transit: number | null; fetchedAt?: string } | null
+  /** Whether any nearby-amenity time came from the routing engine (D-096). */
+  travelTimesRouted?: boolean
 }
 
 /** Year the municipal tax-rate table was last refreshed (constants/propertyTaxRates.ts). */
@@ -299,6 +301,32 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       asOf: input.walkScore.fetchedAt ?? input.createdAt,
       method: 'Fetched for the geocoded address at analysis time; not recomputed on later views.',
     })
+  }
+
+  if (input.travelTimesRouted != null) {
+    rows.push(
+      input.travelTimesRouted
+        ? {
+            key: 'travel_times',
+            label: 'Travel times',
+            value: 'routed',
+            basis: 'published',
+            source: 'Mapbox Directions (walking and driving profiles)',
+            asOf: input.createdAt,
+            method:
+              'Door-to-door on the road and footpath network at analysis time; typical conditions, no live traffic.',
+          }
+        : {
+            key: 'travel_times',
+            label: 'Travel times',
+            value: 'estimated',
+            basis: 'estimate',
+            source: PROPSCOUT_DEFAULT,
+            asOf: null,
+            method:
+              'Straight-line distance at 30 km/h; the routing engine did not answer for this address.',
+          }
+    )
   }
 
   // ── Closing costs ─────────────────────────────────────────────────────────

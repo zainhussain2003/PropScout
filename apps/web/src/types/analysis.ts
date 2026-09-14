@@ -192,6 +192,10 @@ export interface NearbyDistance {
   label: string
   distanceKm: number
   driveMin: number
+  /** Walking minutes on the footpath network; null/absent when not routed (D-096). */
+  walkMin?: number | null
+  /** True when the times are routed (Mapbox Directions), not a straight-line formula. */
+  routed?: boolean
 }
 
 /** Census stats for the listing's area (StatsCan). Null fields = no match/data. */

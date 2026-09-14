@@ -8,7 +8,16 @@
  * activates that endpoint on any project.
  */
 
-import { getNearbySchools, pickNearestPerType, type School } from './googlePlacesService'
+import {
+  getNearbySchools,
+  getNearbyDistances,
+  pickNearestPerType,
+  type School,
+} from './googlePlacesService'
+import { routeMinutes } from './mapboxService'
+
+jest.mock('./mapboxService', () => ({ routeMinutes: jest.fn() }))
+const mockRoute = jest.mocked(routeMinutes)
 
 const mockFetch = jest.fn()
 global.fetch = mockFetch as unknown as typeof fetch
@@ -172,5 +181,57 @@ describe('pickNearestPerType', () => {
 
     const picked = pickNearestPerType(schools, 3)
     expect(picked.map((s) => s.name)).toEqual(['E1', 'E2', 'E3', 'M1', 'H1', 'H2'])
+  })
+})
+
+// ── Nearby amenity times are routed, with a labelled fallback (D-096) ─────────
+
+describe('getNearbyDistances', () => {
+  const ORIGINAL_KEY = process.env.GOOGLE_PLACES_KEY
+  beforeEach(() => {
+    process.env.GOOGLE_PLACES_KEY = 'places-key'
+  })
+  afterAll(() => {
+    process.env.GOOGLE_PLACES_KEY = ORIGINAL_KEY
+  })
+
+  // One Places hit ~1.1 km away for every target query.
+  function placesAlwaysFind(): void {
+    mockFetch.mockResolvedValue(
+      makeResponse({ places: [{ location: { latitude: 43.66, longitude: -79.38 } }] })
+    )
+  }
+
+  it('reports routed walking and driving minutes when the router answers', async () => {
+    placesAlwaysFind()
+    mockRoute.mockImplementation(async (profile) => (profile === 'walking' ? 14 : 4))
+    const rows = await getNearbyDistances(43.65, -79.38)
+    expect(rows.length).toBe(4)
+    for (const r of rows) {
+      expect(r.routed).toBe(true)
+      expect(r.walkMin).toBe(14)
+      expect(r.driveMin).toBe(4)
+    }
+    expect(mockRoute).toHaveBeenCalledWith(
+      'walking',
+      { lat: 43.65, lng: -79.38 },
+      expect.anything()
+    )
+  })
+
+  it('falls back to the straight-line formula, labelled, when routing fails', async () => {
+    placesAlwaysFind()
+    mockRoute.mockResolvedValue(null)
+    const rows = await getNearbyDistances(43.65, -79.38)
+    expect(rows[0]?.routed).toBe(false)
+    expect(rows[0]?.walkMin).toBeNull()
+    // 1.11 km at 30 km/h ≈ 2 min
+    expect(rows[0]?.driveMin).toBe(Math.max(1, Math.round((rows[0]!.distanceKm / 30) * 60)))
+  })
+
+  it('returns [] without a Places key and never calls the router', async () => {
+    process.env.GOOGLE_PLACES_KEY = ''
+    expect(await getNearbyDistances(43.65, -79.38)).toEqual([])
+    expect(mockRoute).not.toHaveBeenCalled()
   })
 })
