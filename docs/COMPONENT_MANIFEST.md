@@ -8,19 +8,19 @@ Every design artifact mapped to the React component it should become in your `ap
 
 Location: `apps/web/src/components/shared/`
 
-| Component | Purpose | Design source |
-|---|---|---|
-| `<Wordmark height>` | "Prop*Scout*" + Scout-Mark logo | `components.jsx::Wordmark` |
-| `<ScoutMark size color>` | Just the glyph (used as watermark too) | `components.jsx::ScoutMark` |
-| `<Icon name size stroke>` | Line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot) | `components.jsx::Icon` |
-| `<Chip>` | Inline pill | `components.jsx::Chip` |
-| `<Button variant="primary\|ghost\|accent">` | All three button styles | `.btn` classes |
-| `<Card>` | Surface + line + shadow + radius-lg | `.card` class |
-| `<SectionHead n topic question verdict tone>` | Every report section header | `tenant-sections.jsx::SectionHead` |
-| `<VerdictPill tone label>` | The pass/caution/fail status pill | `.verdict-pill` class |
-| `<Nav variant>` | Top nav — variants for landing vs. report vs. account | `components.jsx::Nav` + each report's own variant |
-| `<Footer>` | Shared footer | `components.jsx::Footer` |
-| `<SignInModal open onClose>` | Sign-in / sign-up bottom-sheet | `components.jsx::SignInModal` |
+| Component                                     | Purpose                                                                                                                        | Design source                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| `<Wordmark height>`                           | "Prop*Scout*" + Scout-Mark logo                                                                                                | `components.jsx::Wordmark`                        |
+| `<ScoutMark size color>`                      | Just the glyph (used as watermark too)                                                                                         | `components.jsx::ScoutMark`                       |
+| `<Icon name size stroke>`                     | Line-icon library (arrow, link, check, sun, moon, house, chart, shield, doc, map, key, flag, sparkle, paste, plus, minus, dot) | `components.jsx::Icon`                            |
+| `<Chip>`                                      | Inline pill                                                                                                                    | `components.jsx::Chip`                            |
+| `<Button variant="primary\|ghost\|accent">`   | All three button styles                                                                                                        | `.btn` classes                                    |
+| `<Card>`                                      | Surface + line + shadow + radius-lg                                                                                            | `.card` class                                     |
+| `<SectionHead n topic question verdict tone>` | Every report section header                                                                                                    | `tenant-sections.jsx::SectionHead`                |
+| `<VerdictPill tone label>`                    | The pass/caution/fail status pill                                                                                              | `.verdict-pill` class                             |
+| `<Nav variant>`                               | Top nav — variants for landing vs. report vs. account                                                                          | `components.jsx::Nav` + each report's own variant |
+| `<Footer>`                                    | Shared footer                                                                                                                  | `components.jsx::Footer`                          |
+| `<SignInModal open onClose>`                  | Sign-in / sign-up bottom-sheet                                                                                                 | `components.jsx::SignInModal`                     |
 
 ---
 
@@ -28,16 +28,16 @@ Location: `apps/web/src/components/shared/`
 
 Location: `apps/web/src/components/analysis/`
 
-| Component | Purpose | Design source |
-|---|---|---|
-| `<DealScore score size label showVerdict animate>` | Radial gauge — auto-hides label/verdict at small sizes | `report-preview.jsx::DealScore` |
-| `<Metric label value sub status>` | Headline metric tile (cap rate, cash flow, etc.) | `report-preview.jsx::Metric` |
-| `<RentalCompsBar low mid high ask>` | Percentile range bar + hover diamond marker | `report-preview.jsx::RentalCompsBar` |
-| `<AIVerdictBlock eyebrow headline sub addr compact>` | Dark full-bleed AI verdict card | `report-preview.jsx::AIVerdictBlock` |
-| `<RiskRow tone label detail>` | Inline risk flag row (red/amber/good) | `report-preview.jsx::RiskRow` |
-| `<MiniMap height address pins>` | Mapbox-style mini map — **replace with real Mapbox GL JS** in production | `report-preview.jsx::MiniMap` |
-| `<PropertyHero listing score>` | Shared photo grid + chips + address + sticky score card | `tenant-blocks.jsx::PropertyHero` (and the investor / personal / landlord variants — consolidate) |
-| `<FlagDeepRow flag>` | Expandable risk flag with evidence quote + "Ask before signing" | `tenant-sections.jsx::FlagDeepRow` |
+| Component                                            | Purpose                                                                  | Design source                                                                                     |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `<DealScore score size label showVerdict animate>`   | Radial gauge — auto-hides label/verdict at small sizes                   | `report-preview.jsx::DealScore`                                                                   |
+| `<Metric label value sub status>`                    | Headline metric tile (cap rate, cash flow, etc.)                         | `report-preview.jsx::Metric`                                                                      |
+| `<RentalCompsBar low mid high ask>`                  | Percentile range bar + hover diamond marker                              | `report-preview.jsx::RentalCompsBar`                                                              |
+| `<AIVerdictBlock eyebrow headline sub addr compact>` | Dark full-bleed AI verdict card                                          | `report-preview.jsx::AIVerdictBlock`                                                              |
+| `<RiskRow tone label detail>`                        | Inline risk flag row (red/amber/good)                                    | `report-preview.jsx::RiskRow`                                                                     |
+| `<MiniMap height address pins>`                      | Mapbox-style mini map — **replace with real Mapbox GL JS** in production | `report-preview.jsx::MiniMap`                                                                     |
+| `<PropertyHero listing score>`                       | Shared photo grid + chips + address + sticky score card                  | `tenant-blocks.jsx::PropertyHero` (and the investor / personal / landlord variants — consolidate) |
+| `<FlagDeepRow flag>`                                 | Expandable risk flag with evidence quote + "Ask before signing"          | `tenant-sections.jsx::FlagDeepRow`                                                                |
 
 ---
 
@@ -45,15 +45,15 @@ Location: `apps/web/src/components/analysis/`
 
 Location: `apps/web/src/components/investor/`
 
-| Component | Purpose | Design source |
-|---|---|---|
-| `<FinancingSliders financing onChange>` | Live down-payment / rate / amort sliders + preset chips | `investor-blocks.jsx::FinancingSliders` |
-| `<OSFICard osfi financing>` | OSFI stress test card | `investor-blocks.jsx::OSFICard` |
-| `<LTTTable ltt price toronto>` | Ontario LTT bracket table | `investor-blocks.jsx::LTTTable` |
-| `<EquityChart equityCurve totalCashInvested>` | 20-year line chart with hover details | `investor-blocks.jsx::EquityChart` |
-| `<InvestmentMetricsSection metrics property>` | 8-tile metrics grid + annual expense breakdown | `investor-sections.jsx` |
-| `<NeighbourhoodSection property>` | 6 stat tiles + comparable sales + appreciation card | `investor-sections-2.jsx` |
-| `<STRPlaceholderSection property>` | Phase-2 placeholder + STR legality card | `investor-sections-2.jsx` |
+| Component                                     | Purpose                                                 | Design source                           |
+| --------------------------------------------- | ------------------------------------------------------- | --------------------------------------- |
+| `<FinancingSliders financing onChange>`       | Live down-payment / rate / amort sliders + preset chips | `investor-blocks.jsx::FinancingSliders` |
+| `<OSFICard osfi financing>`                   | OSFI stress test card                                   | `investor-blocks.jsx::OSFICard`         |
+| `<LTTTable ltt price toronto>`                | Ontario LTT bracket table                               | `investor-blocks.jsx::LTTTable`         |
+| `<EquityChart equityCurve totalCashInvested>` | 20-year line chart with hover details                   | `investor-blocks.jsx::EquityChart`      |
+| `<InvestmentMetricsSection metrics property>` | 8-tile metrics grid + annual expense breakdown          | `investor-sections.jsx`                 |
+| `<NeighbourhoodSection property>`             | 6 stat tiles + comparable sales + appreciation card     | `investor-sections-2.jsx`               |
+| `<STRPlaceholderSection property>`            | Phase-2 placeholder + STR legality card                 | `investor-sections-2.jsx`               |
 
 ---
 
@@ -61,12 +61,12 @@ Location: `apps/web/src/components/investor/`
 
 Location: `apps/web/src/components/personal/`
 
-| Component | Purpose | Design source |
-|---|---|---|
+| Component                                | Purpose                                                 | Design source             |
+| ---------------------------------------- | ------------------------------------------------------- | ------------------------- |
 | `<SchoolCard school>` + `<SchoolColumn>` | Single school card with EQAO + Fraser + catchment badge | `personal-sections-2.jsx` |
-| `<PBTrueCostSection property monthly>` | Itemized monthly cost table | `personal-sections.jsx` |
-| `<PBFMVSection property score>` | FMV positioning bar | `personal-sections-2.jsx` |
-| `<PBSalesSection comps>` | Comparable sales table | `personal-sections-2.jsx` |
+| `<PBTrueCostSection property monthly>`   | Itemized monthly cost table                             | `personal-sections.jsx`   |
+| `<PBFMVSection property score>`          | FMV positioning bar                                     | `personal-sections-2.jsx` |
+| `<PBSalesSection comps>`                 | Comparable sales table                                  | `personal-sections-2.jsx` |
 
 ---
 
@@ -74,13 +74,13 @@ Location: `apps/web/src/components/personal/`
 
 Location: `apps/web/src/components/tenant/`
 
-| Component | Purpose | Design source |
-|---|---|---|
-| `<TenantSchoolsSection>` | Slim schools section (1 per board × 3 levels) | `tenant-schools.jsx` |
-| `<NegotiationSection>` | Leverage card + suggested-message card | `tenant-sections-2.jsx` |
-| `<ListedVsRealitySection>` | Side-by-side "what listing says" vs "what you get" | `tenant-sections-3.jsx` |
-| `<WhatsIncludedSection>` | Amenities grid with included/extra/unclear coloring | `tenant-sections-3.jsx` |
-| `<LocationCommuteSection>` | Walk/Transit/Bike scores + distances | `tenant-sections-3.jsx` |
+| Component                  | Purpose                                             | Design source           |
+| -------------------------- | --------------------------------------------------- | ----------------------- |
+| `<TenantSchoolsSection>`   | Slim schools section (1 per board × 3 levels)       | `tenant-schools.jsx`    |
+| `<NegotiationSection>`     | Leverage card + suggested-message card              | `tenant-sections-2.jsx` |
+| `<ListedVsRealitySection>` | Side-by-side "what listing says" vs "what you get"  | `tenant-sections-3.jsx` |
+| `<WhatsIncludedSection>`   | Amenities grid with included/extra/unclear coloring | `tenant-sections-3.jsx` |
+| `<LocationCommuteSection>` | Walk/Transit/Bike scores + distances                | `tenant-sections-3.jsx` |
 
 ---
 
@@ -88,15 +88,15 @@ Location: `apps/web/src/components/tenant/`
 
 Location: `apps/web/src/components/paywall/`
 
-| Component | Purpose | Design source |
-|---|---|---|
-| `<ProBadge tier>` | Small inline Pro marker with lock icon | `paywall-components.jsx::ProBadge` |
-| `<UpgradeCard headline sub ctaLabel dark>` | Consistent upgrade pitch — used inside paywalls | `paywall-components.jsx::UpgradeCard` |
-| `<LockedSection headline sub mockContent height>` | Blurred content + upgrade overlay | `paywall-components.jsx::LockedSection` |
-| `<TruncatedVerdict firstParagraph>` | AI verdict with paragraph 2 blurred + inline upgrade strip | `paywall-components.jsx::TruncatedVerdict` |
-| `<LockedButton label icon onClick>` | Lock-icon button (PDF, Save) — opens UpgradeModal | `paywall-components.jsx::LockedButton` |
-| `<UpgradeModal open onClose feature>` | Feature-specific upgrade modal (5 variants) | `paywall-components.jsx::UpgradeModal` |
-| `<HardLimitGate onClose monthlyLimit used resetsIn>` | Full-screen blocker on monthly limit | `paywall-components.jsx::HardLimitGate` |
+| Component                                            | Purpose                                                    | Design source                              |
+| ---------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------ |
+| `<ProBadge tier>`                                    | Small inline Pro marker with lock icon                     | `paywall-components.jsx::ProBadge`         |
+| `<UpgradeCard headline sub ctaLabel dark>`           | Consistent upgrade pitch — used inside paywalls            | `paywall-components.jsx::UpgradeCard`      |
+| `<LockedSection headline sub mockContent height>`    | Blurred content + upgrade overlay                          | `paywall-components.jsx::LockedSection`    |
+| `<TruncatedVerdict firstParagraph>`                  | AI verdict with paragraph 2 blurred + inline upgrade strip | `paywall-components.jsx::TruncatedVerdict` |
+| `<LockedButton label icon onClick>`                  | Lock-icon button (PDF, Save) — opens UpgradeModal          | `paywall-components.jsx::LockedButton`     |
+| `<UpgradeModal open onClose feature>`                | Feature-specific upgrade modal (5 variants)                | `paywall-components.jsx::UpgradeModal`     |
+| `<HardLimitGate onClose monthlyLimit used resetsIn>` | Full-screen blocker on monthly limit                       | `paywall-components.jsx::HardLimitGate`    |
 
 ---
 
@@ -104,13 +104,13 @@ Location: `apps/web/src/components/paywall/`
 
 Location: `apps/web/src/components/states/`
 
-| Component | Purpose | Design source |
-|---|---|---|
-| `<BlockState tone icon eyebrow headline body primary secondary>` | Full-page error/gate state | `error-states.jsx::BlockState` |
-| `<StubState>` | Same pattern for auth landings | `auth-stubs.jsx::StubState` |
-| `<ProvinceGate submitted onSubmit>` | Non-Ontario waitlist | `error-states.jsx::ProvinceGateState` |
-| `<NoCompsInlineState>` | Inline low-confidence callout | `error-states.jsx::NoCompsInlineState` |
-| `<ScraperPartialInlineState>` | Inline "X of Y fields" + missing-field inputs | `error-states.jsx::ScraperPartialInlineState` |
+| Component                                                        | Purpose                                                                                              | Design source                                 |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `<BlockState tone icon eyebrow headline body primary secondary>` | Full-page error/gate state                                                                           | `error-states.jsx::BlockState`                |
+| `<StubState>`                                                    | Same pattern for auth landings                                                                       | `auth-stubs.jsx::StubState`                   |
+| `<ProvinceGate submitted onSubmit>`                              | Non-Ontario waitlist                                                                                 | `error-states.jsx::ProvinceGateState`         |
+| ~~`<NoCompsInlineState>`~~                                       | Removed 2026-09-13 — never mounted; `RentalCompsSection` renders its own empty state                 | `error-states.jsx::NoCompsInlineState`        |
+| ~~`<ScraperPartialInlineState>`~~                                | Removed 2026-09-13 — never mounted; the address form (`AddressDetailsCard`) is the manual-entry path | `error-states.jsx::ScraperPartialInlineState` |
 
 ---
 
@@ -118,36 +118,36 @@ Location: `apps/web/src/components/states/`
 
 Location: `apps/web/src/pages/` (Next-style) or `apps/web/src/routes/` (Tanstack/React Router)
 
-| Page | Route | Design source |
-|---|---|---|
-| Landing | `/` | `index.html` + `app.jsx` + `sections.jsx` |
-| URL paste (scraping screen) | `/analyzing` | `pre-report.jsx::ScrapingProgress` |
-| Manual entry fallback | `/analyzing/manual` | `pre-report.jsx::ManualEntry` |
-| Tenant report | `/r/[token]?mode=tenant` | `tenant-report.jsx` |
-| Investor report | `/r/[token]?mode=investor` | `investor-report.jsx` |
-| Personal buyer report | `/r/[token]?mode=personal` | `personal-report.jsx` |
-| Landlord report | `/r/[token]?mode=landlord` | `landlord-report.jsx` |
-| Account dashboard | `/account` (with `?view=saved\|profile\|plan\|notifications`) | `account-app.jsx` |
-| Privacy policy | `/privacy` | `legal.jsx` (with `pageKey="privacy"`) |
-| Terms of service | `/terms` | `legal.jsx` (with `pageKey="terms"`) |
-| 404 | `*` catch-all | `error-states.jsx::NotFoundState` |
-| Magic-link confirm | `/auth/confirm` | `auth-stubs.jsx::MagicLinkConfirmed` |
-| Password reset request | `/auth/reset` | `auth-stubs.jsx::PasswordResetRequest` |
-| Password reset confirm | `/auth/reset/confirm` | `auth-stubs.jsx::PasswordResetConfirm` |
-| Email verified | `/auth/verified` | `auth-stubs.jsx::EmailVerified` |
-| Stripe welcome | `/welcome-to-pro` | `auth-stubs.jsx::StripeWelcomePro` |
-| Stripe cancelled | `/checkout/cancelled` | `auth-stubs.jsx::StripeCancelled` |
+| Page                        | Route                                                         | Design source                             |
+| --------------------------- | ------------------------------------------------------------- | ----------------------------------------- |
+| Landing                     | `/`                                                           | `index.html` + `app.jsx` + `sections.jsx` |
+| URL paste (scraping screen) | `/analyzing`                                                  | `pre-report.jsx::ScrapingProgress`        |
+| Manual entry fallback       | `/analyzing/manual`                                           | `pre-report.jsx::ManualEntry`             |
+| Tenant report               | `/r/[token]?mode=tenant`                                      | `tenant-report.jsx`                       |
+| Investor report             | `/r/[token]?mode=investor`                                    | `investor-report.jsx`                     |
+| Personal buyer report       | `/r/[token]?mode=personal`                                    | `personal-report.jsx`                     |
+| Landlord report             | `/r/[token]?mode=landlord`                                    | `landlord-report.jsx`                     |
+| Account dashboard           | `/account` (with `?view=saved\|profile\|plan\|notifications`) | `account-app.jsx`                         |
+| Privacy policy              | `/privacy`                                                    | `legal.jsx` (with `pageKey="privacy"`)    |
+| Terms of service            | `/terms`                                                      | `legal.jsx` (with `pageKey="terms"`)      |
+| 404                         | `*` catch-all                                                 | `error-states.jsx::NotFoundState`         |
+| Magic-link confirm          | `/auth/confirm`                                               | `auth-stubs.jsx::MagicLinkConfirmed`      |
+| Password reset request      | `/auth/reset`                                                 | `auth-stubs.jsx::PasswordResetRequest`    |
+| Password reset confirm      | `/auth/reset/confirm`                                         | `auth-stubs.jsx::PasswordResetConfirm`    |
+| Email verified              | `/auth/verified`                                              | `auth-stubs.jsx::EmailVerified`           |
+| Stripe welcome              | `/welcome-to-pro`                                             | `auth-stubs.jsx::StripeWelcomePro`        |
+| Stripe cancelled            | `/checkout/cancelled`                                         | `auth-stubs.jsx::StripeCancelled`         |
 
 ---
 
 ## 🟦 9. Modals (mounted at app root, controlled by global state)
 
-| Component | Trigger | Design source |
-|---|---|---|
-| `<ModeModal open listing onSelect>` | After URL paste, before scraping | `mode-modal.jsx` |
-| `<SignInModal>` | "Sign in" / "Read full verdict" link clicks | `components.jsx::SignInModal` |
-| `<UpgradeModal>` | Free user clicks any locked Pro action | `paywall-components.jsx::UpgradeModal` |
-| `<HardLimitGate>` | Free user pastes 4th URL in a month | `paywall-components.jsx::HardLimitGate` |
+| Component                           | Trigger                                     | Design source                           |
+| ----------------------------------- | ------------------------------------------- | --------------------------------------- |
+| `<ModeModal open listing onSelect>` | After URL paste, before scraping            | `mode-modal.jsx`                        |
+| `<SignInModal>`                     | "Sign in" / "Read full verdict" link clicks | `components.jsx::SignInModal`           |
+| `<UpgradeModal>`                    | Free user clicks any locked Pro action      | `paywall-components.jsx::UpgradeModal`  |
+| `<HardLimitGate>`                   | Free user pastes 4th URL in a month         | `paywall-components.jsx::HardLimitGate` |
 
 ---
 
@@ -157,16 +157,16 @@ Location: `services/calc-engine/calculations/` per `CLAUDE.md`
 
 Every function in `investor-calc.jsx` is pure (no DOM, no React) and translates directly to Python:
 
-| JS function | Python equivalent | Calc engine file |
-|---|---|---|
-| `monthlyPayment(principal, rate, years)` | `monthly_payment(...)` | `mortgage.py` |
-| `remainingBalance(...)` | `remaining_balance(...)` | `mortgage.py` |
-| `ontarioLTT(price, isToronto)` | `ontario_ltt(price, is_toronto)` | `closing_costs.py` |
-| `osfiStressTest(input)` | `osfi_stress_test(...)` | `osfi.py` |
-| `computeMetrics(property, financing)` | `compute_metrics(...)` | `investment.py` |
-| `computeDealScore(metrics, property)` | `compute_deal_score(...)` | `deal_score.py` |
-| `closingCostsEstimate(price)` | `closing_costs_estimate(...)` | `closing_costs.py` |
-| `maintenanceRate(yearBuilt)` | `maintenance_rate(...)` | `investment.py` |
+| JS function                              | Python equivalent                | Calc engine file   |
+| ---------------------------------------- | -------------------------------- | ------------------ |
+| `monthlyPayment(principal, rate, years)` | `monthly_payment(...)`           | `mortgage.py`      |
+| `remainingBalance(...)`                  | `remaining_balance(...)`         | `mortgage.py`      |
+| `ontarioLTT(price, isToronto)`           | `ontario_ltt(price, is_toronto)` | `closing_costs.py` |
+| `osfiStressTest(input)`                  | `osfi_stress_test(...)`          | `osfi.py`          |
+| `computeMetrics(property, financing)`    | `compute_metrics(...)`           | `investment.py`    |
+| `computeDealScore(metrics, property)`    | `compute_deal_score(...)`        | `deal_score.py`    |
+| `closingCostsEstimate(price)`            | `closing_costs_estimate(...)`    | `closing_costs.py` |
+| `maintenanceRate(yearBuilt)`             | `maintenance_rate(...)`          | `investment.py`    |
 
 Run the regression tests from `CLAUDE.md` §12 to confirm the Python port produces identical outputs to the JS designs.
 

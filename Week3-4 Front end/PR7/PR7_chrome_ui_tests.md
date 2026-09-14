@@ -605,7 +605,7 @@ required); the email input field is no longer visible; confirmation text is show
 no console error
 | PASS | FAIL | NOTES |
 
-[ ] TC-PR7-086 CONDITIONAL — NoCompsInlineState visible in investor / landlord report
+[ ] TC-PR7-086 RETIRED (2026-09-13) — NoCompsInlineState was removed; the live comps section renders its own empty state
 Requires mock data with zero rental comps.
 Expected: If triggered, the NoCompsInlineState block is visible within the report
 with the "Low confidence" label and "limited rental comps" explanation text;
@@ -771,7 +771,7 @@ no `Cannot read properties of undefined` or React error in console
 | 11    | Navigation integrity          | 101–106 |      |      |         |
 | —     | **TOTAL**                     | **106** |      |      |         |
 
-**Tester:** ******\_\_\_\_****** **Date:** ******\_\_\_\_******
+**Tester:** **\*\***\_\_\_\_**\*\*** **Date:** **\*\***\_\_\_\_**\*\***
 
 **Overall result:** [ ] PASS — all 106 TCs pass [ ] FAIL — see NOTES above
 

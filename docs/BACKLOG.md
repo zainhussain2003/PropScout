@@ -64,7 +64,6 @@ Ordered by how much a user would notice.
 | **UI-03 — breadcrumbs**                                       | Slug vs label inconsistency across report navs; small.                                                                                                                                  |
 | **J-04 — split `LandingPage.tsx`**                            | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only.                                                                               |
 | **For-rent details form asks for condo fee and property tax** | A tenant does not pay them; a landlord does. Show them for the landlord path only (needs the mode earlier, or hide behind "I own this unit").                                           |
-| **Dead components**                                           | `NoCompsInlineState`, `ScraperPartialInlineState` are unused (and carry inert buttons). Delete or wire.                                                                                 |
 | **Bike Score and Walk Score source dates**                    | Persist response metadata and show "as of".                                                                                                                                             |
 
 ## 6. Paywall / pricing (lower priority per owner) **[code, after the decisions above]**
