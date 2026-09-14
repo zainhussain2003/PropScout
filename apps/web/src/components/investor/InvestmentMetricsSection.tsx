@@ -110,7 +110,7 @@ export function InvestmentMetricsSection({
       label: 'Break-even rent',
       value: fmtMoney(metrics.breakEvenRent),
       sub: 'to cover all costs',
-      plainEnglish: `The rent you would need to stop losing money. The market pays about ${fmtMoney(listing.rentEstimate)}, so you are ${metrics.breakEvenRent > listing.rentEstimate ? `${fmtMoney(metrics.breakEvenRent - listing.rentEstimate)} short` : 'clear of it'}.`,
+      plainEnglish: `The rent you would need to stop losing money. ${listing.rentIsProxy ? `No comparable rentals were found, so this assumes ${fmtMoney(listing.rentEstimate)} (0.5% of the price)` : `The market pays about ${fmtMoney(listing.rentEstimate)}`}, so you are ${metrics.breakEvenRent > listing.rentEstimate ? `${fmtMoney(metrics.breakEvenRent - listing.rentEstimate)} short` : 'clear of it'}.`,
       status: metrics.breakEvenRent <= listing.rentEstimate ? 'pass' : 'fail',
     },
     {

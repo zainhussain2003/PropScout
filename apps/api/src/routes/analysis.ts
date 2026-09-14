@@ -237,7 +237,11 @@ export function toSunScout(py: PySunScout | null | undefined): Analysis['sunScou
 function toMetrics(
   py: PyInvestmentMetrics,
   annualTaxesUsed: number,
-  annualTaxesEstimated: boolean
+  annualTaxesEstimated: boolean,
+  rent: { rentUsedMonthly: number; rentIsProxy: boolean } = {
+    rentUsedMonthly: 0,
+    rentIsProxy: false,
+  }
 ): InvestmentMetrics {
   return {
     cashFlowMonthly: py.cash_flow_monthly,
@@ -261,6 +265,8 @@ function toMetrics(
     lttMunicipal: py.ltt_municipal,
     annualTaxesUsed,
     annualTaxesEstimated,
+    rentUsedMonthly: rent.rentUsedMonthly,
+    rentIsProxy: rent.rentIsProxy,
     hasSanityWarnings: py.has_sanity_warnings,
   }
 }
@@ -732,7 +738,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           metrics: toMetrics(
             pyData.metrics,
             annualTaxesForCalc,
-            listing.annualTaxes == null || listing.annualTaxes <= 0
+            listing.annualTaxes == null || listing.annualTaxes <= 0,
+            // The rent behind every rent-dependent figure, and whether it was
+            // a proxy — the report used to print "the market pays about $0"
+            // on a no-comps sale listing (D-101).
+            { rentUsedMonthly: rentalForCalc.mid, rentIsProxy: midIsSalePriceProxy }
           ),
           dealScore: toDealScore(pyData.deal_score),
           rentalComps: comps

@@ -133,7 +133,11 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     // Comps mid when available; otherwise the listing's own asking rent —
     // the hero once rendered "Asking rent $0/mo" on a $2,650 rental because
     // comps were null (live 2026-07-02).
-    rentEstimate: analysis.rentalComps?.mid ?? listing.rentMonthly ?? 0,
+    // …and on a no-comps SALE listing, the proxy the engine scored with —
+    // otherwise the break-even copy read "the market pays about $0" (D-101).
+    rentEstimate:
+      analysis.rentalComps?.mid ?? listing.rentMonthly ?? analysis.metrics?.rentUsedMonthly ?? 0,
+    rentIsProxy: analysis.metrics?.rentIsProxy === true,
     rentLow: analysis.rentalComps?.low ?? 0,
     rentHigh: analysis.rentalComps?.high ?? 0,
     compCount: analysis.rentalComps?.compCount ?? 0,
@@ -666,7 +670,11 @@ function InvestorReportContent({
           />
         </>
       )}
-      <RentalCompsSection comps={analysis.rentalComps} askingRent={listingData.rentEstimate} />
+      <RentalCompsSection
+        comps={analysis.rentalComps}
+        askingRent={listingData.rentEstimate}
+        rentIsProxy={listingData.rentIsProxy}
+      />
       {listingData.price > 0 && (
         <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
       )}

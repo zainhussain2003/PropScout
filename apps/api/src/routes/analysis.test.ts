@@ -279,6 +279,19 @@ describe('POST / — analysis orchestrator', () => {
     expect(ledger.map((e) => e.key)).not.toContain('insurance')
   })
 
+  it('records the rent the engine scored with, and that it was a proxy when no comps and no listed rent (D-101)', async () => {
+    // The default fixture: a sale listing, comps mocked to null → price × 0.5%.
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    const m = (res.json() as { analysis: Analysis }).analysis.metrics!
+    expect(m.rentIsProxy).toBe(true)
+    expect(m.rentUsedMonthly).toBe(Math.round(LISTING_FIXTURE.price! * 0.005))
+  })
+
   it('forwards the per-city CMHC vacancy rate to the calc engine payload', async () => {
     await app.inject({
       method: 'POST',

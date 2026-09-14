@@ -85,6 +85,14 @@ export interface InvestmentMetrics {
   annualTaxesUsed?: number
   /** Whether annualTaxesUsed came from the city-rate fallback. */
   annualTaxesEstimated?: boolean
+  /**
+   * The monthly rent the engine actually scored with (D-101). With comps it
+   * is the comps mid; without, the listing's own rent or the price-based
+   * proxy. Optional on analyses saved before this shipped.
+   */
+  rentUsedMonthly?: number
+  /** True when rentUsedMonthly is the ~6% gross-yield proxy — no comps, no listed rent. */
+  rentIsProxy?: boolean
 
   // Sanity
   hasSanityWarnings: boolean
@@ -490,7 +498,9 @@ export interface ListingData {
   /** False when annualTaxes is a conservative estimate rather than a listing fact. */
   annualTaxesKnown?: boolean
   condoFeeMonthly: number
-  rentEstimate: number // mid rent estimate from comps
+  rentEstimate: number // mid rent estimate from comps, else the rent the engine scored with
+  /** True when rentEstimate is the price-based proxy — no comps, no listed rent (D-101). */
+  rentIsProxy?: boolean
   rentLow: number
   rentHigh: number
   compCount: number

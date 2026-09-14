@@ -405,6 +405,27 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(document.querySelector('section[data-section="12"]')).toBeNull()
   })
 
+  it('a no-comps sale report keeps §03 and names the proxy rent instead of "the market pays about $0" (D-101)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        riskFlags: [],
+        rentalComps: null,
+        metrics: { ...INVESTOR_ANALYSIS.metrics!, rentUsedMonthly: 3650, rentIsProxy: true },
+      },
+      listing: { ...LISTING, rentMonthly: null },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByText(/No comparable rentals found/i)).toBeInTheDocument()
+    expect(document.querySelector('section[data-section="03"]')).not.toBeNull()
+    expect(
+      screen.getByText(/assumes \$3,650\/mo, which is 0\.5% of the asking price/i)
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/market pays about \$0/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/so this assumes \$3,650/i)).toBeInTheDocument()
+  })
+
   it('feeds real risk flags into the HomeScore risk component (standard red → 5/10)', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: {

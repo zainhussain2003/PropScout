@@ -71,7 +71,9 @@ planned rows (portfolio tracker, white-label PDF, bulk analysis, seats, API acce
 
 Not yet done: Stripe checkout end to end (blocked on price IDs); **landlord mode on production**
 (blocked on L-03); PDF export on production (needs a Pro account); mobile on a real device;
-scraper-fail and non-Ontario error states live; rural comps.
+scraper-fail state live (needs a listing Realtor.ca will not serve).
+
+Verified live on 2026-09-14: non-Ontario address → province gate; US URL → "not a usable link"; rural address (Bancroft) → proxy rent, estimated tax and default vacancy all labelled, and §03 now stays with a finding (D-101).
 
 Verified live on 2026-09-12 and not needing a repeat: address path, Realtor.ca scrape, investor /
 tenant / personal reports with independent recomputation, magic-link sign-in, attribution,
