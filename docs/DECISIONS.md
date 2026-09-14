@@ -3248,6 +3248,25 @@ carries every fact the report uses; putting the flag there closes the row withou
 | Add `beds_known` columns to `listings` | Needs the migration gate; the snapshot is what renders, and it is JSON.    |
 | Treat 0 from the scraper as a studio   | Rows stored before the flag hold 0 for "absent"; the flag is the evidence. |
 
+### D-093 · The landing page is composed from one-file sections
+
+**Chosen.** `pages/LandingPage.tsx` (3,085 lines) is now 86 lines that compose
+`components/landing/*` — one component per file, as the coding standard already required:
+`Hero`, `ReportShowcase`, `HeroStaticMap`, `ReportsSection` (+ `ModePreview`, `ModeStatTiles`),
+`HowSection`, `CoverageSection`, `FounderNoteSection`, `LandingSunScoutSection`,
+`PricingSection`, `FAQSection`, `CTASection`, `SectionHeader`, the six `Showcase*` visuals,
+`sampleListings.ts` and `landingHelpers.ts`. Pure extraction: no markup, copy or behaviour
+changed; the landing and theme tests pass unchanged. The static SunScout section is renamed
+`LandingSunScoutSection` so it cannot be confused with `sunscout/SunScoutPanel`.
+
+**Why.** Audit J-04: one file carried the input orchestration, the demo visuals, the pricing
+logic and the FAQ, and every landing change went through a 3,000-line diff.
+
+| Option                       | Why not                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| Fewer, larger files          | The standard is one component per file; the showcase visuals are separate things. |
+| Move sections under `pages/` | They are components, not routes.                                                  |
+
 ### D-094 · `/health` says which commit is running
 
 **Chosen.** The API and the calc engine echo `RAILWAY_GIT_COMMIT_SHA` (as `commit` and a

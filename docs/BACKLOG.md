@@ -55,9 +55,8 @@
 
 Ordered by how much a user would notice.
 
-| Item                               | Notes                                                                                                     |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
+| Item | Notes |
+| ---- | ----- |
 
 ## 6. Paywall / pricing (lower priority per owner)
 
