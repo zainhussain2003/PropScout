@@ -58,7 +58,6 @@
 Ordered by how much a user would notice.
 
 | Item | Notes |
-| **Sun obstruction coverage threshold** | Coverage is shown ("24 more had no height on record"); below some coverage the score should be marked indicative rather than definitive. |
 | **Assumption ledger ("every number has a source")** | The landing methodology claim is not true of the constants (insurance 0.35%, maintenance 1.5%, closing $2,400, CMHC map). Either build the per-row source/date badge or drop the claim. |
 | **UI-03 — breadcrumbs** | Slug vs label inconsistency across report navs; small. |
 | **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |

@@ -3078,3 +3078,23 @@ it; the ownership question is the earliest point at which the fields make sense.
 | Ask the mode before the form        | Reorders the whole funnel (spec §5) to save one checkbox.                   |
 | Hide the fields on for-rent, always | A landlord's report needs them; hiding them for everyone loses real inputs. |
 | Keep the fields, reword the hints   | Still asks a renter for numbers they do not have.                           |
+
+### D-085 · Obstruction shade from a minority of the skyline is "indicative", not "checked"
+
+**Chosen.** `lib/sunCoverage.ts` computes coverage = buildings with a known height ÷ all nearby
+buildings. Below `SUN_OBSTRUCTION_COVERAGE.INDICATIVE` (0.5) the SunScout panel's eyebrow reads
+"Real surroundings · indicative" instead of "· checked", and the footnote says "Only 2 of 30
+nearby buildings had a height on record … treat the shade figure as indicative". The hours
+figure is still shown; it is still a floor. No change to the score or the engine.
+
+**Why.** Audit counter-review: coverage was disclosed ("13 more had no height on record") but
+nothing drew a line, so a result built from 2 measured buildings out of 30 carried the same
+"checked" label and the same confident hours figure as one built from 17 of 20. The threshold is
+a starting point; the surroundings dataset has no ground truth to calibrate it against yet, which
+is why it lives in `constants/thresholds.ts` with that note.
+
+| Option                                          | Why not                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Hide the obstruction result below the threshold | It is still true as a floor; hiding it loses information the footnote can qualify.               |
+| Discount the score below the threshold          | A score change is an engine decision (spec §17) and needs calibration data first.                |
+| Threshold on absolute count instead of share    | 2 of 2 is full coverage of a quiet street; 2 of 30 is not — the share is what the caveat is for. |
