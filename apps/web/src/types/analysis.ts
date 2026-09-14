@@ -181,6 +181,11 @@ export interface NearbySchool {
   eqaoScore: number | null // 0–10 (EQAO)
   fraserRankPct: number | null // 0–100 percentile (Fraser Institute)
   graduationRate: number | null // 0–1, high schools only
+  /** School coordinates (public data) — what the walk time is routed to. */
+  lat?: number | null
+  lng?: number | null
+  /** Walking minutes on the footpath network (Mapbox Directions); null/absent when not routed (D-100). */
+  walkMin?: number | null
 }
 
 /**

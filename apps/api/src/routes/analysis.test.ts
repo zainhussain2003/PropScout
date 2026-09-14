@@ -16,7 +16,7 @@
 
 import Fastify, { type FastifyInstance } from 'fastify'
 import analysisRoutes from './analysis'
-import type { Analysis } from '../types/analysis'
+import type { Analysis, SchoolsResult } from '../types/analysis'
 import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
 
@@ -864,10 +864,20 @@ describe('POST / - schools wiring', () => {
 
     expect(mockGetNearbySchools).toHaveBeenCalledWith(43.7942, -79.5268)
     const body = res.json() as { analysis: Analysis }
-    expect(body.analysis.schools).toEqual(SCHOOLS_FIXTURE)
+    // Walk times are routed on top (D-100); with no coordinates on the
+    // fixture they are null, and the rest of the school is untouched.
+    const strip = (r: SchoolsResult | null | undefined): unknown =>
+      r && {
+        ...r,
+        elementary: r.elementary.map(({ walkMin: _w, ...x }) => x),
+        middle: r.middle.map(({ walkMin: _w, ...x }) => x),
+        high: r.high.map(({ walkMin: _w, ...x }) => x),
+      }
+    expect(strip(body.analysis.schools)).toEqual(SCHOOLS_FIXTURE)
+    expect(body.analysis.schools?.elementary[0]?.walkMin).toBeNull()
     // Persisted with the analysis so /r/:token reads it back
     const saved = mockSaveAnalysis.mock.calls[0]![1]
-    expect(saved.schools).toEqual(SCHOOLS_FIXTURE)
+    expect(strip(saved.schools)).toEqual(SCHOOLS_FIXTURE)
   })
 
   it('schools stays null when the table is empty (data pending, not an error)', async () => {

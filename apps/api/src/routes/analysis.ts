@@ -56,6 +56,7 @@ import {
 } from '../constants/valuation'
 import { estimateValueFromRent } from '../constants/marketCapRates'
 import { applyValidationErrorHandler, analysisTriggerBody } from '../lib/requestSchemas'
+import { withSchoolWalkTimes } from '../lib/schoolWalkTimes'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -592,6 +593,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         if (coords) {
           try {
             schools = (await getNearbySchools(coords.lat, coords.lng)) ?? null
+            // Walking times on the footpath network (D-100); a silent router
+            // leaves them null and the report shows the labelled estimate.
+            if (schools) schools = await withSchoolWalkTimes(schools, coords)
           } catch {
             schools = null
           }

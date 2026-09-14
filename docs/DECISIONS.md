@@ -3344,3 +3344,14 @@ recomputed for it". An analysis with a sun model gets the assumed row from the s
 **Why.** Roadmap "SunScout: label inferred vs confirmed". The recalc already persisted the
 figures but not the facade, so a reload showed west-facing numbers under a select that read
 "South" — the stored result contradicted its own label.
+
+### D-100 · School walk times are routed; the straight-line estimate says it is one
+
+**Chosen.** `lib/schoolWalkTimes.withSchoolWalkTimes` routes a walking time (Mapbox Directions)
+to each of the up-to-nine nearby schools and stores `walkMin` on the school; the tenant schools
+section shows "9 min walk" when routed and "~7 min walk, straight-line estimate" when not; the
+personal schools card shows the routed walk time and nothing otherwise. School coordinates
+(public data) now ride on the school object so the routing can happen.
+
+**Why.** Roadmap "Schools: pedestrian routing"; same class as D-096 — a fixed pace over a
+straight line was printed as "~14 min walk" with nothing to say it was a formula.
