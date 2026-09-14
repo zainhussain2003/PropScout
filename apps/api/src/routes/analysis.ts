@@ -744,6 +744,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
                 confidence: comps.confidence,
                 postalCode: listing.postalCode,
                 radiusKm: comps.radiusKm,
+                rows: comps.rows,
               }
             : null,
           riskFlags: resolvedFlags,

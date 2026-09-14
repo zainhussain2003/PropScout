@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Analysis, ReportMode, SchoolsResult, NearbySchool } from '../types/analysis'
+import type { Analysis, ReportMode, SchoolsResult, NearbySchool, CompRow } from '../types/analysis'
 import type { Listing } from '../types/property'
 import { FREE_TIER } from '../constants/tiers'
 import { startOfCurrentMonth } from '../lib/billingMonth'
@@ -224,6 +224,62 @@ function percentile(sorted: number[], p: number): number {
 /**
  * Remove outliers using the 1.5× IQR rule.
  */
+/** Raw comp columns the report needs (D-099). */
+interface CompSourceRow {
+  rent_monthly: number
+  beds?: number | null
+  sqft?: number | null
+  postal_code?: string | null
+  source?: string | null
+  scraped_at?: string | null
+  lat?: number | null
+  lng?: number | null
+}
+
+const COMP_SELECT = 'rent_monthly, beds, sqft, postal_code, source, scraped_at, lat, lng'
+
+/** How many individual comps the report shows. */
+export const COMP_ROWS_MAX = 12
+
+/**
+ * Sanitised rows for the report: the rows that survived outlier removal,
+ * nearest first when distances are known, cheapest first otherwise. No
+ * address or URL leaves the API (D-099).
+ */
+function toCompRows(
+  rows: CompSourceRow[],
+  keptRents: number[],
+  subject: { lat: number; lng: number } | null
+): CompRow[] {
+  // removeOutliers returns values, not rows: keep each surviving rent once.
+  const budget = new Map<number, number>()
+  for (const r of keptRents) budget.set(r, (budget.get(r) ?? 0) + 1)
+  const out: CompRow[] = []
+  for (const r of rows) {
+    const left = budget.get(r.rent_monthly) ?? 0
+    if (left <= 0) continue
+    budget.set(r.rent_monthly, left - 1)
+    const hasLoc = subject != null && r.lat != null && r.lng != null
+    out.push({
+      rentMonthly: r.rent_monthly,
+      beds: r.beds ?? null,
+      sqft: r.sqft ?? null,
+      fsa: r.postal_code ? r.postal_code.slice(0, 3).toUpperCase() : null,
+      source: r.source ?? 'unknown',
+      seenAt: r.scraped_at ?? null,
+      distanceKm: hasLoc
+        ? Number(haversineKm(subject.lat, subject.lng, r.lat as number, r.lng as number).toFixed(2))
+        : null,
+    })
+  }
+  out.sort((a, b) =>
+    a.distanceKm != null && b.distanceKm != null
+      ? a.distanceKm - b.distanceKm
+      : a.rentMonthly - b.rentMonthly
+  )
+  return out.slice(0, COMP_ROWS_MAX)
+}
+
 function removeOutliers(values: number[]): number[] {
   if (values.length < 4) return values
   const sorted = [...values].sort((a, b) => a - b)
@@ -418,6 +474,8 @@ export async function fetchRentalComps(
   confidence: 'low' | 'medium' | 'high'
   /** Search radius used, in km. Null when the comps are from the same FSA. */
   radiusKm: number | null
+  /** The comps behind the band, sanitised (D-099). */
+  rows: CompRow[]
 } | null> {
   const fsa = postalCode.trim().toUpperCase().slice(0, 3)
   const now = new Date()
@@ -431,7 +489,7 @@ export async function fetchRentalComps(
     for (const { exact } of bedFilters) {
       let query = db()
         .from('rental_listings')
-        .select('rent_monthly')
+        .select(COMP_SELECT)
         .gte('scraped_at', cutoff)
         .ilike('postal_code', `${fsa}%`)
 
@@ -450,9 +508,8 @@ export async function fetchRentalComps(
         return null
       }
 
-      const rents = (data as Array<{ rent_monthly: number }>)
-        .map((r) => r.rent_monthly)
-        .filter((v) => v > 0)
+      const sourceRows = ((data ?? []) as CompSourceRow[]).filter((r) => r.rent_monthly > 0)
+      const rents = sourceRows.map((r) => r.rent_monthly)
 
       if (rents.length < 3) {
         // Try next fallback (wider beds or wider date window)
@@ -480,7 +537,15 @@ export async function fetchRentalComps(
         confidence = 'low'
       }
 
-      return { low, mid, high, compCount, confidence, radiusKm: null }
+      return {
+        low,
+        mid,
+        high,
+        compCount,
+        confidence,
+        radiusKm: null,
+        rows: toCompRows(sourceRows, cleaned, coords ?? null),
+      }
     }
   }
 
@@ -521,6 +586,7 @@ async function fetchRentalCompsByRadius(
   compCount: number
   confidence: 'low' | 'medium' | 'high'
   radiusKm: number
+  rows: CompRow[]
 } | null> {
   const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -532,7 +598,7 @@ async function fetchRentalCompsByRadius(
 
     let query = db()
       .from('rental_listings')
-      .select('rent_monthly, lat, lng')
+      .select(COMP_SELECT)
       .gte('scraped_at', cutoff)
       .gte('lat', coords.lat - dLat)
       .lte('lat', coords.lat + dLat)
@@ -550,21 +616,16 @@ async function fetchRentalCompsByRadius(
       return null
     }
 
-    const rows = (data ?? []) as Array<{
-      rent_monthly: number
-      lat: number | null
-      lng: number | null
-    }>
+    const rows = (data ?? []) as CompSourceRow[]
 
-    const rents = rows
-      .filter(
-        (r) =>
-          r.lat != null &&
-          r.lng != null &&
-          haversineKm(coords.lat, coords.lng, r.lat, r.lng) <= radiusKm
-      )
-      .map((r) => r.rent_monthly)
-      .filter((v) => v > 0)
+    const inRadius = rows.filter(
+      (r) =>
+        r.rent_monthly > 0 &&
+        r.lat != null &&
+        r.lng != null &&
+        haversineKm(coords.lat, coords.lng, r.lat, r.lng) <= radiusKm
+    )
+    const rents = inRadius.map((r) => r.rent_monthly)
 
     if (rents.length < 3) continue
 
@@ -586,6 +647,7 @@ async function fetchRentalCompsByRadius(
       compCount: cleaned.length,
       confidence,
       radiusKm,
+      rows: toCompRows(inRadius, cleaned, coords),
     }
   }
 

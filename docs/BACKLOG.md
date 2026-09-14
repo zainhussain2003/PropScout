@@ -81,7 +81,9 @@ rate, Toronto LTT, real maps, schools, SunScout obstruction, 60-comp rent band.
 
 From the four per-report audits' "field to work on" columns, grouped. None started.
 
-- **Comparables:** return sanitized individual comp rows (source, date, location, beds, sqft,
+- **Comparables:** individual comp rows shipped (#79, D-099 — rent, beds, sqft, FSA, distance,
+  source, seen date; no address). Still to do: map them; weight by building/type/size/recency;
+  and the original wording — return sanitized individual comp rows (source, date, location, beds, sqft,
   distance, similarity) for rent; map them; weight by building/type/size/recency; licensed Ontario
   sold-sales feed for personal FMV (blocked on a provider decision).
 - **Provenance:** field-level badges (listing says / you entered / calculated / assumed as of),

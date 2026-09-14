@@ -3345,6 +3345,26 @@ recomputed for it". An analysis with a sun model gets the assumed row from the s
 figures but not the facade, so a reload showed west-facing numbers under a select that read
 "South" — the stored result contradicted its own label.
 
+### D-099 · The comps behind the rent band are shown, sanitised
+
+**Chosen.** `fetchRentalComps` returns `rows` — the comparable rentals that survived outlier
+removal, capped at 12, nearest first when the search used a radius and cheapest first otherwise —
+with rent, beds, sqft, FSA, straight-line distance, source site and the date the scraper last saw
+the listing. No address and no URL leave the API. Stored with the analysis
+(`rentalComps.rows`); `CompRowsTable` renders them under the investor/landlord §03 band and the
+tenant §01 band, with "Showing 12 of 30" when capped and "asking rents as scraped, not signed
+leases; addresses are not republished". Fixtures and older analyses carry no rows and show no
+table.
+
+**Why.** Roadmap "Comparables: individual comp rows". A band was a number with no way to judge
+it; the rows are the evidence. Addresses are withheld because the scraped listings are the
+source sites' content to publish, and the FSA + distance + size say everything a reader needs.
+
+| Option                   | Why not                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| Show addresses and links | Republishes scraped listings; not ours to publish.                           |
+| All rows, uncapped       | 60-row tables on a phone; 12 nearest/cheapest are the evidence that matters. |
+
 ### D-100 · School walk times are routed; the straight-line estimate says it is one
 
 **Chosen.** `lib/schoolWalkTimes.withSchoolWalkTimes` routes a walking time (Mapbox Directions)
