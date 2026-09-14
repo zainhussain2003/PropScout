@@ -181,6 +181,32 @@ class HoldCaseOutput(BaseModel):
     break_even_annual_rate: float
 
 
+class AssumptionsAppliedOutput(BaseModel):
+    """
+    Every default the engine applied to this analysis, echoed back so the
+    report can show a ledger of sources (docs/DECISIONS.md D-088). The API
+    must never restate engine constants from its own copy — this is the
+    record of what actually ran.
+    """
+
+    vacancy_allowance: float
+    management_fee: float
+    management_fee_included: bool
+    insurance_rate: float
+    maintenance_rate: float
+    # "post_2010" | "1980_2010" | "pre_1980" | "year_unknown"
+    maintenance_basis: str
+    legal_fees: float
+    title_insurance: float
+    home_inspection: float
+    down_payment_pct: float
+    mortgage_rate: float
+    amortization_years: int
+    cmhc_vacancy_rate: float
+    # False when the API sent none and the engine's own default scored demand.
+    cmhc_vacancy_rate_supplied: bool
+
+
 class AnalysisOutput(BaseModel):
     """Full analysis result returned to the Fastify API."""
 
@@ -191,3 +217,5 @@ class AnalysisOutput(BaseModel):
     sun_scout: SunScoutOutput | None = None
     # Defaults to empty so an older stored analysis deserialises unchanged.
     hold_case: list[HoldCaseOutput] = []
+    # None only for analyses stored before the ledger shipped.
+    assumptions: AssumptionsAppliedOutput | None = None

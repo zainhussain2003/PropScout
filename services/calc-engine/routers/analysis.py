@@ -20,10 +20,20 @@ from models.schemas import (
     SunScoutRequest,
     SunScoutResponse,
     HoldCaseOutput,
+    AssumptionsAppliedOutput,
 )
 from sunscout.obstruction import build_profile, infer_floor_from_address
 from sunscout.sun_path import calculate_sun_hours
-from constants.rates import get_maintenance_rate
+from constants.rates import (
+    get_maintenance_rate,
+    get_maintenance_basis,
+    VACANCY_ALLOWANCE,
+    MANAGEMENT_FEE,
+    INSURANCE_RATE,
+    LEGAL_FEES,
+    TITLE_INSURANCE,
+    HOME_INSPECTION,
+)
 from calculations.mortgage import calculate_monthly_payment
 from calculations.closing_costs import estimate_closing_costs
 from calculations.investment import (
@@ -469,6 +479,24 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         for f in merged_flags
     ]
 
+    # What actually ran — the ledger's source of truth for engine defaults.
+    assumptions = AssumptionsAppliedOutput(
+        vacancy_allowance=VACANCY_ALLOWANCE,
+        management_fee=MANAGEMENT_FEE,
+        management_fee_included=fin.include_management_fee,
+        insurance_rate=INSURANCE_RATE,
+        maintenance_rate=maintenance_rate,
+        maintenance_basis=get_maintenance_basis(prop.year_built),
+        legal_fees=LEGAL_FEES,
+        title_insurance=TITLE_INSURANCE,
+        home_inspection=HOME_INSPECTION,
+        down_payment_pct=fin.down_payment_pct,
+        mortgage_rate=fin.mortgage_rate,
+        amortization_years=fin.amortization_years,
+        cmhc_vacancy_rate=vacancy_rate,
+        cmhc_vacancy_rate_supplied=body.cmhc_vacancy_rate is not None,
+    )
+
     return AnalysisOutput(
         metrics=metrics,
         deal_score=deal_score,
@@ -476,4 +504,5 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         has_sanity_warnings=has_sanity_warnings,
         sun_scout=sun_scout_result,
         hold_case=[HoldCaseOutput(**row) for row in hold_case],
+        assumptions=assumptions,
     )

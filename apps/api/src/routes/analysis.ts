@@ -41,7 +41,8 @@ import { getWalkScore } from '../services/walkScoreService'
 import { getNearbyDistances } from '../services/googlePlacesService'
 import { getNeighbourhoodStats } from '../services/statsCanService'
 import { getComparableSalesWithProvenance } from '../services/comparableSalesService'
-import { getVacancyRateByCity } from '../services/cmhcService'
+import { getVacancyRateByCity, hasVacancyRateForCity } from '../services/cmhcService'
+import { buildAssumptionLedger, type EngineAssumptions } from '../lib/assumptionLedger'
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
 import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
@@ -182,6 +183,8 @@ interface PyAnalysisOutput {
   sun_scout?: PySunScout | null
   /** Optional so an analysis stored before the hold case shipped still parses. */
   hold_case?: PyHoldCaseRow[] | null
+  /** What the engine applied (D-088); absent from an older engine build. */
+  assumptions?: EngineAssumptions | null
 }
 
 // ── snake_case → camelCase output transforms ──────────────────────────────────
@@ -673,11 +676,37 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         const narrative = await generateNarrative(narrativeInput)
 
         // Step 9 — assemble Analysis object
+        const createdAt = new Date().toISOString()
+        const assumptions = buildAssumptionLedger({
+          mode,
+          createdAt,
+          listing: {
+            city: listing.city,
+            price: listing.price,
+            rentMonthly: listing.rentMonthly,
+            annualTaxes: listing.annualTaxes,
+            condoFeeMonthly: listing.condoFeeMonthly,
+            condoFeeKnown: listing.condoFeeKnown,
+            yearBuilt: listing.yearBuilt,
+          },
+          engine: pyData.assumptions ?? null,
+          rate: liveRate
+            ? { rate: liveRate.rate, source: liveRate.source, fetchedAt: liveRate.fetchedAt }
+            : null,
+          comps: comps
+            ? { compCount: comps.compCount, radiusKm: comps.radiusKm, confidence: comps.confidence }
+            : null,
+          rentMid: rentalForCalc.mid,
+          priceEstimated: listing.price == null,
+          annualTaxesUsed: annualTaxesForCalc,
+          annualTaxesEstimated: listing.annualTaxes == null || listing.annualTaxes <= 0,
+          cmhcCityMatched: hasVacancyRateForCity(listing.city),
+        })
         const analysis: Analysis = {
           id: token,
           token,
           mode,
-          createdAt: new Date().toISOString(),
+          createdAt,
           metrics: toMetrics(
             pyData.metrics,
             annualTaxesForCalc,
@@ -705,6 +734,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           comparableSalesAreSample,
           sunScout: toSunScout(pyData.sun_scout),
           holdCase: toHoldCase(pyData.hold_case),
+          assumptions,
           coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
           schools,
           hasSanityWarnings: pyData.has_sanity_warnings,

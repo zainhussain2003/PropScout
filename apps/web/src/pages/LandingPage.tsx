@@ -2203,11 +2203,12 @@ function CoverageSection(): JSX.Element {
       <div className="col gap-32">
         <SectionHeader
           tag="Inside the report"
-          title={<>Every number in the report has a source, a date, and a method.</>}
+          title={<>Every assumption in the report is listed with its source, date, and method.</>}
         >
           Rental comps scraped nightly from Rentals.ca, Kijiji, and PadMapper. Rates from the Bank
-          of Canada feed. Schools from EQAO and Fraser Institute. Walkability from Walk Score. When
-          a number is low-confidence, the report says so instead of guessing.
+          of Canada feed. Schools from EQAO. Walkability from Walk Score. The last section of every
+          report is a ledger of what the numbers rest on — and when one is a PropScout default with
+          no source behind it, it says so.
         </SectionHeader>
 
         <div

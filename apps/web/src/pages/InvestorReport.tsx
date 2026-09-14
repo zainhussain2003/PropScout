@@ -35,6 +35,7 @@ import {
   HAMILTON_LISTING,
   HAMILTON_RENTAL,
   HAMILTON_NEIGHBOURHOOD,
+  demoAssumptions,
 } from '../constants/demoData'
 import type { Analysis, ListingData, NeighbourhoodData } from '../types/analysis'
 import type { RentalInput } from '../types/api'
@@ -54,6 +55,7 @@ import { OSFISection } from '../components/investor/OSFISection'
 import { RiskFlagsSection } from '../components/investor/RiskFlagsSection'
 import { EquitySection } from '../components/investor/EquitySection'
 import { DueDiligenceSection } from '../components/investor/DueDiligenceSection'
+import { AssumptionLedgerSection } from '../components/investor/AssumptionLedgerSection'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
@@ -388,6 +390,14 @@ export function InvestorReport({
 
             {/* ── §11 Due diligence ──────────────────────────────────── */}
             <DueDiligenceSection />
+
+            {/* ── §12 Sources — the assumption ledger (D-088) ─────────── */}
+            <AssumptionLedgerSection
+              entries={
+                realAnalysis ? realAnalysis.assumptions : demoAssumptions(listing, demoData.rental)
+              }
+              sectionNumber="12"
+            />
           </>
         )}
       </main>

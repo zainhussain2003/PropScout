@@ -93,7 +93,7 @@ not a defect.
 | "Any Canadian listing URL"              | ✅     | #57                                                                               |
 | Zillow.ca supported                     | ✅     | #57                                                                               |
 | Under 60 seconds every time             | ✅     | #57                                                                               |
-| Every number has a source, date, method | ⬜     | Assumption ledger — BACKLOG                                                       |
+| Every number has a source, date, method | ✅     | #68 D-088 — ledger section on every live report; landing claim reworded to match  |
 | Comparable sales for personal buyers    | ✅     | Copy #57; score paused with reason (live)                                         |
 | School catchments                       | ✅     | #57                                                                               |
 | SunScout obstruction / 3D               | 🟡     | Obstruction is live for everyone; "3D" wording — paywall BACKLOG                  |

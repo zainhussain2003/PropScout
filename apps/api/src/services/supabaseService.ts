@@ -155,6 +155,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     dealScore?: Analysis['dealScore']
     sunScout?: Analysis['sunScout']
     holdCase?: Analysis['holdCase']
+    assumptions?: Analysis['assumptions']
     walkScore?: Analysis['walkScore']
     coordinates?: Analysis['coordinates']
     schools?: Analysis['schools']
@@ -191,6 +192,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     neighbourhood: null,
     sunScout: marketData?.sunScout ?? null,
     holdCase: marketData?.holdCase ?? null,
+    assumptions: marketData?.assumptions ?? null,
     coordinates: marketData?.coordinates ?? null,
     schools: marketData?.schools ?? null,
     nearbyDistances: marketData?.nearbyDistances ?? null,
@@ -289,6 +291,7 @@ export async function saveAnalysis(
         dealScore: analysis.dealScore,
         sunScout: analysis.sunScout,
         holdCase: analysis.holdCase ?? null,
+        assumptions: analysis.assumptions ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,
@@ -1104,6 +1107,7 @@ export async function updateAnalysisByToken(
         dealScore: analysis.dealScore,
         sunScout: analysis.sunScout,
         holdCase: analysis.holdCase ?? null,
+        assumptions: analysis.assumptions ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,

@@ -15,6 +15,12 @@ import { CMHC_VACANCY_RATES_BY_CITY, DEFAULT_VACANCY_RATE } from '../constants/c
  * Look up the vacancy rate for a given city. Case-insensitive.
  * Falls back to DEFAULT_VACANCY_RATE when the city isn't in the table.
  */
+/** Whether the city has its own row in the CMHC table (else the default applies). */
+export function hasVacancyRateForCity(city: string | null | undefined): boolean {
+  if (!city) return false
+  return CMHC_VACANCY_RATES_BY_CITY[city.trim().toLowerCase()] != null
+}
+
 export function getVacancyRateByCity(city: string | null | undefined): number {
   if (!city) return DEFAULT_VACANCY_RATE
   const normalized = city.trim().toLowerCase()

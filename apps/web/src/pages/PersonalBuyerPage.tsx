@@ -65,6 +65,7 @@ import type {
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
 import { useTheme } from '../hooks/useTheme'
+import { AssumptionLedgerSection } from '../components/investor/AssumptionLedgerSection'
 
 // ── Static light score (Phase 2 will compute this from sun-path data) ─────────
 const STATIC_LIGHT_SCORE = 76
@@ -1640,6 +1641,9 @@ export function PersonalBuyerPage({
         hasListingText={isReal ? (realListing?.description ?? '').trim().length > 0 : true}
       />
       <ChecklistSection onPDF={pdf.exportPdf} />
+      {/* §09 Sources — the assumption ledger (D-088); live reports only, the
+          demo fixture has no engine run behind it. */}
+      {isReal && <AssumptionLedgerSection entries={realAnalysis!.assumptions} sectionNumber="09" />}
       <ConversionSection city={isReal ? realListing!.city : 'Burlington'} />
 
       <Footer />

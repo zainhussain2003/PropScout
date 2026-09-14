@@ -1128,6 +1128,7 @@ propscout/
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
 │   │       │   │   ├── BreakEvenAppreciation.tsx  # Growth needed to return the cash a hold consumes (D-062)
+│   │       │   │   ├── AssumptionLedgerSection.tsx + .test.tsx  # §12 Sources — every modelled number with its basis (D-088)
 │   │       │   │   ├── FinancingSection.tsx   # §02 head + FinancingSliders — shared by demo and live (D-073)
 │       │   │   ├── RentalCompsSection.tsx # §03 — shared by demo and live (D-073)
 │       │   │   ├── CashToCloseSection.tsx # §04 — shared by demo and live (D-073)
@@ -1255,6 +1256,7 @@ propscout/
 │           │   ├── pdfService.ts            # Puppeteer renders /r/:token → branded PDF (spec §14)
 │           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── lib/
+│           │   ├── assumptionLedger.ts + .test.ts  # Rows for the report's Sources section from engine echo + pipeline provenance (D-088)
 │           │   ├── billingMonth.ts    # UTC calendar-month window for the free quota (D-071)
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)

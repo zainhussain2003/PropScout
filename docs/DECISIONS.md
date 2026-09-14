@@ -3139,3 +3139,30 @@ column; making it tolerant is what lets this ship now instead of waiting on the 
 | Ship the code only after the migration is applied | Ties a code deploy to a dashboard action nobody can schedule from a PR.                 |
 | Store status inside `market_data` JSON instead    | Avoids the migration but hides a queryable state in a blob; wrong shape for a job flag. |
 | Treat "processing for > N minutes" as failed      | Still worth doing after apply; it is a heuristic and this row is the fact it needs.     |
+
+### D-088 · The report carries a ledger of what its numbers rest on, and a default is called a default
+
+**Chosen.** Every live report ends with a "Sources" section: one row per modelled number with a
+basis (Observed / Published / Estimate / Default), a source, an as-of date where one exists, and
+a one-sentence method. The calc engine echoes every constant it applied
+(`AssumptionsAppliedOutput`) so the API never restates engine values from a copy; the API adds
+the rate feed's source and fetch time, the comps' count and radius, and whether tax or value were
+estimated, in `lib/assumptionLedger.ts`; the rows are stored with the analysis. The verdict
+counts the defaults. The demo investor report shows the same section from a fixture (D-073). The
+landing headline changed from "every number has a source, a date, and a method" to "every
+assumption is listed with its source, date, and method" — the first was not true and the second
+is what ships. The CMHC per-city table and the cap-rate table are labelled Default, not Published,
+because their own files say they are placeholders.
+
+**Why.** Audit product-claims table: the methodology claim was untrue of insurance (0.35%), the
+maintenance bands, the $1,500 legal fee, the vacancy table. The choice was to build the ledger or
+drop the claim; the ledger is what makes the claim honest without hiding that most of the
+constants are still starting points. Labelling them is also the shortest path to replacing them:
+each Default row says what would replace it (a quote, a bill, a refreshed table).
+
+| Option                                          | Why not                                                                                      |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Drop the landing claim and ship nothing         | The report still rests on unlabelled constants; the audit's point was the reader can't tell. |
+| Per-figure badges inline in every section       | Fourteen sections to touch and a denser page; one ledger is findable and complete.           |
+| Keep engine constants in the API for the ledger | Two copies drift; the engine already knows what it ran and now says so.                      |
+| Call the CMHC / cap-rate tables "Published"     | Their files say placeholder; the ledger would be lying in the one place it must not.         |

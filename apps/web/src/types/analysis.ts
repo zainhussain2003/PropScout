@@ -275,6 +275,32 @@ export interface Analysis {
   /** Nearest schools per level. Optional: analyses stored before 2026-07-02
    * don't carry it; null until the schools CSV is loaded. */
   schools?: SchoolsResult | null
+  /**
+   * Every modelled number behind the report with its source, date and method
+   * (D-088). Optional: analyses stored before 2026-09-13 don't carry it.
+   */
+  assumptions?: AssumptionEntry[] | null
+}
+
+// ── Assumption ledger (D-088) ─────────────────────────────────────────────────
+
+/**
+ * Where a number the report relies on came from. Mirrors the API type.
+ *   observed  — from the listing or the user
+ *   published — a named third-party source with a date
+ *   estimate  — a stated PropScout formula over other inputs
+ *   default   — a starting constant with no external source behind it
+ */
+export type AssumptionBasis = 'observed' | 'published' | 'estimate' | 'default'
+
+export interface AssumptionEntry {
+  key: string
+  label: string
+  value: string
+  basis: AssumptionBasis
+  source: string
+  asOf: string | null
+  method: string
 }
 
 // ── Investor report extended types ────────────────────────────────────────────

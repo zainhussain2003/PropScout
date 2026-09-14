@@ -41,6 +41,7 @@ import { FinancingSection } from '../components/investor/FinancingSection'
 import { NeighbourhoodSection } from '../components/investor/NeighbourhoodSection'
 import { STRPlaceholderSection } from '../components/investor/STRPlaceholderSection'
 import { DueDiligenceSection } from '../components/investor/DueDiligenceSection'
+import { AssumptionLedgerSection } from '../components/investor/AssumptionLedgerSection'
 import { RentalCompsSection } from '../components/investor/RentalCompsSection'
 import { RiskFlagsSection } from '../components/investor/RiskFlagsSection'
 import { CashToCloseSection } from '../components/investor/CashToCloseSection'
@@ -687,6 +688,9 @@ function InvestorReportContent({
       <STRPlaceholderSection listing={listingData} />
       {/* §11 Due diligence — generic, property-agnostic buyer checklist. */}
       <DueDiligenceSection />
+      {/* §12 Sources — every modelled number with its basis (D-088). Renders
+          nothing on a report saved before the ledger existed. */}
+      <AssumptionLedgerSection entries={analysis.assumptions} sectionNumber="12" />
     </main>
   )
 }

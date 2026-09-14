@@ -204,6 +204,59 @@ describe('POST / — analysis orchestrator', () => {
 
   // ── Test 1b ────────────────────────────────────────────────────────────────
 
+  it('stores an assumption ledger built from what the engine says it applied (D-088)', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      makeCalcResponse({
+        ...CALC_ENGINE_FIXTURE,
+        assumptions: {
+          vacancy_allowance: 0.05,
+          management_fee: 0.08,
+          management_fee_included: false,
+          insurance_rate: 0.0035,
+          maintenance_rate: 0.005,
+          maintenance_basis: 'post_2010',
+          legal_fees: 1500,
+          title_insurance: 300,
+          home_inspection: 600,
+          down_payment_pct: 0.2,
+          mortgage_rate: 0.0479,
+          amortization_years: 25,
+          cmhc_vacancy_rate: 0.018,
+          cmhc_vacancy_rate_supplied: true,
+        },
+      })
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    const ledger = (res.json() as { analysis: Analysis }).analysis.assumptions ?? []
+    const keys = ledger.map((e) => e.key)
+    expect(keys).toEqual(
+      expect.arrayContaining(['rent', 'mortgage_rate', 'insurance', 'maintenance', 'legal_fees'])
+    )
+    const insurance = ledger.find((e) => e.key === 'insurance')
+    expect(insurance?.basis).toBe('default')
+    expect(insurance?.value).toBe('0.35% of value')
+    // The ledger is persisted with the analysis, not recomputed on read.
+    const saved = mockSaveAnalysis.mock.calls[0]?.[1] as Analysis
+    expect(saved.assumptions?.length).toBe(ledger.length)
+  })
+
+  it('an older engine without the echo still yields the non-engine ledger rows', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    const ledger = (res.json() as { analysis: Analysis }).analysis.assumptions ?? []
+    expect(ledger.map((e) => e.key)).toContain('rent')
+    expect(ledger.map((e) => e.key)).not.toContain('insurance')
+  })
+
   it('forwards the per-city CMHC vacancy rate to the calc engine payload', async () => {
     await app.inject({
       method: 'POST',

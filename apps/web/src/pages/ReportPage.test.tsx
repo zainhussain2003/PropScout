@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { ReportPage } from './ReportPage'
 import type { Analysis } from '../types/analysis'
@@ -368,6 +368,41 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(await screen.findByText(/Analyzed (May 31|Jun\.? 1), 2026/i)).toBeInTheDocument()
     expect(screen.queryByText(/Refreshed \d+ min ago/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Sample report/i)).not.toBeInTheDocument()
+  })
+
+  it('renders the assumption ledger the API stored, and nothing when a report predates it', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        riskFlags: [],
+        assumptions: [
+          {
+            key: 'insurance',
+            label: 'Insurance',
+            value: '0.35% of value',
+            basis: 'default',
+            source: 'PropScout default — no external source',
+            asOf: null,
+            method: 'Annual premium modelled as a share of the property value.',
+          },
+        ],
+      },
+      listing: LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByText('0.35% of value')).toBeInTheDocument()
+    expect(document.querySelector('section[data-section="12"]')).not.toBeNull()
+    expect(screen.getByText(/1 of 1 are defaults/i)).toBeInTheDocument()
+    cleanup()
+
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, riskFlags: [], assumptions: null },
+      listing: LISTING,
+    })
+    renderReport()
+    await screen.findByText(/Due diligence/i)
+    expect(document.querySelector('section[data-section="12"]')).toBeNull()
   })
 
   it('feeds real risk flags into the HomeScore risk component (standard red → 5/10)', async () => {

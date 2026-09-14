@@ -57,10 +57,10 @@
 
 Ordered by how much a user would notice.
 
-| Item | Notes |
-| **Assumption ledger ("every number has a source")** | The landing methodology claim is not true of the constants (insurance 0.35%, maintenance 1.5%, closing $2,400, CMHC map). Either build the per-row source/date badge or drop the claim. |
-| **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
-| **Bike Score and Walk Score source dates** | Persist response metadata and show "as of". |
+| Item                                       | Notes                                                                                                     |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| **J-04 — split `LandingPage.tsx`**         | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
+| **Bike Score and Walk Score source dates** | Persist response metadata and show "as of".                                                               |
 
 ## 6. Paywall / pricing (lower priority per owner) **[code, after the decisions above]**
 

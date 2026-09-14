@@ -115,6 +115,17 @@ const INVESTOR_ANALYSIS: Analysis = {
   walkScore: null,
   neighbourhood: null,
   hasSanityWarnings: false,
+  assumptions: [
+    {
+      key: 'rent',
+      label: 'Market rent',
+      value: '$2,900/mo',
+      basis: 'published',
+      source: '8 asking rents from the PropScout nightly comps table',
+      asOf: '2026-06-01T00:00:00.000Z',
+      method: 'Median of asking rents with outliers removed.',
+    },
+  ],
 }
 
 /** Ordered [section number, topic] pairs as rendered. */
@@ -180,6 +191,7 @@ describe('demo and live investor reports are one product', () => {
       '09',
       '10',
       '11',
+      '12',
     ])
   })
 
@@ -197,7 +209,10 @@ describe('demo and live investor reports are one product', () => {
 
   it('itemises cash to close identically — no invented legal or inspection lines on the demo', () => {
     renderDemo()
-    const text = document.body.textContent ?? ''
+    // Scoped to §04: the sources ledger (§12) legitimately names the legal,
+    // title and inspection defaults that make up "other closing costs".
+    const text =
+      document.querySelector('section[data-section="04"]')?.textContent ?? 'NO SECTION 04'
     expect(text).toContain('Other closing costs (est.)')
     for (const invented of ['Legal fees', 'Title insurance', 'Home inspection', 'Miscellaneous']) {
       expect(text).not.toContain(invented)
