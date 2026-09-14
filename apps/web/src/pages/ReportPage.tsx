@@ -688,7 +688,7 @@ function InvestorReportContent({
           demo investor/landlord reports; now mounted live too. */}
       <STRPlaceholderSection listing={listingData} />
       {/* §11 Due diligence — generic, property-agnostic buyer checklist. */}
-      <DueDiligenceSection />
+      <DueDiligenceSection storageKey={analysis.token} />
       {/* §12 Sources — every modelled number with its basis (D-088). Renders
           nothing on a report saved before the ledger existed. */}
       <AssumptionLedgerSection entries={analysis.assumptions} sectionNumber="12" />

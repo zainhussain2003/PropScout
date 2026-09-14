@@ -26,7 +26,7 @@
  *   §11  Landlord checklist   → static checklist
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { LockedButton } from '../components/paywall/LockedButton'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
@@ -81,6 +81,7 @@ import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { RentalCompsBar } from '../components/analysis/RentalCompsBar'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { useTheme } from '../hooks/useTheme'
+import { useChecklist } from '../hooks/useChecklist'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -184,19 +185,19 @@ const LANDLORD_CHECKLIST = [
   { label: 'Confirm building rental ratio and verify CMHC vacancy allowance', critical: false },
 ] as const
 
-function LandlordChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Element {
+function LandlordChecklistSection({
+  onPDF,
+  storageKey = null,
+}: {
+  onPDF?: () => void
+  /** Share token of a live report — ticks are kept in this browser under it. */
+  storageKey?: string | null
+}): JSX.Element {
   const { tier, openUpgradeModal } = usePaywall()
   const share = useCopyLink()
-  const [checked, setChecked] = useState<Set<number>>(new Set())
-
-  const toggle = useCallback((i: number) => {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(i)) next.delete(i)
-      else next.add(i)
-      return next
-    })
-  }, [])
+  const { checked, toggle, persisted } = useChecklist<number>(
+    storageKey ? `${storageKey}:landlord-prep` : null
+  )
 
   const criticalCount = LANDLORD_CHECKLIST.filter((i) => i.critical).length
 
@@ -213,6 +214,12 @@ function LandlordChecklistSection({ onPDF }: { onPDF?: () => void }): JSX.Elemen
         verdict={`${LANDLORD_CHECKLIST.length} items · ${criticalCount} critical`}
         tone="caution"
       />
+      {persisted && (
+        <p className="mono" style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12 }}>
+          Ticks are kept in this browser for this report — not in your account, not on the shared
+          link.
+        </p>
+      )}
 
       <div className="card" style={{ padding: 28 }}>
         <div className="col">
@@ -707,7 +714,7 @@ export function LandlordPage({
       <STRPlaceholderSection listing={listing} />
 
       {/* §11 Landlord checklist */}
-      <LandlordChecklistSection onPDF={pdf.exportPdf} />
+      <LandlordChecklistSection onPDF={pdf.exportPdf} storageKey={realAnalysis?.token ?? null} />
 
       <Footer />
       <StickyActionBar
