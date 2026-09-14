@@ -62,7 +62,6 @@ Ordered by how much a user would notice.
 | **Assumption ledger ("every number has a source")** | The landing methodology claim is not true of the constants (insurance 0.35%, maintenance 1.5%, closing $2,400, CMHC map). Either build the per-row source/date badge or drop the claim. |
 | **UI-03 — breadcrumbs** | Slug vs label inconsistency across report navs; small. |
 | **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
-| **Dead components** | `NoCompsInlineState`, `ScraperPartialInlineState` are unused (and carry inert buttons). Delete or wire. |
 | **Bike Score and Walk Score source dates** | Persist response metadata and show "as of". |
 
 ## 6. Paywall / pricing (lower priority per owner) **[code, after the decisions above]**
