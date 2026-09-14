@@ -307,6 +307,7 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
     condoFeeMonthly: listing.condoFeeMonthly ?? 0,
     rentEstimate: analysis.rentalComps?.mid ?? analysis.metrics?.rentUsedMonthly ?? 0,
     rentIsProxy: analysis.metrics?.rentIsProxy === true,
+    askingRent: listing.rentMonthly ?? null,
     rentLow: analysis.rentalComps?.low ?? 0,
     rentHigh: analysis.rentalComps?.high ?? 0,
     compCount: analysis.rentalComps?.compCount ?? 0,
