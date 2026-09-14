@@ -196,6 +196,17 @@ describe('buildAssumptionLedger', () => {
     expect(keys).not.toContain('legal_fees')
   })
 
+  it('walk and transit scores are published with their fetch time', () => {
+    const e = entry(
+      base({ walkScore: { walk: 72, transit: 85, fetchedAt: '2026-09-13T11:30:00.000Z' } }),
+      'walk_score'
+    )
+    expect(e.basis).toBe('published')
+    expect(e.value).toBe('72 / 85')
+    expect(e.asOf).toBe('2026-09-13T11:30:00.000Z')
+    expect(buildAssumptionLedger(base()).find((x) => x.key === 'walk_score')).toBeUndefined()
+  })
+
   it('financing defaults are labelled as the starting case', () => {
     const dp = entry(base(), 'down_payment')
     expect(dp.value).toBe('20%')

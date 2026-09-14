@@ -27,6 +27,14 @@ interface NeighbourhoodSectionProps {
   neighbourhood: NeighbourhoodData
 }
 
+/** "Very walkable" → "Very walkable · as of 12 Sep 2026" when the fetch time is known. */
+function withAsOf(note: string, iso: string | null | undefined): string {
+  if (!iso) return note
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return note
+  return `${note} · as of ${d.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })}`
+}
+
 export function NeighbourhoodSection({
   listing: _listing,
   neighbourhood,
@@ -60,13 +68,13 @@ export function NeighbourhoodSection({
     {
       label: 'Walk Score',
       value: String(n.walkScore),
-      note: n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable',
+      note: withAsOf(n.walkScore >= 80 ? 'Very walkable' : 'Mostly walkable', n.walkScoreAsOf),
       present: n.walkScore > 0,
     },
     {
       label: 'Transit Score',
       value: String(n.transitScore),
-      note: n.transitScore >= 80 ? 'Excellent' : 'Some transit',
+      note: withAsOf(n.transitScore >= 80 ? 'Excellent' : 'Some transit', n.walkScoreAsOf),
       present: n.transitScore > 0,
     },
     {

@@ -3166,3 +3166,14 @@ each Default row says what would replace it (a quote, a bill, a refreshed table)
 | Per-figure badges inline in every section       | Fourteen sections to touch and a denser page; one ledger is findable and complete.           |
 | Keep engine constants in the API for the ledger | Two copies drift; the engine already knows what it ran and now says so.                      |
 | Call the CMHC / cap-rate tables "Published"     | Their files say placeholder; the ledger would be lying in the one place it must not.         |
+
+### D-089 · Walk and Transit scores carry their fetch time
+
+**Chosen.** `walkScoreService` stamps `fetchedAt` on a successful call; it is stored with the
+analysis (`market_data.walkScore`), the neighbourhood tiles read "Very walkable · as of 13 Sep
+2026", and the Sources ledger (D-088) gets a Published row "Walk / Transit Score — Walk Score API,
+as of …". Fixtures and older analyses have no time and show none.
+
+**Why.** Backlog "Walk Score source dates": the score is fetched once at analysis time and never
+refreshed; a report opened months later was presenting it as current. Same rule as the tenant
+crumb (D-086) — say when, not "live".

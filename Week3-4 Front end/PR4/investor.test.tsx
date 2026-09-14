@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { axe } from 'jest-axe'
 
 import { FinancingSliders } from '../../apps/web/src/components/investor/FinancingSliders'
@@ -538,6 +538,19 @@ describe('NeighbourhoodSection', () => {
     expect(screen.getByText('Transit Score')).toBeInTheDocument()
     expect(screen.getByText('Active building permits')).toBeInTheDocument()
     expect(screen.getByText('Price per sqft trend')).toBeInTheDocument()
+  })
+
+  it('dates the Walk and Transit scores when the fetch time is known, and not otherwise', () => {
+    render(<NeighbourhoodSection listing={VAUGHAN_LISTING} neighbourhood={VAUGHAN_NEIGHBOURHOOD} />)
+    expect(screen.queryByText(/as of/i)).not.toBeInTheDocument()
+    cleanup()
+    render(
+      <NeighbourhoodSection
+        listing={VAUGHAN_LISTING}
+        neighbourhood={{ ...VAUGHAN_NEIGHBOURHOOD, walkScoreAsOf: '2026-09-13T11:30:00.000Z' }}
+      />
+    )
+    expect(screen.getAllByText(/as of (Sep\.? 13|Sep\.? 12), 2026/i)).toHaveLength(2)
   })
 
   it('shows the median income value', () => {

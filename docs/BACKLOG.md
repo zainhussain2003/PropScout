@@ -57,10 +57,9 @@
 
 Ordered by how much a user would notice.
 
-| Item                                       | Notes                                                                                                     |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| **J-04 — split `LandingPage.tsx`**         | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
-| **Bike Score and Walk Score source dates** | Persist response metadata and show "as of".                                                               |
+| Item                               | Notes                                                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
 
 ## 6. Paywall / pricing (lower priority per owner) **[code, after the decisions above]**
 
