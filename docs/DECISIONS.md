@@ -3266,3 +3266,12 @@ logic and the FAQ, and every landing change went through a 3,000-line diff.
 | ---------------------------- | --------------------------------------------------------------------------------- |
 | Fewer, larger files          | The standard is one component per file; the showcase visuals are separate things. |
 | Move sections under `pages/` | They are components, not routes.                                                  |
+
+### D-094 · `/health` says which commit is running
+
+**Chosen.** The API and the calc engine echo `RAILWAY_GIT_COMMIT_SHA` (as `commit` and a
+7-character `shortCommit` / `short_commit`) from `/health`; null where the variable is not set.
+
+**Why.** Every production check this week started with "has Railway deployed master yet?" and
+had no answer but waiting. Railway sets the variable on every deploy; echoing it costs nothing
+and turns the question into a curl.

@@ -65,8 +65,15 @@ app.include_router(scrape.router, prefix="/scrape")
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    """Health check endpoint."""
+async def health() -> dict[str, str | None]:
+    """Health check. Echoes the deployed commit (Railway sets it) — D-094."""
     from datetime import datetime, timezone
+    import os
 
-    return {"status": "ok", "ts": datetime.now(timezone.utc).isoformat()}
+    commit = os.environ.get("RAILWAY_GIT_COMMIT_SHA") or None
+    return {
+        "status": "ok",
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "commit": commit,
+        "short_commit": commit[:7] if commit else None,
+    }
