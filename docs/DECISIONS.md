@@ -3394,3 +3394,14 @@ engine's rent when comps were null.
 | ----------------------------------------- | ------------------------------------------------------------------------------------- |
 | Suppress the investor score without comps | The tenant report does; for the investor it is an S-\* scoring decision (BACKLOG §1). |
 | Keep dropping §03                         | The numbering gap was the only hint, and the ledger is the last section.              |
+
+### D-102 · Editing the landing input drops a finished sample preview
+
+**Chosen.** Typing or pasting into the hero input resets the sample stage to idle. Before, "Try
+one of ours" left the stage at `done`, and `handleAnalyze` checks that first — so any listing
+URL entered afterwards opened the demo modal and landed on `/r/demo`, never touching the
+scraper. Found on the 2026-09-14 production run when a pasted Realtor.ca link produced the
+Hamilton demo.
+
+**Why.** The sample flow and the real flow share one input and one button; the state that
+distinguishes them has to follow the input.

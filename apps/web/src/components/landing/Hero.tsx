@@ -334,7 +334,14 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 <Icon name="link" size={18} />
                 <input
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => {
+                    setUrl(e.target.value)
+                    // A finished sample preview must not follow the next input:
+                    // with the stage left at 'done', any URL typed after "Try
+                    // one of ours" opened the DEMO report instead of scraping
+                    // (live 2026-09-14, D-102).
+                    if (stage !== 'idle') setStage('idle')
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAnalyze()
                   }}
@@ -359,7 +366,10 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     void navigator.clipboard
                       ?.readText()
                       .then((v) => {
-                        if (v) setUrl(v)
+                        if (v) {
+                          setUrl(v)
+                          if (stage !== 'idle') setStage('idle')
+                        }
                       })
                       .catch(() => {
                         /* clipboard permission denied */
