@@ -31,7 +31,7 @@ not a defect.
 | J-01   | P1  | "Any Canadian listing URL" / Zillow advertised       | ✅     | #57                                                                                                |
 | J-02   | P1  | Report cards advertise what live does not provide    | 🟡     | Landlord → L-01/L-03 🔒; personal comps copy #57                                                   |
 | J-03   | P1  | Pricing advertises portfolio, white-label, 3D        | ✅     | #71 D-091 — unbuilt rows tagged "planned"; CTAs wired                                              |
-| J-04   | P2  | 2,900-line landing page                              | ⬜     | Maintainability; BACKLOG                                                                           |
+| J-04   | P2  | 2,900-line landing page                              | ✅     | #73 D-093 — 22 files under components/landing/                                                     |
 | J-05   | P2  | "Under sixty seconds, every time"                    | ✅     | #57                                                                                                |
 | J-06   | P1  | Status updates are no-ops; failed = pending          | 🟡     | Code #67 D-087; migration awaiting apply — BACKLOG                                                 |
 | J-07   | P1  | No polling deadline                                  | ✅     | #37 D-068 (no backoff; not needed at 2 s)                                                          |

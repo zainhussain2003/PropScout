@@ -3225,3 +3225,22 @@ removing keeps the roadmap visible and leaves the build-or-drop decision where i
 | Remove the unbuilt features from pricing | A product decision (the tiers are priced on them); "planned" is true today either way.  |
 | Hide paid CTAs until price IDs exist     | A visible 503 with a real message is more honest than a page that looks unfinished.     |
 | Hard-code a contact address              | Nobody has chosen one; an env var makes it a 30-second owner action, not a code change. |
+
+### D-093 · The landing page is composed from one-file sections
+
+**Chosen.** `pages/LandingPage.tsx` (3,085 lines) is now 86 lines that compose
+`components/landing/*` — one component per file, as the coding standard already required:
+`Hero`, `ReportShowcase`, `HeroStaticMap`, `ReportsSection` (+ `ModePreview`, `ModeStatTiles`),
+`HowSection`, `CoverageSection`, `FounderNoteSection`, `LandingSunScoutSection`,
+`PricingSection`, `FAQSection`, `CTASection`, `SectionHeader`, the six `Showcase*` visuals,
+`sampleListings.ts` and `landingHelpers.ts`. Pure extraction: no markup, copy or behaviour
+changed; the landing and theme tests pass unchanged. The static SunScout section is renamed
+`LandingSunScoutSection` so it cannot be confused with `sunscout/SunScoutPanel`.
+
+**Why.** Audit J-04: one file carried the input orchestration, the demo visuals, the pricing
+logic and the FAQ, and every landing change went through a 3,000-line diff.
+
+| Option                       | Why not                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| Fewer, larger files          | The standard is one component per file; the showcase visuals are separate things. |
+| Move sections under `pages/` | They are components, not routes.                                                  |

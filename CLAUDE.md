@@ -1118,6 +1118,17 @@ propscout/
 │   │       │   │   ├── StickyActionBar.tsx    # Mobile-only sticky bottom bar (Save / Share / PDF)
 │   │       │   │   └── ErrorBoundary.tsx      # Root error boundary — app never blank-screens
 │   │       │   │
+│   │       │   ├── landing/           # Landing page sections, one per file (J-04, D-093) — composed by pages/LandingPage.tsx
+│   │       │   │   ├── Hero.tsx               # URL / address input orchestration + sample listings + ReportShowcase mount
+│   │       │   │   ├── ReportShowcase.tsx     # Static mini-report visual under the hero
+│   │       │   │   ├── HeroStaticMap.tsx
+│   │       │   │   ├── ReportsSection.tsx + ModePreview.tsx + ModeStatTiles.tsx   # Four report-mode cards
+│   │       │   │   ├── HowSection.tsx · CoverageSection.tsx · FounderNoteSection.tsx · LandingSunScoutSection.tsx
+│   │       │   │   ├── PricingSection.tsx     # Tiers, planned tags, wired CTAs (D-091)
+│   │       │   │   ├── FAQSection.tsx · CTASection.tsx · SectionHeader.tsx
+│   │       │   │   ├── Showcase*.tsx · PreviewListingType.tsx   # Display-only visuals for the showcase
+│   │       │   │   ├── sampleListings.ts      # The three demo listings the hero offers
+│   │       │   │   └── landingHelpers.ts      # clampStr, detectKindFromUrl
 │   │       │   ├── analysis/          # Domain components — used across investor + landlord reports
 │   │       │   │   ├── DealScore.tsx          # Radial gauge with animation
 │   │       │   │   ├── Metric.tsx             # Headline metric tile
@@ -1207,7 +1218,7 @@ propscout/
 │   │       │   └── thresholds.ts      # Deal score brackets, confidence thresholds
 │   │       │
 │   │       └── pages/                 # One file per route (see App.tsx for the router)
-│   │           ├── LandingPage.tsx            # / — Landing + URL paste home (+ landing.test.tsx)
+│   │           ├── LandingPage.tsx            # / — composes components/landing/* + the two overlays (+ landing.test.tsx)
 │   │           ├── analyzing.tsx              # /analyzing — Scraping progress + manual-entry fallback
 │   │           ├── ReportPage.tsx             # /r/:token — LIVE shareable report, all 4 modes (+ ReportPage.test.tsx)
 │   │           ├── InvestorReport.tsx         # /investor-report — demo route (fixtures; same section components as live, D-073) (+ demoLiveParity.test.tsx)
