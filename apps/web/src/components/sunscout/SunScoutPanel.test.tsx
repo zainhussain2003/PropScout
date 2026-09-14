@@ -98,4 +98,43 @@ describe('SunScoutPanel — facade direction input', () => {
     expect(screen.queryByText(/effectively open/i)).not.toBeInTheDocument()
     expect(screen.getByText(/calculated shade is a floor, not a ceiling/i)).toBeInTheDocument()
   })
+
+  // ── Coverage: a minority of measured buildings is indicative, not checked ──
+
+  it('calls the surroundings "checked" when most nearby buildings had a height', () => {
+    render(
+      <SunScoutPanel
+        sunScout={{
+          ...SOUTH,
+          obstructionAssessed: true,
+          obstructionOpenness: 0.72,
+          obstructionBuildingsUsed: 17,
+          obstructionBuildingsUnknown: 3,
+          hoursLostToBuildings: 210,
+        }}
+      />
+    )
+    expect(screen.getByText(/Real surroundings · checked/i)).toBeInTheDocument()
+    expect(screen.queryByText(/indicative/i)).not.toBeInTheDocument()
+  })
+
+  it('labels the result indicative when most nearby buildings had no height', () => {
+    render(
+      <SunScoutPanel
+        sunScout={{
+          ...SOUTH,
+          obstructionAssessed: true,
+          obstructionOpenness: 0.72,
+          obstructionBuildingsUsed: 2,
+          obstructionBuildingsUnknown: 28,
+          hoursLostToBuildings: 210,
+        }}
+      />
+    )
+    expect(screen.getByText(/Real surroundings · indicative/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Real surroundings · checked/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Only 2 of 30 nearby buildings/i)).toBeInTheDocument()
+    // The hours figure is still shown — as a floor, with the caveat next to it.
+    expect(screen.getByText(/210 hours/i)).toBeInTheDocument()
+  })
 })
