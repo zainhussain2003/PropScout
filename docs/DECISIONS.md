@@ -3315,3 +3315,20 @@ token was already in the API for geocoding.
 | Mapbox Matrix API (one call) | Needs the driving/walking split anyway; eight cheap calls are simpler and per-target failures stay isolated. |
 | Google Distance Matrix       | A second billed product for something the existing token covers.                                             |
 | Transit routing              | Mapbox has no transit profile; needs another source (BACKLOG).                                               |
+
+### D-097 · The investment down-payment slider starts at 20%, and says why
+
+**Chosen.** `FINANCING_SLIDER.MIN_DOWN_PAYMENT = 0.20`; the slider's range is 20–50% with ticks
+20/30/40/50 and one line under it: "20% is the floor for a rental purchase — insured (high-ratio)
+mortgages are not available for non-owner-occupied properties." A stored value below 20% renders
+at 20%.
+
+**Why.** Spec §6.5 has always said 20–50%; the component shipped 5–50%. Below 20%, a rental
+purchase needs default mortgage insurance, which the insurers do not offer for non-owner-occupied
+1–4 unit properties — so the 5–15% scenarios were mortgages nobody would write, with no premium
+modelled either. Same class as the audit's "formula presented as a fact".
+
+| Option                           | Why not                                                                    |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| Keep 5% and add the CMHC premium | The premium does not apply — the product is not available for rentals.     |
+| Silently clamp without the note  | A user who wants 10% down should be told why the slider will not go there. |
