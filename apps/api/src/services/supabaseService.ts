@@ -1267,6 +1267,8 @@ export async function getNearbySchools(lat: number, lng: number): Promise<School
         name: r.name,
         schoolType: r.school_type as NearbySchool['schoolType'],
         board: r.board,
+        lat: r.lat,
+        lng: r.lng,
         distanceKm: Math.round(haversineKm(lat, lng, r.lat!, r.lng!) * 10) / 10,
         eqaoScore: r.eqao_score,
         fraserRankPct: r.fraser_rank_pct,

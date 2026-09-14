@@ -782,9 +782,9 @@ function toPersonalSchool(school: NearbySchool): PersonalSchool {
     name: school.name,
     board: school.board ?? '—',
     distance: `${school.distanceKm.toFixed(1)} km`,
-    // The schools table stores straight-line distance only. Do not turn that
-    // into a precise drive time without a routing source.
-    driveTime: undefined,
+    // Only a routed time is shown as a time (D-100); the straight-line
+    // distance stays a distance.
+    driveTime: school.walkMin != null ? `${school.walkMin} min walk` : undefined,
     // Keep null when EQAO hasn't loaded for this school (French boards, alternative
     // schools, tiny cohorts) so the card shows "No EQAO score" rather than a red 0.
     eqao: school.eqaoScore,
@@ -816,7 +816,10 @@ function toTenantSchool(school: NearbySchool): TenantSchool {
     grades: '—',
     eqao: school.eqaoScore,
     distance: `${school.distanceKm.toFixed(1)} km`,
-    walk: `~${Math.max(1, Math.round(school.distanceKm * WALK_MIN_PER_KM))} min walk`,
+    walk:
+      school.walkMin != null
+        ? `${school.walkMin} min walk`
+        : `~${Math.max(1, Math.round(school.distanceKm * WALK_MIN_PER_KM))} min walk, straight-line estimate`,
     quality: qualityFor(school),
     // Attendance boundaries are NOT ingested — never claim catchment.
     inCatchment: false,

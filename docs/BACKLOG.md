@@ -45,11 +45,11 @@
 
 ## 4. Real data the owner has to supply
 
-| Item                          | Needed                                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Golden dataset**            | 47 more labelled listing descriptions (3 of 50). The 95% gate is trivial at this size.         |
-| **Founder-note copy** (PR10)  | 3–4 sentences in the owner's words for `FOUNDER_NOTE_BODY`. Nothing may be invented.           |
-| **Fraser Institute rankings** | `fraser_rank_pct` is null for every school; the source must be licensed/loaded before display. |
+| Item                          | Needed                                                                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Golden dataset**            | Stale row corrected 2026-09-14: 96 cases exist (45 real, 51 synthetic) and the gate passes. More real full descriptions are welcome, not required. |
+| **Founder-note copy** (PR10)  | 3–4 sentences in the owner's words for `FOUNDER_NOTE_BODY`. Nothing may be invented.                                                               |
+| **Fraser Institute rankings** | `fraser_rank_pct` is null for every school; the source must be licensed/loaded before display.                                                     |
 
 ## 5. Code-only, not yet done **[code]**
 
@@ -88,7 +88,8 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   sold-sales feed for personal FMV (blocked on a provider decision).
 - **Provenance:** field-level badges (listing says / you entered / calculated / assumed as of),
   extraction confidence, scrape timestamps, geocoder match type.
-- **Schools:** attendance-boundary polygons, grades, pedestrian routing, Fraser data.
+- **Schools:** attendance-boundary polygons, grades, Fraser data (pedestrian routing shipped —
+  #80, D-100).
 - **Location:** routed walking/driving times shipped (#76, D-096); transit times would need a
   transit routing source.
 - **Financing:** rate provenance/date, fixed vs variable, CMHC rules, renewal scenarios, saved

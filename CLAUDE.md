@@ -1274,6 +1274,7 @@ propscout/
 │           │   ├── billingMonth.ts    # UTC calendar-month window for the free quota (D-071)
 │           │   ├── buildInfo.ts + .test.ts  # Deployed commit for /health (RAILWAY_GIT_COMMIT_SHA, D-094)
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
+│           │   ├── schoolWalkTimes.ts + .test.ts  # Routed walking minutes to the nearby schools (D-100)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint

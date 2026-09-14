@@ -70,10 +70,21 @@ describe('shimToTenantSchools', () => {
     expect(result.high[0]!.quality).toBe('below') // fraser 28 < 33
   })
 
-  it('estimates walk time from distance and never claims catchment', () => {
+  it('labels the walk time an estimate when nothing was routed, and never claims catchment', () => {
     const result = shimToTenantSchools(SCHOOLS)
-    expect(result.elementary[0]!.walk).toBe('~7 min walk') // 0.6 km × 12 min/km estimate
+    // 0.6 km × 12 min/km estimate — said to be one (D-100)
+    expect(result.elementary[0]!.walk).toBe('~7 min walk, straight-line estimate')
     expect(result.high[0]!.distance).toBe('3.4 km')
     expect(result.elementary[0]!.inCatchment).toBe(false)
+  })
+
+  it('shows a routed walk time as a time (D-100)', () => {
+    const routed = {
+      ...SCHOOLS,
+      elementary: [{ ...SCHOOLS.elementary[0]!, walkMin: 9 }],
+    }
+    expect(shimToTenantSchools(routed).elementary[0]!.walk).toBe('9 min walk')
+    expect(shimToPersonalSchools(routed).elementary[0]!.driveTime).toBe('9 min walk')
+    expect(shimToPersonalSchools(SCHOOLS).elementary[0]!.driveTime).toBeUndefined()
   })
 })

@@ -3364,3 +3364,14 @@ source sites' content to publish, and the FSA + distance + size say everything a
 | ------------------------ | ---------------------------------------------------------------------------- |
 | Show addresses and links | Republishes scraped listings; not ours to publish.                           |
 | All rows, uncapped       | 60-row tables on a phone; 12 nearest/cheapest are the evidence that matters. |
+
+### D-100 · School walk times are routed; the straight-line estimate says it is one
+
+**Chosen.** `lib/schoolWalkTimes.withSchoolWalkTimes` routes a walking time (Mapbox Directions)
+to each of the up-to-nine nearby schools and stores `walkMin` on the school; the tenant schools
+section shows "9 min walk" when routed and "~7 min walk, straight-line estimate" when not; the
+personal schools card shows the routed walk time and nothing otherwise. School coordinates
+(public data) now ride on the school object so the routing can happen.
+
+**Why.** Roadmap "Schools: pedestrian routing"; same class as D-096 — a fixed pace over a
+straight line was printed as "~14 min walk" with nothing to say it was a formula.
