@@ -126,6 +126,25 @@ export interface FlagOverrideControls {
   onToggle: (flagId: string) => void
 }
 
+/**
+ * One comparable rental behind the rent band, sanitised for the report
+ * (D-099): no address, no URL — the FSA, the source, the size and the rent are
+ * what a reader needs to judge the band; the listing itself is the source
+ * site's to publish.
+ */
+export interface CompRow {
+  rentMonthly: number
+  beds: number | null
+  sqft: number | null
+  /** Forward sortation area (first three characters of the postal code). */
+  fsa: string | null
+  source: 'rentals_ca' | 'kijiji' | 'padmapper' | string
+  /** ISO date the row was last seen by the nightly scraper. */
+  seenAt: string | null
+  /** Straight-line km from the subject; null on the same-FSA path (no subject coords used). */
+  distanceKm: number | null
+}
+
 export interface RentalEstimate {
   low: number
   mid: number
@@ -141,6 +160,8 @@ export interface RentalEstimate {
    * municipality's rental market, and presenting it as local would be wrong.
    */
   radiusKm?: number | null
+  /** Individual comps behind the band (D-099); absent on fixtures and older analyses. */
+  rows?: CompRow[]
 }
 
 export interface SunScoutResult {
