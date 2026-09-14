@@ -1168,7 +1168,7 @@ propscout/
 │   │       │   │   ├── LockedSection.tsx      # Blurred content + upgrade overlay
 │   │       │   │   ├── TruncatedVerdict.tsx   # AI verdict paragraph 2 blurred
 │   │       │   │   ├── LockedButton.tsx       # Lock-icon button
-│   │       │   │   ├── UpgradeModal.tsx       # 5 feature-specific variants
+│   │       │   │   ├── UpgradeModal.tsx + .test.tsx  # 5 feature-specific variants; Upgrade now wired (D-091)
 │   │       │   │   ├── HardLimitGate.tsx      # Full-screen monthly limit blocker
 │   │       │   │   └── TierUnavailableNotice.tsx  # Banner when /me could not confirm the plan (A-10, D-078)
 │   │       │   │
