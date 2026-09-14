@@ -130,7 +130,7 @@ export function PropertyHero({
             }}
             aria-hidden="true"
           />
-          Live recalc · sliders below
+          {listing.price > 0 ? 'Live recalc · sliders below' : 'Rental listing · operating view'}
         </span>
       </div>
 
@@ -218,111 +218,154 @@ export function PropertyHero({
           )}
         </div>
 
-        <aside
-          className="card report-hero-score scorecard"
-          aria-label="Investment verdict"
-          style={{ '--score-tone': verdictColor } as React.CSSProperties}
-        >
-          <div className="scorecard-heading">
-            <div className="scorecard-call">
-              <span className="mono scorecard-eyebrow">The investment verdict</span>
-              <h2 className="serif scorecard-verdict">{score.label}</h2>
-              <p className="scorecard-tagline">{score.tagline}</p>
+        {listing.price > 0 ? (
+          <aside
+            className="card report-hero-score scorecard"
+            aria-label="Investment verdict"
+            style={{ '--score-tone': verdictColor } as React.CSSProperties}
+          >
+            <div className="scorecard-heading">
+              <div className="scorecard-call">
+                <span className="mono scorecard-eyebrow">The investment verdict</span>
+                <h2 className="serif scorecard-verdict">{score.label}</h2>
+                <p className="scorecard-tagline">{score.tagline}</p>
+              </div>
+              <div className="scorecard-gauge">
+                <DealScore
+                  score={score.displayTotal}
+                  max={100}
+                  tone={score.tone}
+                  size={isMobile ? 'sm' : 'md'}
+                  animate
+                />
+                <span className="mono scorecard-caption">Score / 100</span>
+              </div>
             </div>
-            <div className="scorecard-gauge">
-              <DealScore
-                score={score.displayTotal}
-                max={100}
-                tone={score.tone}
-                size={isMobile ? 'sm' : 'md'}
-                animate
-              />
-              <span className="mono scorecard-caption">Score / 100</span>
+
+            <div className="scorecard-cashflow">
+              <span className="scorecard-eyebrow mono">Monthly cash flow</span>
+              <strong
+                className="mono tabular scorecard-cashflow-value"
+                style={{ color: cashFlowMonthly >= 0 ? 'var(--pass)' : 'var(--fail)' }}
+              >
+                {Number.isFinite(cashFlowMonthly) ? fmtMoney(cashFlowMonthly) : '—'}
+                <span className="scorecard-caption"> /mo</span>
+              </strong>
+              <p className="scorecard-caption">
+                {Number.isFinite(cashFlowMonthly)
+                  ? 'After operating costs and mortgage, with the assumptions below.'
+                  : 'Cash flow is unavailable because the analysis did not return a valid value.'}
+              </p>
             </div>
-          </div>
 
-          <div className="scorecard-cashflow">
-            <span className="scorecard-eyebrow mono">Monthly cash flow</span>
-            <strong
-              className="mono tabular scorecard-cashflow-value"
-              style={{ color: cashFlowMonthly >= 0 ? 'var(--pass)' : 'var(--fail)' }}
-            >
-              {Number.isFinite(cashFlowMonthly) ? fmtMoney(cashFlowMonthly) : '—'}
-              <span className="scorecard-caption"> /mo</span>
-            </strong>
-            <p className="scorecard-caption">
-              {Number.isFinite(cashFlowMonthly)
-                ? 'After operating costs and mortgage, with the assumptions below.'
-                : 'Cash flow is unavailable because the analysis did not return a valid value.'}
-            </p>
-          </div>
-
-          <div className="scorecard-breakdown">
-            <h3 className="mono scorecard-eyebrow">Score breakdown</h3>
-            <p className="scorecard-caption">Points earned · longer tracks carry more weight</p>
-            {scoreBreakdownBars(score.breakdown).map((bar) => (
-              <div key={bar.label} className="scorecard-factor">
+            <div className="scorecard-breakdown">
+              <h3 className="mono scorecard-eyebrow">Score breakdown</h3>
+              <p className="scorecard-caption">Points earned · longer tracks carry more weight</p>
+              {scoreBreakdownBars(score.breakdown).map((bar) => (
+                <div key={bar.label} className="scorecard-factor">
+                  <div className="scorecard-row">
+                    <span>{bar.label}</span>
+                    <span className="mono tabular">
+                      {bar.value ?? '—'} / {bar.max}
+                    </span>
+                  </div>
+                  <div
+                    className="scorecard-track"
+                    style={{ width: `${bar.trackPercent}%` }}
+                    role={bar.value === null ? undefined : 'meter'}
+                    aria-label={bar.label}
+                    aria-valuemin={bar.value === null ? undefined : 0}
+                    aria-valuemax={bar.value === null ? undefined : bar.max}
+                    aria-valuenow={bar.value ?? undefined}
+                    aria-valuetext={
+                      bar.value === null ? undefined : `${bar.value} of ${bar.max} points`
+                    }
+                  >
+                    <div className="scorecard-fill" style={{ width: `${bar.fillPercent}%` }} />
+                  </div>
+                  {bar.value === null && (
+                    <p className="scorecard-caption">
+                      Component points unavailable from the analysis.
+                    </p>
+                  )}
+                  {bar.note != null && <p className="scorecard-caption">{bar.note}</p>}
+                </div>
+              ))}
+              {score.deductions > 0 && (
                 <div className="scorecard-row">
-                  <span>{bar.label}</span>
-                  <span className="mono tabular">
-                    {bar.value ?? '—'} / {bar.max}
-                  </span>
+                  <span>Risk deductions</span>
+                  <span className="mono tabular scorecard-penalty">−{score.deductions}</span>
                 </div>
-                <div
-                  className="scorecard-track"
-                  style={{ width: `${bar.trackPercent}%` }}
-                  role={bar.value === null ? undefined : 'meter'}
-                  aria-label={bar.label}
-                  aria-valuemin={bar.value === null ? undefined : 0}
-                  aria-valuemax={bar.value === null ? undefined : bar.max}
-                  aria-valuenow={bar.value ?? undefined}
-                  aria-valuetext={
-                    bar.value === null ? undefined : `${bar.value} of ${bar.max} points`
-                  }
-                >
-                  <div className="scorecard-fill" style={{ width: `${bar.fillPercent}%` }} />
-                </div>
-                {bar.value === null && (
-                  <p className="scorecard-caption">
-                    Component points unavailable from the analysis.
-                  </p>
-                )}
-                {bar.note != null && <p className="scorecard-caption">{bar.note}</p>}
-              </div>
-            ))}
-            {score.deductions > 0 && (
-              <div className="scorecard-row">
-                <span>Risk deductions</span>
-                <span className="mono tabular scorecard-penalty">−{score.deductions}</span>
-              </div>
-            )}
-            <p className="scorecard-caption">
-              Components use a 95-point scale. The score above is shown out of 100; risk limits can
-              lower the final verdict.
-            </p>
-          </div>
+              )}
+              <p className="scorecard-caption">
+                Components use a 95-point scale. The score above is shown out of 100; risk limits
+                can lower the final verdict.
+              </p>
+            </div>
 
-          <dl className="scorecard-facts">
-            <div className="scorecard-row">
-              <dt>{listing.price > 0 ? 'Asking' : 'Asking rent'}</dt>
-              <dd className="mono tabular">
-                {listing.price > 0
-                  ? fmtMoney(listing.price)
-                  : `${fmtMoney(listing.rentEstimate)}/mo`}
-              </dd>
+            <dl className="scorecard-facts">
+              <div className="scorecard-row">
+                <dt>{listing.price > 0 ? 'Asking' : 'Asking rent'}</dt>
+                <dd className="mono tabular">
+                  {listing.price > 0
+                    ? fmtMoney(listing.price)
+                    : `${fmtMoney(listing.rentEstimate)}/mo`}
+                </dd>
+              </div>
+              <div className="scorecard-row">
+                <dt>Cap rate</dt>
+                <dd className="mono tabular">{Number.isFinite(capRate) ? fmtPct(capRate) : '—'}</dd>
+              </div>
+              <div className="scorecard-row">
+                <dt>DSCR</dt>
+                <dd className="mono tabular">
+                  {Number.isFinite(dscr) ? `${dscr.toFixed(2)}×` : '—'}
+                </dd>
+              </div>
+            </dl>
+          </aside>
+        ) : (
+          /* A for-rent listing has no purchase, so the investment score does
+             not apply. Until the landlord report has its own method (L-03),
+             the card says so and shows the two rents that do exist — the old
+             card printed "Hard pass · 14", "DSCR 0.00×" and the comps median
+             under the label "Asking rent" (2026-09-14 review run, D-104). */
+          <aside
+            className="card report-hero-score scorecard"
+            aria-label="Rental listing — no purchase score"
+            style={{ '--score-tone': 'var(--caution)' } as React.CSSProperties}
+          >
+            <div className="scorecard-heading">
+              <div className="scorecard-call">
+                <span className="mono scorecard-eyebrow">Operating view</span>
+                <h2 className="serif scorecard-verdict">No purchase score</h2>
+                <p className="scorecard-tagline">
+                  The investment score rates a purchase; this is a rental listing. A landlord method
+                  is not built yet, so nothing here is scored — the sections below show the rent,
+                  the comps and the running costs.
+                </p>
+              </div>
             </div>
-            <div className="scorecard-row">
-              <dt>Cap rate</dt>
-              <dd className="mono tabular">{Number.isFinite(capRate) ? fmtPct(capRate) : '—'}</dd>
-            </div>
-            <div className="scorecard-row">
-              <dt>DSCR</dt>
-              <dd className="mono tabular">
-                {Number.isFinite(dscr) ? `${dscr.toFixed(2)}×` : '—'}
-              </dd>
-            </div>
-          </dl>
-        </aside>
+            <dl className="scorecard-facts">
+              <div className="scorecard-row">
+                <dt>Asking rent</dt>
+                <dd className="mono tabular">
+                  {listing.askingRent != null && listing.askingRent > 0
+                    ? `${fmtMoney(listing.askingRent)}/mo`
+                    : 'not provided'}
+                </dd>
+              </div>
+              <div className="scorecard-row">
+                <dt>Market rent</dt>
+                <dd className="mono tabular">
+                  {listing.compCount > 0
+                    ? `${fmtMoney(listing.rentEstimate)}/mo · ${listing.compCount} comps`
+                    : 'no comps found'}
+                </dd>
+              </div>
+            </dl>
+          </aside>
+        )}
       </div>
     </section>
   )

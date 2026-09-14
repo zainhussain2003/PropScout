@@ -499,6 +499,8 @@ export interface ListingData {
   annualTaxesKnown?: boolean
   condoFeeMonthly: number
   rentEstimate: number // mid rent estimate from comps, else the rent the engine scored with
+  /** The listing's own asking rent on a for-rent listing; null/absent on a sale (D-104). */
+  askingRent?: number | null
   /** True when rentEstimate is the price-based proxy — no comps, no listed rent (D-101). */
   rentIsProxy?: boolean
   rentLow: number

@@ -559,6 +559,24 @@ describe('PropertyHero', () => {
     expect(screen.getByText('Condo · 950 sqft')).toBeInTheDocument()
   })
 
+  it('a rental listing gets no purchase score: no verdict, no DSCR, both rents named (D-104)', () => {
+    render(
+      <PropertyHero
+        listing={{ ...LISTING, price: 0, askingRent: 3400, rentEstimate: 3275, compCount: 12 }}
+        score={VAUGHAN_SCORE}
+        cashFlowMonthly={cashFlowMonthly}
+        capRate={capRate}
+        dscr={dscr}
+      />
+    )
+    expect(screen.getByText(/No purchase score/i)).toBeInTheDocument()
+    expect(screen.queryByText(/The investment verdict/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^DSCR$/)).not.toBeInTheDocument()
+    expect(screen.getByText('$3,400/mo')).toBeInTheDocument()
+    expect(screen.getByText(/\$3,275\/mo · 12 comps/)).toBeInTheDocument()
+    expect(screen.getByText(/Rental listing · operating view/i)).toBeInTheDocument()
+  })
+
   it('renders "Analyze another listing" button', () => {
     render(
       <PropertyHero

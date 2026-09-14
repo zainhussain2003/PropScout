@@ -3405,3 +3405,16 @@ Hamilton demo.
 
 **Why.** The sample flow and the real flow share one input and one button; the state that
 distinguishes them has to follow the input.
+
+### D-104 · A rental listing's hero shows no purchase score
+
+**Chosen.** When the report renders a for-rent listing (`price` 0 — landlord mode today), the
+sticky score card becomes "Operating view · No purchase score" with the listing's asking rent and
+the comps' market rent (with the comp count), and the crumb reads "Rental listing · operating
+view". The investment verdict, gauge, cash flow, breakdown, cap rate and DSCR are not rendered
+for it. `ListingData.askingRent` carries the listed rent separately from `rentEstimate`.
+
+**Why.** The 2026-09-14 review run of three rental listings in landlord mode showed "Hard pass ·
+14", "Monthly cash flow $1,596" (no mortgage in it), "DSCR 0.00×", "Live recalc · sliders below"
+with no sliders, and the comps median under the label "Asking rent". L-03 (what a landlord score
+should mean) is still the owner's decision; not printing the wrong score meanwhile is not.
