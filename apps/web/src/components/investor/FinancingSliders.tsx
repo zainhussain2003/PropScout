@@ -2,7 +2,8 @@
  * FinancingSliders — live financing assumption sliders for the Investor Report.
  *
  * Three sliders (exact specs — tests verify these values):
- *   Down payment:   min=5%  max=50% step=5%   stored as decimal (0.05–0.50)
+ *   Down payment:   min=20% max=50% step=5%   stored as decimal (0.20–0.50) — 20% is the
+ *                   floor for a rental purchase (no insured mortgage), D-097
  *   Mortgage rate:  min=2%  max=10% step=0.25% stored as decimal (0.02–0.10)
  *   Amortization:   min=10  max=30  step=5     integer years
  *
@@ -18,6 +19,7 @@ import type { FinancingInputs } from '../../types/analysis'
 import { DEFAULT_FINANCING_INPUTS } from '../../constants/demoData'
 import { OSFI_STRESS } from '../../constants/osfi'
 import { fmtMoney } from '../../lib/investorCalc'
+import { FINANCING_SLIDER } from '../../constants/thresholds'
 
 /** The three financing terms a preset is expressed relative to. */
 export type FinancingBase = Pick<
@@ -145,12 +147,13 @@ export function FinancingSliders({
           unit="of price"
           display={`${Math.round(financing.downPaymentPct * 100)}%`}
           secondary={fmtMoney(financing.downPaymentPct * price)}
-          min={5}
-          max={50}
-          step={5}
-          value={financing.downPaymentPct * 100}
+          min={FINANCING_SLIDER.MIN_DOWN_PAYMENT * 100}
+          max={FINANCING_SLIDER.MAX_DOWN_PAYMENT * 100}
+          step={FINANCING_SLIDER.DOWN_PAYMENT_STEP * 100}
+          value={Math.max(FINANCING_SLIDER.MIN_DOWN_PAYMENT, financing.downPaymentPct) * 100}
           onChange={(v) => set({ downPaymentPct: v / 100 })}
-          ticks={['5%', '20%', '35%', '50%']}
+          ticks={['20%', '30%', '40%', '50%']}
+          note="20% is the floor for a rental purchase — insured (high-ratio) mortgages are not available for non-owner-occupied properties."
         />
 
         {/* Mortgage rate */}
@@ -276,6 +279,8 @@ interface SliderRowProps {
   value: number
   ticks: string[]
   onChange: (value: number) => void
+  /** One line under the ticks explaining a bound the user may push against. */
+  note?: string
 }
 
 function SliderRow({
@@ -290,6 +295,7 @@ function SliderRow({
   value,
   ticks,
   onChange,
+  note,
 }: SliderRowProps): JSX.Element {
   return (
     <div className="col" style={{ gap: 8 }}>
@@ -358,6 +364,11 @@ function SliderRow({
           </span>
         ))}
       </div>
+      {note && (
+        <p style={{ fontSize: 11.5, lineHeight: 1.45, color: 'var(--muted)', margin: '4px 0 0' }}>
+          {note}
+        </p>
+      )}
     </div>
   )
 }

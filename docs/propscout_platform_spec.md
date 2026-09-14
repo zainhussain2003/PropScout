@@ -306,6 +306,8 @@ Output: low/mid/high rent range (25th/50th/75th percentile), number of comps, co
 
 Four default scenarios: base case, OSFI stress, 35% down, conservative (rate +2%). Pro sliders: down payment 20–50%, mortgage rate ±3%, amortization 20/25/30yr. Live recalculation on every slider move.
 
+The 20% floor is a rule, not a preference: a non-owner-occupied rental purchase is not eligible for default (high-ratio / insured) mortgage insurance in Canada, so no lender writes a rental mortgage below 20% down. The slider says so under its ticks (D-097). The personal-buyer report, when it gets financing controls, may go below 20% only if it also adds the insurance premium to the loan.
+
 Closing costs by province:
 
 | Province            | Land Transfer Tax                                                   |
