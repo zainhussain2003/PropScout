@@ -66,7 +66,7 @@ export function LandlordPropertyHero({
     <section className="container" style={{ paddingTop: 56, paddingBottom: 48 }}>
       {/* Breadcrumb strip */}
       <div className="row gap-12" style={{ marginBottom: 28, color: 'var(--muted)', fontSize: 13 }}>
-        <a href="#" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span style={{ transform: 'rotate(180deg)', display: 'inline-flex' }}>
             <Icon name="arrow" size={13} />
           </span>

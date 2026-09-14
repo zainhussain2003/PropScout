@@ -23,6 +23,7 @@
  */
 
 import { useCallback, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { TruncatedVerdict } from '../components/paywall/TruncatedVerdict'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { usePdfExport } from '../hooks/usePdfExport'
@@ -269,9 +270,8 @@ export function InvestorReport({
       realAnalysis ?? null // skip internal API call when analysis is preloaded
     )
 
-  const handleBack = useCallback(() => {
-    window.history.back()
-  }, [])
+  const navigate = useNavigate()
+  const handleBack = useCallback(() => navigate('/'), [navigate])
 
   const handleRetry = useCallback(() => {
     window.location.reload()

@@ -35,7 +35,7 @@ not a defect.
 | J-05   | P2  | "Under sixty seconds, every time"                    | ✅     | #57                                                                                                |
 | J-06   | P1  | Status updates are no-ops; failed = pending          | 🟡     | Code #67 D-087; migration awaiting apply — BACKLOG                                                 |
 | J-07   | P1  | No polling deadline                                  | ✅     | #37 D-068 (no backoff; not needed at 2 s)                                                          |
-| J-08   | P1  | Transient poll error ends the flow                   | ⬜     | BACKLOG (small)                                                                                    |
+| J-08   | P1  | Transient poll error ends the flow                   | ✅     | #62 D-083                                                                                          |
 | J-09   | P2  | Progress steps claim things they cannot know         | ✅     | #48 D-077                                                                                          |
 | J-10   | P2  | Cancel does not cancel server work                   | 🔒     | Needs job status — BACKLOG                                                                         |
 | J-11   | P2  | Reload retriggers analysis                           | ✅     | #52 D-080                                                                                          |
@@ -51,7 +51,7 @@ not a defect.
 | S-06   | P1  | One score for all modes                              | 🟡     | Tenant has its own score; personal paused; landlord = L-03 🔒                                      |
 | UI-01  | P1  | Report header Share has no handler                   | ✅     | #48 D-077                                                                                          |
 | UI-02  | P1  | Save to account does not save                        | ✅     | #48, #59                                                                                           |
-| UI-03  | P2  | Breadcrumbs inconsistent; no mode switch             | 🟡     | Mode-switch claim removed #57; breadcrumb polish ⬜                                                |
+| UI-03  | P2  | Breadcrumbs inconsistent; no mode switch             | ✅     | Mode-switch claim removed #57; crumbs #66 D-086                                                    |
 | UI-04  | P2  | Theme page-local, not persisted                      | ✅     | #50 D-079                                                                                          |
 | T-01   | P0  | Share recipient cannot mutate owner state            | ✅     | #34 D-065; verified live                                                                           |
 | T-02   | P1  | Durable processing/failed states                     | 🟡     | Code #67 D-087; migration awaiting apply — BACKLOG                                                 |
@@ -80,7 +80,7 @@ not a defect.
 | `calculate_break_even_rent` management asymmetry        | ✅     | Router tests kept; D-067                                                |
 | Listing rows overwritten by re-scrape                   | ✅     | #38 D-069                                                               |
 | Evidence labels not applied                             | ➖     | Process note                                                            |
-| Sun obstruction coverage threshold                      | ⬜     | Coverage shown; no suppression threshold — BACKLOG                      |
+| Sun obstruction coverage threshold                      | ✅     | #64 D-085 — below 50% measured, labelled indicative                     |
 | "True monthly cost" ~24% modelled                       | 🟡     | Rows labelled estimate/confirm; headline still "true" — BACKLOG         |
 | Narrative `tier: 'free'` hardcoded                      | ➖     | Inert; truncation is client-side                                        |
 | Agent sharing vs mutable share links                    | ✅     | Links are read-only for recipients (#34)                                |

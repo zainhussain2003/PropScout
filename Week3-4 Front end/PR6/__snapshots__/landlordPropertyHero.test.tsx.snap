@@ -10,7 +10,7 @@ exports[`LandlordPropertyHero > matches snapshot 1`] = `
     style="margin-bottom: 28px; color: var(--muted); font-size: 13px;"
   >
     <a
-      href="#"
+      href="/"
       style="display: inline-flex; align-items: center; gap: 6px;"
     >
       <span

@@ -379,6 +379,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     targetHigh,
     chips: buildTenantChips(listing),
     photoUrls: listing.photos.length > 0 ? listing.photos : undefined,
+    analyzedAt: analysis.createdAt,
   }
 }
 

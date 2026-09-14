@@ -357,6 +357,19 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(screen.queryByText('$0/mo')).not.toBeInTheDocument()
   })
 
+  it('dates a live tenant report by its analysis time instead of "refreshed 3 min ago"', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...ANALYSIS, mode: 'tenant', riskFlags: [] },
+      listing: { ...LISTING, listingType: 'for-rent' },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    // createdAt is 2026-06-01 (UTC); the local date may land on May 31 or Jun 1.
+    expect(await screen.findByText(/Analyzed (May 31|Jun\.? 1), 2026/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Refreshed \d+ min ago/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Sample report/i)).not.toBeInTheDocument()
+  })
+
   it('feeds real risk flags into the HomeScore risk component (standard red → 5/10)', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: {

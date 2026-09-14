@@ -1093,6 +1093,7 @@ propscout/
 │   │       │
 │   │       ├── lib/scoreBreakdown.ts + scoreBreakdown.test.ts # Weighted component bar presentation
 │       ├── lib/listingFacts.ts + listingFacts.test.ts     # One rule for counts a source may not provide (D-072)
+│       ├── lib/sunCoverage.ts + sunCoverage.test.ts       # Obstruction coverage → checked / indicative (D-085)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css
@@ -1171,9 +1172,7 @@ propscout/
 │   │       │   │
 │   │       │   └── states/            # Error, empty, and gate states
 │   │       │       ├── BlockState.tsx         # Full-page error/gate state
-│   │       │       ├── ProvinceGate.tsx       # Non-Ontario waitlist
-│   │       │       ├── NoCompsInlineState.tsx
-│   │       │       └── ScraperPartialInlineState.tsx
+│   │       │       └── ProvinceGate.tsx       # Non-Ontario waitlist (NoComps/ScraperPartial inline states removed 2026-09-13 — never mounted; live sections render their own empties)
 │   │       │
 │   │       ├── hooks/
 │   │       │   ├── useAccount.ts      # Real identity + usage from /me (no fixtures — D-064)
