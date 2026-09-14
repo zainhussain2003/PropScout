@@ -3405,3 +3405,14 @@ Hamilton demo.
 
 **Why.** The sample flow and the real flow share one input and one button; the state that
 distinguishes them has to follow the input.
+
+### D-103 · A listing with no sale price shows no price-derived metric tile
+
+**Chosen.** When `listing.price` is 0 — a for-rent listing rendered by the investor/landlord
+report — §01 shows only NOI and break-even rent, the verdict reads "Operating view · no purchase
+price", and one sentence says cap rate, cash-on-cash, DSCR, mortgage payment and gross yield need
+a price and are not shown. A priced listing is unchanged.
+
+**Why.** The 2026-09-14 review run of three rental listings in landlord mode showed "$19,154 a
+year on $0 — before any mortgage", "Monthly payment $0" and cash-on-cash on $0 invested. The
+landlord report's own method is an owner decision (L-03); printing nonsense while it waits is not.
