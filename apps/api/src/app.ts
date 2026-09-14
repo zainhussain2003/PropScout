@@ -8,6 +8,7 @@ import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
 import { corsOrigins } from './corsOrigins'
+import { buildInfo } from './lib/buildInfo'
 
 const fastify = Fastify({
   logger: true,
@@ -79,7 +80,7 @@ async function main(): Promise<void> {
   await fastify.register(import('./routes/waitlist'), { prefix: '/waitlist' })
 
   fastify.get('/health', async (_req, _reply) => {
-    return { status: 'ok', ts: new Date().toISOString() }
+    return { status: 'ok', ts: new Date().toISOString(), ...buildInfo() }
   })
 
   // ── Start ───────────────────────────────────────────────────────────────────
