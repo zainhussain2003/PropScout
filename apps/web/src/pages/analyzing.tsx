@@ -51,6 +51,17 @@ const POLL_INTERVAL_MS = 2000
  */
 const POLL_TIMEOUT_MS = 3 * 60 * 1000
 
+/**
+ * How many polls in a row may fail before the page reports an error.
+ *
+ * A poll is a plain GET every two seconds; one dropped request (a phone
+ * changing networks, a Railway cold restart, a 502 from the edge) used to end
+ * the whole flow with "Something went wrong" while the pipeline was still
+ * running and would have finished seconds later (audit J-08). A definitive
+ * answer — the report no longer exists — is not a blip and is handled at once.
+ */
+const POLL_MAX_CONSECUTIVE_FAILURES = 3
+
 // What the pipeline is *doing*, not what it has *achieved*. This screen has no
 // per-step signal from the server — the list advances on elapsed time — so it
 // used to announce "Fetched listing from Realtor.ca" for a property typed in
@@ -244,6 +255,7 @@ export function AnalyzingPage(): JSX.Element {
 
       // Step 2 — poll until complete, failed, or the bound above is reached.
       const startedAt = Date.now()
+      let consecutiveFailures = 0
       intervalRef.current = setInterval(() => {
         void (async () => {
           if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
@@ -257,6 +269,7 @@ export function AnalyzingPage(): JSX.Element {
           try {
             const result = await fetchReport(token)
             if (!mountedRef.current) return
+            consecutiveFailures = 0
 
             if (mountedRef.current) setStatus(result.status)
 
@@ -279,15 +292,22 @@ export function AnalyzingPage(): JSX.Element {
             }
           } catch (err) {
             if (!mountedRef.current) return
+            const gone =
+              err instanceof ApiRequestError && (err.code === 'NOT_FOUND' || err.code === 'EXPIRED')
+            consecutiveFailures += 1
+            if (!gone && consecutiveFailures < POLL_MAX_CONSECUTIVE_FAILURES) {
+              // Transient: the next tick tries again.
+              return
+            }
             if (intervalRef.current !== null) {
               clearInterval(intervalRef.current)
               intervalRef.current = null
             }
+            if (gone) {
+              navigate('/')
+              return
+            }
             if (err instanceof ApiRequestError) {
-              if (err.code === 'NOT_FOUND' || err.code === 'EXPIRED') {
-                navigate('/')
-                return
-              }
               if (mountedRef.current) setError(err.message)
             } else {
               if (mountedRef.current) setError('Something went wrong — please try again.')

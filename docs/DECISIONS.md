@@ -3041,6 +3041,25 @@ documented "unknown" value.
 | Keep `detached` as the row-reader default | The reader cannot know; "more common" is a prior, and the report presents facts.             |
 | Make the type required on the form        | Some people will not know; the honest answer for them is "not provided", not a forced guess. |
 
+### D-083 · One failed poll is not a failed analysis
+
+**Chosen.** The analyzing page tolerates up to two consecutive failed polls and gives up on the
+third (`POLL_MAX_CONSECUTIVE_FAILURES = 3`); a successful poll resets the count. A definitive
+answer — `NOT_FOUND` or `EXPIRED` — still sends the user home at once. The three-minute wall-clock
+bound (D-068) is unchanged and still governs the "taking longer than it should" state.
+
+**Why.** Audit J-08. A poll is a plain GET every two seconds; one dropped request — a phone
+changing networks, a Railway cold restart, a 502 from the edge — ended the whole flow with
+"Something went wrong" while the pipeline was still running and would have finished seconds
+later. The user then pressed "try again" and re-triggered work that D-080 now dedupes, but the
+error was never true.
+
+| Option                               | Why not                                                                                               |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Retry forever until the wall clock   | A dead API would show a progress bar for three minutes; three misses (six seconds) is enough to know. |
+| Exponential backoff between retries  | The interval is already two seconds and bounded; backoff adds latency to the common "one blip" case.  |
+| Treat 5xx as transient, 4xx as final | The only 4xx that matter are already handled by code; other 4xx on a GET by token are not expected.   |
+
 ### D-084 · A for-rent address asks for running costs only from the owner
 
 **Chosen.** When the address form is switched to "For rent", the condo-fee and property-tax
