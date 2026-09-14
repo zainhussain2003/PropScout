@@ -421,4 +421,40 @@ describe('POST / — property type the scraper cannot recognise', () => {
     const body = JSON.parse(res.body) as { listing: { propertyType: string } }
     expect(body.listing.propertyType).toBe('unknown')
   })
+
+  // ── A stated zero is a studio; an unstated count is null (D-092) ────────────
+
+  async function scrapeCounts(extra: object): Promise<{
+    beds: number | null
+    baths: number | null
+    bedsKnown?: boolean
+    bathsKnown?: boolean
+  }> {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ ...ONTARIO_FIXTURE, ...extra }, 200))
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+    return (JSON.parse(res.body) as { listing: ReturnType<typeof Object> }).listing as never
+  }
+
+  it('keeps a studio as 0 beds when the scraper says the count was on the page', async () => {
+    const l = await scrapeCounts({ beds: 0, baths: 1, beds_known: true, baths_known: true })
+    expect(l.beds).toBe(0)
+    expect(l.bedsKnown).toBe(true)
+  })
+
+  it('stores null for a count the page did not carry', async () => {
+    const l = await scrapeCounts({ beds: 0, baths: 0, beds_known: false, baths_known: false })
+    expect(l.beds).toBeNull()
+    expect(l.baths).toBeNull()
+    expect(l.bedsKnown).toBe(false)
+  })
+
+  it('an older scraper build without the flags passes counts through unchanged', async () => {
+    const l = await scrapeCounts({ beds: 2, baths: 1 })
+    expect(l.beds).toBe(2)
+    expect(l.bedsKnown).toBeUndefined()
+  })
 })

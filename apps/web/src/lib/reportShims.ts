@@ -40,7 +40,14 @@ import {
   formatPropertyType,
 } from '../constants/defaults'
 import { computeTenantScore } from './tenantScore'
-import { bareCount, bedBathLabel, countLabel, knownCount, NOT_PROVIDED } from './listingFacts'
+import {
+  bareCount,
+  bedBathLabel,
+  countLabel,
+  knownCount,
+  NOT_PROVIDED,
+  bedroomLabel,
+} from './listingFacts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -168,8 +175,11 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
     province: listing.province,
     toronto: listing.city.toLowerCase() === 'toronto',
     propertyType: listing.propertyType,
-    beds: bareCount(listing.beds),
-    baths: bareCount(listing.baths),
+    beds:
+      knownCount(listing.beds, listing.bedsKnown) === 0
+        ? 'Studio'
+        : bareCount(listing.beds, listing.bedsKnown),
+    baths: bareCount(listing.baths, listing.bathsKnown),
     sqft,
     parking,
     yearBuilt: listing.yearBuilt ?? 0,
@@ -266,8 +276,11 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
     province: listing.province,
     isToronto: listing.city.toLowerCase() === 'toronto',
     propertyType: listing.propertyType,
-    beds: bareCount(listing.beds),
-    baths: bareCount(listing.baths),
+    beds:
+      knownCount(listing.beds, listing.bedsKnown) === 0
+        ? 'Studio'
+        : bareCount(listing.beds, listing.bedsKnown),
+    baths: bareCount(listing.baths, listing.bathsKnown),
     sqft: listing.sqft ?? 0,
     parking: countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED }),
     yearBuilt: listing.yearBuilt ?? 0,
@@ -367,8 +380,8 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     // The hero appends the unit ("{beds} · {baths} bath", "{sqft} sqft"), so these
     // carry bare values — beds keeps its "bed(s)" word (hero shows it as-is), but
     // baths/sqft must be bare or they double ("2 baths bath", "700 sqft sqft").
-    beds: countLabel(listing.beds, 'bed', { fallback: `${NOT_PROVIDED} beds` }),
-    baths: bareCount(listing.baths),
+    beds: bedroomLabel(listing.beds, listing.bedsKnown, { fallback: `${NOT_PROVIDED} beds` }),
+    baths: bareCount(listing.baths, listing.bathsKnown),
     sqft: listing.sqft ? listing.sqft.toLocaleString() : '',
     floor: '',
     utilities: '',
@@ -426,7 +439,12 @@ export function shimToTenantSpecRows(listing: Listing): {
   buildingRows: Array<[string, string]>
 } {
   const unitRows: Array<[string, string]> = [
-    ['Bedrooms', countLabel(listing.beds, 'bedroom', { fallback: 'Not listed' })],
+    [
+      'Bedrooms',
+      knownCount(listing.beds, listing.bedsKnown) === 0
+        ? 'Studio'
+        : countLabel(listing.beds, 'bedroom', { fallback: 'Not listed' }),
+    ],
     ['Bathrooms', countLabel(listing.baths, 'bathroom', { fallback: 'Not listed' })],
     ['Interior size', listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : 'Not listed'],
     ['Property type', formatPropertyType(listing.propertyType)],
@@ -674,8 +692,11 @@ export function shimToLandlordProperty(listing: Listing, analysis: Analysis): La
     province: listing.province,
     toronto: listing.city.toLowerCase() === 'toronto',
     propertyType: formatPropertyType(listing.propertyType),
-    beds: bareCount(listing.beds),
-    baths: bareCount(listing.baths),
+    beds:
+      knownCount(listing.beds, listing.bedsKnown) === 0
+        ? 'Studio'
+        : bareCount(listing.beds, listing.bedsKnown),
+    baths: bareCount(listing.baths, listing.bathsKnown),
     sqft: listing.sqft ?? 0,
     parking,
     yearBuilt: listing.yearBuilt ?? 0,

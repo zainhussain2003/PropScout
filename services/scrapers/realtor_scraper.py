@@ -90,6 +90,11 @@ class ScrapedListing:
     # "Total Parking Spaces" from the details section (was never captured —
     # the API hardcoded 0).
     parking_spaces: int | None = None
+    # Whether the dataLayer actually carried a bedroom / bathroom count. The
+    # parser used "0" for a missing field, so a genuine studio (bedrooms: '0')
+    # was indistinguishable from an absent one and rendered "— bed" (D-092).
+    beds_known: bool = False
+    baths_known: bool = False
 
 
 def _dl(field: str, block: str) -> str | None:
@@ -283,8 +288,12 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
 
         price_raw = _dl("price", dl) or ""
         lease_raw = _dl("leasePrice", dl) or ""
-        beds_raw = _dl("bedrooms", dl) or "0"
-        baths_raw = _dl("bathrooms", dl) or "0"
+        beds_field = _dl("bedrooms", dl)
+        baths_field = _dl("bathrooms", dl)
+        beds_known = beds_field is not None and beds_field.strip() != ""
+        baths_known = baths_field is not None and baths_field.strip() != ""
+        beds_raw = beds_field or "0"
+        baths_raw = baths_field or "0"
         prop_type = _dl("propertyType", dl) or ""
         building_type = _dl("buildingType", dl)
         sqft_raw = _dl("interiorFloorSpace", dl) or ""
@@ -385,6 +394,8 @@ async def scrape_listing(url: str) -> ScrapedListing | None:
             },
             building_type=building_type,
             parking_spaces=details.parking_spaces,
+            beds_known=beds_known or details.beds_above_grade is not None,
+            baths_known=baths_known,
         )
 
     except Exception:
