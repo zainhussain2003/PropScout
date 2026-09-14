@@ -1261,7 +1261,7 @@ propscout/
 │           ├── services/              # One file per external API — never call APIs in routes
 │           │   ├── anthropicService.ts      # Claude Haiku (extraction) + Sonnet (narrative)
 │           │   ├── walkScoreService.ts      # Walk Score + Transit Score
-│           │   ├── mapboxService.ts         # Geocoding + map tiles
+│           │   ├── mapboxService.ts         # Geocoding + Directions (routed travel times, D-096)
 │           │   ├── googlePlacesService.ts   # School discovery
 │           │   ├── stripeService.ts         # Subscriptions + billing portal
 │           │   ├── cmhcService.ts           # Vacancy rates (getVacancyRateByCity)

@@ -1,4 +1,4 @@
-import { geocodeAddress } from './mapboxService'
+import { geocodeAddress, routeMinutes } from './mapboxService'
 
 const mockFetch = jest.fn()
 global.fetch = mockFetch as unknown as typeof fetch
@@ -72,5 +72,38 @@ describe('geocodeAddress', () => {
 
     expect(result).toBeNull()
     expect(mockFetch).not.toHaveBeenCalled()
+  })
+})
+
+describe('routeMinutes', () => {
+  const A = { lat: 43.65, lng: -79.38 }
+  const B = { lat: 43.66, lng: -79.39 }
+
+  it('returns the first route duration in whole minutes', async () => {
+    process.env.MAPBOX_TOKEN = 'pk.test'
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ routes: [{ duration: 754 }] }, 200))
+    expect(await routeMinutes('walking', A, B)).toBe(13)
+    const url = String(mockFetch.mock.calls[0][0])
+    expect(url).toContain('/directions/v5/mapbox/walking/-79.38,43.65;-79.39,43.66')
+  })
+
+  it('never reports zero minutes for a real route', async () => {
+    process.env.MAPBOX_TOKEN = 'pk.test'
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ routes: [{ duration: 12 }] }, 200))
+    expect(await routeMinutes('driving', A, B)).toBe(1)
+  })
+
+  it('null without a token, on a non-200, on no routes, and on a network error', async () => {
+    process.env.MAPBOX_TOKEN = ''
+    expect(await routeMinutes('walking', A, B)).toBeNull()
+    expect(mockFetch).not.toHaveBeenCalled()
+
+    process.env.MAPBOX_TOKEN = 'pk.test'
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ message: 'nope' }, 422))
+    expect(await routeMinutes('walking', A, B)).toBeNull()
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ routes: [] }, 200))
+    expect(await routeMinutes('walking', A, B)).toBeNull()
+    mockFetch.mockRejectedValueOnce(new Error('ECONNRESET'))
+    expect(await routeMinutes('walking', A, B)).toBeNull()
   })
 })

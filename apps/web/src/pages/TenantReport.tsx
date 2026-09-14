@@ -82,6 +82,7 @@ import {
   shimToTenantChecklist,
   shimToTenantNegotiation,
   shimToListedVsReality,
+  travelTimeLabel,
 } from '../lib/reportShims'
 import { useTheme } from '../hooks/useTheme'
 import { scanState, SCAN_VERDICT, SCAN_NOTE, type ScanState } from '../lib/scanState'
@@ -1618,7 +1619,7 @@ export function TenantReport({
             ? (realAnalysis!.nearbyDistances ?? []).map((d) => ({
                 k: d.label,
                 v: d.distanceKm < 0.05 ? '<0.1' : d.distanceKm.toFixed(1),
-                unit: 'km straight-line',
+                unit: d.routed ? travelTimeLabel(d) : 'km straight-line',
                 tone: (d.distanceKm <= 1.5 ? 'pass' : 'caution') as 'pass' | 'caution',
               }))
             : CHARLES_DISTANCES

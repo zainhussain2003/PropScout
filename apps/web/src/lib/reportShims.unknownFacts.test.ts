@@ -19,6 +19,7 @@ import {
   shimToTenantAmenities,
   shimToTenantCostLines,
   shimToTenantChecklist,
+  travelTimeLabel,
 } from './reportShims'
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
@@ -129,5 +130,17 @@ describe('a provided count is still shown', () => {
     expect(shimToTenantSpecRows(given).unitRows.find(([k]) => k === 'Parking')?.[1]).toBe(
       '2 spaces'
     )
+  })
+})
+
+describe('travelTimeLabel (D-096)', () => {
+  it('shows routed walking and driving minutes', () => {
+    expect(travelTimeLabel({ driveMin: 4, walkMin: 12, routed: true })).toBe(
+      'km · 12 min walk · 4 min drive'
+    )
+    expect(travelTimeLabel({ driveMin: 4, walkMin: null, routed: true })).toBe('km · 4 min drive')
+  })
+  it('labels the formula as an estimate when nothing was routed', () => {
+    expect(travelTimeLabel({ driveMin: 3 })).toBe('km · ~3 min drive, straight-line estimate')
   })
 })

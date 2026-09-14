@@ -87,7 +87,8 @@ From the four per-report audits' "field to work on" columns, grouped. None start
 - **Provenance:** field-level badges (listing says / you entered / calculated / assumed as of),
   extraction confidence, scrape timestamps, geocoder match type.
 - **Schools:** attendance-boundary polygons, grades, pedestrian routing, Fraser data.
-- **Location:** routing API for walking/driving times instead of straight-line.
+- **Location:** routed walking/driving times shipped (#76, D-096); transit times would need a
+  transit routing source.
 - **Financing:** rate provenance/date, fixed vs variable, CMHC rules, renewal scenarios, saved
   side-by-side cases; personal-report financing controls.
 - **Checklists:** notes, owners, deadlines, attachments (ticks are kept per browser since #75,

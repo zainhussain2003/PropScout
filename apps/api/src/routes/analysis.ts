@@ -714,6 +714,10 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           annualTaxesEstimated: listing.annualTaxes == null || listing.annualTaxes <= 0,
           cmhcCityMatched: hasVacancyRateForCity(listing.city),
           walkScore,
+          travelTimesRouted:
+            nearbyDistances != null && nearbyDistances.length > 0
+              ? nearbyDistances.some((d) => d.routed === true)
+              : undefined,
         })
         const analysis: Analysis = {
           id: token,

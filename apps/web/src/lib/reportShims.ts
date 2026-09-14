@@ -225,6 +225,22 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
  * Only this function needs updating at that point.
  */
 /** Google-Places distances → the {k,v,unit,tone} rows the report tables render. */
+/**
+ * "km · 12 min walk · 4 min drive" when the times were routed; the old
+ * straight-line formula is still shown, but says so (D-096).
+ */
+export function travelTimeLabel(d: {
+  driveMin: number
+  walkMin?: number | null
+  routed?: boolean
+}): string {
+  if (d.routed) {
+    const walk = d.walkMin != null ? `${d.walkMin} min walk · ` : ''
+    return `km · ${walk}${d.driveMin} min drive`
+  }
+  return `km · ~${d.driveMin} min drive, straight-line estimate`
+}
+
 function mapDistanceRows(analysis: Analysis): Array<{
   k: string
   v: string
@@ -234,7 +250,7 @@ function mapDistanceRows(analysis: Analysis): Array<{
   return (analysis.nearbyDistances ?? []).map((d) => ({
     k: d.label,
     v: d.distanceKm.toFixed(1),
-    unit: `km · ${d.driveMin} min drive`,
+    unit: travelTimeLabel(d),
     tone: d.distanceKm <= 1.5 ? 'pass' : 'caution',
   }))
 }
