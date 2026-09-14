@@ -110,6 +110,14 @@ export interface RentalEstimate {
 }
 
 export interface SunScoutResult {
+  /**
+   * Facade bearing the figures were computed for, degrees (180 = south). Absent
+   * on an analysis that never had the facade set → the pipeline's south
+   * assumption (D-098).
+   */
+  facadeBearing?: number
+  /** True once the user chose the facade; the figures are then an input, not an assumption. */
+  facadeConfirmed?: boolean
   annualPeakSunHours: number
   summerDailyHours: number
   winterDailyHours: number
