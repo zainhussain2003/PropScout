@@ -3041,6 +3041,44 @@ documented "unknown" value.
 | Keep `detached` as the row-reader default | The reader cannot know; "more common" is a prior, and the report presents facts.             |
 | Make the type required on the form        | Some people will not know; the honest answer for them is "not provided", not a forced guess. |
 
+### D-083 · One failed poll is not a failed analysis
+
+**Chosen.** The analyzing page tolerates up to two consecutive failed polls and gives up on the
+third (`POLL_MAX_CONSECUTIVE_FAILURES = 3`); a successful poll resets the count. A definitive
+answer — `NOT_FOUND` or `EXPIRED` — still sends the user home at once. The three-minute wall-clock
+bound (D-068) is unchanged and still governs the "taking longer than it should" state.
+
+**Why.** Audit J-08. A poll is a plain GET every two seconds; one dropped request — a phone
+changing networks, a Railway cold restart, a 502 from the edge — ended the whole flow with
+"Something went wrong" while the pipeline was still running and would have finished seconds
+later. The user then pressed "try again" and re-triggered work that D-080 now dedupes, but the
+error was never true.
+
+| Option                               | Why not                                                                                               |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Retry forever until the wall clock   | A dead API would show a progress bar for three minutes; three misses (six seconds) is enough to know. |
+| Exponential backoff between retries  | The interval is already two seconds and bounded; backoff adds latency to the common "one blip" case.  |
+| Treat 5xx as transient, 4xx as final | The only 4xx that matter are already handled by code; other 4xx on a GET by token are not expected.   |
+
+### D-084 · A for-rent address asks for running costs only from the owner
+
+**Chosen.** When the address form is switched to "For rent", the condo-fee and property-tax
+fields are hidden behind one checkbox, "I own this unit — add its running costs". Unchecked, the
+form sends null for both, even if something was typed while the form was still "For sale". The
+for-sale form is unchanged. The hint under the fee reads for an owner ("comes out of the rent
+before anything else") rather than for a buyer.
+
+**Why.** A tenant does not pay either cost and usually does not know them; asking made the form
+look like it was for someone else, and a guess typed in to get past it would have become a fact
+(D-072). The mode (tenant / landlord) is chosen _after_ this form, so the form cannot branch on
+it; the ownership question is the earliest point at which the fields make sense.
+
+| Option                              | Why not                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| Ask the mode before the form        | Reorders the whole funnel (spec §5) to save one checkbox.                   |
+| Hide the fields on for-rent, always | A landlord's report needs them; hiding them for everyone loses real inputs. |
+| Keep the fields, reword the hints   | Still asks a renter for numbers they do not have.                           |
+
 ### D-085 · Obstruction shade from a minority of the skyline is "indicative", not "checked"
 
 **Chosen.** `lib/sunCoverage.ts` computes coverage = buildings with a known height ÷ all nearby

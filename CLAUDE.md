@@ -1172,9 +1172,7 @@ propscout/
 │   │       │   │
 │   │       │   └── states/            # Error, empty, and gate states
 │   │       │       ├── BlockState.tsx         # Full-page error/gate state
-│   │       │       ├── ProvinceGate.tsx       # Non-Ontario waitlist
-│   │       │       ├── NoCompsInlineState.tsx
-│   │       │       └── ScraperPartialInlineState.tsx
+│   │       │       └── ProvinceGate.tsx       # Non-Ontario waitlist (NoComps/ScraperPartial inline states removed 2026-09-13 — never mounted; live sections render their own empties)
 │   │       │
 │   │       ├── hooks/
 │   │       │   ├── useAccount.ts      # Real identity + usage from /me (no fixtures — D-064)

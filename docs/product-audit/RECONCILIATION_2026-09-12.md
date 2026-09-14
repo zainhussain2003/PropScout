@@ -35,7 +35,7 @@ not a defect.
 | J-05   | P2  | "Under sixty seconds, every time"                    | ✅     | #57                                                                                                |
 | J-06   | P1  | Status updates are no-ops; failed = pending          | 🔒     | Migration — BACKLOG                                                                                |
 | J-07   | P1  | No polling deadline                                  | ✅     | #37 D-068 (no backoff; not needed at 2 s)                                                          |
-| J-08   | P1  | Transient poll error ends the flow                   | ⬜     | BACKLOG (small)                                                                                    |
+| J-08   | P1  | Transient poll error ends the flow                   | ✅     | #62 D-083                                                                                          |
 | J-09   | P2  | Progress steps claim things they cannot know         | ✅     | #48 D-077                                                                                          |
 | J-10   | P2  | Cancel does not cancel server work                   | 🔒     | Needs job status — BACKLOG                                                                         |
 | J-11   | P2  | Reload retriggers analysis                           | ✅     | #52 D-080                                                                                          |

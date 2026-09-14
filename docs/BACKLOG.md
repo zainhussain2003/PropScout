@@ -57,15 +57,11 @@
 
 Ordered by how much a user would notice.
 
-| Item                                                          | Notes                                                                                                                                                                                   |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **J-08 — transient poll error ends the flow**                 | One failed `fetchReport` during polling sets the error state. Retry a few times before giving up.                                                                                       |
-| **Assumption ledger ("every number has a source")**           | The landing methodology claim is not true of the constants (insurance 0.35%, maintenance 1.5%, closing $2,400, CMHC map). Either build the per-row source/date badge or drop the claim. |
-| **UI-03 — breadcrumbs**                                       | Slug vs label inconsistency across report navs; small.                                                                                                                                  |
-| **J-04 — split `LandingPage.tsx`**                            | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only.                                                                               |
-| **For-rent details form asks for condo fee and property tax** | A tenant does not pay them; a landlord does. Show them for the landlord path only (needs the mode earlier, or hide behind "I own this unit").                                           |
-| **Dead components**                                           | `NoCompsInlineState`, `ScraperPartialInlineState` are unused (and carry inert buttons). Delete or wire.                                                                                 |
-| **Bike Score and Walk Score source dates**                    | Persist response metadata and show "as of".                                                                                                                                             |
+| Item | Notes |
+| **Assumption ledger ("every number has a source")** | The landing methodology claim is not true of the constants (insurance 0.35%, maintenance 1.5%, closing $2,400, CMHC map). Either build the per-row source/date badge or drop the claim. |
+| **UI-03 — breadcrumbs** | Slug vs label inconsistency across report navs; small. |
+| **J-04 — split `LandingPage.tsx`** | ~2,900 lines: nav, input orchestration, demo previews, pricing and FAQ in one file. Maintainability only. |
+| **Bike Score and Walk Score source dates** | Persist response metadata and show "as of". |
 
 ## 6. Paywall / pricing (lower priority per owner) **[code, after the decisions above]**
 

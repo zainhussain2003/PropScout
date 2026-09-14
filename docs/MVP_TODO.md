@@ -259,8 +259,8 @@ Reference: `Paywall States.html` + `Account.html` + `Error States.html` + `Auth 
 - [x] `<HardLimitGate onClose monthlyLimit used resetsIn>` — full-screen monthly limit blocker
 - [x] `<BlockState>` — full-page error/gate state
 - [x] `<ProvinceGate>` — non-Ontario waitlist
-- [x] `<NoCompsInlineState>` — inline low-confidence callout
-- [x] `<ScraperPartialInlineState>` — inline "X of Y fields" + missing-field inputs
+- [x] ~~`<NoCompsInlineState>`~~ — built, never mounted; removed 2026-09-13 (live comps section has its own empty state)
+- [x] ~~`<ScraperPartialInlineState>`~~ — built, never mounted; removed 2026-09-13 (address form is the manual-entry path)
 - [x] Account dashboard `/account` — saved analyses, profile, plan, notifications tabs
 - [x] Auth stubs: magic link confirm, password reset, email verified, Stripe welcome, Stripe cancelled
 - [x] Wire all paywall components into every report
