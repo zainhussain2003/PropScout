@@ -66,9 +66,22 @@ describe('FinancingSliders', () => {
     )
     const slider = screen.getByLabelText('Down payment') as HTMLInputElement
     expect(slider.value).toBe('20')
-    expect(slider.min).toBe('5')
+    // 20% is the floor for a rental purchase — no insured mortgage (D-097)
+    expect(slider.min).toBe('20')
     expect(slider.max).toBe('50')
     expect(slider.step).toBe('5')
+  })
+
+  it('explains the 20% floor and never renders a value below it', () => {
+    render(
+      <FinancingSliders
+        financing={{ ...mockFinancingInputs, downPaymentPct: 0.05 }}
+        price={729900}
+        onChange={defaultOnChange}
+      />
+    )
+    expect(screen.getByText(/20% is the floor for a rental purchase/i)).toBeInTheDocument()
+    expect((screen.getByLabelText('Down payment') as HTMLInputElement).value).toBe('20')
   })
 
   it('renders mortgage rate slider with correct value (4.79 = 0.0479 * 100)', () => {

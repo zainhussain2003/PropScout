@@ -2842,7 +2842,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 class="scout-slider"
                 id="slider-down-payment"
                 max="50"
-                min="5"
+                min="20"
                 step="5"
                 style="width: 100%;"
                 type="range"
@@ -2855,19 +2855,19 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   class="mono"
                   style="font-size: 9px; color: var(--muted);"
                 >
-                  5%
-                </span>
-                <span
-                  class="mono"
-                  style="font-size: 9px; color: var(--muted);"
-                >
                   20%
                 </span>
                 <span
                   class="mono"
                   style="font-size: 9px; color: var(--muted);"
                 >
-                  35%
+                  30%
+                </span>
+                <span
+                  class="mono"
+                  style="font-size: 9px; color: var(--muted);"
+                >
+                  40%
                 </span>
                 <span
                   class="mono"
@@ -2876,6 +2876,11 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                   50%
                 </span>
               </div>
+              <p
+                style="font-size: 11.5px; line-height: 1.45; color: var(--muted); margin: 4px 0px 0px;"
+              >
+                20% is the floor for a rental purchase — insured (high-ratio) mortgages are not available for non-owner-occupied properties.
+              </p>
             </div>
             <div
               class="col"

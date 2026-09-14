@@ -46,3 +46,18 @@ export const HOME_SCORE = {
 export const SUN_OBSTRUCTION_COVERAGE = {
   INDICATIVE: 0.5,
 } as const
+
+/**
+ * Financing slider bounds on the investment report.
+ *
+ * MIN_DOWN_PAYMENT is 20% because a rental (non-owner-occupied) purchase is not
+ * eligible for default (high-ratio / CMHC-insured) mortgage insurance in
+ * Canada — the insurers' 1–4 unit rental programs start at 20% down — so any
+ * scenario below it is a mortgage no lender writes. The slider used to start
+ * at 5% (D-097).
+ */
+export const FINANCING_SLIDER = {
+  MIN_DOWN_PAYMENT: 0.2,
+  MAX_DOWN_PAYMENT: 0.5,
+  DOWN_PAYMENT_STEP: 0.05,
+} as const
