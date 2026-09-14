@@ -47,6 +47,20 @@ describe('RentalCompsSection — comp rows', () => {
     expect(screen.getByText(/addresses are not republished/i)).toBeInTheDocument()
   })
 
+  it('keeps §03 on the page with a finding when there are no comps, and names the proxy (D-101)', () => {
+    const { container } = render(<RentalCompsSection askingRent={1745} comps={null} rentIsProxy />)
+    expect(container.querySelector('section[data-section="03"]')).not.toBeNull()
+    expect(screen.getByText(/No comparable rentals found/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/assumes \$1,745\/mo, which is 0\.5% of the asking price/i)
+    ).toBeInTheDocument()
+  })
+
+  it('with no comps but a listed rent, says the rent is unverified rather than a proxy', () => {
+    render(<RentalCompsSection askingRent={2400} comps={{ ...BAND, compCount: 0 }} />)
+    expect(screen.getByText(/listing's own \$2,400\/mo/i)).toBeInTheDocument()
+  })
+
   it('renders no table when the analysis carries no rows (demo, older reports)', () => {
     render(<RentalCompsSection askingRent={2900} comps={BAND} />)
     expect(screen.queryByRole('table')).not.toBeInTheDocument()

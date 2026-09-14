@@ -13,6 +13,10 @@ import { RentalCompsBar } from '../analysis/RentalCompsBar'
 import type { CompRow } from '../../types/analysis'
 import { CompRowsTable } from '../analysis/CompRowsTable'
 
+function fmtCAD(n: number): string {
+  return `$${Math.round(n).toLocaleString('en-CA')}`
+}
+
 export interface RentalCompsSectionProps {
   /** The analysis's rental estimate; null or zero comps renders nothing. */
   comps: {
@@ -27,13 +31,46 @@ export interface RentalCompsSectionProps {
   } | null
   /** The rent the report is evaluating against the range. */
   askingRent: number
+  /** True when askingRent is the price-based proxy (no comps, no listed rent) — D-101. */
+  rentIsProxy?: boolean
 }
 
 export function RentalCompsSection({
   comps,
   askingRent,
+  rentIsProxy = false,
 }: RentalCompsSectionProps): JSX.Element | null {
-  if (!comps || comps.compCount === 0) return null
+  // No comps is a finding, not a missing section (D-101): the numbers above
+  // and below rest on a rent that nothing observed supports, and the report
+  // used to drop §03 entirely — the outline skipped from 02 to 04 and the only
+  // trace of the proxy was a row in the Sources ledger.
+  if (!comps || comps.compCount === 0) {
+    return (
+      <section className="container tr-section" data-section="03">
+        <SectionHead
+          n="03"
+          topic="Rental comps"
+          question={
+            <>
+              What can it <em>realistically</em> rent for?
+            </>
+          }
+          verdict="No comparable rentals found"
+          tone="fail"
+        />
+        <div className="card col" style={{ padding: 28, gap: 10 }}>
+          <div style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 500 }}>
+            Nothing to compare against within 10 km.
+          </div>
+          <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
+            {rentIsProxy
+              ? `Every rent-dependent figure on this report — cash flow, cap rate, DSCR, break-even, the score — assumes ${fmtCAD(askingRent)}/mo, which is 0.5% of the asking price (about a 6% gross yield), not a market observation. Treat those figures as indicative until you have real asking rents for the area.`
+              : `The rent used is the listing's own ${fmtCAD(askingRent)}/mo; nothing in the nightly comps table tests it. Treat the rent-dependent figures as unverified.`}
+          </p>
+        </div>
+      </section>
+    )
+  }
 
   const { low, mid, high, compCount, confidence } = comps
   const radiusKm = comps.radiusKm ?? null

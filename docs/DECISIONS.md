@@ -3375,3 +3375,22 @@ personal schools card shows the routed walk time and nothing otherwise. School c
 
 **Why.** Roadmap "Schools: pedestrian routing"; same class as D-096 — a fixed pace over a
 straight line was printed as "~14 min walk" with nothing to say it was a formula.
+
+### D-101 · No comps is a finding, not a missing section; the proxy rent is named where it is used
+
+**Chosen.** `metrics.rentUsedMonthly` and `metrics.rentIsProxy` record the rent the engine scored
+with and whether it was the price-based proxy. With zero comps, §03 stays on the page with
+"No comparable rentals found" and one paragraph: every rent-dependent figure assumes $X/mo,
+which is 0.5% of the asking price, not a market observation. The break-even copy reads "No
+comparable rentals were found, so this assumes $1,745 (0.5% of the price)" instead of "The market
+pays about $0". The web's rent fallback chain is comps mid → listed rent → the engine's rent.
+
+**Why.** Found on the 2026-09-14 rural production run (Bancroft): §03 vanished, the outline
+skipped 02 → 04, the headline cash flow and score rested on a proxy disclosed only in the Sources
+ledger, and the break-even line said the market pays $0. The client had no way to know the
+engine's rent when comps were null.
+
+| Option                                    | Why not                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| Suppress the investor score without comps | The tenant report does; for the investor it is an S-\* scoring decision (BACKLOG §1). |
+| Keep dropping §03                         | The numbering gap was the only hint, and the ledger is the last section.              |

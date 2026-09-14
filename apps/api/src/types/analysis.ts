@@ -63,6 +63,14 @@ export interface InvestmentMetrics {
   annualTaxesUsed?: number
   /** True when annualTaxesUsed is a conservative city-rate estimate. */
   annualTaxesEstimated?: boolean
+  /**
+   * The monthly rent the engine actually scored with (D-101). With comps it
+   * is the comps mid; without, the listing's own rent or the price-based
+   * proxy. Optional on analyses saved before this shipped.
+   */
+  rentUsedMonthly?: number
+  /** True when rentUsedMonthly is the ~6% gross-yield proxy — no comps, no listed rent. */
+  rentIsProxy?: boolean
   hasSanityWarnings: boolean
 }
 
