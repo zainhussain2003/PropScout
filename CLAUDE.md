@@ -1363,7 +1363,10 @@ propscout/
 │       ├── 20260623_add_rental_listings_source_url_unique.sql
 │       ├── 20260623_add_score_version.sql
 │       ├── 20260624_add_rental_listings_first_seen_at.sql
-│       └── 20260701_add_schools_name_postal_unique.sql  # NOT applied — required by load-schools.mjs upsert
+│       ├── 20260701_add_schools_name_postal_unique.sql  # NOT applied — required by load-schools.mjs upsert
+│       ├── 20260707_add_neighbourhood_stats.sql
+│       ├── 20260906_listings_source_url_nullable.sql
+│       └── 20260913_add_analyses_status.sql  # NOT applied — analyses.status/failure_code; API works either side (D-087)
 │
 └── Week3-4 Front end/                 # External test suites — referenced from vite.config.ts includes
     ├── PR4/                           # Investor report + shared component tests

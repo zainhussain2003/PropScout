@@ -33,7 +33,7 @@ not a defect.
 | J-03   | P1  | Pricing advertises portfolio, white-label, 3D        | 🔒     | Paywall — lower priority per owner; BACKLOG                                                        |
 | J-04   | P2  | 2,900-line landing page                              | ⬜     | Maintainability; BACKLOG                                                                           |
 | J-05   | P2  | "Under sixty seconds, every time"                    | ✅     | #57                                                                                                |
-| J-06   | P1  | Status updates are no-ops; failed = pending          | 🔒     | Migration — BACKLOG                                                                                |
+| J-06   | P1  | Status updates are no-ops; failed = pending          | 🟡     | Code #67 D-087; migration awaiting apply — BACKLOG                                                 |
 | J-07   | P1  | No polling deadline                                  | ✅     | #37 D-068 (no backoff; not needed at 2 s)                                                          |
 | J-08   | P1  | Transient poll error ends the flow                   | ✅     | #62 D-083                                                                                          |
 | J-09   | P2  | Progress steps claim things they cannot know         | ✅     | #48 D-077                                                                                          |
@@ -54,7 +54,7 @@ not a defect.
 | UI-03  | P2  | Breadcrumbs inconsistent; no mode switch             | ✅     | Mode-switch claim removed #57; crumbs #66 D-086                                                    |
 | UI-04  | P2  | Theme page-local, not persisted                      | ✅     | #50 D-079                                                                                          |
 | T-01   | P0  | Share recipient cannot mutate owner state            | ✅     | #34 D-065; verified live                                                                           |
-| T-02   | P1  | Durable processing/failed states                     | 🔒     | Migration — BACKLOG                                                                                |
+| T-02   | P1  | Durable processing/failed states                     | 🟡     | Code #67 D-087; migration awaiting apply — BACKLOG                                                 |
 | T-03   | P1  | All four live modes render canonical pages           | 🟡     | Investor/tenant/personal verified live; landlord 🔒                                                |
 | T-04   | P1  | Account contains only authenticated data             | ✅     | #33, #45, #46, #55                                                                                 |
 | T-05   | P1  | Password reset invokes Supabase                      | ✅     | #35                                                                                                |
