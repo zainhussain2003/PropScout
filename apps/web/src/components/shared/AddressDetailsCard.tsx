@@ -92,12 +92,18 @@ export function AddressDetailsCard({
   const [condoFee, setCondoFee] = useState('')
   const [taxes, setTaxes] = useState('')
   const [propertyType, setPropertyType] = useState<PropertyType | ''>('')
+  // A tenant does not pay the condo fee or the property tax, so a for-rent
+  // listing asks for them only once the person says they own the unit
+  // (BACKLOG "for-rent details form"). The mode is chosen after this form, so
+  // this is the earliest point the question makes sense.
+  const [ownsUnit, setOwnsUnit] = useState(false)
   const [touched, setTouched] = useState(false)
 
   const amountValue = parseNumber(amount)
   const bedsValue = parseNumber(beds)
   const amountMissing = amountValue === null
   const bedsMissing = bedsValue === null
+  const asksRunningCosts = listingType === 'for-sale' || ownsUnit
 
   function handleSubmit(): void {
     setTouched(true)
@@ -110,8 +116,8 @@ export function AddressDetailsCard({
       baths: parseNumber(baths),
       sqft: parseNumber(sqft),
       propertyType: propertyType === '' ? null : propertyType,
-      condoFeeMonthly: parseNumber(condoFee),
-      annualTaxes: parseNumber(taxes),
+      condoFeeMonthly: asksRunningCosts ? parseNumber(condoFee) : null,
+      annualTaxes: asksRunningCosts ? parseNumber(taxes) : null,
     })
   }
 
@@ -344,34 +350,64 @@ export function AddressDetailsCard({
             />
             <div style={hintStyle}>Lets us compare price per square foot.</div>
           </div>
-          <div>
-            <label style={labelStyle} htmlFor="ps-condo">
-              Monthly condo fee
+          {listingType === 'for-rent' && (
+            <label
+              htmlFor="ps-owner"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                gridColumn: '1 / -1',
+                fontSize: 14,
+                color: 'var(--ink)',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                id="ps-owner"
+                type="checkbox"
+                checked={ownsUnit}
+                onChange={(e) => setOwnsUnit(e.target.checked)}
+              />
+              I own this unit — add its running costs
             </label>
-            <input
-              id="ps-condo"
-              value={condoFee}
-              onChange={(e) => setCondoFee(e.target.value)}
-              inputMode="numeric"
-              placeholder="620"
-              style={fieldStyle}
-            />
-            <div style={hintStyle}>Often the difference between a good and bad deal.</div>
-          </div>
-          <div>
-            <label style={labelStyle} htmlFor="ps-taxes">
-              Yearly property tax
-            </label>
-            <input
-              id="ps-taxes"
-              value={taxes}
-              onChange={(e) => setTaxes(e.target.value)}
-              inputMode="numeric"
-              placeholder="3,200"
-              style={fieldStyle}
-            />
-            <div style={hintStyle}>We estimate it from your city if you skip this.</div>
-          </div>
+          )}
+          {asksRunningCosts && (
+            <div>
+              <label style={labelStyle} htmlFor="ps-condo">
+                Monthly condo fee
+              </label>
+              <input
+                id="ps-condo"
+                value={condoFee}
+                onChange={(e) => setCondoFee(e.target.value)}
+                inputMode="numeric"
+                placeholder="620"
+                style={fieldStyle}
+              />
+              <div style={hintStyle}>
+                {listingType === 'for-sale'
+                  ? 'Often the difference between a good and bad deal.'
+                  : 'Comes out of the rent before anything else.'}
+              </div>
+            </div>
+          )}
+          {asksRunningCosts && (
+            <div>
+              <label style={labelStyle} htmlFor="ps-taxes">
+                Yearly property tax
+              </label>
+              <input
+                id="ps-taxes"
+                value={taxes}
+                onChange={(e) => setTaxes(e.target.value)}
+                inputMode="numeric"
+                placeholder="3,200"
+                style={fieldStyle}
+              />
+              <div style={hintStyle}>We estimate it from your city if you skip this.</div>
+            </div>
+          )}
         </div>
       </div>
 
