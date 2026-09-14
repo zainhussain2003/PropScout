@@ -3247,3 +3247,12 @@ carries every fact the report uses; putting the flag there closes the row withou
 | -------------------------------------- | -------------------------------------------------------------------------- |
 | Add `beds_known` columns to `listings` | Needs the migration gate; the snapshot is what renders, and it is JSON.    |
 | Treat 0 from the scraper as a studio   | Rows stored before the flag hold 0 for "absent"; the flag is the evidence. |
+
+### D-094 · `/health` says which commit is running
+
+**Chosen.** The API and the calc engine echo `RAILWAY_GIT_COMMIT_SHA` (as `commit` and a
+7-character `shortCommit` / `short_commit`) from `/health`; null where the variable is not set.
+
+**Why.** Every production check this week started with "has Railway deployed master yet?" and
+had no answer but waiting. Railway sets the variable on every deploy; echoing it costs nothing
+and turns the question into a curl.
