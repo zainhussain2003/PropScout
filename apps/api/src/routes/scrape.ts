@@ -56,6 +56,9 @@ interface ScrapedListingResponse {
   price: number
   beds: number
   baths: number
+  /** Whether the page actually carried the count; absent from an older scraper build. */
+  beds_known?: boolean
+  baths_known?: boolean
   sqft: number | null
   property_type: string
   annual_taxes: number | null
@@ -247,8 +250,13 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           postalCode,
           price: listingType === 'for-sale' ? scraped.price : null,
           rentMonthly,
-          beds: scraped.beds,
-          baths: scraped.baths,
+          // A count the page did not carry is null (D-072); a count it did
+          // carry is a fact even when it is 0 — a studio (D-092). An older
+          // scraper build sends no flag, and then the D-072 rule applies alone.
+          beds: scraped.beds_known === false ? null : scraped.beds,
+          baths: scraped.baths_known === false ? null : scraped.baths,
+          bedsKnown: scraped.beds_known,
+          bathsKnown: scraped.baths_known,
           sqft: scraped.sqft,
           propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
           yearBuilt: scraped.year_built,

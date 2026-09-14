@@ -3226,6 +3226,28 @@ removing keeps the roadmap visible and leaves the build-or-drop decision where i
 | Hide paid CTAs until price IDs exist     | A visible 503 with a real message is more honest than a page that looks unfinished.     |
 | Hard-code a contact address              | Nobody has chosen one; an env var makes it a 30-second owner action, not a code change. |
 
+### D-092 · A stated zero is a studio; an unstated count is a gap
+
+**Chosen.** The scraper reports `beds_known` / `baths_known` — whether the page's dataLayer
+actually carried the field. The API stores a count the page did not carry as null (D-072) and
+keeps a stated 0; `bedsKnown` / `bathsKnown` ride on the `Listing` and therefore on the listing
+snapshot the report renders (D-069), so no `listings` column is needed. `listingFacts.knownCount`
+takes the flag: a known 0 is a count, an unknown 0 is still a gap. Reports render "Studio" for a
+known zero-bedroom unit and "—" for an absent count, in the hero chips, the tenant facts and the
+personal facts table. Rows stored before this and the address path (which asks for beds) carry
+no flag and read exactly as before.
+
+**Why.** BACKLOG §3 "`*_known` flags", planned as a migration: the parser used "0" for a missing
+field, so a genuine studio (`bedrooms: '0'` on Realtor.ca) rendered "— bed". The snapshot already
+carries every fact the report uses; putting the flag there closes the row without the human gate.
+`type_known` from the same row is already covered by D-082 (`'unknown'` is the type's own
+"not stated").
+
+| Option                                 | Why not                                                                    |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| Add `beds_known` columns to `listings` | Needs the migration gate; the snapshot is what renders, and it is JSON.    |
+| Treat 0 from the scraper as a studio   | Rows stored before the flag hold 0 for "absent"; the flag is the evidence. |
+
 ### D-093 · The landing page is composed from one-file sections
 
 **Chosen.** `pages/LandingPage.tsx` (3,085 lines) is now 86 lines that compose

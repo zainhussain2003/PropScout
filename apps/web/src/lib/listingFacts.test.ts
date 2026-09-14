@@ -4,7 +4,14 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { knownCount, bareCount, countLabel, bedBathLabel, NOT_PROVIDED } from './listingFacts'
+import {
+  knownCount,
+  bareCount,
+  countLabel,
+  bedBathLabel,
+  NOT_PROVIDED,
+  bedroomLabel,
+} from './listingFacts'
 
 describe('knownCount', () => {
   it('passes a positive count through', () => {
@@ -63,5 +70,29 @@ describe('bedBathLabel', () => {
     expect(bedBathLabel({ beds: 2, baths: null })).toBe('2 bed · — bath')
     expect(bedBathLabel({ beds: 2, baths: 0 })).toBe('2 bed · — bath')
     expect(bedBathLabel({ beds: 2, baths: 0 })).not.toContain('0 bath')
+  })
+})
+
+describe('a stated zero is a studio, an unstated one is a gap (D-092)', () => {
+  it('knownCount keeps 0 only when the source said so', () => {
+    expect(knownCount(0)).toBeNull()
+    expect(knownCount(0, false)).toBeNull()
+    expect(knownCount(0, true)).toBe(0)
+    expect(knownCount(2, false)).toBe(2)
+  })
+  it('bareCount renders a known 0', () => {
+    expect(bareCount(0, true)).toBe('0')
+    expect(bareCount(0)).toBe('—')
+  })
+  it('bedroomLabel says Studio for a known 0', () => {
+    expect(bedroomLabel(0, true)).toBe('Studio')
+    expect(bedroomLabel(0, undefined, { fallback: 'Not listed' })).toBe('Not listed')
+    expect(bedroomLabel(2, true)).toBe('2 beds')
+  })
+  it('bedBathLabel', () => {
+    expect(bedBathLabel({ beds: 0, baths: 1, bedsKnown: true, bathsKnown: true })).toBe(
+      'Studio · 1 bath'
+    )
+    expect(bedBathLabel({ beds: 0, baths: null })).toBe('— bed · — bath')
   })
 })
