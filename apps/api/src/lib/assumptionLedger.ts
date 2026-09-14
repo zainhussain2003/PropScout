@@ -63,6 +63,68 @@ export interface LedgerInput {
   walkScore?: { walk: number; transit: number | null; fetchedAt?: string } | null
   /** Whether any nearby-amenity time came from the routing engine (D-096). */
   travelTimesRouted?: boolean
+  /** Whether the analysis produced a sun model at all (needs coordinates). */
+  hasSunScout?: boolean
+}
+
+const COMPASS: Array<[number, string]> = [
+  [0, 'north'],
+  [45, 'north-east'],
+  [90, 'east'],
+  [135, 'south-east'],
+  [180, 'south'],
+  [225, 'south-west'],
+  [270, 'west'],
+  [315, 'north-west'],
+]
+
+function compassLabel(bearing: number): string {
+  const b = ((bearing % 360) + 360) % 360
+  let best = COMPASS[0]!
+  for (const c of COMPASS) {
+    const d = Math.min(Math.abs(c[0] - b), 360 - Math.abs(c[0] - b))
+    const bd = Math.min(Math.abs(best[0] - b), 360 - Math.abs(best[0] - b))
+    if (d < bd) best = c
+  }
+  return best[1]
+}
+
+/** The Sources row for the facade the sun model used (D-098). */
+export function facadeRow(bearing: number | null): AssumptionEntry {
+  return bearing == null
+    ? {
+        key: 'facade',
+        label: 'Primary facade',
+        value: 'south (assumed)',
+        basis: 'default',
+        source: PROPSCOUT_DEFAULT,
+        asOf: null,
+        method:
+          'The sun model assumes the main windows face south until you set the facade in the SunScout section.',
+      }
+    : {
+        key: 'facade',
+        label: 'Primary facade',
+        value: compassLabel(bearing),
+        basis: 'observed',
+        source: 'You — set in the SunScout section',
+        asOf: null,
+        method: 'The sun figures were recomputed for this facade.',
+      }
+}
+
+/** Replace (or add) the facade row after the user sets the facade. */
+export function withFacadeRow(
+  rows: AssumptionEntry[] | null | undefined,
+  bearing: number
+): AssumptionEntry[] | null {
+  if (rows == null) return null
+  const next = rows.filter((r) => r.key !== 'facade')
+  const at = rows.findIndex((r) => r.key === 'facade')
+  const row = facadeRow(bearing)
+  if (at >= 0) next.splice(at, 0, row)
+  else next.push(row)
+  return next
 }
 
 /** Year the municipal tax-rate table was last refreshed (constants/propertyTaxRates.ts). */
@@ -328,6 +390,8 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
           }
     )
   }
+
+  if (input.hasSunScout) rows.push(facadeRow(null))
 
   // ── Closing costs ─────────────────────────────────────────────────────────
   if (purchase && engine != null) {

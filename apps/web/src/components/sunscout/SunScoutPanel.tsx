@@ -128,7 +128,9 @@ export function SunScoutPanel({
 }: Props): JSX.Element {
   // Local copy so a facade-direction recalc updates the panel in place.
   const [current, setCurrent] = useState<SunScoutResult | null>(sunScout)
-  const [bearing, setBearing] = useState(180)
+  // Start from the facade the stored figures were computed for, else the
+  // pipeline's south assumption (D-098).
+  const [bearing, setBearing] = useState(sunScout?.facadeBearing ?? 180)
   const [recalculating, setRecalculating] = useState(false)
 
   useEffect(() => {
@@ -247,6 +249,11 @@ export function SunScoutPanel({
                   </option>
                 ))}
               </select>
+              <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
+                {sunScoutData.facadeConfirmed
+                  ? 'Set by you · figures recomputed for it'
+                  : 'Assumed south · set it if you know'}
+              </span>
             </label>
           ) : (
             <div className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>

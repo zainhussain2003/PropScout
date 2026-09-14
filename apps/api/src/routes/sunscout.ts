@@ -18,6 +18,7 @@ import { serializeError, isTimeoutError } from '../lib/http'
 import { getAnalysisByToken, updateAnalysisByToken } from '../services/supabaseService'
 import { toSunScout, type PySunScout } from './analysis'
 import { applyValidationErrorHandler, tokenParams, sunscoutBody } from '../lib/requestSchemas'
+import { withFacadeRow } from '../lib/assumptionLedger'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -80,12 +81,19 @@ async function sunscoutRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         const pyData = (await pyResponse.json()) as { sun_scout: PySunScout | null }
-        const sunScout = toSunScout(pyData.sun_scout)
+        const base = toSunScout(pyData.sun_scout)
+        // The stored figures must say which facade they were computed for,
+        // or a reload shows them under the south default (D-098).
+        const sunScout = base ? { ...base, facadeBearing: bearing, facadeConfirmed: true } : null
 
         // Persist so a reload keeps the chosen orientation. Non-fatal: the
         // recalculated data is still returned even if the save fails.
         try {
-          await updateAnalysisByToken(token, { ...found.analysis, sunScout })
+          await updateAnalysisByToken(token, {
+            ...found.analysis,
+            sunScout,
+            assumptions: withFacadeRow(found.analysis.assumptions, bearing),
+          })
         } catch (err) {
           fastify.log.error({ err }, 'Failed to persist recalculated sunScout')
         }

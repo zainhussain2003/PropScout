@@ -3333,6 +3333,18 @@ modelled either. Same class as the audit's "formula presented as a fact".
 | Keep 5% and add the CMHC premium | The premium does not apply — the product is not available for rentals.     |
 | Silently clamp without the note  | A user who wants 10% down should be told why the slider will not go there. |
 
+### D-098 · The sun figures say which facade they were computed for
+
+**Chosen.** A SunScout recalculation stores `facadeBearing` and `facadeConfirmed: true` with the
+figures, and refreshes the Sources ledger's "Primary facade" row from "south (assumed) · Default"
+to the chosen direction · Observed ("You — set in the SunScout section"). The panel starts from
+the stored bearing and says "Assumed south · set it if you know" or "Set by you · figures
+recomputed for it". An analysis with a sun model gets the assumed row from the start.
+
+**Why.** Roadmap "SunScout: label inferred vs confirmed". The recalc already persisted the
+figures but not the facade, so a reload showed west-facing numbers under a select that read
+"South" — the stored result contradicted its own label.
+
 ### D-099 · The comps behind the rent band are shown, sanitised
 
 **Chosen.** `fetchRentalComps` returns `rows` — the comparable rentals that survived outlier

@@ -95,7 +95,8 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   side-by-side cases; personal-report financing controls.
 - **Checklists:** notes, owners, deadlines, attachments (ticks are kept per browser since #75,
   D-095; account-side storage would need a table).
-- **SunScout:** ask the user to confirm floor and facade; label inferred vs confirmed inputs.
+- **SunScout:** facade is now labelled assumed vs set-by-you and persists with the figures
+  (#78, D-098); floor confirmation still to do (needs a floor input in the pipeline).
 - **Equity build:** flat/conservative/stress scenarios with selling costs, tax, capex.
 - **STR:** dated rules snapshot with municipal citations until an official source exists.
 - **Landlord:** verified rent-control guidance; landlord-specific method (L-03).
