@@ -178,6 +178,13 @@ Also test a Toronto address — LTT should be approximately double.
 3. Open any live report's Sources section: "Rental days on market" and "Rent trend" rows read either a figure with its sample size, or "not observed · 0 of 3 points"
 4. Pass: no live report shows a DOM or trend that the comps table did not measure
 
+**🤖 Test 15c — Landlord value re-runs the report (D-107)**
+
+1. `npx jest src/routes/ownerValue.test.ts` — value → engine price; 400 outside $50k–$50M; 409 on a non-landlord report; 503 when the engine is down
+2. `npx vitest run src/pages/ReportPage.test.tsx -t D-107` — the form on a price-less landlord report, the scored card after, "Change" pre-filled
+3. Open a live landlord report: enter a value → within ~10 s the card shows a verdict and "Value · you entered $X"; Sources has "Property value · observed · You entered it"
+4. Pass: no landlord report shows a score before a value is entered, and every figure after is run on it
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

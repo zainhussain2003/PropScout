@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
+import { useOwnerValue } from '../hooks/useOwnerValue'
 import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
@@ -91,7 +92,10 @@ function buildChips(listing: Listing): string[] {
 
 function toListingData(listing: Listing, analysis: Analysis): ListingData {
   const [addressLine1, addressLine2] = splitAddress(listing.address, listing.city, listing.province)
-  const price = listing.price ?? 0
+  // A landlord's own value stands in for the price a rental listing never
+  // states (D-107); the engine scored on it, so the page must too.
+  const ownerValue = analysis.ownerInputs?.value ?? null
+  const price = ownerValue ?? listing.price ?? 0
   const listedAnnualTaxes =
     listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
   const annualTaxes = listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0
@@ -139,6 +143,7 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
       analysis.rentalComps?.mid ?? listing.rentMonthly ?? analysis.metrics?.rentUsedMonthly ?? 0,
     rentIsProxy: analysis.metrics?.rentIsProxy === true,
     askingRent: listing.rentMonthly ?? null,
+    ownerValue,
     rentLow: analysis.rentalComps?.low ?? 0,
     rentHigh: analysis.rentalComps?.high ?? 0,
     compCount: analysis.rentalComps?.compCount ?? 0,
@@ -515,14 +520,18 @@ function InvestorReportContent({
   tier,
   flagOverrides,
   mode = 'investor',
+  onAnalysisUpdated,
 }: {
   listing: Listing
   analysis: Analysis
   tier: string
   flagOverrides: FlagOverrideControls
   mode?: 'investor' | 'landlord'
+  /** The page swaps in the re-run analysis after a landlord enters a value (D-107). */
+  onAnalysisUpdated?: (analysis: Analysis) => void
 }): JSX.Element {
   const { openUpgradeModal } = usePaywall()
+  const ownerValue = useOwnerValue(analysis.token, onAnalysisUpdated ?? (() => undefined))
   const verdictEyebrow = `PropScout · ${mode} verdict`
   const listingData = toListingData(listing, analysis)
 
@@ -633,6 +642,11 @@ function InvestorReportContent({
         onBack={handleBack}
         mapCenter={analysis.coordinates ?? null}
         viewLabel={mode === 'landlord' ? 'Landlord view' : 'Investor view'}
+        onSetValue={
+          mode === 'landlord' && onAnalysisUpdated != null ? ownerValue.submit : undefined
+        }
+        valueBusy={ownerValue.busy}
+        valueError={ownerValue.error}
       />
 
       <div className="container" style={{ marginBottom: 32 }}>
@@ -843,6 +857,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
               tier={tier}
               flagOverrides={flagOverrides}
               mode={mode}
+              onAnalysisUpdated={setAnalysis}
             />
           )}
 

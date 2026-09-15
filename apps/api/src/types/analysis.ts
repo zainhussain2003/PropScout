@@ -255,6 +255,17 @@ export interface HoldCaseRow {
   breakEvenAnnualRate: number
 }
 
+/**
+ * What a landlord entered about a property the listing never priced (D-107).
+ * Persisted with the analysis; every price-dependent figure is re-run on it.
+ */
+export interface OwnerInputs {
+  /** The property's value in CAD, as the landlord stated it. */
+  value: number
+  /** ISO time it was entered — the ledger's "as of". */
+  enteredAt: string
+}
+
 export interface Analysis {
   id: string
   token: string
@@ -305,6 +316,8 @@ export interface Analysis {
   assumptions?: AssumptionEntry[] | null
   /** Outcome of the description scan (D-090). Optional: older analyses don't carry it. */
   extractionStatus?: ExtractionStatus | null
+  /** The landlord's own value behind this run, if one was entered (D-107). */
+  ownerInputs?: OwnerInputs | null
 }
 
 /**

@@ -3503,3 +3503,53 @@ demand input is a market observation and should come from the survey.
 
 **Refresh rule.** Every January, download the new Ontario data table, copy the Oct-NN Total
 column for a/b/c rows, update `CMHC_VACANCY_SURVEY`, run `cmhcService.test.ts`.
+
+### D-107 · A landlord states the property's value in the hero and the report is re-run on it
+
+**Chosen.** L-03, decided by the owner on 2026-09-15 as spec §9 already reads: the landlord
+report is acquisition underwriting on the landlord's own numbers, not a separate scoring method.
+A for-rent listing never states a value, so the hero's "No purchase score" card (D-104) now asks
+**"What is it worth?"**; the value goes to `POST /analysis/:token/value`, which persists it as
+`Analysis.ownerInputs` (`market_data.ownerInputs` — no migration) and re-runs the same pipeline
+`POST /analysis` ran, with the value in place of the rent-derived estimate. The response is the
+fresh analysis; the page swaps it in, the card becomes the scored card with "Value · you entered
+$X · Change", and every price-dependent section (metrics, financing sliders, cash to close, OSFI,
+equity, break-even) renders as it does for a sale listing. The Sources ledger carries "Property
+value · $X · observed · You entered it · as of <date>" in place of the cap-rate estimate row.
+
+Mechanics: the pipeline body is now `runAnalysisPipeline()` (steps 3–10) shared by both routes;
+the value route is landlord-only (409 otherwise), bounded by `OWNER_VALUE` (50k–50M; 400
+outside), one re-run per token at a time, not counted against the free quota (a re-run of a
+report the person already has, like the facade recalc), and not owner-gated — the share token
+is the capability, the same policy as the facade (D-098). The web has `OwnerValueForm`
+(rendering only), `useOwnerValue` (request, busy, error) and `analysisService.setOwnerValue`.
+`toListingData` reads `analysis.ownerInputs?.value ?? listing.price`, so nothing downstream
+needed to learn a new field.
+
+**Why option 1.** The spec's own §9; the investor engine, sections, sliders and ledger already
+exist and every input then came from the landlord; the score is defensible as "what this would
+pencil at as a purchase today". A separate pricing-health score (option 2) needs the S-02 demand
+data to mean anything and is a new method with regression cases — a post-launch item once the
+comps table has months of history. Leaving the operating view (option 3) gives a landlord no
+verdict at all.
+
+**What it deliberately does not do yet.** Mortgage balance and rate inputs. An owned-outright
+property has no debt service; `calculate_dscr` raises on zero debt, the sanity bounds assume
+0.5–5×, and the web renders `dscr.toFixed(2)`. Modelling "no mortgage" honestly is an engine
+change (DSCR = not applicable, CoC on full value) that touches the score, the sanity checks and
+the tiles — logged in BACKLOG §8 rather than faked with a 5% mortgage. Until then the sliders'
+20–50% down payment is the landlord's equity lever, labelled as a down payment. Cash to close and
+OSFI render as a purchase — which is what §9 says the report is.
+
+**Verified 2026-09-15** on the live Westcroft and Russett landlord reports through the local API
+(same Supabase project): value → engine re-run in ~10 s, card scored, ledger row present,
+`Change` re-opens the form pre-filled; screenshots in the review folder `landlord-value/`.
+
+**Alternatives considered**
+
+| Option                                              | Why not                                                                                             |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Ask for the value before the report renders         | The rent, comps, flags and location sections are useful without it; a gate hides them for nothing.  |
+| Write the value into the listing snapshot's `price` | The listing would claim a price it never had; `ownerInputs` keeps provenance and the ledger honest. |
+| Owner-only writes (D-065 policy)                    | Guest landlord reports have no owner; the facade input already follows the share-token policy.      |
+| Count the re-run against the quota                  | It is the same report re-scored, not a new analysis; the facade recalc set the precedent.           |

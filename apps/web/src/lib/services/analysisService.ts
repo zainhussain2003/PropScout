@@ -357,6 +357,46 @@ export async function fetchReport(token: string): Promise<FetchReportResult> {
   return result
 }
 
+// ── Landlord value (D-107) ────────────────────────────────────────────────────
+
+/**
+ * POST /analysis/:token/value — the landlord states what the property is
+ * worth and the report is re-run on that number. Resolves to the fresh
+ * Analysis; throws ApiRequestError with the API's own message otherwise.
+ */
+export async function setOwnerValue(token: string, value: number): Promise<Analysis> {
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}/value`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    })
+  } catch {
+    throw new ApiRequestError(
+      'NETWORK_ERROR',
+      'Could not reach the analysis service — check your connection and try again.',
+      0
+    )
+  }
+
+  if (!response.ok) {
+    let code = 'VALUE_FAILED'
+    let message = 'Could not re-run the report — please try again.'
+    try {
+      const json = (await response.json()) as { code?: string; message?: string }
+      if (json.code) code = json.code
+      if (json.message) message = json.message
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiRequestError(code, message, response.status)
+  }
+
+  const result = (await response.json()) as { analysis: Analysis }
+  return withCleanNarrative(result.analysis)
+}
+
 // ── Province waitlist ─────────────────────────────────────────────────────────
 
 /**
