@@ -199,6 +199,12 @@ Also test a Toronto address — LTT should be approximately double.
 3. On a live report with comps: §03 shows a Match % per row, the map under the table with one pin per positioned comp, and the caption about rounding; the Sources rent row says "weighted median"
 4. Pass: no comp address or exact coordinate leaves the API (rows carry FSA, ~3-decimal position, no URL)
 
+**🤖 Test 15f — Exit scenarios (D-110)**
+
+1. `npx vitest run src/lib/exitScenarios.test.ts src/components/investor/ExitScenariosCard.test.tsx`
+2. On any report with a price, §07 shows "What does a sale return?" with Stress / Flat / Conservative / Base columns; the 5 / 10 / 20 chips change every figure; flat's sale price equals the price the report ran on
+3. Pass: profit and the annualized figure are red when negative, green when positive; the footnote states the selling-cost assumption and that tax is not deducted
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

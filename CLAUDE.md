@@ -1095,6 +1095,7 @@ propscout/
 │       ├── lib/listingFacts.ts + listingFacts.test.ts     # One rule for counts a source may not provide (D-072)
 │       ├── lib/sunCoverage.ts + sunCoverage.test.ts       # Obstruction coverage → checked / indicative (D-085)
 │       ├── lib/scanState.ts + scanState.test.ts           # no text / failed / partial / clean — one rule for empty flag sections (D-090)
+│       ├── lib/exitScenarios.ts + exitScenarios.test.ts   # Stress / flat / conservative / base exit after selling costs and the balance owed (D-110)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css
@@ -1142,6 +1143,7 @@ propscout/
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
 │   │       │   │   ├── BreakEvenAppreciation.tsx  # Growth needed to return the cash a hold consumes (D-062)
+│   │       │   │   ├── ExitScenariosCard.tsx + .test.tsx  # Sale return on four price paths at 5/10/20 yrs, before tax (D-110)
 │   │       │   │   ├── AssumptionLedgerSection.tsx + .test.tsx  # §12 Sources — every modelled number with its basis (D-088)
 │   │       │   │   ├── FinancingSection.tsx   # §02 head + FinancingSliders — shared by demo and live (D-073)
 │       │   │   ├── RentalCompsSection.tsx # §03 — shared by demo and live (D-073)

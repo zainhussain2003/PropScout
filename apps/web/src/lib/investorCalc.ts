@@ -249,7 +249,7 @@ export function computeMonthlyPayment(
 
 // ── Remaining mortgage balance ─────────────────────────────────────────────────
 
-function remainingBalance(
+export function remainingBalance(
   principal: number,
   annualRate: number,
   years: number,

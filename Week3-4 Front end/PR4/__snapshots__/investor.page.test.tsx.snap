@@ -4421,6 +4421,389 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             These are minimums, and your real figure is higher: selling a property costs money — commission and legal fees — and we don’t include it, because commission is negotiated rather than published, so we won’t put a number on yours. Getting even is also not the same as earning a return: nothing here credits what that cash could have made elsewhere, and equity cannot be spent until you sell. Figures hold today’s rent and costs flat for the whole period. We don’t have a local price history for this area, so we can’t tell you whether these growth rates are realistic here.
           </p>
         </div>
+        <div
+          class="card"
+          data-testid="exit-scenarios"
+          style="padding: 28px; margin-top: 18px;"
+        >
+          <div
+            style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px;"
+          >
+            <h3
+              style="font-family: "Instrument Serif", Georgia, serif; font-size: 26px; font-weight: 400; margin: 0px; color: var(--ink);"
+            >
+              What does a 
+              <em>
+                sale
+              </em>
+               return?
+            </h3>
+            <div
+              aria-label="Hold period"
+              role="group"
+              style="display: flex; gap: 6px;"
+            >
+              <button
+                aria-pressed="false"
+                class="btn btn-ghost"
+                style="padding: 6px 12px; font-size: 12px;"
+                type="button"
+              >
+                5
+                 yrs
+              </button>
+              <button
+                aria-pressed="true"
+                class="btn btn-primary"
+                style="padding: 6px 12px; font-size: 12px;"
+                type="button"
+              >
+                10
+                 yrs
+              </button>
+              <button
+                aria-pressed="false"
+                class="btn btn-ghost"
+                style="padding: 6px 12px; font-size: 12px;"
+                type="button"
+              >
+                20
+                 yrs
+              </button>
+            </div>
+          </div>
+          <p
+            style="margin: 10px 0px 0px; color: var(--muted); max-width: 64ch;"
+          >
+            Selling after 
+            10
+             years under four price paths, after the cost of selling and the mortgage still owed, against every dollar put in. Before tax.
+          </p>
+          <div
+            style="overflow-x: auto; margin-top: 18px;"
+          >
+            <table
+              style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px;"
+            >
+              <thead>
+                <tr>
+                  <th
+                    style="text-align: left; padding: 10px 12px 10px 0px; border-bottom: 1px solid var(--line);"
+                  />
+                  <th
+                    style="text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600;"
+                  >
+                    Stress
+                    <div
+                      class="mono"
+                      style="font-size: 10.5px; color: var(--muted);"
+                    >
+                      −2.0%
+                       / yr
+                    </div>
+                  </th>
+                  <th
+                    style="text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600;"
+                  >
+                    Flat
+                    <div
+                      class="mono"
+                      style="font-size: 10.5px; color: var(--muted);"
+                    >
+                      +0.0%
+                       / yr
+                    </div>
+                  </th>
+                  <th
+                    style="text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600;"
+                  >
+                    Conservative
+                    <div
+                      class="mono"
+                      style="font-size: 10.5px; color: var(--muted);"
+                    >
+                      +2.0%
+                       / yr
+                    </div>
+                  </th>
+                  <th
+                    style="text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600;"
+                  >
+                    Base
+                    <div
+                      class="mono"
+                      style="font-size: 10.5px; color: var(--muted);"
+                    >
+                      +3.0%
+                       / yr
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink-2); font-weight: 400; white-space: nowrap;"
+                  >
+                    Sale price
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $596,381
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $729,900
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $889,744
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $980,925
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink-2); font-weight: 400; white-space: nowrap;"
+                  >
+                    Cost of selling
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$35,196
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$42,739
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$51,771
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$56,922
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink-2); font-weight: 400; white-space: nowrap;"
+                  >
+                    Mortgage paid off
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$427,883
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$427,883
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$427,883
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$427,883
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600; white-space: nowrap;"
+                  >
+                    Net proceeds
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--pass);"
+                  >
+                    $133,303
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--pass);"
+                  >
+                    $259,278
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--pass);"
+                  >
+                    $410,090
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--pass);"
+                  >
+                    $496,119
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink-2); font-weight: 400; white-space: nowrap;"
+                  >
+                    Cash flow over the hold
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$291,720 put in
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$291,720 put in
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$291,720 put in
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    −$291,720 put in
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink-2); font-weight: 400; white-space: nowrap;"
+                  >
+                    Cash in, all told
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $451,173
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $451,173
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $451,173
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 400; color: var(--ink-2);"
+                  >
+                    $451,173
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600; white-space: nowrap;"
+                  >
+                    Profit before tax
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--fail);"
+                  >
+                    −$317,870
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--fail);"
+                  >
+                    −$191,895
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--fail);"
+                  >
+                    −$41,083
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--pass);"
+                  >
+                    $44,946
+                  </td>
+                </tr>
+                <tr>
+                  <td
+                    style="padding: 9px 12px 9px 0px; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600; white-space: nowrap;"
+                  >
+                    A year, on your cash
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--fail);"
+                  >
+                    −11.5%
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--fail);"
+                  >
+                    −5.4%
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--fail);"
+                  >
+                    −1.0%
+                  </td>
+                  <td
+                    class="mono tabular"
+                    style="padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-weight: 600; color: var(--pass);"
+                  >
+                    +1.0%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p
+            class="mono"
+            style="font-size: 10.5px; color: var(--muted); margin: 12px 0px 0px;"
+          >
+            Cost of selling = 
+            5
+            % commission + HST +
+             
+            $1,500
+             legal, a starting assumption. Capital gains tax (half the gain at your marginal rate) is not deducted. Maintenance is already inside the cash flow; a major repair would come off these figures.
+          </p>
+        </div>
       </section>
       <section
         class="container tr-section"
