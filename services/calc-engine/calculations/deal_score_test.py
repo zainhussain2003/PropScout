@@ -330,6 +330,12 @@ class TestScoreMarketDemand:
         assert _score_market_demand(0.055, None, None) == 0
 
 
+class TestScoreDscrNoDebt:
+    def test_no_debt_scores_the_maximum(self) -> None:
+        """D-108: owned outright — nothing to cover, so the coverage test is met."""
+        assert _score_dscr(None) == 15
+
+
 # ── calculate_deal_score (integration) ────────────────────────────
 
 

@@ -42,6 +42,19 @@ export const OWNER_VALUE = {
   MAX: 50_000_000,
 } as const
 
+/**
+ * Lowest equity share the engine models for an owned property (its
+ * FinancingInput floor). A balance above 95% of the stated value is clamped
+ * here and the ledger says so (D-108).
+ */
+export const OWNER_EQUITY_MIN = 0.05
+
+/** A contract mortgage rate the engine will accept (its FinancingInput band), as a decimal. */
+export const MORTGAGE_RATE_BOUNDS = {
+  MIN: 0.01,
+  MAX: 0.25,
+} as const
+
 // Market demand measured from the nightly rental_listings table (D-105).
 // Days-on-market = median (last seen − first seen) over listings in the FSA
 // that dropped off in the window; rent trend = median rent of listings first

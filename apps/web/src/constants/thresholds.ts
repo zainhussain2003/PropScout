@@ -63,6 +63,22 @@ export const FINANCING_SLIDER = {
 } as const
 
 /**
+ * The same slider for a property the person already owns (D-108): equity is
+ * whatever it is, from the engine's 5% floor to owned outright.
+ */
+export const EQUITY_SLIDER = {
+  MIN: 0.05,
+  MAX: 1,
+  STEP: 0.05,
+} as const
+
+/** A contract mortgage rate the engine accepts, as a decimal (apps/api MORTGAGE_RATE_BOUNDS). */
+export const MORTGAGE_RATE_BOUNDS = {
+  MIN: 0.01,
+  MAX: 0.25,
+} as const
+
+/**
  * A landlord's own property value (D-107) — the same bounds the API enforces
  * (OWNER_VALUE in apps/api), so the form can say so before the round trip.
  */

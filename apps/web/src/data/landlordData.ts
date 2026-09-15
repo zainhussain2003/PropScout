@@ -214,10 +214,11 @@ export function computeLandlordDealScore(
 
   // DSCR component (max 15)
   let dscrPts = 0
-  if (metrics.dscr >= 1.25) dscrPts = 15
-  else if (metrics.dscr >= 1.1) dscrPts = 12
-  else if (metrics.dscr >= 1.0) dscrPts = 7
-  else if (metrics.dscr >= 0.85) dscrPts = 3
+  const dscr = metrics.dscr ?? Number.POSITIVE_INFINITY // no debt → coverage met (D-108)
+  if (dscr >= 1.25) dscrPts = 15
+  else if (dscr >= 1.1) dscrPts = 12
+  else if (dscr >= 1.0) dscrPts = 7
+  else if (dscr >= 0.85) dscrPts = 3
 
   // Demand component (max 10)
   let demandPts = 0

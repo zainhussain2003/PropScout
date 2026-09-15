@@ -1,3 +1,5 @@
+import pytest
+
 """
 Functionality tests for the FastAPI analysis router (POST /analysis/).
 
@@ -528,6 +530,56 @@ def test_observed_demand_inputs_are_scored_and_echoed() -> None:
     assert data["deal_score"]["breakdown"]["demand"] == 6
     assert data["assumptions"]["rental_days_on_market"] == 9
     assert data["assumptions"]["rent_trend"] == "rising"
+
+
+def test_owned_outright_has_no_debt_service_and_no_closing_costs() -> None:
+    """
+    D-108: financing.owned with 100% equity — mortgage payment 0, DSCR None
+    (not infinite, not 0), DSCR component at its maximum, closing costs and
+    LTT zero, cash on cash measured against the equity alone.
+    """
+    body = {
+        **_VAUGHAN_PAYLOAD,
+        "financing": {
+            **_VAUGHAN_PAYLOAD["financing"],
+            "down_payment_pct": 1.0,
+            "owned": True,
+        },
+    }
+    resp = client.post("/analysis/", json=body)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    m = data["metrics"]
+    assert m["mortgage_payment_monthly"] == 0
+    assert m["mortgage_amount"] == 0
+    assert m["dscr"] is None
+    assert m["closing_costs_total"] == 0
+    assert m["ltt_provincial"] == 0
+    assert data["deal_score"]["breakdown"]["dscr"] == 15
+    assert data["assumptions"]["owned"] is True
+    assert data["has_sanity_warnings"] is False
+    # Cash flow is NOI with nothing to pay the bank; CoC is on the full value.
+    assert m["cash_flow_monthly"] == pytest.approx(m["noi"] / 12, abs=1)
+    assert m["cash_on_cash_return"] == pytest.approx(
+        m["cash_flow_annual"] / 729900, abs=1e-4
+    )
+
+
+def test_owned_with_a_mortgage_keeps_debt_service_but_drops_closing_costs() -> None:
+    """A 40% equity position: the mortgage is real, the LTT is not payable again."""
+    body = {
+        **_VAUGHAN_PAYLOAD,
+        "financing": {
+            **_VAUGHAN_PAYLOAD["financing"],
+            "down_payment_pct": 0.4,
+            "owned": True,
+        },
+    }
+    m = client.post("/analysis/", json=body).json()["metrics"]
+    assert m["mortgage_payment_monthly"] > 0
+    assert m["dscr"] is not None and m["dscr"] > 0
+    assert m["closing_costs_total"] == 0
+    assert m["down_payment"] == pytest.approx(729900 * 0.4)
 
 
 def test_rent_trend_outside_the_vocabulary_is_rejected() -> None:

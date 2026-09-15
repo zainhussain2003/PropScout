@@ -68,18 +68,28 @@ export function InvestmentMetricsSection({
             ? 'caution'
             : 'fail',
     },
-    {
-      label: 'DSCR',
-      value: `${metrics.dscr.toFixed(2)}×`,
-      sub:
-        metrics.dscr >= 1.1
-          ? 'Investment-grade'
-          : metrics.dscr >= 1.0
-            ? 'Marginal'
-            : 'Will not qualify',
-      plainEnglish: `The bank's test: does the rent cover the mortgage on its own? Here it covers ${Math.round(metrics.dscr * 100)}% of it. Most lenders want at least 100%, and many want 110%.`,
-      status: metrics.dscr >= 1.1 ? 'pass' : metrics.dscr >= 1.0 ? 'caution' : 'fail',
-    },
+    metrics.dscr == null
+      ? {
+          // Owned outright (D-108): nothing to cover, so the test is met, not failed.
+          label: 'DSCR',
+          value: 'No debt',
+          sub: 'Owned outright',
+          plainEnglish:
+            "The bank's test — does the rent cover the mortgage on its own — has no mortgage to cover here. Cash flow is the operating income.",
+          status: 'pass',
+        }
+      : {
+          label: 'DSCR',
+          value: `${metrics.dscr.toFixed(2)}×`,
+          sub:
+            metrics.dscr >= 1.1
+              ? 'Investment-grade'
+              : metrics.dscr >= 1.0
+                ? 'Marginal'
+                : 'Will not qualify',
+          plainEnglish: `The bank's test: does the rent cover the mortgage on its own? Here it covers ${Math.round(metrics.dscr * 100)}% of it. Most lenders want at least 100%, and many want 110%.`,
+          status: metrics.dscr >= 1.1 ? 'pass' : metrics.dscr >= 1.0 ? 'caution' : 'fail',
+        },
     {
       label: 'Monthly payment',
       value: fmtMoney(metrics.mortgagePaymentMonthly),
@@ -155,14 +165,16 @@ export function InvestmentMetricsSection({
     ],
   ]
 
+  // No debt service reads as the coverage test met (D-108).
+  const dscrForVerdict = metrics.dscr ?? Number.POSITIVE_INFINITY
   const verdictLabel =
-    metrics.dscr >= 1.1
+    dscrForVerdict >= 1.1
       ? 'Passes thresholds'
-      : metrics.dscr >= 1.0
+      : dscrForVerdict >= 1.0
         ? '2 below threshold'
         : '4 below threshold'
 
-  const verdictTone = metrics.dscr >= 1.1 ? 'pass' : metrics.dscr >= 1.0 ? 'caution' : 'fail'
+  const verdictTone = dscrForVerdict >= 1.1 ? 'pass' : dscrForVerdict >= 1.0 ? 'caution' : 'fail'
 
   // A for-rent listing has no sale price, so every price-derived tile (cap
   // rate "on $0", a $0 mortgage payment, cash-on-cash on $0 invested) was

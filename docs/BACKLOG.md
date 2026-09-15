@@ -67,9 +67,9 @@ planned rows (portfolio tracker, white-label PDF, bulk analysis, seats, API acce
 
 ## 7. Manual testing (lower priority per owner)
 
-Not yet done: Stripe checkout end to end (blocked on price IDs); **landlord value input on
+Not yet done: Stripe checkout end to end (blocked on price IDs); **landlord value and owned-position inputs on
 production** (built and verified through the local API against live reports on 2026-09-15,
-D-107 — the production API deploys with #88); PDF export on production (needs a Pro account); mobile on a real device;
+D-107 / D-108); PDF export on production (needs a Pro account); mobile on a real device;
 scraper-fail state live (needs a listing Realtor.ca will not serve).
 
 Nightly rental-comps job confirmed running on 2026-09-15: live reports carry comps last seen 2026-09-13/14 from Kijiji (Toronto) and Rentals.ca + PadMapper (Ottawa).
@@ -104,6 +104,6 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   (#78, D-098); floor confirmation still to do (needs a floor input in the pipeline).
 - **Equity build:** flat/conservative/stress scenarios with selling costs, tax, capex.
 - **STR:** dated rules snapshot with municipal citations until an official source exists.
-- **Landlord:** verified rent-control guidance; mortgage balance / rate inputs and an
-  owned-outright path (engine: DSCR not applicable on zero debt, CoC on full value — D-107);
-  a pricing-health score once the comps table has months of DOM / trend history.
+- **Landlord:** verified rent-control guidance; remaining-amortization input and OSFI copy
+  for the renewal/refinance case (D-108 known limits); a pricing-health score once the comps
+  table has months of DOM / trend history.

@@ -50,7 +50,7 @@ import { buildAssumptionLedger, type EngineAssumptions } from '../lib/assumption
 import { getMortgageRate } from '../services/bankOfCanadaService'
 import { flagLabel } from '../constants/flagLabels'
 import { estimateAnnualTaxes } from '../constants/propertyTaxRates'
-import { RENT_BOUNDS, CALC_ENGINE_TIMEOUT_MS } from '../constants/thresholds'
+import { RENT_BOUNDS, CALC_ENGINE_TIMEOUT_MS, OWNER_EQUITY_MIN } from '../constants/thresholds'
 import { serializeError, isTimeoutError } from '../lib/http'
 import {
   RENT_TO_PRICE_MONTHLY,
@@ -121,7 +121,7 @@ interface PyInvestmentMetrics {
   cash_flow_annual: number
   cap_rate: number
   cash_on_cash_return: number
-  dscr: number
+  dscr: number | null
   grm: number
   noi: number
   mortgage_payment_monthly: number
@@ -393,9 +393,21 @@ export async function runAnalysisPipeline(
   // Step 4b — live mortgage rate (falls back to FINANCING_DEFAULTS.mortgage_rate
   // when the BoC service is unreachable or returns 'fallback').
   const liveRate = await getMortgageRate().catch(() => null)
+  // A landlord who already owns it (D-108): equity share from value − balance
+  // (floored at the engine's 5%), their rate when given, no closing costs.
+  const owned = ownerInputs?.mortgageBalance != null
   const financingForCalc = {
     ...FINANCING_DEFAULTS,
-    mortgage_rate: liveRate?.rate ?? FINANCING_DEFAULTS.mortgage_rate,
+    mortgage_rate: ownerInputs?.mortgageRate ?? liveRate?.rate ?? FINANCING_DEFAULTS.mortgage_rate,
+    ...(owned && ownerInputs != null
+      ? {
+          down_payment_pct: Math.max(
+            OWNER_EQUITY_MIN,
+            Math.min(1, 1 - (ownerInputs.mortgageBalance as number) / ownerInputs.value)
+          ),
+          owned: true,
+        }
+      : {}),
   }
 
   // Step 5 — build calc engine payload
@@ -603,7 +615,7 @@ export async function runAnalysisPipeline(
     cashFlowMonthly: pyData.metrics.cash_flow_monthly,
     cashFlowAnnual: pyData.metrics.cash_flow_annual,
     cashOnCash: pyData.metrics.cash_on_cash_return,
-    dscr: pyData.metrics.dscr,
+    dscr: pyData.metrics.dscr ?? undefined,
     dealScore: pyData.deal_score.total,
     dealVerdict: pyData.deal_score.verdict,
     rentMid: rentalForCalc.mid,
@@ -652,7 +664,14 @@ export async function runAnalysisPipeline(
       : null,
     rentMid: rentalForCalc.mid,
     priceEstimated: listing.price == null && ownerInputs == null,
-    ownerValue: ownerInputs ? { value: ownerInputs.value, enteredAt: ownerInputs.enteredAt } : null,
+    ownerValue: ownerInputs
+      ? {
+          value: ownerInputs.value,
+          enteredAt: ownerInputs.enteredAt,
+          mortgageBalance: ownerInputs.mortgageBalance ?? null,
+          mortgageRate: ownerInputs.mortgageRate ?? null,
+        }
+      : null,
     annualTaxesUsed: annualTaxesForCalc,
     annualTaxesEstimated: listing.annualTaxes == null || listing.annualTaxes <= 0,
     cmhcCityMatched: hasVacancyRateForCity(listing.city),

@@ -37,7 +37,8 @@ export interface InvestmentMetrics {
   cashFlowAnnual: number
   capRate: number
   cashOnCashReturn: number
-  dscr: number
+  /** Null when there is no debt service — owned outright (D-108). */
+  dscr: number | null
   grm: number
   noi: number
   mortgagePaymentMonthly: number
@@ -262,6 +263,13 @@ export interface HoldCaseRow {
 export interface OwnerInputs {
   /** The property's value in CAD, as the landlord stated it. */
   value: number
+  /**
+   * Mortgage balance outstanding, when the landlord already owns it (D-108).
+   * 0 = owned outright; null/absent = evaluating as a purchase at defaults.
+   */
+  mortgageBalance?: number | null
+  /** Their mortgage rate as a decimal (0.0479), when they own it and gave one. */
+  mortgageRate?: number | null
   /** ISO time it was entered — the ledger's "as of". */
   enteredAt: string
 }

@@ -131,7 +131,10 @@ function makeCalcResponse(body: object, status = 200): Response {
   } as unknown as Response
 }
 
-function sentCalcBody(): { property_data: { price: number } } {
+function sentCalcBody(): {
+  property_data: { price: number }
+  financing: { down_payment_pct: number; mortgage_rate: number; owned?: boolean }
+} {
   const fetchMock = global.fetch as jest.Mock
   const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
   if (!call) throw new Error('calc engine was not called')
@@ -162,7 +165,35 @@ beforeEach(async () => {
   mockGenerateNarrative.mockResolvedValue('Narrative.')
   mockGeocodeAddress.mockResolvedValue(null)
   mockGetWalkScore.mockResolvedValue(null)
-  global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  // The engine echoes the financing it ran (D-088); mirror that from the request
+  // so the ledger's financing rows see the equity share and rate actually sent.
+  global.fetch = jest.fn().mockImplementation(async (_url: unknown, init?: RequestInit) => {
+    const sent = JSON.parse((init?.body as string) ?? '{}') as {
+      financing?: { down_payment_pct: number; mortgage_rate: number; owned?: boolean }
+    }
+    return makeCalcResponse({
+      ...CALC_ENGINE_FIXTURE,
+      assumptions: {
+        vacancy_allowance: 0.05,
+        management_fee: 0.08,
+        management_fee_included: false,
+        insurance_rate: 0.0035,
+        maintenance_rate: 0.005,
+        maintenance_basis: 'post_2010',
+        legal_fees: 1500,
+        title_insurance: 300,
+        home_inspection: 0,
+        down_payment_pct: sent.financing?.down_payment_pct ?? 0.2,
+        mortgage_rate: sent.financing?.mortgage_rate ?? 0.0479,
+        amortization_years: 25,
+        cmhc_vacancy_rate: 0.03,
+        cmhc_vacancy_rate_supplied: true,
+        owned: sent.financing?.owned === true,
+        rental_days_on_market: null,
+        rent_trend: null,
+      },
+    })
+  })
   app = Fastify({ logger: false })
   await app.register(ownerValueRoutes)
 })
@@ -202,6 +233,85 @@ describe('POST /:token/value', () => {
       RENTAL_LISTING
     )
     expect(mockUpdateAnalysisStatus).toHaveBeenLastCalledWith('test-token', 'complete')
+  })
+
+  it('an owned position sends the equity share, the contract rate and owned=true (D-108)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/value',
+      payload: { value: 800_000, mortgageBalance: 320_000, mortgageRate: 0.0389 },
+    })
+    expect(res.statusCode).toBe(200)
+    const fin = sentCalcBody().financing
+    expect(fin.down_payment_pct).toBeCloseTo(0.6, 6)
+    expect(fin.mortgage_rate).toBe(0.0389)
+    expect(fin.owned).toBe(true)
+    const body = res.json() as { analysis: Analysis }
+    expect(body.analysis.ownerInputs).toMatchObject({
+      value: 800_000,
+      mortgageBalance: 320_000,
+      mortgageRate: 0.0389,
+    })
+    const bal = body.analysis.assumptions?.find((e) => e.key === 'mortgage_balance')
+    expect(bal?.value).toBe('$320,000')
+    expect(bal?.basis).toBe('observed')
+    expect(bal?.method).toMatch(/Equity share = .* 60%/)
+    const rate = body.analysis.assumptions?.find((e) => e.key === 'mortgage_rate')
+    expect(rate?.source).toBe('You entered it')
+    expect(rate?.value).toBe('3.89%')
+  })
+
+  it('owned outright (balance 0) sends 100% equity and the ledger says there is no mortgage', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/value',
+      payload: { value: 800_000, mortgageBalance: 0 },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(sentCalcBody().financing.down_payment_pct).toBe(1)
+    const body = res.json() as { analysis: Analysis }
+    const bal = body.analysis.assumptions?.find((e) => e.key === 'mortgage_balance')
+    expect(bal?.value).toBe('none — owned outright')
+    expect(bal?.method).toMatch(/DSCR does not apply/)
+    expect(body.analysis.assumptions?.find((e) => e.key === 'mortgage_rate')).toBeUndefined()
+  })
+
+  it('a balance above 95% of the value is clamped to the 5% equity floor and says so', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/value',
+      payload: { value: 800_000, mortgageBalance: 790_000 },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(sentCalcBody().financing.down_payment_pct).toBe(0.05)
+    const bal = (res.json() as { analysis: Analysis }).analysis.assumptions?.find(
+      (e) => e.key === 'mortgage_balance'
+    )
+    expect(bal?.method).toMatch(/clamped at the 5% floor/)
+  })
+
+  it('a null balance and rate is the purchase case', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/value',
+      payload: { value: 800_000, mortgageBalance: null, mortgageRate: null },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(sentCalcBody().financing.owned).toBeUndefined()
+    expect(sentCalcBody().financing.down_payment_pct).toBe(0.2)
+  })
+
+  it.each([
+    [{ value: 800_000, mortgageBalance: -1 }, 'INVALID_MORTGAGE_BALANCE'],
+    [{ value: 800_000, mortgageBalance: 800_001 }, 'INVALID_MORTGAGE_BALANCE'],
+    [{ value: 800_000, mortgageBalance: 100_000, mortgageRate: 0.3 }, 'INVALID_MORTGAGE_RATE'],
+    [{ value: 800_000, mortgageBalance: 100_000, mortgageRate: 0.005 }, 'INVALID_MORTGAGE_RATE'],
+    [{ value: 800_000, mortgageRate: 0.04 }, 'RATE_WITHOUT_BALANCE'],
+  ])('rejects an invalid owned position %o', async (payload, code) => {
+    const res = await app.inject({ method: 'POST', url: '/test-token/value', payload })
+    expect(res.statusCode).toBe(400)
+    expect((res.json() as ApiError).code).toBe(code)
+    expect(global.fetch).not.toHaveBeenCalled()
   })
 
   it('rounds the value to whole dollars', async () => {

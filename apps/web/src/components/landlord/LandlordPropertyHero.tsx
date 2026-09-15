@@ -390,7 +390,7 @@ export function LandlordPropertyHero({
             >
               <span>DSCR</span>
               <span className="mono tabular" style={{ fontWeight: 600, color: 'var(--ink)' }}>
-                {metrics.dscr.toFixed(2)}×
+                {metrics.dscr == null ? 'no debt' : `${metrics.dscr.toFixed(2)}×`}
               </span>
             </div>
             <div

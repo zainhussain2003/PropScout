@@ -321,3 +321,8 @@ def test_nonfinite_break_even_appreciation_warns() -> None:
 def test_break_even_appreciation_omitted_is_not_checked() -> None:
     """Older callers that don't pass the rates are unaffected."""
     assert sanity_check_metrics(**_VAUGHAN_OK) == []
+
+
+def test_no_debt_service_dscr_is_not_checked() -> None:
+    """D-108: an owned-outright property has no DSCR; None must not trip the bound."""
+    assert sanity_check_metrics(**{**_VAUGHAN_OK, "dscr": None}) == []

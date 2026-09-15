@@ -185,6 +185,13 @@ Also test a Toronto address — LTT should be approximately double.
 3. Open a live landlord report: enter a value → within ~10 s the card shows a verdict and "Value · you entered $X"; Sources has "Property value · observed · You entered it"
 4. Pass: no landlord report shows a score before a value is entered, and every figure after is run on it
 
+**🤖 Test 15d — Owned outright has no DSCR, no closing costs (D-108)**
+
+1. `pytest routers/analysis_test.py -k owned` — `financing.owned` + 100% equity → payment 0, `dscr` null, DSCR component 15, closing 0, no sanity warning
+2. `npx jest src/routes/ownerValue.test.ts -t D-108` — balance → equity share and `owned: true`; ledger "Mortgage balance" row; blank balance = outright; balance > value / rate outside 1–25% → 400
+3. `npx vitest run src/pages/ReportPage.test.tsx -t D-108` — "No debt" tile, "Equity share" slider, "Owned · nothing to close", no `Infinity`/`NaN`
+4. On a live landlord report: tick "I already own it", leave the balance blank, Score it → hero says "no debt", §02 pill "Owned outright", §04 "Owned · nothing to close"
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

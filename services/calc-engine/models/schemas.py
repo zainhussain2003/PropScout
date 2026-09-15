@@ -17,6 +17,11 @@ class FinancingInput(BaseModel):
     )
     amortization_years: int = Field(..., ge=1, le=30)
     include_management_fee: bool = False
+    # The person already owns the property (D-108): down_payment_pct is their
+    # equity share, no closing costs or LTT are payable, and cash invested is
+    # that equity. down_payment_pct == 1.0 is owned outright — no debt service,
+    # so DSCR is not applicable (None) rather than infinite.
+    owned: bool = False
 
 
 class PropertyInput(BaseModel):
@@ -56,7 +61,8 @@ class InvestmentMetricsOutput(BaseModel):
     cash_flow_annual: float
     cap_rate: float
     cash_on_cash_return: float
-    dscr: float
+    # None when there is no debt service (owned outright, D-108).
+    dscr: float | None
     grm: float
     noi: float
     mortgage_payment_monthly: float
@@ -205,6 +211,8 @@ class AssumptionsAppliedOutput(BaseModel):
     cmhc_vacancy_rate: float
     # False when the API sent none and the engine's own default scored demand.
     cmhc_vacancy_rate_supplied: bool
+    # The financing was an existing position, not a purchase (D-108).
+    owned: bool = False
     # What scored the other two demand inputs: the API's measurement from the
     # nightly comps table, or None = not observed, 0 points (D-105).
     rental_days_on_market: int | None

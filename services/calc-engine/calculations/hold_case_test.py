@@ -161,3 +161,30 @@ def test_takes_no_selling_cost_parameters() -> None:
 
     params = set(inspect.signature(calculate_break_even_appreciation).parameters)
     assert not params & {"commission_rate", "sale_legal_fees", "selling_costs"}
+
+
+def test_owned_outright_needs_no_growth_and_carries_no_closing_costs() -> None:
+    """D-108: 100% equity, positive cash flow, no closing costs → break-even is the
+    purchase price itself (0% growth) and the mortgage balance is zero."""
+    rows = _rows(
+        down_payment_pct=1.0, monthly_cash_flow=400.0, include_closing_costs=False
+    )
+    for row in rows:
+        assert row["mortgage_balance"] == 0.0
+        assert row["break_even_sale_price"] == pytest.approx(
+            BUTTERMILL["purchase_price"]
+        )
+        assert row["break_even_annual_rate"] == pytest.approx(0.0)
+
+
+def test_owned_with_a_mortgage_excludes_closing_costs_from_cash_in() -> None:
+    """The same position with and without closing costs differs by exactly those costs."""
+    purchase = _rows(down_payment_pct=0.5)
+    owned = _rows(down_payment_pct=0.5, include_closing_costs=False)
+    closing = estimate_closing_costs(purchase_price=BUTTERMILL["purchase_price"])[
+        "total"
+    ]
+    for p, o in zip(purchase, owned):
+        assert p["break_even_sale_price"] - o["break_even_sale_price"] == pytest.approx(
+            closing
+        )

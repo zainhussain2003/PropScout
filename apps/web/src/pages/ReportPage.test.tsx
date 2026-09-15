@@ -745,7 +745,13 @@ describe('ReportPage — a landlord states the value and the report is re-run on
     fireEvent.change(input, { target: { value: '800,000' } })
     fireEvent.click(screen.getByRole('button', { name: 'Score it' }))
 
-    await waitFor(() => expect(setOwnerValue).toHaveBeenCalledWith('test-token', 800000))
+    await waitFor(() =>
+      expect(setOwnerValue).toHaveBeenCalledWith('test-token', {
+        value: 800000,
+        mortgageBalance: null,
+        mortgageRate: null,
+      })
+    )
     // The page now renders the re-run: a verdict, the value labelled as theirs,
     // and the price-dependent metrics the operating view withheld.
     expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
@@ -753,6 +759,38 @@ describe('ReportPage — a landlord states the value and the report is re-run on
     expect(screen.queryByText('No purchase score')).not.toBeInTheDocument()
     expect(screen.getAllByText('Cap rate').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Change' })).toBeInTheDocument()
+  })
+
+  it('an owned-outright report shows no debt, equity slider, and nothing to close (D-108)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...UNSCORED,
+        metrics: {
+          ...(INVESTOR_ANALYSIS.metrics as NonNullable<Analysis['metrics']>),
+          dscr: null,
+          mortgagePaymentMonthly: 0,
+          mortgageAmount: 0,
+          downPayment: 800000,
+          closingCostsTotal: 0,
+          lttProvincial: 0,
+          lttMunicipal: 0,
+        },
+        ownerInputs: {
+          value: 800000,
+          mortgageBalance: 0,
+          mortgageRate: null,
+          enteredAt: '2026-09-15T14:00:00.000Z',
+        },
+      },
+      listing: RENTAL,
+    })
+    renderReport()
+    expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
+    expect(screen.getAllByText('No debt').length).toBeGreaterThan(0)
+    expect(screen.getByText('Owned · nothing to close')).toBeInTheDocument()
+    expect(screen.getByText('Equity share')).toBeInTheDocument()
+    expect(screen.queryByText('Down payment')).not.toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/Infinity|NaN/)
   })
 
   it('a report saved with a value opens scored, and "Change" re-opens the form pre-filled', async () => {

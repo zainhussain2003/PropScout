@@ -55,7 +55,8 @@ export interface InvestmentMetrics {
   cashFlowAnnual: number
   capRate: number // decimal (e.g. 0.045 = 4.5%)
   cashOnCashReturn: number
-  dscr: number // debt-service coverage ratio
+  /** Null when there is no debt service — owned outright (D-108). */
+  dscr: number | null // debt-service coverage ratio
   grm: number // gross rent multiplier
   noi: number // net operating income (annual)
 
@@ -284,6 +285,13 @@ export interface HoldCaseRow {
 export interface OwnerInputs {
   /** The property's value in CAD, as the landlord stated it. */
   value: number
+  /**
+   * Mortgage balance outstanding, when the landlord already owns it (D-108).
+   * 0 = owned outright; null/absent = evaluating as a purchase at defaults.
+   */
+  mortgageBalance?: number | null
+  /** Their mortgage rate as a decimal (0.0479), when they own it and gave one. */
+  mortgageRate?: number | null
   /** ISO time it was entered — the ledger's "as of". */
   enteredAt: string
 }
@@ -389,6 +397,12 @@ export interface FinancingInputs {
   isToronto: boolean // adds Toronto municipal LTT using its own brackets
   appreciationRate: number // e.g. 0.03 for 3% — equity projections only
   assumedIncome: number // household income for OSFI GDS calc, default 125000
+  /**
+   * The person already owns it (D-108): downPaymentPct is their equity share
+   * (5–100%), no land-transfer tax or closing costs are charged, and 100% means
+   * no debt service — DSCR is not applicable.
+   */
+  owned?: boolean
 }
 
 /** Single bracket row in the Ontario LTT breakdown table. */
@@ -518,6 +532,10 @@ export interface ListingData {
   askingRent?: number | null
   /** The landlord's own value behind `price` on a rental listing, when entered (D-107). */
   ownerValue?: number | null
+  /** The landlord's mortgage balance when they own it (D-108); 0 = outright; null = purchase case. */
+  ownerMortgageBalance?: number | null
+  /** Their contract rate as a decimal, when entered with the balance. */
+  ownerMortgageRate?: number | null
   /** True when rentEstimate is the price-based proxy — no comps, no listed rent (D-101). */
   rentIsProxy?: boolean
   rentLow: number
