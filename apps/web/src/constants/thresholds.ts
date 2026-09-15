@@ -61,3 +61,12 @@ export const FINANCING_SLIDER = {
   MAX_DOWN_PAYMENT: 0.5,
   DOWN_PAYMENT_STEP: 0.05,
 } as const
+
+/**
+ * A landlord's own property value (D-107) — the same bounds the API enforces
+ * (OWNER_VALUE in apps/api), so the form can say so before the round trip.
+ */
+export const OWNER_VALUE = {
+  MIN: 50_000,
+  MAX: 50_000_000,
+} as const

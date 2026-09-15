@@ -63,6 +63,8 @@ export interface LedgerInput {
   rentMid: number
   /** True on a for-rent listing whose value was modelled from rent. */
   priceEstimated: boolean
+  /** The landlord's own value when one was entered (D-107) — outranks the model. */
+  ownerValue?: { value: number; enteredAt: string } | null
   annualTaxesUsed: number
   annualTaxesEstimated: boolean
   /** Whether the city had its own row in the CMHC table (else the province default). */
@@ -209,7 +211,18 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
   }
 
   // ── Value (for-rent listings only) ───────────────────────────────────────
-  if (input.priceEstimated) {
+  if (input.ownerValue != null) {
+    rows.push({
+      key: 'value_owner',
+      label: 'Property value',
+      value: cad(input.ownerValue.value),
+      basis: 'observed',
+      source: 'You entered it',
+      asOf: input.ownerValue.enteredAt.slice(0, 10),
+      method:
+        "The listing states no value. Every price-dependent figure — score, cash flow, cap rate, DSCR, cash to close, equity — is run on this number as a purchase at today's financing; change it in the hero to re-run.",
+    })
+  } else if (input.priceEstimated) {
     rows.push({
       key: 'value_estimate',
       label: 'Property value',

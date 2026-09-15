@@ -115,6 +115,14 @@ export const sunscoutBody = {
   additionalProperties: false,
 } as const
 
+/** POST /analysis/:token/value — a landlord's own value (D-107); bounds in OWNER_VALUE. */
+export const ownerValueBody = {
+  type: 'object',
+  properties: { value: { type: 'number' } },
+  required: ['value'],
+  additionalProperties: false,
+} as const
+
 export const waitlistBody = {
   type: 'object',
   properties: {

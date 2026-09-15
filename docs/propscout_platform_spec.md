@@ -626,7 +626,7 @@ Triggered when a for-rent URL is pasted and the user selects "I'm a Landlord." F
 
 Used by landlords who own or are considering buying a property and want to understand whether the rental income pencils out.
 
-The user inputs (or the system prompts for): the property's purchase price or current value, current mortgage details if owned, actual monthly expenses if owned.
+The user inputs the property's purchase price or current value: the hero score card asks "What is it worth?" and the report is re-run on that value (`POST /analysis/:token/value`, persisted as `ownerInputs`, D-107). Until a value is entered the card is an operating view — rent, comps, flags, costs, no purchase score (D-104). Current mortgage details and an owned-outright path are not built yet (engine needs a no-debt DSCR path — BACKLOG §8).
 
 Rent estimate uses the listed rent as the primary input, with comps run alongside to show whether current/planned rent is at, above, or below market.
 

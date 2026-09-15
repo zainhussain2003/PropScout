@@ -65,6 +65,8 @@ async function main(): Promise<void> {
 
   await fastify.register(import('./routes/sunscout'), { prefix: '/analysis' })
 
+  await fastify.register(import('./routes/ownerValue'), { prefix: '/analysis' })
+
   await fastify.register(import('./routes/pdf'), { prefix: '/analysis' })
 
   await fastify.register(import('./routes/scrape'), { prefix: '/scrape' })

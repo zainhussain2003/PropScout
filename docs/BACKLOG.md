@@ -14,15 +14,14 @@
 
 ## 1. Owner decisions
 
-| Item                                    | Decision needed                                                                                                                                      | Why it matters                                                                                                                                                            | Written up     |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| **L-03 — what a landlord score means**  | Acquisition underwriting (today's investor score with a landlord label) or operating / pricing health (its own method)?                              | Live landlord traffic renders investor content (L-01). `LandlordPage` is fixture-free and safe to route; routing before this decision swaps one wrong report for another. | D-070          |
-| **S-01 / S-03 / S-04 — scoring method** | Overlapping economics in the component weights; the display floor at 5; severe-gate constants documented as unsourced placeholders.                  | Spec §10 is the formula; changing it is a product decision and moves pinned regression values.                                                                            | Audit S-\*     |
-| **Guest policy (A-09)**                 | Spec §5: "a guest gets one free analysis with email capture". Build it, or leave guests uncounted? Should a guest report be claimable after sign-in? | Quota is per account; signing out is a bypass; guest reports are never owned so their flags can never be dismissed.                                                       | D-071          |
-| **Break-even rent definition**          | Keep "current rent − current cash flow" or gross up vacancy to the break-even rent (≈ $140/mo higher on the calibration unit)?                       | Definitional; changes a pinned value either way.                                                                                                                          | D-074          |
-| **"True monthly cost" headline**        | ~24% of the personal headline is modelled (insurance, utilities, maintenance from a 1.5% assumption). Keep "true", or "estimated all-in"?            | Rows are labelled estimate/confirm; the headline word is not.                                                                                                             | Counter-review |
-| **Rent control (landlord vs tenant)**   | A landlord task must distinguish vacancy pricing from a sitting-tenant increase; needs an authoritative Ontario source for the guideline.            | Legal behaviour; not to be paraphrased from memory.                                                                                                                       | Counter-review |
-| **Stripe key mode** (lower priority)    | Live or test keys on the production API.                                                                                                             | Checkout answers 503 "paid plans not open yet" until price IDs exist.                                                                                                     | D-076          |
+| Item                                    | Decision needed                                                                                                                                      | Why it matters                                                                                                      | Written up     |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **S-01 / S-03 / S-04 — scoring method** | Overlapping economics in the component weights; the display floor at 5; severe-gate constants documented as unsourced placeholders.                  | Spec §10 is the formula; changing it is a product decision and moves pinned regression values.                      | Audit S-\*     |
+| **Guest policy (A-09)**                 | Spec §5: "a guest gets one free analysis with email capture". Build it, or leave guests uncounted? Should a guest report be claimable after sign-in? | Quota is per account; signing out is a bypass; guest reports are never owned so their flags can never be dismissed. | D-071          |
+| **Break-even rent definition**          | Keep "current rent − current cash flow" or gross up vacancy to the break-even rent (≈ $140/mo higher on the calibration unit)?                       | Definitional; changes a pinned value either way.                                                                    | D-074          |
+| **"True monthly cost" headline**        | ~24% of the personal headline is modelled (insurance, utilities, maintenance from a 1.5% assumption). Keep "true", or "estimated all-in"?            | Rows are labelled estimate/confirm; the headline word is not.                                                       | Counter-review |
+| **Rent control (landlord vs tenant)**   | A landlord task must distinguish vacancy pricing from a sitting-tenant increase; needs an authoritative Ontario source for the guideline.            | Legal behaviour; not to be paraphrased from memory.                                                                 | Counter-review |
+| **Stripe key mode** (lower priority)    | Live or test keys on the production API.                                                                                                             | Checkout answers 503 "paid plans not open yet" until price IDs exist.                                               | D-076          |
 
 ## 2. Credentials and dashboards (owner has access; Claude does not)
 
@@ -68,8 +67,9 @@ planned rows (portfolio tracker, white-label PDF, bulk analysis, seats, API acce
 
 ## 7. Manual testing (lower priority per owner)
 
-Not yet done: Stripe checkout end to end (blocked on price IDs); **landlord mode on production**
-(blocked on L-03); PDF export on production (needs a Pro account); mobile on a real device;
+Not yet done: Stripe checkout end to end (blocked on price IDs); **landlord value input on
+production** (built and verified through the local API against live reports on 2026-09-15,
+D-107 — the production API deploys with #88); PDF export on production (needs a Pro account); mobile on a real device;
 scraper-fail state live (needs a listing Realtor.ca will not serve).
 
 Nightly rental-comps job confirmed running on 2026-09-15: live reports carry comps last seen 2026-09-13/14 from Kijiji (Toronto) and Rentals.ca + PadMapper (Ottawa).
@@ -104,4 +104,6 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   (#78, D-098); floor confirmation still to do (needs a floor input in the pipeline).
 - **Equity build:** flat/conservative/stress scenarios with selling costs, tax, capex.
 - **STR:** dated rules snapshot with municipal citations until an official source exists.
-- **Landlord:** verified rent-control guidance; landlord-specific method (L-03).
+- **Landlord:** verified rent-control guidance; mortgage balance / rate inputs and an
+  owned-outright path (engine: DSCR not applicable on zero debt, CoC on full value — D-107);
+  a pricing-health score once the comps table has months of DOM / trend history.
