@@ -11,7 +11,7 @@
  *   Maintenance reserve
  *   ─── Total ───
  *
- * Burlington (condoFeeMonthly=0) shows Condo fee as $0.
+ * Burlington (condoFeeMonthly=0, semi-detached) has no Condo fee row.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -58,15 +58,27 @@ describe('PBTrueCostSection', () => {
     expect(screen.getByText('Property tax')).toBeInTheDocument()
   })
 
-  it('renders "Condo fee" top-level line item (always shown, $0 for Burlington)', () => {
+  it('omits the "Condo fee" row on a freehold house with no fee (Burlington semi)', () => {
     render(<PBTrueCostSection property={PB_PROPERTY} monthly={MONTHLY} />)
-    expect(screen.getByText('Condo fee')).toBeInTheDocument()
+    expect(screen.queryByText('Condo fee')).not.toBeInTheDocument()
+    expect(screen.queryByText('$0')).not.toBeInTheDocument()
   })
 
-  it('Condo fee row shows $0 for Burlington (condoFeeMonthly=0)', () => {
-    render(<PBTrueCostSection property={PB_PROPERTY} monthly={MONTHLY} />)
-    // The condo row value is fmtMoney(0, { decimals: 0 }) = "$0"
-    expect(screen.getByText('$0')).toBeInTheDocument()
+  it('keeps the "Condo fee" row for a condo whose fee the listing did not state, and says so', () => {
+    render(
+      <PBTrueCostSection
+        property={{ ...PB_PROPERTY, propertyType: 'Condo apartment' }}
+        monthly={MONTHLY}
+      />
+    )
+    expect(screen.getByText('Condo fee')).toBeInTheDocument()
+    expect(screen.getByText(/not listed · confirm the fee/)).toBeInTheDocument()
+  })
+
+  it('shows the fee when one is known, whatever the property type', () => {
+    render(<PBTrueCostSection property={PB_PROPERTY} monthly={{ ...MONTHLY, condo: 412 }} />)
+    expect(screen.getByText('Condo fee')).toBeInTheDocument()
+    expect(screen.getByText('$412')).toBeInTheDocument()
   })
 
   it('renders "Insurance" top-level line item', () => {

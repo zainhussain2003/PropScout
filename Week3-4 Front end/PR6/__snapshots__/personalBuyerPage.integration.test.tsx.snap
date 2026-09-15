@@ -939,32 +939,6 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span
               style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
             >
-              Condo fee
-            </span>
-            <span
-              class="mono"
-              style="font-size: 10px; color: var(--muted);"
-            >
-              monthly maintenance fee
-            </span>
-          </div>
-          <span
-            class="mono tabular"
-            style="text-align: right; font-size: 16px; font-weight: 500; color: var(--ink);"
-          >
-            $0
-          </span>
-        </div>
-        <div
-          style="display: grid; grid-template-columns: 1.4fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--line); align-items: center; background: transparent;"
-        >
-          <div
-            class="col"
-            style="gap: 2px;"
-          >
-            <span
-              style="font-size: 14.5px; color: var(--ink); font-weight: 500;"
-            >
               Insurance
             </span>
             <span
