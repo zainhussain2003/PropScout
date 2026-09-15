@@ -3690,3 +3690,38 @@ not a crash.
 | Model tax at an assumed 40% marginal | A number the reader did not give, in the one row that varies most between readers.                        |
 | IRR                                  | A solver for level cash flows adds little over the simple rate and is harder to explain.                  |
 | Put the projection in the engine     | The engine's hold case is the break-even; the scenarios reuse its inputs client-side like the curve does. |
+
+### D-111 · Provenance next to the figure: listing says / you entered / calculated · N assumed
+
+**Chosen.** `lib/provenance.ts` (web, pure) and a shared `ProvenanceBadge`. Three places:
+
+- **Hero source line** under the address: "Listing facts from realtor.ca · read Sep 14, 2026"
+  (scraped) or "Listing facts as you entered them · entered …" (address path), from
+  `listing.url` and `listing.scrapedAt` (`ListingData.provenance`).
+- **Hero asking price**: "listing says", "you entered" (address path), or "you entered" for a
+  landlord's value (D-107).
+- **§01 headline tiles**: every tile is "calculated"; each carries the count of §12 ledger rows
+  among its inputs whose basis is `estimate` or `default` — "calculated · 5 assumed" — with the
+  hover naming them ("assumes property tax, maintenance reserve, …. See §12"). The input map is
+  `TILE_INPUTS` (tile → ledger keys), so the badge is derived from the ledger the API already
+  produces (D-088); the component computes nothing.
+
+The badge is muted, not amber: most tiles rest on a few labelled starting assumptions (down
+payment, amortization, insurance, legal fees) and a wall of amber would say nothing; the count
+and the hover carry the information.
+
+**Why.** Audit roadmap "field-level badges (listing says / you entered / calculated / assumed as
+of), scrape timestamps". The §12 ledger answers "where did this come from" for a reader who
+scrolls to the end; the tile is where the question arises.
+
+**Not in this.** Extraction confidence per flag is already on the flag rows; geocoder match
+type is not stored (BACKLOG §8). Tenant and personal reports do not carry the tiles; the hero
+line and price badge apply wherever `PropertyHero` renders.
+
+**Alternatives considered**
+
+| Option                             | Why not                                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| One badge per tile input           | Nine tiles × up to twelve inputs is a table, not a tag; the count + hover + §12 is enough. |
+| Amber whenever anything is assumed | Every tile on every report would be amber; the tone would stop meaning anything.           |
+| Compute provenance in the API      | The ledger is already the API's answer; mapping tiles to it is presentation.               |

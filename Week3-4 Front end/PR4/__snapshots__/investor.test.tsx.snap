@@ -448,7 +448,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         Cap rate
       </div>
@@ -476,7 +476,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         Monthly cash flow
       </div>
@@ -504,7 +504,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         Cash-on-cash
       </div>
@@ -532,7 +532,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         DSCR
       </div>
@@ -560,7 +560,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         Monthly payment
       </div>
@@ -588,7 +588,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         NOI
       </div>
@@ -616,7 +616,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         GRM
       </div>
@@ -644,7 +644,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         Break-even rent
       </div>
@@ -672,7 +672,7 @@ exports[`InvestmentMetricsSection > matches snapshot 1`] = `
     >
       <div
         class="mono"
-        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);"
+        style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;"
       >
         Gross yield
       </div>

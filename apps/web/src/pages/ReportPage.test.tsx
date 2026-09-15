@@ -831,6 +831,67 @@ describe('ReportPage — a landlord states the value and the report is re-run on
   })
 })
 
+describe('ReportPage — provenance tags (D-111)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+    listOverrides.mockResolvedValue([])
+  })
+
+  it('says where the listing facts came from and tags the price and each tile', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        assumptions: [
+          {
+            key: 'property_tax',
+            label: 'Property tax',
+            value: '$5,000',
+            basis: 'estimate',
+            source: 's',
+            asOf: null,
+            method: 'm',
+          },
+          {
+            key: 'rent',
+            label: 'Market rent',
+            value: '$2,900/mo',
+            basis: 'published',
+            source: 's',
+            asOf: null,
+            method: 'm',
+          },
+        ],
+      },
+      listing: {
+        ...SALE_LISTING,
+        url: 'https://www.realtor.ca/real-estate/1/x',
+        scrapedAt: '2026-09-14T15:00:00Z',
+      },
+    })
+    renderReport()
+    const line = await screen.findByTestId('listing-provenance')
+    expect(line).toHaveTextContent('Listing facts from realtor.ca · read Sep 14, 2026')
+    // The asking price is the listing's; the tiles are calculated and name the estimate.
+    expect(screen.getAllByText('listing says').length).toBeGreaterThan(0)
+    const capRate = screen.getAllByTitle(/assumes property tax/i)
+    expect(capRate.length).toBeGreaterThan(0)
+    expect(capRate[0]).toHaveTextContent('calculated · 1 assumed')
+  })
+
+  it('an address-entered listing is tagged as yours', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: { ...SALE_LISTING, url: '' },
+    })
+    renderReport()
+    expect(await screen.findByTestId('listing-provenance')).toHaveTextContent(
+      'Listing facts as you entered them'
+    )
+    expect(screen.getAllByText('you entered').length).toBeGreaterThan(0)
+  })
+})
+
 describe('ReportPage — live financing sliders recompute every dependent metric', () => {
   beforeEach(() => {
     getAnalysisByToken.mockReset()

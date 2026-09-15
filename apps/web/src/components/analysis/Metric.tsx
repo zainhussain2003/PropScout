@@ -12,6 +12,9 @@
  * expands the acronym ("Gross Rent Multiplier") explains nothing either.
  */
 
+import type { Provenance } from '../../lib/provenance'
+import { ProvenanceBadge } from '../shared/ProvenanceBadge'
+
 interface MetricProps {
   label: string
   value: string
@@ -23,6 +26,8 @@ interface MetricProps {
    */
   plainEnglish?: string
   status?: 'pass' | 'caution' | 'fail' | 'neutral'
+  /** Where the figure came from, shown as a small tag beside the label (D-111). */
+  provenance?: Provenance
 }
 
 const STATUS_COLOR: Record<NonNullable<MetricProps['status']>, string> = {
@@ -38,6 +43,7 @@ export function Metric({
   sub,
   plainEnglish,
   status = 'neutral',
+  provenance,
 }: MetricProps): JSX.Element {
   return (
     <div
@@ -58,9 +64,19 @@ export function Metric({
           letterSpacing: '0.14em',
           textTransform: 'uppercase',
           color: 'var(--muted)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'wrap',
         }}
       >
         {label}
+        {provenance != null && (
+          <>
+            {' '}
+            <ProvenanceBadge provenance={provenance} />
+          </>
+        )}
       </div>
 
       <div
