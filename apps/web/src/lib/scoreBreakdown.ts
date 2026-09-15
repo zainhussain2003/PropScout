@@ -1,18 +1,24 @@
 import type { DealScoreBreakdown, ScoreBarData } from '../types/analysis'
 
 /**
- * Of the demand component's 10 points, 4 are awarded for inputs the engine
- * never observes: median rental days-on-market (default 21 → +2) and rent
- * trend (default "flat" → +2). Only the CMHC vacancy part is measured. Every
- * live report therefore carries 4 assumed demand points (audit S-02). Until
- * the nightly comps scraper yields real DOM and trend, the row says so
- * rather than presenting 8/10 as observed demand.
+ * Analyses computed before D-105 earned 4 of the demand component's 10 points
+ * for inputs the engine never observed (days-on-market default 21 → +2, rent
+ * trend default "flat" → +2). Those saved reports still carry the points, so
+ * their row says so. An analysis whose Sources ledger has the measured rows
+ * (`rental_dom`, `rent_trend`) scored only what was observed — no note.
  */
 export const ASSUMED_DEMAND_POINTS = 4
 export const DEMAND_ASSUMPTION_NOTE = `${ASSUMED_DEMAND_POINTS} of these points assume typical days-on-market and flat rents — not measured for this area.`
 
-/** Keep component weights visible without recalculating the backend verdict. */
-export function scoreBreakdownBars(breakdown: DealScoreBreakdown): ScoreBarData[] {
+/**
+ * Keep component weights visible without recalculating the backend verdict.
+ * `demandMeasured` — true when the analysis scored DOM / trend from the comps
+ * table or as 0 (D-105); false for fixtures and pre-D-105 reports.
+ */
+export function scoreBreakdownBars(
+  breakdown: DealScoreBreakdown,
+  demandMeasured = false
+): ScoreBarData[] {
   const components = [
     ['Cap rate', 'capRate'],
     ['Cash flow', 'cashFlow'],
@@ -30,7 +36,10 @@ export function scoreBreakdownBars(breakdown: DealScoreBreakdown): ScoreBarData[
       label,
       value: valid ? value : null,
       max,
-      note: key === 'demand' && valid && value > 0 ? DEMAND_ASSUMPTION_NOTE : undefined,
+      note:
+        key === 'demand' && valid && value > 0 && !demandMeasured
+          ? DEMAND_ASSUMPTION_NOTE
+          : undefined,
       trackPercent:
         Number.isFinite(max) && max > 0 && Number.isFinite(largest) && largest > 0
           ? (max / largest) * 100

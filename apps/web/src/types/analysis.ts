@@ -436,6 +436,8 @@ export interface DealScoreData {
   tone: 'pass' | 'caution' | 'fail'
   breakdown: DealScoreBreakdown
   deductions: number // total risk-flag deductions (capped at 15)
+  /** True when DOM / rent trend were measured or scored 0 (D-105) — no assumed-points note. */
+  demandMeasured?: boolean
 }
 
 /** Presentation of a component on the common weighted-points scale. */

@@ -32,6 +32,7 @@ import {
   updateAnalysisStatus,
   updateAnalysisByToken,
   fetchRentalComps,
+  fetchMarketDemand,
   getFlagOverrides,
   getNearbySchools,
   getSupabase,
@@ -47,6 +48,7 @@ import { getWalkScore } from '../services/walkScoreService'
 import { getVacancyRateByCity } from '../services/cmhcService'
 
 const mockGetListingByToken = jest.mocked(getListingByToken)
+const mockFetchMarketDemand = jest.mocked(fetchMarketDemand)
 const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
 const mockSaveAnalysis = jest.mocked(updateAnalysisByToken)
 const mockFetchRentalComps = jest.mocked(fetchRentalComps)
@@ -172,6 +174,14 @@ describe('POST / — analysis orchestrator', () => {
     mockGeocodeAddress.mockResolvedValue(null)
     mockGetWalkScore.mockResolvedValue(null)
     mockFetchRentalComps.mockResolvedValue(null)
+    mockFetchMarketDemand.mockResolvedValue({
+      daysOnMarket: null,
+      domSample: 0,
+      rentTrend: null,
+      trendChangePct: null,
+      recentSample: 0,
+      priorSample: 0,
+    })
     mockGetFlagOverrides.mockResolvedValue([])
 
     global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
@@ -308,6 +318,41 @@ describe('POST / — analysis orchestrator', () => {
     }
     // LISTING_FIXTURE city is Vaughan — must match the real cmhcService value.
     expect(sentBody.cmhc_vacancy_rate).toBe(getVacancyRateByCity('Vaughan'))
+  })
+
+  it('forwards measured days-on-market and rent trend to the engine, null when unobserved (D-105)', async () => {
+    const send = async (): Promise<{ rental_days_on_market: unknown; rent_trend: unknown }> => {
+      await app.inject({
+        method: 'POST',
+        url: '/',
+        payload: { token: 'test-token', mode: 'investor' },
+      })
+      const fetchMock = global.fetch as jest.Mock
+      const calcCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/analysis/'))
+      return JSON.parse((calcCall![1] as RequestInit).body as string)
+    }
+    // Default mock: nothing observed → the engine is told so, not given 21 / flat.
+    const unobserved = await send()
+    expect(unobserved.rental_days_on_market).toBeNull()
+    expect(unobserved.rent_trend).toBeNull()
+
+    jest.clearAllMocks()
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+    mockFetchMarketDemand.mockResolvedValue({
+      daysOnMarket: 12,
+      domSample: 15,
+      rentTrend: 'declining',
+      trendChangePct: -0.041,
+      recentSample: 10,
+      priorSample: 18,
+    })
+    const observed = await send()
+    expect(observed.rental_days_on_market).toBe(12)
+    expect(observed.rent_trend).toBe('declining')
+    expect(mockFetchMarketDemand).toHaveBeenCalledWith(
+      LISTING_FIXTURE.postalCode,
+      LISTING_FIXTURE.beds
+    )
   })
 
   it('recognizes Toronto neighbourhood suffixes for MLTT and tax estimation', async () => {

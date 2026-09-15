@@ -9,7 +9,8 @@ Component breakdown (max points):
   cash flow       → 25 pts
   cash-on-cash    → 20 pts
   dscr            → 15 pts
-  market demand   → 10 pts  (vacancy + DOM + rent trend)
+  market demand   → 10 pts  (vacancy + DOM + rent trend; an unobserved
+                             DOM or trend scores 0, never a default — D-105)
   ─────────────────────────
   subtotal max    → 95 pts
   risk deductions → up to −15 pts (capped)
@@ -178,16 +179,22 @@ def _score_dscr(dscr: float) -> int:
 
 def _score_market_demand(
     cmhc_vacancy_rate: float,
-    rental_days_on_market: int,
-    rent_trend: str,
+    rental_days_on_market: int | None,
+    rent_trend: str | None,
 ) -> int:
     """
     Score market demand based on vacancy rate, rental DOM, and rent trend.
 
+    A None DOM or trend means the pipeline could not observe it; that input
+    contributes 0 points. Until D-105 the engine substituted 21 days / 'flat'
+    and every property in the province earned 4 points for nothing.
+
     Args:
         cmhc_vacancy_rate: CMHC vacancy rate as a decimal (e.g. 0.018 = 1.8%).
-        rental_days_on_market: Median days a rental sits on market in the area.
-        rent_trend: Direction of rent movement — 'rising', 'flat', or 'declining'.
+        rental_days_on_market: Median days a rental sits on market in the area,
+            or None when not observed.
+        rent_trend: Direction of rent movement — 'rising', 'flat', 'declining',
+            or None when not observed.
 
     Returns:
         Integer score 0–10.
@@ -202,13 +209,15 @@ def _score_market_demand(
     elif cmhc_vacancy_rate < 0.05:
         demand += 1
 
-    # Days on market contribution (max 3 pts)
-    if rental_days_on_market < 14:
+    # Days on market contribution (max 3 pts); None → 0
+    if rental_days_on_market is None:
+        pass
+    elif rental_days_on_market < 14:
         demand += 3
     elif rental_days_on_market <= 30:
         demand += 2
 
-    # Rent trend contribution (max 3 pts)
+    # Rent trend contribution (max 3 pts); None → 0
     if rent_trend == "rising":
         demand += 3
     elif rent_trend == "flat":
@@ -223,8 +232,8 @@ def calculate_deal_score(
     cash_on_cash: float,
     dscr: float,
     cmhc_vacancy_rate: float,
-    rental_days_on_market: int,
-    rent_trend: str,
+    rental_days_on_market: int | None,
+    rent_trend: str | None,
     risk_flag_deductions: float = 0.0,
     severe_flag_count: int = 0,
 ) -> dict[str, object]:
@@ -241,8 +250,9 @@ def calculate_deal_score(
         cash_on_cash: Cash-on-cash return as a decimal (e.g. 0.06 = 6%).
         dscr: Debt service coverage ratio.
         cmhc_vacancy_rate: CMHC vacancy rate as a decimal.
-        rental_days_on_market: Median rental days on market in the area.
-        rent_trend: 'rising', 'flat', or 'declining'.
+        rental_days_on_market: Median rental days on market in the area;
+            None when unobserved (scores 0).
+        rent_trend: 'rising', 'flat', 'declining'; None when unobserved (scores 0).
         risk_flag_deductions: Total deduction points from confirmed red-flag risk items.
             Each individual flag specifies its own deduct value. Capped at 15.
 

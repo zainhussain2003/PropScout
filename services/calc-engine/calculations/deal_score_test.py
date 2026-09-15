@@ -316,6 +316,19 @@ class TestScoreMarketDemand:
         result = _score_market_demand(0.025, 22, "rising")
         assert result == 8
 
+    def test_unobserved_dom_scores_zero(self) -> None:
+        """D-105: None DOM contributes nothing — vacancy 4 + trend 3 = 7."""
+        assert _score_market_demand(0.015, None, "rising") == 7
+
+    def test_unobserved_trend_scores_zero(self) -> None:
+        """D-105: None trend contributes nothing — vacancy 4 + DOM 3 = 7."""
+        assert _score_market_demand(0.015, 10, None) == 7
+
+    def test_both_unobserved_leaves_vacancy_only(self) -> None:
+        """D-105: with neither observed, demand is the vacancy bracket alone."""
+        assert _score_market_demand(0.015, None, None) == 4
+        assert _score_market_demand(0.055, None, None) == 0
+
 
 # ── calculate_deal_score (integration) ────────────────────────────
 

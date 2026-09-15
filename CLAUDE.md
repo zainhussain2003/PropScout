@@ -1265,13 +1265,14 @@ propscout/
 │           │   ├── mapboxService.ts         # Geocoding + Directions (routed travel times, D-096)
 │           │   ├── googlePlacesService.ts   # School discovery
 │           │   ├── stripeService.ts         # Subscriptions + billing portal
-│           │   ├── cmhcService.ts           # Vacancy rates (getVacancyRateByCity)
+│           │   ├── cmhcService.ts + .test.ts  # Vacancy rates from the CMHC survey table; neighbourhood suffix stripped (D-106)
 │           │   ├── bankOfCanadaService.ts   # Current mortgage rates
 │           │   ├── pdfService.ts            # Puppeteer renders /r/:token → branded PDF (spec §14)
 │           │   └── supabaseService.ts       # All DB reads and writes (incl. flag_overrides)
 │           ├── lib/
 │           │   ├── assumptionLedger.ts + .test.ts  # Rows for the report's Sources section from engine echo + pipeline provenance (D-088)
 │           │   ├── billingMonth.ts    # UTC calendar-month window for the free quota (D-071)
+│           │   ├── marketDemand.ts + .test.ts  # Days-on-market + rent trend from the comps table, or "not observed" (D-105)
 │           │   ├── buildInfo.ts + .test.ts  # Deployed commit for /health (RAILWAY_GIT_COMMIT_SHA, D-094)
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
 │           │   ├── schoolWalkTimes.ts + .test.ts  # Routed walking minutes to the nearby schools (D-100)
@@ -1286,7 +1287,7 @@ propscout/
 │               ├── tiers.ts
 │               ├── thresholds.ts
 │               ├── flagLabels.ts      # Risk-flag id → human-readable label
-│               ├── cmhcVacancy.ts     # CMHC vacancy rates by city (refresh annually)
+│               ├── cmhcVacancy.ts     # CMHC Oct-2025 survey totals by municipality + CMHC_VACANCY_SURVEY (refresh every January, D-106)
 │               ├── propertyTaxRates.ts # Ontario municipal property-tax rates (refresh annually)
 │               ├── valuation.ts       # Fallback rent↔price proxies (~6% gross yield) for missing data
 │               └── provinces.ts       # Ontario FSA prefixes, LTT brackets

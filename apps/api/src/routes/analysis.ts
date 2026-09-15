@@ -24,6 +24,7 @@ import {
   updateAnalysisStatus,
   updateAnalysisByToken,
   fetchRentalComps,
+  fetchMarketDemand,
   getFlagOverrides,
   getNearbySchools,
   getUserById,
@@ -420,6 +421,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         const comps = await fetchRentalComps(listing.postalCode, listing.beds, coords).catch(
           () => null
         )
+        // Days-on-market and rent trend from the same table (D-105); either
+        // may be "not observed", in which case the engine scores it 0.
+        const demand = await fetchMarketDemand(listing.postalCode, listing.beds)
 
         const rentalFallback =
           listing.rentMonthly ?? Math.round((listing.price ?? 0) * RENT_TO_PRICE_MONTHLY)
@@ -540,6 +544,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             postal_code: listing.postalCode,
           },
           cmhc_vacancy_rate: cmhcVacancyRate,
+          rental_days_on_market: demand.daysOnMarket,
+          rent_trend: demand.rentTrend,
           dismissed_flag_ids: dismissedFlagIds,
           mode,
         }
@@ -682,7 +688,8 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           breakEvenRent: pyData.metrics.break_even_rent,
           condoFeeMonthly: listing.condoFeeMonthly,
           condoFeeKnown: listing.condoFeeKnown,
-          rentTrend: 'flat',
+          // Measured or absent — never a stand-in the prompt could quote (D-105).
+          rentTrend: demand.rentTrend ?? undefined,
           vacancyRate: cmhcVacancyRate,
           riskFlagSummary: flagLabels || undefined,
           // Tenant-verdict inputs — without these the tenant prompt saw only $0
@@ -710,6 +717,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             condoFeeMonthly: listing.condoFeeMonthly,
             condoFeeKnown: listing.condoFeeKnown,
             yearBuilt: listing.yearBuilt,
+            postalCode: listing.postalCode,
           },
           engine: pyData.assumptions ?? null,
           rate: liveRate
@@ -723,6 +731,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           annualTaxesUsed: annualTaxesForCalc,
           annualTaxesEstimated: listing.annualTaxes == null || listing.annualTaxes <= 0,
           cmhcCityMatched: hasVacancyRateForCity(listing.city),
+          demand,
           walkScore,
           hasSunScout: pyData.sun_scout != null,
           travelTimesRouted:
