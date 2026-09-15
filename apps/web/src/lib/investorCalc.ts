@@ -96,9 +96,10 @@ export function verdictLabelForScore(score: number): string {
 /**
  * Adds human-readable label, tagline, and tone to a core DealScore API object.
  */
-export function toDealScoreData(score: DealScore): DealScoreData {
+export function toDealScoreData(score: DealScore, demandMeasured = false): DealScoreData {
   const display = VERDICT_DISPLAY[score.verdict]
   return {
+    demandMeasured,
     total: score.total,
     displayTotal: score.displayTotal,
     verdict: score.verdict,

@@ -59,6 +59,11 @@ describe('assumed demand points are labelled (audit S-02)', () => {
     expect(demand?.note).toMatch(/not measured/)
   })
 
+  it('drops the note once the analysis measured its demand inputs (D-105)', () => {
+    const bars = scoreBreakdownBars(breakdown, true)
+    expect(bars.find((b) => b.label === 'Rental demand')?.note).toBeUndefined()
+  })
+
   it('puts the note on no other component', () => {
     const bars = scoreBreakdownBars(breakdown)
     for (const b of bars) {

@@ -261,7 +261,7 @@ export function PropertyHero({
             <div className="scorecard-breakdown">
               <h3 className="mono scorecard-eyebrow">Score breakdown</h3>
               <p className="scorecard-caption">Points earned · longer tracks carry more weight</p>
-              {scoreBreakdownBars(score.breakdown).map((bar) => (
+              {scoreBreakdownBars(score.breakdown, score.demandMeasured === true).map((bar) => (
                 <div key={bar.label} className="scorecard-factor">
                   <div className="scorecard-row">
                     <span>{bar.label}</span>

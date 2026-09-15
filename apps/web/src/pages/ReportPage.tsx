@@ -586,8 +586,11 @@ function InvestorReportContent({
   // computation would drift from the gate (a dismissed flag once inflated a
   // grow-op property from its gated 40 up to ~90 by ignoring the ceiling).
   // Dismissing a flag persists the override; the gated score updates on re-run.
+  // A ledger with the measured demand rows means the score earned no assumed
+  // demand points (D-105); older analyses keep the note.
+  const demandMeasured = analysis.assumptions?.some((e) => e.key === 'rental_dom') === true
   const dealScore: DealScoreData | null =
-    analysis.dealScore != null ? toDealScoreData(analysis.dealScore) : null
+    analysis.dealScore != null ? toDealScoreData(analysis.dealScore, demandMeasured) : null
 
   // "Analyze another listing" means the input, not the previous page: from a
   // share link, history.back() left the site (UI-03).
