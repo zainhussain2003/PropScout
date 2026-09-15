@@ -12,6 +12,7 @@ import { SectionHead } from '../shared/SectionHead'
 import { RentalCompsBar } from '../analysis/RentalCompsBar'
 import type { CompRow } from '../../types/analysis'
 import { CompRowsTable } from '../analysis/CompRowsTable'
+import { CompsMap } from '../analysis/CompsMap'
 
 function fmtCAD(n: number): string {
   return `$${Math.round(n).toLocaleString('en-CA')}`
@@ -33,12 +34,15 @@ export interface RentalCompsSectionProps {
   askingRent: number
   /** True when askingRent is the price-based proxy (no comps, no listed rent) — D-101. */
   rentIsProxy?: boolean
+  /** Subject coordinates — with them, comps that carry a position are mapped (D-109). */
+  mapCenter?: { lat: number; lng: number } | null
 }
 
 export function RentalCompsSection({
   comps,
   askingRent,
   rentIsProxy = false,
+  mapCenter = null,
 }: RentalCompsSectionProps): JSX.Element | null {
   // No comps is a finding, not a missing section (D-101): the numbers above
   // and below rest on a rent that nothing observed supports, and the report
@@ -136,6 +140,11 @@ export function RentalCompsSection({
       {/* The comps themselves (D-099): the rows after outlier removal,
           nearest first when the search used a radius. Sanitised. */}
       <CompRowsTable rows={comps.rows} compCount={compCount} />
+      <CompsMap
+        rows={comps.rows}
+        center={mapCenter}
+        caption={radiusKm !== null ? `within ${radiusKm} km` : 'same postal area'}
+      />
     </section>
   )
 }

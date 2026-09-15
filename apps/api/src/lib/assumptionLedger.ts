@@ -196,7 +196,8 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       source: `${comps.compCount} asking rents from the PropScout nightly comps table`,
       asOf: input.createdAt,
       method:
-        `Median of asking rents within ${comps.radiusKm ?? '—'} km with outliers removed; ` +
+        `Weighted median of asking rents ${comps.radiusKm != null ? `within ${comps.radiusKm} km` : 'in the same FSA'} with outliers removed — ` +
+        `each comp weighted by distance, how recently it was seen, size and bedroom match (D-109); ` +
         `${comps.confidence} confidence. Asking rents, not signed leases.`,
     })
   } else if (listing.rentMonthly != null && listing.rentMonthly > 0) {

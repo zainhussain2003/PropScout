@@ -88,6 +88,7 @@ import { useTheme } from '../hooks/useTheme'
 import { scanState, SCAN_VERDICT, SCAN_NOTE, type ScanState } from '../lib/scanState'
 import { useChecklist } from '../hooks/useChecklist'
 import { CompRowsTable } from '../components/analysis/CompRowsTable'
+import { CompsMap, compPins } from '../components/analysis/CompsMap'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -1668,10 +1669,36 @@ export function TenantReport({
         }
       />
 
-      {/* §10 Comps map — the demo maps 14 fixture buildings; live has only the
-          aggregate rent range (no per-comp coordinates), so show an honest empty
-          rather than fabricated building pins. */}
-      {isReal ? (
+      {/* §10 Comps map — the demo maps 14 fixture buildings; live maps the
+          comps behind the band at their approximate positions (D-109), and
+          says so honestly when none carry one rather than inventing pins. */}
+      {isReal &&
+      realAnalysis?.coordinates != null &&
+      compPins(realAnalysis.rentalComps?.rows).length > 0 ? (
+        <section className="container tr-section" data-section="10">
+          <SectionHead
+            n="10"
+            topic="Map of comps"
+            question={
+              <>
+                Where do <em>similar units</em> sit?
+              </>
+            }
+            verdict={`${compPins(realAnalysis.rentalComps?.rows).length} comps mapped`}
+            tone="pass"
+          />
+          <CompsMap
+            rows={realAnalysis.rentalComps?.rows}
+            center={realAnalysis.coordinates}
+            height={420}
+            caption={
+              realAnalysis.rentalComps?.radiusKm != null
+                ? `within ${realAnalysis.rentalComps.radiusKm} km`
+                : 'same postal area'
+            }
+          />
+        </section>
+      ) : isReal ? (
         <section className="container tr-section" data-section="10">
           <SectionHead
             n="10"
@@ -1686,9 +1713,9 @@ export function TenantReport({
           />
           <div className="card" style={{ padding: 32 }}>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
-              Individual comparable rentals aren&apos;t mapped for this listing yet. The market rent
-              range in §01 uses recent asking-rent records scraped nightly from Rentals.ca, Kijiji,
-              and PadMapper
+              None of the comparable rentals behind §01 carries a position this report can map. The
+              market rent range uses recent asking-rent records scraped nightly from Rentals.ca,
+              Kijiji, and PadMapper
               {realAnalysis?.rentalComps?.radiusKm != null
                 ? ` within ${realAnalysis.rentalComps.radiusKm} km because this postal area had too few records.`
                 : ' in the same first-three-character postal area.'}

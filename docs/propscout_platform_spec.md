@@ -300,7 +300,7 @@ Rules this figure is presented under:
 
 Comp selection logic: same FSA or within 1km radius, same bedroom count (±1 if fewer than 5 results), listed within 90 days (expand to 180 if needed), outliers removed.
 
-Output: low/mid/high rent range (25th/50th/75th percentile), number of comps, confidence level (0–4: low, 5–9: medium, 10+: high), nearest 5 comps on Mapbox map, rental days-on-market, 12-month rent trend, CMHC vacancy rate.
+Output: low/mid/high rent range (weighted 25th/50th/75th percentile — each comp weighted by distance, recency, size and bedroom match, D-109), number of comps, confidence level (0–4: low, 5–9: medium, 10+: high), the comps behind the band with their match and approximate (~100 m) positions on a Mapbox map (D-099, D-109), rental days-on-market, 12-month rent trend, CMHC vacancy rate.
 
 **5. Financing scenarios** (sliders Pro only)
 

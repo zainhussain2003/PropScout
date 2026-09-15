@@ -696,6 +696,7 @@ function InvestorReportContent({
         comps={analysis.rentalComps}
         askingRent={listingData.rentEstimate}
         rentIsProxy={listingData.rentIsProxy}
+        mapCenter={analysis.coordinates ?? null}
       />
       {listingData.price > 0 && (
         <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />

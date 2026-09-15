@@ -3602,3 +3602,53 @@ position in acquisition language.
 | DSCR = ∞ / a sentinel like 99                       | Prints "Infinity" or a fake number; the tile and the score both need "not applicable".            |
 | Drop the DSCR component when unfinanced and rescale | Changes spec §10's formula; a maximum is the reading under which the component keeps its meaning. |
 | Separate "owner" report                             | The sections are the same; the difference is three inputs and what "cash in" means.               |
+
+### D-109 · Comps are weighted by similarity and mapped at approximate positions
+
+**Chosen.** The rent band is no longer the plain 25/50/75th percentile of every comp that
+survived outlier removal. Each comp gets a weight in (0, 1] — `lib/compWeighting.ts`,
+constants `COMP_WEIGHTS`:
+
+| factor   | rule                                   | when unknown |
+| -------- | -------------------------------------- | ------------ |
+| distance | 1 / (1 + km)                           | 1            |
+| recency  | exp(−days since last seen / 90)        | 1            |
+| size     | exp(−\|Δ sqft\| / 300)                 | 1            |
+| bedrooms | 1 exact, 0.6 for the ±1 fallback match | 1            |
+
+— and the band is the weighted percentile (each comp at the midpoint of its share of the total
+weight, interpolated between neighbours). Missing facts are neutral; only a known difference
+lowers a comp. `fetchRentalComps` takes the subject's sqft as well as beds and coordinates, on
+both the FSA path and the radius fallback. `CompRow` gains `similarity` (the weight, shown as
+"Match 61%"), and `approxLat/approxLng` — the source position rounded to three decimals
+(~110 m) — and rows come back most similar first. The report shows a Match column in the comps
+table (investor §03, tenant §01), a **CompsMap** under the table in §03 and as the tenant §10
+(the "not mapped individually" state stays for rows without a position), with the caption
+"positions rounded to about 100 m; addresses are not republished". The Sources rent row names
+the weighting.
+
+**Why.** Audit roadmap "weight by building/type/size/recency; map them", and spec §6 ("nearest
+5 comps on Mapbox map"). Before this a 90-day-old three-bedroom 4 km away counted the same as
+last night's two-bedroom in the next building, and the tenant §10 was an honest empty state
+because the rows carried no position. Publishing a block-level position of a public rental
+listing does not identify the unit; publishing the address (D-099) would.
+
+**Effects.** Bands move on re-run: on the live M6H report the weighted band is $1,761 / $2,265
+/ $2,850 from twelve Kijiji comps, the median unchanged from the plain one. With every factor
+unknown the weighted percentile is within a few dollars of the old plain one (p25/p75 shift by a
+quarter-step; the median of an odd count is exact) — the supabaseService "known dataset" test
+now pins 2775 / 2900 / 3025 instead of 2800 / 2900 / 3000. Stored analyses are untouched until
+re-run; rows without `similarity` show a dash and no weighting note.
+
+**Known limits.** No building/type factor yet — `rental_listings` has no property type column
+and "same building" would need the address the row deliberately drops. Recency uses last-seen;
+Kijiji re-posts refresh it. The map is one pin per comp, unclustered.
+
+**Alternatives considered**
+
+| Option                                                | Why not                                                                                            |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Keep plain percentiles, show similarity only          | The number the score runs on would still be the unweighted one; the column would be decorative.    |
+| Filter to the top-N most similar, then plain          | A cliff at N; weighting degrades smoothly and keeps the count honest.                              |
+| Exact positions on the map                            | Identifies the building — the line D-099 drew.                                                     |
+| Interpolation that reproduces the old p25/p75 exactly | Makes the top comp's weight nearly irrelevant to p75; the midpoint definition is the standard one. |

@@ -266,8 +266,9 @@ describe('fetchRentalComps', () => {
   })
 
   it('calculates correct percentiles for known dataset', async () => {
-    // Sorted: 2700, 2800, 2900, 3000, 3100
-    // p25 = 2800, p50 = 2900, p75 = 3000
+    // Sorted: 2700, 2800, 2900, 3000, 3100 — equal weights (nothing known
+    // against any comp), so the band is the weighted percentile at the
+    // cumulative midpoints (D-109): p25 = 2775, p50 = 2900, p75 = 3025.
     const chain = makeQueryChain({
       data: [
         { rent_monthly: 2700 },
@@ -282,12 +283,12 @@ describe('fetchRentalComps', () => {
 
     const result = await fetchRentalComps('L4K5W4', 3)
     expect(result).not.toBeNull()
-    expect(result!.low).toBe(2800)
+    expect(result!.low).toBe(2775)
     expect(result!.mid).toBe(2900)
-    expect(result!.high).toBe(3000)
+    expect(result!.high).toBe(3025)
   })
 
-  it('returns the comps behind the band, sanitised and cheapest-first on the FSA path (D-099)', async () => {
+  it('returns the comps behind the band, sanitised and most-similar-first on the FSA path (D-099, D-109)', async () => {
     const chain = makeQueryChain({
       data: [
         {
@@ -310,7 +311,9 @@ describe('fetchRentalComps', () => {
     expect(result).not.toBeNull()
     const rows = result!.rows
     // The $50,000 outlier is not in the band, so it is not in the rows either.
-    expect(rows.map((r) => r.rentMonthly)).toEqual([2700, 2900, 3100])
+    // Most similar first: the undated 3-bed (nothing known against it), the
+    // dated 3-bed (a little recency decay), then the 2-bed (±1 factor 0.6).
+    expect(rows.map((r) => r.rentMonthly)).toEqual([2700, 3100, 2900])
     expect(rows[0]).toEqual({
       rentMonthly: 2700,
       beds: 3,
@@ -319,10 +322,41 @@ describe('fetchRentalComps', () => {
       source: 'kijiji',
       seenAt: null,
       distanceKm: null,
+      similarity: 1,
+      approxLat: null,
+      approxLng: null,
     })
-    expect(rows[2]!.seenAt).toBe('2026-09-12T06:00:00.000Z')
+    expect(rows[1]!.seenAt).toBe('2026-09-12T06:00:00.000Z')
+    expect(rows[2]!.similarity).toBeCloseTo(0.6, 2)
     // Nothing that identifies the listing leaves the API.
     for (const r of rows) expect(Object.keys(r)).not.toContain('address')
+  })
+
+  it('weights the band toward nearer, fresher, like-sized comps and rounds positions to ~110 m (D-109)', async () => {
+    // Two comps at $2,000 sit 200 m away; one at $3,000 sits 4 km away. Plain
+    // percentiles would put the median at $2,000 either way; the weighted
+    // low/high move toward the near pair and the far comp's weight is small.
+    const chain = makeQueryChain({
+      data: [
+        { rent_monthly: 2000, beds: 2, sqft: 700, lat: 43.6512, lng: -79.3801 },
+        { rent_monthly: 2000, beds: 2, sqft: 720, lat: 43.6513, lng: -79.3799 },
+        { rent_monthly: 3000, beds: 2, sqft: 700, lat: 43.687, lng: -79.38 },
+      ],
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+    const result = await fetchRentalComps('M5V1Y9', 2, { lat: 43.65, lng: -79.38 }, 700)
+    expect(result).not.toBeNull()
+    expect(result!.mid).toBe(2000)
+    // Plain p75 of [2000, 2000, 3000] is 2500; the far comp carries ~1/5 the weight.
+    expect(result!.high).toBeLessThan(2500)
+    expect(result!.high).toBeGreaterThanOrEqual(2000)
+    const far = result!.rows.find((r) => r.rentMonthly === 3000)!
+    expect(far.similarity).toBeLessThan(0.3)
+    expect(far.distanceKm).toBeCloseTo(4.1, 0)
+    expect(far.approxLat).toBe(43.687)
+    expect(far.approxLng).toBe(-79.38)
+    expect(result!.rows[0]!.similarity).toBeGreaterThan(0.85)
   })
 
   it('removes outliers using 1.5x IQR rule', async () => {

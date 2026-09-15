@@ -347,7 +347,12 @@ export async function runAnalysisPipeline(
   // dense condo FSAs such as Vaughan's L4K had none while dozens of comps
   // sat within 5km. Without them the report fell back to a gross-yield
   // proxy and told the user there were no comps for the area.
-  const comps = await fetchRentalComps(listing.postalCode, listing.beds, coords).catch(() => null)
+  const comps = await fetchRentalComps(
+    listing.postalCode,
+    listing.beds,
+    coords,
+    listing.sqft
+  ).catch(() => null)
   // Days-on-market and rent trend from the same table (D-105); either
   // may be "not observed", in which case the engine scores it 0.
   const demand = await fetchMarketDemand(listing.postalCode, listing.beds)
