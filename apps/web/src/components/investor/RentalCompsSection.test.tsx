@@ -47,6 +47,100 @@ describe('RentalCompsSection — comp rows', () => {
     expect(screen.getByText(/addresses are not republished/i)).toBeInTheDocument()
   })
 
+  it('shows each comp’s match and maps the ones with a position when the subject has coordinates (D-109)', () => {
+    const rows = [
+      {
+        rentMonthly: 2750,
+        beds: 3,
+        sqft: 950,
+        fsa: 'L4K',
+        source: 'rentals_ca',
+        seenAt: '2026-09-12T06:00:00.000Z',
+        distanceKm: 0.8,
+        similarity: 0.82,
+        approxLat: 43.795,
+        approxLng: -79.53,
+      },
+      {
+        rentMonthly: 3100,
+        beds: 2,
+        sqft: null,
+        fsa: 'L4K',
+        source: 'kijiji',
+        seenAt: null,
+        distanceKm: null,
+        similarity: 0.6,
+        approxLat: null,
+        approxLng: null,
+      },
+    ]
+    render(
+      <RentalCompsSection
+        askingRent={2900}
+        comps={{ ...BAND, radiusKm: null, rows }}
+        mapCenter={{ lat: 43.79, lng: -79.53 }}
+      />
+    )
+    expect(screen.getByText('Match')).toBeInTheDocument()
+    expect(screen.getByText('82%')).toBeInTheDocument()
+    expect(screen.getByText('60%')).toBeInTheDocument()
+    expect(screen.getByText(/Match weighs distance/)).toBeInTheDocument()
+    expect(screen.getByText(/1 of 2 comps mapped · same postal area/)).toBeInTheDocument()
+    expect(
+      screen.getByLabelText(/Map showing rental comps near comparable rentals/)
+    ).toBeInTheDocument()
+  })
+
+  it('renders no map without subject coordinates or without positioned comps', () => {
+    const { rerender } = render(
+      <RentalCompsSection
+        askingRent={2900}
+        comps={{
+          ...BAND,
+          rows: [
+            {
+              rentMonthly: 2750,
+              beds: 3,
+              sqft: null,
+              fsa: 'L4K',
+              source: 'kijiji',
+              seenAt: null,
+              distanceKm: null,
+              similarity: 1,
+              approxLat: 43.795,
+              approxLng: -79.53,
+            },
+          ],
+        }}
+      />
+    )
+    expect(screen.queryByText(/comps mapped/)).not.toBeInTheDocument()
+    rerender(
+      <RentalCompsSection
+        askingRent={2900}
+        comps={{
+          ...BAND,
+          rows: [
+            {
+              rentMonthly: 2750,
+              beds: 3,
+              sqft: null,
+              fsa: 'L4K',
+              source: 'kijiji',
+              seenAt: null,
+              distanceKm: null,
+            },
+          ],
+        }}
+        mapCenter={{ lat: 43.79, lng: -79.53 }}
+      />
+    )
+    expect(screen.queryByText(/comps mapped/)).not.toBeInTheDocument()
+    // Rows without a similarity (older analyses) get a dash, and no weighting note.
+    expect(screen.getAllByText('—', { selector: 'td' }).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Match weighs distance/)).not.toBeInTheDocument()
+  })
+
   it('keeps §03 on the page with a finding when there are no comps, and names the proxy (D-101)', () => {
     const { container } = render(<RentalCompsSection askingRent={1745} comps={null} rentIsProxy />)
     expect(container.querySelector('section[data-section="03"]')).not.toBeNull()

@@ -1136,7 +1136,8 @@ propscout/
 │   │       │   │   ├── AIVerdictBlock.tsx     # Dark full-bleed AI verdict card
 │   │       │   │   ├── RiskRow.tsx            # Inline risk flag row
 │   │       │   │   ├── MiniMap.tsx            # Real Mapbox GL JS map (token + coords) with SVG placeholder fallback
-│   │       │   │   ├── CompRowsTable.tsx      # The comps behind a rent band, sanitised — investor §03 + tenant §01 (D-099)
+│   │       │   │   ├── CompRowsTable.tsx      # The comps behind a rent band with their match, sanitised — investor §03 + tenant §01 (D-099, D-109)
+│   │       │   │   ├── CompsMap.tsx           # Comps at ~100 m positions on the MiniMap — investor §03 + tenant §10 (D-109)
 │   │       │   │   └── PropertyHero.tsx       # Photo grid + chips + address + sticky score card
 │   │       │   │
 │   │       │   ├── investor/          # Investor-specific — also reused by landlord report
@@ -1282,6 +1283,7 @@ propscout/
 │           │   ├── buildInfo.ts + .test.ts  # Deployed commit for /health (RAILWAY_GIT_COMMIT_SHA, D-094)
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
 │           │   ├── schoolWalkTimes.ts + .test.ts  # Routed walking minutes to the nearby schools (D-100)
+│           │   ├── compWeighting.ts + .test.ts  # Similarity weights + weighted percentile for the rent band (D-109)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint

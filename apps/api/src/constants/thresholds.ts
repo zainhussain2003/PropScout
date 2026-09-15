@@ -55,6 +55,21 @@ export const MORTGAGE_RATE_BOUNDS = {
   MAX: 0.25,
 } as const
 
+// Similarity weighting for rental comps (D-109, lib/compWeighting.ts). Each
+// factor is 1 when the fact is unknown; only a known difference lowers it.
+export const COMP_WEIGHTS = {
+  /** km at which the distance factor halves: 1 / (1 + km / scale). */
+  DISTANCE_KM_SCALE: 1,
+  /** Days for the recency factor to fall to 1/e: exp(−days / RECENCY_DAYS). */
+  RECENCY_DAYS: 90,
+  /** Square feet of size difference for the size factor to fall to 1/e. */
+  SIZE_SQFT_SCALE: 300,
+  /** Factor for a comp one bedroom off the subject (the ±1 fallback path). */
+  BEDS_ADJACENT: 0.6,
+  /** Decimal places kept on a comp's published position (~110 m); D-109. */
+  POSITION_DECIMALS: 3,
+} as const
+
 // Market demand measured from the nightly rental_listings table (D-105).
 // Days-on-market = median (last seen − first seen) over listings in the FSA
 // that dropped off in the window; rent trend = median rent of listings first

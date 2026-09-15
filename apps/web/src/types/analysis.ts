@@ -150,8 +150,20 @@ export interface CompRow {
   source: 'rentals_ca' | 'kijiji' | 'padmapper' | string
   /** ISO date the row was last seen by the nightly scraper. */
   seenAt: string | null
-  /** Straight-line km from the subject; null on the same-FSA path (no subject coords used). */
+  /** Straight-line km from the subject; null when either side has no coordinates. */
   distanceKm: number | null
+  /**
+   * Similarity to the subject in (0, 1] — distance, recency, size, bedrooms
+   * (D-109). The rent band is the weighted percentile over these. Absent on
+   * analyses saved before D-109.
+   */
+  similarity?: number
+  /**
+   * Position rounded to ~110 m (three decimals) so the comp can be mapped
+   * without republishing the building (D-109). Null when the source had none.
+   */
+  approxLat?: number | null
+  approxLng?: number | null
 }
 
 export interface RentalEstimate {

@@ -3,8 +3,9 @@
  *
  * Shared by the investor/landlord §03 and the tenant §01. A band is only as
  * good as what it was drawn from; these are the rows after outlier removal,
- * nearest first when the search used a radius. Sanitised: no address, no
- * link — the listing itself is the source site's to publish.
+ * most similar first (distance, recency, size, bedroom match — D-109), with
+ * the match shown so a reader can see what the band leaned on. Sanitised: no
+ * address, no link — the listing itself is the source site's to publish.
  */
 
 import type { CompRow } from '../../types/analysis'
@@ -45,11 +46,16 @@ export function CompRowsTable({ rows, compCount }: CompRowsTableProps): JSX.Elem
                 textAlign: 'left',
               }}
             >
-              {['Asking rent', 'Beds', 'Sqft', 'Area', 'Distance', 'Source', 'Seen'].map((h) => (
-                <th key={h} style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-                  {h}
-                </th>
-              ))}
+              {['Asking rent', 'Match', 'Beds', 'Sqft', 'Area', 'Distance', 'Source', 'Seen'].map(
+                (h) => (
+                  <th
+                    key={h}
+                    style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}
+                  >
+                    {h}
+                  </th>
+                )
+              )}
             </tr>
           </thead>
           <tbody>
@@ -57,6 +63,7 @@ export function CompRowsTable({ rows, compCount }: CompRowsTableProps): JSX.Elem
               <tr key={i}>
                 {[
                   `$${r.rentMonthly.toLocaleString('en-CA')}`,
+                  r.similarity == null ? '—' : `${Math.round(r.similarity * 100)}%`,
                   r.beds == null ? '—' : String(r.beds),
                   r.sqft == null ? '—' : r.sqft.toLocaleString('en-CA'),
                   r.fsa ?? '—',
@@ -66,7 +73,7 @@ export function CompRowsTable({ rows, compCount }: CompRowsTableProps): JSX.Elem
                 ].map((cell, j) => (
                   <td
                     key={j}
-                    className={j === 0 || j === 4 ? 'mono' : undefined}
+                    className={j === 0 || j === 1 || j === 5 ? 'mono' : undefined}
                     style={{
                       padding: '10px 16px',
                       borderBottom: '1px solid var(--line)',
@@ -90,6 +97,9 @@ export function CompRowsTable({ rows, compCount }: CompRowsTableProps): JSX.Elem
           ? `Showing ${rows.length} of ${compCount} comps behind the band. `
           : ''}
         Asking rents as scraped, not signed leases; addresses are not republished.
+        {rows.some((r) => r.similarity != null)
+          ? ' Match weighs distance, how recently the comp was seen, size and bedroom count; the band is the match-weighted percentile.'
+          : ''}
       </p>
     </div>
   )

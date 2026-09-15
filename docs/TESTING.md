@@ -192,6 +192,13 @@ Also test a Toronto address — LTT should be approximately double.
 3. `npx vitest run src/pages/ReportPage.test.tsx -t D-108` — "No debt" tile, "Equity share" slider, "Owned · nothing to close", no `Infinity`/`NaN`
 4. On a live landlord report: tick "I already own it", leave the balance blank, Score it → hero says "no debt", §02 pill "Owned outright", §04 "Owned · nothing to close"
 
+**🤖 Test 15e — Comps weighted by similarity and mapped (D-109)**
+
+1. `npx jest src/lib/compWeighting.test.ts src/services/supabaseService.test.ts` — factors, weighted percentile, most-similar-first rows, ~110 m rounding
+2. `npx vitest run src/components/investor/RentalCompsSection.test.tsx` — Match column, map only with subject coordinates and positioned comps
+3. On a live report with comps: §03 shows a Match % per row, the map under the table with one pin per positioned comp, and the caption about rounding; the Sources rent row says "weighted median"
+4. Pass: no comp address or exact coordinate leaves the API (rows carry FSA, ~3-decimal position, no URL)
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`
