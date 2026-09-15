@@ -1164,6 +1164,10 @@ propscout/
 │   │       │   │   ├── NegotiationSection.tsx      # Leverage card + suggested message
 │   │       │   │   └── TenantSchoolsSection.tsx    # Slim schools (1 per board × 3 levels)
 │   │       │   │
+│   │       │   ├── landlord/          # Landlord-specific
+│   │       │   │   ├── OwnerValueForm.tsx + .test.tsx  # "What is it worth?" in the hero card (D-107)
+│   │       │   │   └── LandlordPropertyHero.tsx · LandlordVerdictHero.tsx · LandlordRentPositioningSection.tsx  # demo route
+│   │       │   │
 │   │       │   ├── personal/          # Personal buyer-specific
 │   │       │   │   ├── SchoolCard.tsx
 │   │       │   │   ├── SchoolColumn.tsx
@@ -1193,6 +1197,7 @@ propscout/
 │   │       │   ├── useAnalysis.ts     # Fetches and manages analysis state
 │   │       │   ├── useAuth.ts         # Auth state and methods
 │   │       │   ├── useChecklist.ts + useChecklist.test.tsx  # Report checklist ticks kept in this browser per share token (D-095)
+│   │       │   ├── useOwnerValue.ts + useOwnerValue.test.tsx  # Landlord value → POST /value → fresh analysis (D-107)
 │   │       │   ├── useTier.ts         # Current user tier + feature access checks
 │   │       │   ├── useTheme.ts + useTheme.test.tsx  # One app-wide theme, saved + OS-preference aware (UI-04, D-079)
 │   │       │   ├── useRentalComps.ts  # Rental comps data and loading state
@@ -1252,6 +1257,7 @@ propscout/
 │           │   ├── analysisToken.ts   # GET/POST /analysis/:token — fetch + trigger by share token
 │           │   ├── overrides.ts       # GET/POST/DELETE /analysis/:token/overrides — reads token-scoped, writes owner-only (D-065)
 │           │   ├── sunscout.ts        # POST /analysis/:token/sunscout — facade-direction SunScout recalc
+│           │   ├── ownerValue.ts + .test.ts  # POST /analysis/:token/value — landlord's value re-runs the pipeline (D-107)
 │           │   ├── pdf.ts             # GET /analysis/:token/pdf — Pro-gated Puppeteer PDF export
 │           │   ├── scrape.ts          # POST /scrape — scrape a listing URL into a pending analysis
 │           │   ├── rates.ts           # GET /rates/mortgage — live Bank of Canada rate proxy

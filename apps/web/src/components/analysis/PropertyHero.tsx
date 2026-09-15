@@ -18,6 +18,7 @@ import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
 import { scoreBreakdownBars } from '../../lib/scoreBreakdown'
+import { OwnerValueForm } from '../landlord/OwnerValueForm'
 
 interface PropertyHeroProps {
   listing: ListingData
@@ -34,6 +35,13 @@ interface PropertyHeroProps {
   mapCenter?: { lat: number; lng: number } | null
   /** Breadcrumb view label, e.g. "Investor view" / "Landlord view". */
   viewLabel?: string
+  /**
+   * Landlord value input (D-107): when present, a price-less listing's card
+   * asks what the property is worth, and a scored card lets them change it.
+   */
+  onSetValue?: (value: number) => void
+  valueBusy?: boolean
+  valueError?: string | null
 }
 
 export function PropertyHero({
@@ -45,7 +53,14 @@ export function PropertyHero({
   onBack,
   mapCenter,
   viewLabel = 'Investor view',
+  onSetValue,
+  valueBusy = false,
+  valueError = null,
 }: PropertyHeroProps): JSX.Element {
+  // "Change" on a card scored on the landlord's own value re-opens the form.
+  const [editingValue, setEditingValue] = useState(false)
+  // A successful re-run arrives as a new ownerValue; the form has done its job.
+  useEffect(() => setEditingValue(false), [listing.ownerValue])
   // Only the gauge size depends on this now; the layout collapse is CSS.
   // matchMedia reads the viewport, so it agrees with the stylesheet and is not
   // thrown off by horizontal overflow the way window.innerWidth was.
@@ -305,11 +320,38 @@ export function PropertyHero({
 
             <dl className="scorecard-facts">
               <div className="scorecard-row">
-                <dt>{listing.price > 0 ? 'Asking' : 'Asking rent'}</dt>
+                <dt>
+                  {listing.ownerValue != null
+                    ? 'Value · you entered'
+                    : listing.price > 0
+                      ? 'Asking'
+                      : 'Asking rent'}
+                </dt>
                 <dd className="mono tabular">
                   {listing.price > 0
                     ? fmtMoney(listing.price)
                     : `${fmtMoney(listing.rentEstimate)}/mo`}
+                  {listing.ownerValue != null && onSetValue != null && !editingValue && (
+                    <>
+                      {' '}
+                      <button
+                        type="button"
+                        onClick={() => setEditingValue(true)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                          fontSize: 12,
+                          color: 'var(--accent)',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        Change
+                      </button>
+                    </>
+                  )}
                 </dd>
               </div>
               <div className="scorecard-row">
@@ -323,13 +365,23 @@ export function PropertyHero({
                 </dd>
               </div>
             </dl>
+            {editingValue && onSetValue != null && (
+              <OwnerValueForm
+                initialValue={listing.ownerValue ?? null}
+                busy={valueBusy}
+                error={valueError}
+                onSubmit={onSetValue}
+                onCancel={() => setEditingValue(false)}
+              />
+            )}
           </aside>
         ) : (
           /* A for-rent listing has no purchase, so the investment score does
-             not apply. Until the landlord report has its own method (L-03),
-             the card says so and shows the two rents that do exist — the old
-             card printed "Hard pass · 14", "DSCR 0.00×" and the comps median
-             under the label "Asking rent" (2026-09-14 review run, D-104). */
+             not apply until the landlord says what the property is worth
+             (D-107, spec §9). The card shows the two rents that do exist and,
+             on a live report, asks for the value — the old card printed
+             "Hard pass · 14", "DSCR 0.00×" and the comps median under the
+             label "Asking rent" (2026-09-14 review run, D-104). */
           <aside
             className="card report-hero-score scorecard"
             aria-label="Rental listing — no purchase score"
@@ -340,9 +392,9 @@ export function PropertyHero({
                 <span className="mono scorecard-eyebrow">Operating view</span>
                 <h2 className="serif scorecard-verdict">No purchase score</h2>
                 <p className="scorecard-tagline">
-                  The investment score rates a purchase; this is a rental listing. A landlord method
-                  is not built yet, so nothing here is scored — the sections below show the rent,
-                  the comps and the running costs.
+                  {onSetValue != null
+                    ? 'The investment score rates a purchase, and a rental listing states no price. Tell us what the property is worth and every figure below is re-run on it.'
+                    : 'The investment score rates a purchase; this is a rental listing, so nothing here is scored — the sections below show the rent, the comps and the running costs.'}
                 </p>
               </div>
             </div>
@@ -364,6 +416,9 @@ export function PropertyHero({
                 </dd>
               </div>
             </dl>
+            {onSetValue != null && (
+              <OwnerValueForm busy={valueBusy} error={valueError} onSubmit={onSetValue} />
+            )}
           </aside>
         )}
       </div>

@@ -237,6 +237,21 @@ describe('buildAssumptionLedger', () => {
     expect(e.method).toMatch(/cap rate/i)
   })
 
+  it('a landlord’s own value is observed, dated, and replaces the modelled estimate (D-107)', () => {
+    const input = base({
+      priceEstimated: false,
+      ownerValue: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z' },
+      listing: { ...base().listing, price: null, rentMonthly: 3400 },
+    })
+    const e = entry(input, 'value_owner')
+    expect(e.basis).toBe('observed')
+    expect(e.value).toBe('$800,000')
+    expect(e.source).toBe('You entered it')
+    expect(e.asOf).toBe('2026-09-15')
+    expect(e.method).toMatch(/change it in the hero/)
+    expect(buildAssumptionLedger(input).find((x) => x.key === 'value_estimate')).toBeUndefined()
+  })
+
   it('tenant mode carries only what a tenant report uses', () => {
     const keys = buildAssumptionLedger(
       base({

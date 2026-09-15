@@ -30,8 +30,19 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 // ── Analysis fetch ────────────────────────────────────────────────────────────
 const getAnalysisByToken = vi.fn()
+const setOwnerValue = vi.fn()
 vi.mock('../lib/services/analysisService', () => ({
   getAnalysisByToken: (token: string) => getAnalysisByToken(token),
+  setOwnerValue: (token: string, value: number) => setOwnerValue(token, value),
+  ApiRequestError: class ApiRequestError extends Error {
+    constructor(
+      public readonly code: string,
+      message: string,
+      public readonly status: number
+    ) {
+      super(message)
+    }
+  },
 }))
 
 // ── Override service ──────────────────────────────────────────────────────────
@@ -703,6 +714,82 @@ describe('ReportPage — for-rent landlord hero honesty', () => {
     expect(screen.queryByText(/bath bath/)).not.toBeInTheDocument()
     // Purchase-transaction section hidden without a sale price
     expect(screen.queryByText(/on closing day/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('ReportPage — a landlord states the value and the report is re-run on it (D-107)', () => {
+  const RENTAL = { ...LISTING, price: null, rentMonthly: 2650, yearBuilt: null }
+  const UNSCORED: Analysis = {
+    ...INVESTOR_ANALYSIS,
+    mode: 'landlord',
+    rentalComps: null,
+    riskFlags: [],
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+    listOverrides.mockResolvedValue([])
+  })
+
+  it('asks for the value on a price-less landlord report, then swaps in the scored analysis', async () => {
+    getAnalysisByToken.mockResolvedValue({ analysis: UNSCORED, listing: RENTAL })
+    setOwnerValue.mockResolvedValue({
+      ...UNSCORED,
+      ownerInputs: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z' },
+    })
+    renderReport()
+
+    expect(await screen.findByText('No purchase score')).toBeInTheDocument()
+    const input = screen.getByLabelText('What is it worth?')
+    fireEvent.change(input, { target: { value: '800,000' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Score it' }))
+
+    await waitFor(() => expect(setOwnerValue).toHaveBeenCalledWith('test-token', 800000))
+    // The page now renders the re-run: a verdict, the value labelled as theirs,
+    // and the price-dependent metrics the operating view withheld.
+    expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
+    expect(screen.getByText('$800,000')).toBeInTheDocument()
+    expect(screen.queryByText('No purchase score')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Cap rate').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Change' })).toBeInTheDocument()
+  })
+
+  it('a report saved with a value opens scored, and "Change" re-opens the form pre-filled', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...UNSCORED,
+        ownerInputs: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z' },
+      },
+      listing: RENTAL,
+    })
+    renderReport()
+    expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Change' }))
+    expect(screen.getByLabelText('What is it worth?')).toHaveValue('800,000')
+    fireEvent.click(screen.getByRole('button', { name: 'Keep the current value' }))
+    expect(screen.queryByLabelText('What is it worth?')).not.toBeInTheDocument()
+  })
+
+  it('shows the API’s message when the re-run fails and keeps the operating view', async () => {
+    getAnalysisByToken.mockResolvedValue({ analysis: UNSCORED, listing: RENTAL })
+    const { ApiRequestError } = await import('../lib/services/analysisService')
+    setOwnerValue.mockRejectedValue(
+      new ApiRequestError(
+        'CALC_ENGINE_UNAVAILABLE',
+        'Analysis service is temporarily unavailable.',
+        503
+      )
+    )
+    renderReport()
+    fireEvent.change(await screen.findByLabelText('What is it worth?'), {
+      target: { value: '800000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Score it' }))
+    expect(
+      await screen.findByText('Analysis service is temporarily unavailable.')
+    ).toBeInTheDocument()
+    expect(screen.getByText('No purchase score')).toBeInTheDocument()
   })
 })
 

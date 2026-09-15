@@ -35,6 +35,13 @@ export const CALC_ENGINE_TIMEOUT_MS = {
   SUNSCOUT: 30_000,
 } as const
 
+// A landlord's own property value (D-107): wide enough for any Ontario
+// dwelling, tight enough to catch a rent typed into the value box.
+export const OWNER_VALUE = {
+  MIN: 50_000,
+  MAX: 50_000_000,
+} as const
+
 // Market demand measured from the nightly rental_listings table (D-105).
 // Days-on-market = median (last seen − first seen) over listings in the FSA
 // that dropped off in the window; rent trend = median rent of listings first

@@ -163,6 +163,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     holdCase?: Analysis['holdCase']
     assumptions?: Analysis['assumptions']
     extractionStatus?: Analysis['extractionStatus']
+    ownerInputs?: Analysis['ownerInputs']
     walkScore?: Analysis['walkScore']
     coordinates?: Analysis['coordinates']
     schools?: Analysis['schools']
@@ -201,6 +202,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     holdCase: marketData?.holdCase ?? null,
     assumptions: marketData?.assumptions ?? null,
     extractionStatus: marketData?.extractionStatus ?? null,
+    ownerInputs: marketData?.ownerInputs ?? null,
     coordinates: marketData?.coordinates ?? null,
     schools: marketData?.schools ?? null,
     nearbyDistances: marketData?.nearbyDistances ?? null,
@@ -357,6 +359,7 @@ export async function saveAnalysis(
         holdCase: analysis.holdCase ?? null,
         assumptions: analysis.assumptions ?? null,
         extractionStatus: analysis.extractionStatus ?? null,
+        ownerInputs: analysis.ownerInputs ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,
@@ -1207,6 +1210,7 @@ export async function updateAnalysisByToken(
         holdCase: analysis.holdCase ?? null,
         assumptions: analysis.assumptions ?? null,
         extractionStatus: analysis.extractionStatus ?? null,
+        ownerInputs: analysis.ownerInputs ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,

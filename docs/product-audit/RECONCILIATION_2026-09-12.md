@@ -39,16 +39,16 @@ not a defect.
 | J-09   | P2  | Progress steps claim things they cannot know         | ✅     | #48 D-077                                                                                          |
 | J-10   | P2  | Cancel does not cancel server work                   | 🔒     | Needs job status — BACKLOG                                                                         |
 | J-11   | P2  | Reload retriggers analysis                           | ✅     | #52 D-080                                                                                          |
-| L-01   | P1  | Live landlord renders investor content               | 🔒     | Blocked on L-03 — BACKLOG                                                                          |
+| L-01   | P1  | Live landlord renders investor content               | ✅     | By decision: landlord = acquisition underwriting on the landlord's value (D-107)                   |
 | L-02   | P2  | LandlordPage fixture-coupled                         | ✅     | #39 D-070                                                                                          |
-| L-03   | P1  | Landlord score is the acquisition score              | 🔒     | Owner decision — BACKLOG                                                                           |
-| L-04   | P2  | Landlord demo and live are different products        | 🔒     | Follows L-03                                                                                       |
+| L-03   | P1  | Landlord score is the acquisition score              | ✅     | Owner chose option 1; value input in the hero, re-run on it (#87, D-107)                           |
+| L-04   | P2  | Landlord demo and live are different products        | 🟡     | Live is the investor report on the landlord's value; the demo page keeps its own hero (L-02)       |
 | S-01   | P1  | Overlapping economics in score weights               | 🔒     | Scoring method (spec §10) — BACKLOG                                                                |
-| S-02   | P1  | Default DOM / rent trend score as if observed        | 🟡     | Labelled #56; whether they score at all is 🔒                                                      |
+| S-02   | P1  | Default DOM / rent trend score as if observed        | ✅     | Measured from the comps table or scored 0 (#86, D-105)                                             |
 | S-03   | P2  | Display score floors at 5                            | 🔒     | Scoring decision — BACKLOG                                                                         |
 | S-04   | P1  | Severe gate constants unsourced                      | 🔒     | Research/decision — BACKLOG                                                                        |
 | S-05   | P1  | Sliders move economics; saved score fixed            | 🟡     | Metrics recompute (#32 D-054/55); score stays at saved case, labelled "with the assumptions below" |
-| S-06   | P1  | One score for all modes                              | 🟡     | Tenant has its own score; personal paused; landlord = L-03 🔒                                      |
+| S-06   | P1  | One score for all modes                              | 🟡     | Tenant has its own score; personal paused; landlord = investor score by decision (D-107)           |
 | UI-01  | P1  | Report header Share has no handler                   | ✅     | #48 D-077                                                                                          |
 | UI-02  | P1  | Save to account does not save                        | ✅     | #48, #59                                                                                           |
 | UI-03  | P2  | Breadcrumbs inconsistent; no mode switch             | ✅     | Mode-switch claim removed #57; crumbs #66 D-086                                                    |
