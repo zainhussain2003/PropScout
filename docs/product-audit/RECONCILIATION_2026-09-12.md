@@ -41,7 +41,7 @@ not a defect.
 | J-11   | P2  | Reload retriggers analysis                           | ✅     | #52 D-080                                                                                          |
 | L-01   | P1  | Live landlord renders investor content               | ✅     | By decision: landlord = acquisition underwriting on the landlord's value (D-107)                   |
 | L-02   | P2  | LandlordPage fixture-coupled                         | ✅     | #39 D-070                                                                                          |
-| L-03   | P1  | Landlord score is the acquisition score              | ✅     | Owner chose option 1; value input in the hero, re-run on it (#87, D-107)                           |
+| L-03   | P1  | Landlord score is the acquisition score              | ✅     | Owner chose option 1; value input in the hero, re-run on it (#88, D-107)                           |
 | L-04   | P2  | Landlord demo and live are different products        | 🟡     | Live is the investor report on the landlord's value; the demo page keeps its own hero (L-02)       |
 | S-01   | P1  | Overlapping economics in score weights               | 🔒     | Scoring method (spec §10) — BACKLOG                                                                |
 | S-02   | P1  | Default DOM / rent trend score as if observed        | ✅     | Measured from the comps table or scored 0 (#86, D-105)                                             |

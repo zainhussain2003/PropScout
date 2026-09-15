@@ -69,7 +69,7 @@ planned rows (portfolio tracker, white-label PDF, bulk analysis, seats, API acce
 
 Not yet done: Stripe checkout end to end (blocked on price IDs); **landlord value input on
 production** (built and verified through the local API against live reports on 2026-09-15,
-D-107 — the production API deploys with #87); PDF export on production (needs a Pro account); mobile on a real device;
+D-107 — the production API deploys with #88); PDF export on production (needs a Pro account); mobile on a real device;
 scraper-fail state live (needs a listing Realtor.ca will not serve).
 
 Nightly rental-comps job confirmed running on 2026-09-15: live reports carry comps last seen 2026-09-13/14 from Kijiji (Toronto) and Rentals.ca + PadMapper (Ottawa).
