@@ -377,7 +377,7 @@ export function InvestorReport({
             <RiskFlagsSection listing={listing} />
 
             {/* ── §07 Equity build ───────────────────────────────────── */}
-            <EquitySection metrics={metrics} />
+            <EquitySection metrics={metrics} listing={listing} financing={financing} />
 
             {/* ── §08 Neighbourhood ──────────────────────────────────── */}
             <NeighbourhoodSection listing={listing} neighbourhood={neighbourhood} />

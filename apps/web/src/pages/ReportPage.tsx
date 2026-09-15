@@ -703,7 +703,9 @@ function InvestorReportContent({
       )}
       {listingData.price > 0 && <OSFISection financing={financing} listing={listingData} />}
       <RiskFlagsSection listing={listingData} flagOverrides={flagOverrides} />
-      {listingData.price > 0 && <EquitySection metrics={metrics} />}
+      {listingData.price > 0 && (
+        <EquitySection metrics={metrics} listing={listingData} financing={financing} />
+      )}
       {/* §08 Neighbourhood — stat tiles + comps + appreciation. Every field is
           data-honest: unknown stats render "—" and empty comps show the "no
           comparable-sales source yet" state (shimToNeighbourhood returns zeros

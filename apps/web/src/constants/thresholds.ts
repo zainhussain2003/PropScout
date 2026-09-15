@@ -86,3 +86,24 @@ export const OWNER_VALUE = {
   MIN: 50_000,
   MAX: 50_000_000,
 } as const
+
+/**
+ * Exit scenarios (D-110): the annual appreciation each column assumes. "Base"
+ * is the slider rate. Stress is a decline, not a crash — the point is what a
+ * soft market does to the exit, not a tail event.
+ */
+export const EXIT_SCENARIOS = {
+  STRESS: -0.02,
+  FLAT: 0,
+  CONSERVATIVE: 0.02,
+} as const
+
+/**
+ * Cost of selling in Ontario (D-110): a typical total commission (both
+ * sides), HST on it, and a legal fee — starting assumptions, labelled as such.
+ */
+export const EXIT_COSTS = {
+  COMMISSION_RATE: 0.05,
+  HST_RATE: 0.13,
+  LEGAL_FEES: 1500,
+} as const

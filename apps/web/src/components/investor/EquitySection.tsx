@@ -10,14 +10,18 @@
 import { SectionHead } from '../shared/SectionHead'
 import { EquityChart } from './EquityChart'
 import { BreakEvenAppreciation } from './BreakEvenAppreciation'
+import { ExitScenariosCard } from './ExitScenariosCard'
 import { fmtMoney } from '../../lib/investorCalc'
-import type { ComputedInvestorMetrics } from '../../types/analysis'
+import type { ComputedInvestorMetrics, FinancingInputs, ListingData } from '../../types/analysis'
 
 export interface EquitySectionProps {
   metrics: ComputedInvestorMetrics
+  /** With the listing and financing, the exit-scenarios table renders too (D-110). */
+  listing?: ListingData
+  financing?: FinancingInputs
 }
 
-export function EquitySection({ metrics }: EquitySectionProps): JSX.Element {
+export function EquitySection({ metrics, listing, financing }: EquitySectionProps): JSX.Element {
   const finalPoint = metrics.equityCurve[metrics.equityCurve.length - 1]
   const year20Equity = finalPoint?.equity ?? 0
 
@@ -44,6 +48,9 @@ export function EquitySection({ metrics }: EquitySectionProps): JSX.Element {
         holdCase={metrics.holdCase}
         cashFlowMonthly={metrics.cashFlowMonthly}
       />
+      {listing != null && financing != null && (
+        <ExitScenariosCard metrics={metrics} listing={listing} financing={financing} />
+      )}
     </section>
   )
 }

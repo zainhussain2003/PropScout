@@ -3652,3 +3652,41 @@ Kijiji re-posts refresh it. The map is one pin per comp, unclustered.
 | Filter to the top-N most similar, then plain          | A cliff at N; weighting degrades smoothly and keeps the count honest.                              |
 | Exact positions on the map                            | Identifies the building — the line D-099 drew.                                                     |
 | Interpolation that reproduces the old p25/p75 exactly | Makes the top comp's weight nearly irrelevant to p75; the midpoint definition is the standard one. |
+
+### D-110 · Exit scenarios under §07: what a sale returns on four price paths, before tax
+
+**Chosen.** `lib/exitScenarios.ts` (web, pure) and `ExitScenariosCard` under the equity chart
+and the break-even card. Four columns — **Stress −2%/yr, Flat 0%, Conservative +2%, Base** (the
+appreciation slider) — at a hold the reader picks (5 / 10 / 20 years, the chart's snapshots).
+Each column: sale price, cost of selling (`EXIT_COSTS`: 5% commission + 13% HST on it + $1,500
+legal), mortgage paid off (the amortization balance at that year; 0 when owned outright or past
+the amortization), net proceeds, cash flow over the hold, cash in all told, profit before tax,
+and a simple annualized return on cash in. The cash convention is the break-even card's
+(D-062): a shortfall accumulates into cash in, a surplus into cash out, never netted. Capital
+gains are not deducted and the card says so; maintenance is already in the cash flow and the
+card says that too. The card renders on the live report and the demo route; it needs the
+listing and financing, so `EquitySection` takes them as optional props.
+
+**Why.** Audit roadmap "equity build: flat/conservative/stress scenarios with selling costs,
+tax, capex". The equity chart shows one path at one rate and calls the result "equity" — the
+number a seller banks is smaller by the cost of selling, and the number that matters is against
+every dollar put in. On the calibration condo a 10-year hold at the base 3% returns +0.9%/yr;
+at 0% it loses $192k. That is the sentence the chart alone never said.
+
+**Not tax.** A capital-gains figure needs the seller's marginal rate and whether the property is
+a principal residence; asking for that is a form the report does not have. Labelled "before
+tax" rather than modelled at an assumed rate.
+
+**Known limits.** Web-only projection, like the equity curve and the client-side hold case —
+no engine sanity bound (the engine never sees it). Simple annualized return, not IRR (the cash
+flows are level so the two are close; IRR would need a solver). Stress is −2%/yr, a soft market,
+not a crash.
+
+**Alternatives considered**
+
+| Option                               | Why not                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Add a scenario selector to the chart | One line at a time hides the comparison; the table shows the four side by side.                           |
+| Model tax at an assumed 40% marginal | A number the reader did not give, in the one row that varies most between readers.                        |
+| IRR                                  | A solver for level cash flows adds little over the simple rate and is harder to explain.                  |
+| Put the projection in the engine     | The engine's hold case is the break-even; the scenarios reuse its inputs client-side like the curve does. |

@@ -755,7 +755,7 @@ describe('ReportPage — a landlord states the value and the report is re-run on
     // The page now renders the re-run: a verdict, the value labelled as theirs,
     // and the price-dependent metrics the operating view withheld.
     expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
-    expect(screen.getByText('$800,000')).toBeInTheDocument()
+    expect(screen.getAllByText('$800,000').length).toBeGreaterThan(0)
     expect(screen.queryByText('No purchase score')).not.toBeInTheDocument()
     expect(screen.getAllByText('Cap rate').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Change' })).toBeInTheDocument()

@@ -255,6 +255,7 @@ Calculated outputs:
 - GRM — Gross Rent Multiplier = purchase price / annual gross rent
 - Break-even rent = all monthly expenses combined
 - Equity build at 5, 10, and 20 years (mortgage paydown + 3% appreciation, user-adjustable)
+- Exit scenarios at the chosen hold (5/10/20): sale price under stress −2%, flat, conservative +2% and the slider rate, less the cost of selling (5% commission + HST + legal) and the mortgage balance, against cash in including any shortfall funded; profit and annualized return before tax (D-110)
 - Break-even appreciation at 5, 10, and 20 years — the minimum annual price growth required to return all cash the hold consumes, before the costs of selling
 
 Maintenance reserve by build year: post-2010 at 0.5%/yr, 1980–2010 at 1.0%/yr, pre-1980 at 1.5%/yr.
