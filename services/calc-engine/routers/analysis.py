@@ -244,9 +244,21 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     )
     annual_debt_service = mortgage_payment_monthly * 12
 
-    closing = estimate_closing_costs(
-        purchase_price=float(prop.price),
-        is_toronto=prop.is_toronto,
+    # Nothing is payable to keep holding a property already owned (D-108).
+    closing = (
+        {
+            "ltt_provincial": 0.0,
+            "ltt_municipal": 0.0,
+            "legal_fees": 0.0,
+            "title_insurance": 0.0,
+            "home_inspection": 0.0,
+            "total": 0.0,
+        }
+        if fin.owned
+        else estimate_closing_costs(
+            purchase_price=float(prop.price),
+            is_toronto=prop.is_toronto,
+        )
     )
 
     # ── 3. Investment metrics ─────────────────────────────────────────────────
@@ -278,7 +290,12 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     )
     cash_flow_annual = cash_flow_monthly * 12
 
-    dscr = calculate_dscr(noi=noi, annual_debt_service=annual_debt_service)
+    # No debt, no coverage ratio — owned outright (D-108).
+    dscr = (
+        calculate_dscr(noi=noi, annual_debt_service=annual_debt_service)
+        if annual_debt_service > 0
+        else None
+    )
 
     grm = (
         calculate_grm(
@@ -315,6 +332,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         amortization_years=fin.amortization_years,
         monthly_cash_flow=cash_flow_monthly,
         is_toronto=prop.is_toronto,
+        include_closing_costs=not fin.owned,
     )
 
     # ── 3b. Listing description extraction pipeline ───────────────────────────
@@ -468,7 +486,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         cash_flow_annual=round(cash_flow_annual, 2),
         cap_rate=round(cap_rate, 6),
         cash_on_cash_return=round(cash_on_cash, 6),
-        dscr=round(dscr, 4),
+        dscr=round(dscr, 4) if dscr is not None else None,
         grm=round(grm, 2),
         noi=round(noi, 2),
         mortgage_payment_monthly=round(mortgage_payment_monthly, 2),
@@ -513,6 +531,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         amortization_years=fin.amortization_years,
         cmhc_vacancy_rate=vacancy_rate,
         cmhc_vacancy_rate_supplied=body.cmhc_vacancy_rate is not None,
+        owned=fin.owned,
         rental_days_on_market=body.rental_days_on_market,
         rent_trend=body.rent_trend,
     )

@@ -19,7 +19,7 @@ import type { FinancingInputs } from '../../types/analysis'
 import { DEFAULT_FINANCING_INPUTS } from '../../constants/demoData'
 import { OSFI_STRESS } from '../../constants/osfi'
 import { fmtMoney } from '../../lib/investorCalc'
-import { FINANCING_SLIDER } from '../../constants/thresholds'
+import { FINANCING_SLIDER, EQUITY_SLIDER } from '../../constants/thresholds'
 
 /** The three financing terms a preset is expressed relative to. */
 export type FinancingBase = Pick<
@@ -140,21 +140,38 @@ export function FinancingSliders({
           gap: 24,
         }}
       >
-        {/* Down payment */}
-        <SliderRow
-          id="slider-down-payment"
-          label="Down payment"
-          unit="of price"
-          display={`${Math.round(financing.downPaymentPct * 100)}%`}
-          secondary={fmtMoney(financing.downPaymentPct * price)}
-          min={FINANCING_SLIDER.MIN_DOWN_PAYMENT * 100}
-          max={FINANCING_SLIDER.MAX_DOWN_PAYMENT * 100}
-          step={FINANCING_SLIDER.DOWN_PAYMENT_STEP * 100}
-          value={Math.max(FINANCING_SLIDER.MIN_DOWN_PAYMENT, financing.downPaymentPct) * 100}
-          onChange={(v) => set({ downPaymentPct: v / 100 })}
-          ticks={['20%', '30%', '40%', '50%']}
-          note="20% is the floor for a rental purchase — insured (high-ratio) mortgages are not available for non-owner-occupied properties."
-        />
+        {/* Down payment — or, for a property already owned, the equity share (D-108) */}
+        {financing.owned === true ? (
+          <SliderRow
+            id="slider-down-payment"
+            label="Equity share"
+            unit="of value"
+            display={`${Math.round(financing.downPaymentPct * 100)}%`}
+            secondary={fmtMoney(financing.downPaymentPct * price)}
+            min={EQUITY_SLIDER.MIN * 100}
+            max={EQUITY_SLIDER.MAX * 100}
+            step={EQUITY_SLIDER.STEP * 100}
+            value={Math.max(EQUITY_SLIDER.MIN, financing.downPaymentPct) * 100}
+            onChange={(v) => set({ downPaymentPct: v / 100 })}
+            ticks={['5%', '25%', '50%', '75%', '100%']}
+            note="Value minus mortgage balance, from what you entered. 100% is owned outright — no mortgage payment, no DSCR."
+          />
+        ) : (
+          <SliderRow
+            id="slider-down-payment"
+            label="Down payment"
+            unit="of price"
+            display={`${Math.round(financing.downPaymentPct * 100)}%`}
+            secondary={fmtMoney(financing.downPaymentPct * price)}
+            min={FINANCING_SLIDER.MIN_DOWN_PAYMENT * 100}
+            max={FINANCING_SLIDER.MAX_DOWN_PAYMENT * 100}
+            step={FINANCING_SLIDER.DOWN_PAYMENT_STEP * 100}
+            value={Math.max(FINANCING_SLIDER.MIN_DOWN_PAYMENT, financing.downPaymentPct) * 100}
+            onChange={(v) => set({ downPaymentPct: v / 100 })}
+            ticks={['20%', '30%', '40%', '50%']}
+            note="20% is the floor for a rental purchase — insured (high-ratio) mortgages are not available for non-owner-occupied properties."
+          />
+        )}
 
         {/* Mortgage rate */}
         <SliderRow
@@ -220,12 +237,15 @@ export function FinancingSliders({
             value={financing.includeManagementFee}
             onChange={(v) => set({ includeManagementFee: v })}
           />
-          <ToggleRow
-            label="Toronto LTT stacking"
-            value={financing.isToronto}
-            onChange={(v) => set({ isToronto: v })}
-            hint="Adds Toronto municipal LTT using the city's bracket schedule"
-          />
+          {/* No land-transfer tax is payable on a property already owned (D-108). */}
+          {financing.owned !== true && (
+            <ToggleRow
+              label="Toronto LTT stacking"
+              value={financing.isToronto}
+              onChange={(v) => set({ isToronto: v })}
+              hint="Adds Toronto municipal LTT using the city's bracket schedule"
+            />
+          )}
         </div>
 
         <div

@@ -8,9 +8,10 @@
 import { useCallback, useState } from 'react'
 import type { Analysis } from '../types/analysis'
 import { ApiRequestError, setOwnerValue } from '../lib/services/analysisService'
+import type { OwnerValueSubmission } from '../components/landlord/OwnerValueForm'
 
 interface UseOwnerValueResult {
-  submit: (value: number) => Promise<void>
+  submit: (submission: OwnerValueSubmission) => Promise<void>
   busy: boolean
   error: string | null
 }
@@ -23,12 +24,12 @@ export function useOwnerValue(
   const [error, setError] = useState<string | null>(null)
 
   const submit = useCallback(
-    async (value: number): Promise<void> => {
+    async (submission: OwnerValueSubmission): Promise<void> => {
       if (token == null || busy) return
       setBusy(true)
       setError(null)
       try {
-        const analysis = await setOwnerValue(token, value)
+        const analysis = await setOwnerValue(token, submission)
         onUpdated(analysis)
       } catch (err) {
         setError(

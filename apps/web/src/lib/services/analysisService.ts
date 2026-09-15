@@ -364,13 +364,20 @@ export async function fetchReport(token: string): Promise<FetchReportResult> {
  * worth and the report is re-run on that number. Resolves to the fresh
  * Analysis; throws ApiRequestError with the API's own message otherwise.
  */
-export async function setOwnerValue(token: string, value: number): Promise<Analysis> {
+export async function setOwnerValue(
+  token: string,
+  submission: { value: number; mortgageBalance?: number | null; mortgageRate?: number | null }
+): Promise<Analysis> {
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}/value`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value }),
+      body: JSON.stringify({
+        value: submission.value,
+        mortgageBalance: submission.mortgageBalance ?? null,
+        mortgageRate: submission.mortgageRate ?? null,
+      }),
     })
   } catch {
     throw new ApiRequestError(

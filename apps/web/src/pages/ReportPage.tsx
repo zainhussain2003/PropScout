@@ -144,6 +144,8 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     rentIsProxy: analysis.metrics?.rentIsProxy === true,
     askingRent: listing.rentMonthly ?? null,
     ownerValue,
+    ownerMortgageBalance: analysis.ownerInputs?.mortgageBalance ?? null,
+    ownerMortgageRate: analysis.ownerInputs?.mortgageRate ?? null,
     rentLow: analysis.rentalComps?.low ?? 0,
     rentHigh: analysis.rentalComps?.high ?? 0,
     compCount: analysis.rentalComps?.compCount ?? 0,
@@ -168,6 +170,8 @@ function toFinancingInputs(metrics: Analysis['metrics'], listing: ListingData): 
     mortgageRate: metrics?.mortgageRate ?? DEFAULT_FINANCING_INPUTS.mortgageRate,
     amortizationYears: metrics?.amortizationYears ?? DEFAULT_FINANCING_INPUTS.amortizationYears,
     isToronto: listing.isToronto,
+    // An owned position (D-108): the slider is equity, nothing is charged to close.
+    owned: listing.ownerMortgageBalance != null,
   }
 }
 

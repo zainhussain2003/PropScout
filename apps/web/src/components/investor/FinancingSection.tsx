@@ -36,7 +36,13 @@ export function FinancingSection({
             How do the <em>numbers</em> change?
           </>
         }
-        verdict={`${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`}
+        verdict={
+          financing.owned === true
+            ? financing.downPaymentPct >= 1
+              ? 'Owned outright'
+              : `${Math.round(financing.downPaymentPct * 100)}% equity · ${(financing.mortgageRate * 100).toFixed(2)}%`
+            : `${Math.round(financing.downPaymentPct * 100)}% down · ${(financing.mortgageRate * 100).toFixed(2)}%`
+        }
         tone="caution"
       />
       <FinancingSliders

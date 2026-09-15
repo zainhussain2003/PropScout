@@ -118,7 +118,11 @@ export const sunscoutBody = {
 /** POST /analysis/:token/value — a landlord's own value (D-107); bounds in OWNER_VALUE. */
 export const ownerValueBody = {
   type: 'object',
-  properties: { value: { type: 'number' } },
+  properties: {
+    value: { type: 'number' },
+    mortgageBalance: { type: ['number', 'null'] },
+    mortgageRate: { type: ['number', 'null'] },
+  },
   required: ['value'],
   additionalProperties: false,
 } as const

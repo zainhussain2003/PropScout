@@ -18,7 +18,7 @@ import { Chip } from '../shared/Chip'
 import { Icon } from '../shared/Icon'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
 import { scoreBreakdownBars } from '../../lib/scoreBreakdown'
-import { OwnerValueForm } from '../landlord/OwnerValueForm'
+import { OwnerValueForm, type OwnerValueSubmission } from '../landlord/OwnerValueForm'
 
 interface PropertyHeroProps {
   listing: ListingData
@@ -27,8 +27,8 @@ interface PropertyHeroProps {
   cashFlowMonthly: number
   /** Cap rate (decimal, e.g. 0.045) — shown in the sticky score card */
   capRate: number
-  /** DSCR — shown in the sticky score card */
-  dscr: number
+  /** DSCR — shown in the sticky score card; null when there is no debt (D-108) */
+  dscr: number | null
   /** Called when the user clicks "Analyze another listing" */
   onBack?: () => void
   /** Subject coordinates — renders the real Mapbox map when provided. */
@@ -39,7 +39,7 @@ interface PropertyHeroProps {
    * Landlord value input (D-107): when present, a price-less listing's card
    * asks what the property is worth, and a scored card lets them change it.
    */
-  onSetValue?: (value: number) => void
+  onSetValue?: (submission: OwnerValueSubmission) => void
   valueBusy?: boolean
   valueError?: string | null
 }
@@ -361,13 +361,15 @@ export function PropertyHero({
               <div className="scorecard-row">
                 <dt>DSCR</dt>
                 <dd className="mono tabular">
-                  {Number.isFinite(dscr) ? `${dscr.toFixed(2)}×` : '—'}
+                  {dscr == null ? 'no debt' : Number.isFinite(dscr) ? `${dscr.toFixed(2)}×` : '—'}
                 </dd>
               </div>
             </dl>
             {editingValue && onSetValue != null && (
               <OwnerValueForm
                 initialValue={listing.ownerValue ?? null}
+                initialMortgageBalance={listing.ownerMortgageBalance ?? null}
+                initialMortgageRate={listing.ownerMortgageRate ?? null}
                 busy={valueBusy}
                 error={valueError}
                 onSubmit={onSetValue}

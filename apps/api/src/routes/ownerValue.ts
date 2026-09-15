@@ -15,7 +15,7 @@
 import { type FastifyInstance } from 'fastify'
 import { makeError } from '../types/api'
 import type { ReportMode } from '../types/analysis'
-import { OWNER_VALUE } from '../constants/thresholds'
+import { OWNER_VALUE, MORTGAGE_RATE_BOUNDS } from '../constants/thresholds'
 import {
   getAnalysisByToken,
   getListingByToken,
@@ -30,7 +30,10 @@ const inFlight = new Set<string>()
 async function ownerValueRoutes(fastify: FastifyInstance): Promise<void> {
   applyValidationErrorHandler(fastify)
 
-  fastify.post<{ Params: { token: string }; Body: { value: number } }>(
+  fastify.post<{
+    Params: { token: string }
+    Body: { value: number; mortgageBalance?: number | null; mortgageRate?: number | null }
+  }>(
     '/:token/value',
     { schema: { params: tokenParams, body: ownerValueBody } },
     async (req, reply) => {
@@ -44,6 +47,46 @@ async function ownerValueRoutes(fastify: FastifyInstance): Promise<void> {
             makeError(
               'INVALID_VALUE',
               `Enter a property value between $${OWNER_VALUE.MIN.toLocaleString('en-CA')} and $${OWNER_VALUE.MAX.toLocaleString('en-CA')}.`
+            )
+          )
+      }
+
+      // Owned position (D-108): a balance from 0 (outright) up to the value,
+      // and a contract rate in the engine's 1–25% band. Null means "purchase
+      // case" and is the same as omitting it.
+      const mortgageBalance =
+        req.body.mortgageBalance != null ? Math.round(req.body.mortgageBalance) : null
+      const mortgageRate = req.body.mortgageRate ?? null
+      if (mortgageBalance != null && (mortgageBalance < 0 || mortgageBalance > value)) {
+        return reply
+          .code(400)
+          .send(
+            makeError(
+              'INVALID_MORTGAGE_BALANCE',
+              'The mortgage balance must be between $0 and the property value.'
+            )
+          )
+      }
+      if (
+        mortgageRate != null &&
+        (mortgageRate < MORTGAGE_RATE_BOUNDS.MIN || mortgageRate > MORTGAGE_RATE_BOUNDS.MAX)
+      ) {
+        return reply
+          .code(400)
+          .send(
+            makeError(
+              'INVALID_MORTGAGE_RATE',
+              'Enter the mortgage rate as a percentage between 1 and 25.'
+            )
+          )
+      }
+      if (mortgageRate != null && mortgageBalance == null) {
+        return reply
+          .code(400)
+          .send(
+            makeError(
+              'RATE_WITHOUT_BALANCE',
+              'A mortgage rate only applies with a mortgage balance.'
             )
           )
       }
@@ -81,7 +124,12 @@ async function ownerValueRoutes(fastify: FastifyInstance): Promise<void> {
             token,
             mode,
             listing,
-            ownerInputs: { value, enteredAt: new Date().toISOString() },
+            ownerInputs: {
+              value,
+              mortgageBalance,
+              mortgageRate,
+              enteredAt: new Date().toISOString(),
+            },
           })
           if (!result.ok) {
             return reply.code(result.status).send(makeError(result.code, result.message))

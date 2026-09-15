@@ -26,8 +26,14 @@ describe('useOwnerValue (D-107)', () => {
     setOwnerValue.mockResolvedValue(ANALYSIS)
     const onUpdated = vi.fn()
     const { result } = renderHook(() => useOwnerValue('t', onUpdated))
-    await act(() => result.current.submit(800_000))
-    expect(setOwnerValue).toHaveBeenCalledWith('t', 800_000)
+    await act(() =>
+      result.current.submit({ value: 800_000, mortgageBalance: null, mortgageRate: null })
+    )
+    expect(setOwnerValue).toHaveBeenCalledWith('t', {
+      value: 800_000,
+      mortgageBalance: null,
+      mortgageRate: null,
+    })
     expect(onUpdated).toHaveBeenCalledWith(ANALYSIS)
     expect(result.current.busy).toBe(false)
     expect(result.current.error).toBeNull()
@@ -40,7 +46,7 @@ describe('useOwnerValue (D-107)', () => {
     )
     const onUpdated = vi.fn()
     const { result } = renderHook(() => useOwnerValue('t', onUpdated))
-    await act(() => result.current.submit(1))
+    await act(() => result.current.submit({ value: 1, mortgageBalance: null, mortgageRate: null }))
     expect(onUpdated).not.toHaveBeenCalled()
     expect(result.current.error).toBe('Enter a value between…')
   })
@@ -48,13 +54,17 @@ describe('useOwnerValue (D-107)', () => {
   it('a non-API failure gets a generic message', async () => {
     setOwnerValue.mockRejectedValue(new TypeError('boom'))
     const { result } = renderHook(() => useOwnerValue('t', vi.fn()))
-    await act(() => result.current.submit(800_000))
+    await act(() =>
+      result.current.submit({ value: 800_000, mortgageBalance: null, mortgageRate: null })
+    )
     expect(result.current.error).toMatch(/Could not re-run the report/)
   })
 
   it('does nothing without a token', async () => {
     const { result } = renderHook(() => useOwnerValue(null, vi.fn()))
-    await act(() => result.current.submit(800_000))
+    await act(() =>
+      result.current.submit({ value: 800_000, mortgageBalance: null, mortgageRate: null })
+    )
     expect(setOwnerValue).not.toHaveBeenCalled()
   })
 })

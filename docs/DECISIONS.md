@@ -3553,3 +3553,52 @@ OSFI render as a purchase — which is what §9 says the report is.
 | Write the value into the listing snapshot's `price` | The listing would claim a price it never had; `ownerInputs` keeps provenance and the ledger honest. |
 | Owner-only writes (D-065 policy)                    | Guest landlord reports have no owner; the facade input already follows the share-token policy.      |
 | Count the re-run against the quota                  | It is the same report re-scored, not a new analysis; the facade recalc set the precedent.           |
+
+### D-108 · A landlord who already owns it enters the mortgage balance; no debt means no DSCR, not an infinite one
+
+**Chosen.** The hero value form (D-107) gains **"I already own it"**, revealing _Mortgage
+balance_ (blank = owned outright) and an optional _Rate %_. `OwnerInputs` carries
+`mortgageBalance` (0 = outright, null = purchase case) and `mortgageRate` (decimal). The API
+turns them into the engine's financing: `down_payment_pct` = (value − balance) / value, floored
+at the engine's 5% (`OWNER_EQUITY_MIN`, the ledger says when it clamps), `mortgage_rate` = the
+contract rate when given else the live prime rate, and a new `FinancingInput.owned = true`.
+
+In the engine, `owned` means: no closing costs or LTT (nothing is payable to keep holding it),
+cash invested = the equity alone (cash-on-cash and the break-even appreciation both measure
+against it), and when the equity is 100% there is no debt service — `dscr` is **`None`**, the
+DSCR component scores its **maximum** (the coverage test is met, not failed), and the sanity
+bound skips it. `InvestmentMetrics.dscr` is `number | null` end to end; the tile reads "No debt ·
+Owned outright", the hero fact reads "no debt", nothing prints `Infinity`, `NaN` or `0.00×`.
+
+On the page: the financing slider becomes **Equity share** 5–100% (`EQUITY_SLIDER`), the §02 pill
+reads "Owned outright" or "60% equity · 3.89%", the Toronto-LTT toggle is hidden, the live
+recompute (`computeDemoMetrics` / `enrichMetrics`) charges no LTT or closing costs and returns
+`dscr: null` on zero debt, and §04 Cash to close stays in the outline with the finding "Owned ·
+nothing to close" and the equity the return is measured on. The ledger's financing rows become
+"Mortgage balance · $X · observed · You entered it" (or "none — owned outright"), "Mortgage
+rate · You entered it" when given, and amortization stays the labelled default (remaining
+amortization is not asked for yet).
+
+**Why.** D-107 left "owned outright" as the one landlord position the model could not represent
+honestly: `calculate_dscr` raised on zero debt and every renderer assumed a number. Faking a 5%
+mortgage would have printed a payment the landlord does not make. Treating no debt as "coverage
+met" is the only reading under which the score's DSCR component means the same thing for a
+financed and an unfinanced hold; excluding it and rescaling would change spec §10.
+
+**Verified 2026-09-15** on the live Russett landlord report through the local API: owned
+outright at $950k → score 47 (cash flow 25/25, DSCR 15/15), $0 payment, DSCR null, $0 closing,
+no sanity warnings; page shows Equity share 100%, "No debt", "Owned · nothing to close".
+
+**Known limits.** Remaining amortization is not an input (the default 25 years stands, labelled).
+OSFI §05 still renders as a purchase qualification; for an owner it is the renewal/refinance
+test and the copy does not yet say so. The landlord narrative prompt still describes the
+position in acquisition language.
+
+**Alternatives considered**
+
+| Option                                              | Why not                                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Clamp equity at 95% and model a tiny mortgage       | A payment the person does not make, a DSCR that means nothing; the ledger would have to lie.      |
+| DSCR = ∞ / a sentinel like 99                       | Prints "Infinity" or a fake number; the tile and the score both need "not applicable".            |
+| Drop the DSCR component when unfinanced and rescale | Changes spec §10's formula; a maximum is the reading under which the component keeps its meaning. |
+| Separate "owner" report                             | The sections are the same; the difference is three inputs and what "cash in" means.               |

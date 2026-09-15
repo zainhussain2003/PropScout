@@ -36,6 +36,8 @@ export interface EngineAssumptions {
   amortization_years: number
   cmhc_vacancy_rate: number
   cmhc_vacancy_rate_supplied: boolean
+  /** The financing was an existing position, not a purchase (D-108). */
+  owned?: boolean
   /** What scored the other two demand inputs; null = not observed, 0 points (D-105). */
   rental_days_on_market?: number | null
   rent_trend?: string | null
@@ -64,7 +66,13 @@ export interface LedgerInput {
   /** True on a for-rent listing whose value was modelled from rent. */
   priceEstimated: boolean
   /** The landlord's own value when one was entered (D-107) — outranks the model. */
-  ownerValue?: { value: number; enteredAt: string } | null
+  ownerValue?: {
+    value: number
+    enteredAt: string
+    /** Balance outstanding when they own it (D-108); 0 = outright; null = purchase case. */
+    mortgageBalance?: number | null
+    mortgageRate?: number | null
+  } | null
   annualTaxesUsed: number
   annualTaxesEstimated: boolean
   /** Whether the city had its own row in the CMHC table (else the province default). */
@@ -172,7 +180,10 @@ const MAINTENANCE_BAND: Record<string, string> = {
 export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
   const { mode, listing, engine, rate, comps } = input
   const rows: AssumptionEntry[] = []
-  const purchase = mode === 'investor' || mode === 'personal'
+  // A landlord report scored on the landlord's own value is a purchase model
+  // too (D-107); before a value is entered it is an operating view.
+  const purchase =
+    mode === 'investor' || mode === 'personal' || (mode === 'landlord' && input.ownerValue != null)
   const operating = mode === 'investor' || mode === 'landlord'
 
   // ── Rent ──────────────────────────────────────────────────────────────────
@@ -237,7 +248,59 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
   }
 
   // ── Financing ─────────────────────────────────────────────────────────────
-  if (purchase && engine != null) {
+  const owner = input.ownerValue ?? null
+  const ownedOutright = owner?.mortgageBalance === 0
+  const ownedWithMortgage = owner?.mortgageBalance != null && owner.mortgageBalance > 0
+  if (purchase && engine != null && (ownedOutright || ownedWithMortgage) && owner != null) {
+    // The landlord's existing position (D-108): their balance and rate are
+    // observed; the equity share is arithmetic on two numbers they gave.
+    const enteredOn = owner.enteredAt.slice(0, 10)
+    rows.push({
+      key: 'mortgage_balance',
+      label: ownedOutright ? 'Mortgage' : 'Mortgage balance',
+      value: ownedOutright ? 'none — owned outright' : cad(owner.mortgageBalance as number),
+      basis: 'observed',
+      source: 'You entered it',
+      asOf: enteredOn,
+      method: ownedOutright
+        ? 'No debt service: cash flow is the operating income, DSCR does not apply and scores its maximum, and cash-on-cash is measured on the full value.'
+        : `Equity share = (value − balance) / value = ${pct(engine.down_payment_pct, 0)}${engine.down_payment_pct <= 0.05 ? ' (clamped at the 5% floor the model needs)' : ''}. No land-transfer tax or closing costs are charged to keep holding it.`,
+    })
+    if (!ownedOutright) {
+      rows.push({
+        key: 'mortgage_rate',
+        label: 'Mortgage rate',
+        value: pct(engine.mortgage_rate),
+        basis:
+          owner.mortgageRate != null
+            ? 'observed'
+            : rate?.source === 'fallback' || rate == null
+              ? 'default'
+              : 'published',
+        source:
+          owner.mortgageRate != null
+            ? 'You entered it'
+            : rate != null && rate.source !== 'fallback'
+              ? 'Bank of Canada Valet — prime business rate (series V80691311)'
+              : PROPSCOUT_DEFAULT,
+        asOf: owner.mortgageRate != null ? enteredOn : (rate?.fetchedAt ?? null),
+        method:
+          owner.mortgageRate != null
+            ? 'Your contract rate, applied over the default amortization; use the slider for a renewal scenario.'
+            : 'No rate was entered, so the current prime rate stands in for your contract rate. Use the slider.',
+      })
+      rows.push({
+        key: 'amortization',
+        label: 'Amortization',
+        value: `${engine.amortization_years} years`,
+        basis: 'default',
+        source: PROPSCOUT_DEFAULT,
+        asOf: null,
+        method:
+          'Remaining amortization was not entered; the starting case applies. Adjustable in the financing section.',
+      })
+    }
+  } else if (purchase && engine != null) {
     const r = rate ?? { rate: engine.mortgage_rate, source: 'fallback' as const, fetchedAt: null }
     rows.push({
       key: 'mortgage_rate',

@@ -68,7 +68,7 @@ def sanity_check_metrics(
     cap_rate: float,
     monthly_rent: float,
     purchase_price: float,
-    dscr: float,
+    dscr: float | None,
     break_even_rent: float,
     deal_score: float | None = None,
     cash_flow_monthly: float | None = None,
@@ -86,7 +86,7 @@ def sanity_check_metrics(
         cap_rate: Cap rate as a decimal (e.g. 0.045 = 4.5%).
         monthly_rent: Estimated monthly rent at full occupancy, in dollars.
         purchase_price: Property purchase price, in dollars.
-        dscr: Debt service coverage ratio.
+        dscr: Debt service coverage ratio; None (no debt service) is not checked.
         break_even_rent: Monthly rent required to break even, in dollars.
         deal_score: Final deal score (0–95). Optional — checked only when provided.
         cash_flow_monthly: Monthly cash flow in dollars. Optional — checked only
@@ -138,7 +138,7 @@ def sanity_check_metrics(
         )
 
     # ── DSCR ─────────────────────────────────────────────────────────────────
-    if dscr > bounds.dscr_max:
+    if dscr is not None and dscr > bounds.dscr_max:
         warnings.append(
             f"DSCR of {dscr:.2f}x exceeds {bounds.dscr_max:.1f}x — "
             "this is unusually high and may indicate a data entry error in rent or expenses."

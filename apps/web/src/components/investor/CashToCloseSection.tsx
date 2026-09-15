@@ -27,6 +27,41 @@ export function CashToCloseSection({
   const lttResult = computeLTT(listing.price, financing.isToronto)
   const total = metrics.totalCashInvested
 
+  // Already owned (D-108): nothing is due on any closing day. The section
+  // stays in the outline and says so, with the equity the model runs on.
+  if (financing.owned === true) {
+    const equity = Math.round(listing.price * financing.downPaymentPct)
+    return (
+      <section className="container tr-section" data-section="04">
+        <SectionHead
+          n="04"
+          topic="Cash to close"
+          question={
+            <>
+              What you need in the <em>bank</em> on closing day.
+            </>
+          }
+          verdict="Owned · nothing to close"
+          tone="pass"
+        />
+        <div className="card col" style={{ padding: 28, gap: 10 }}>
+          <div style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 500 }}>
+            You already own this property, so no land-transfer tax, legal fees or down payment are
+            due.
+          </div>
+          <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
+            The equity the report measures your return on is {fmtMoney(equity)} —{' '}
+            {Math.round(financing.downPaymentPct * 100)}% of the {fmtMoney(listing.price)} value you
+            entered
+            {financing.downPaymentPct >= 1
+              ? ', owned outright.'
+              : ', after the mortgage balance you entered.'}
+          </p>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="container tr-section" data-section="04">
       <SectionHead

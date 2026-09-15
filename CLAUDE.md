@@ -1165,7 +1165,7 @@ propscout/
 │   │       │   │   └── TenantSchoolsSection.tsx    # Slim schools (1 per board × 3 levels)
 │   │       │   │
 │   │       │   ├── landlord/          # Landlord-specific
-│   │       │   │   ├── OwnerValueForm.tsx + .test.tsx  # "What is it worth?" in the hero card (D-107)
+│   │       │   │   ├── OwnerValueForm.tsx + .test.tsx  # "What is it worth?" + "I already own it" (balance, rate) in the hero card (D-107, D-108)
 │   │       │   │   └── LandlordPropertyHero.tsx · LandlordVerdictHero.tsx · LandlordRentPositioningSection.tsx  # demo route
 │   │       │   │
 │   │       │   ├── personal/          # Personal buyer-specific

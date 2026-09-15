@@ -437,10 +437,15 @@ export function enrichMetrics(
 ): ComputedInvestorMetrics {
   const grossRentAnnual = listing.rentEstimate * 12
   const principal = listing.price * (1 - financing.downPaymentPct)
-  // API closingCostsTotal already includes provincial and municipal LTT.
-  const totalCashInvested = metrics.downPayment + metrics.closingCostsTotal
+  // API closingCostsTotal already includes provincial and municipal LTT. An
+  // owned property (D-108) pays neither again: the cash in is the equity.
+  const totalCashInvested = financing.owned
+    ? metrics.downPayment
+    : metrics.downPayment + metrics.closingCostsTotal
 
-  const ltt = computeLTT(listing.price, financing.isToronto)
+  const ltt = financing.owned
+    ? { provincial: 0, municipal: 0, total: 0, rows: [] }
+    : computeLTT(listing.price, financing.isToronto)
   const osfi = computeOSFI(
     listing.price,
     financing.downPaymentPct,
@@ -522,11 +527,15 @@ export function computeDemoMetrics(
   const annualMortgagePayments = mortgagePaymentMonthly * 12
   const cashFlowMonthly = Math.round(noi / 12 - mortgagePaymentMonthly)
   const cashFlowAnnual = cashFlowMonthly * 12
-  const dscr = annualMortgagePayments > 0 ? noi / annualMortgagePayments : 0
+  // No debt, no coverage ratio (D-108) — null, never 0 or Infinity.
+  const dscr = annualMortgagePayments > 0 ? noi / annualMortgagePayments : null
 
-  const lttResult = computeLTT(listing.price, financing.isToronto)
-  const totalCashInvested =
-    downPayment + lttResult.provincial + lttResult.municipal + closingCostsTotal
+  const lttResult = financing.owned
+    ? { provincial: 0, municipal: 0, total: 0, rows: [] }
+    : computeLTT(listing.price, financing.isToronto)
+  const totalCashInvested = financing.owned
+    ? downPayment
+    : downPayment + lttResult.provincial + lttResult.municipal + closingCostsTotal
   const cashOnCashReturn = totalCashInvested > 0 ? cashFlowAnnual / totalCashInvested : 0
 
   // Break-even rent: (annual mortgage + annual operating expenses) / 12
@@ -549,7 +558,9 @@ export function computeDemoMetrics(
     amortizationYears: financing.amortizationYears,
     mortgageRate: financing.mortgageRate,
     breakEvenRent,
-    closingCostsTotal: closingCostsTotal + lttResult.provincial + lttResult.municipal,
+    closingCostsTotal: financing.owned
+      ? 0
+      : closingCostsTotal + lttResult.provincial + lttResult.municipal,
     lttProvincial: lttResult.provincial,
     lttMunicipal: lttResult.municipal,
     hasSanityWarnings: false,

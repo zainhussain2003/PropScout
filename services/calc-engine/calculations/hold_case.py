@@ -37,6 +37,7 @@ def calculate_break_even_appreciation(
     monthly_cash_flow: float,
     is_toronto: bool = False,
     snapshot_years: tuple[int, ...] = (5, 10, 20),
+    include_closing_costs: bool = True,
 ) -> list[dict[str, float]]:
     """
     Minimum annual price growth needed to return the cash a hold consumes.
@@ -85,6 +86,9 @@ def calculate_break_even_appreciation(
             the purchase closing costs that must be recovered).
         snapshot_years: Hold periods to evaluate. Defaults to the same 5/10/20
             the equity chart uses, so the two read against each other.
+        include_closing_costs: False for a property already owned (D-108) —
+            no LTT or legal fees were paid to hold it, so the cash in is the
+            equity alone.
 
     Returns:
         List of dicts, one per snapshot year, each containing:
@@ -119,11 +123,14 @@ def calculate_break_even_appreciation(
 
     principal = purchase_price * (1 - down_payment_pct)
     down_payment = purchase_price * down_payment_pct
-    closing = estimate_closing_costs(
-        purchase_price=purchase_price,
-        is_toronto=is_toronto,
+    closing_total = (
+        estimate_closing_costs(purchase_price=purchase_price, is_toronto=is_toronto)[
+            "total"
+        ]
+        if include_closing_costs
+        else 0.0
     )
-    cash_invested = down_payment + closing["total"]
+    cash_invested = down_payment + closing_total
 
     schedule = calculate_amortization_schedule(
         principal, annual_rate, amortization_years

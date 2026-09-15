@@ -626,7 +626,7 @@ Triggered when a for-rent URL is pasted and the user selects "I'm a Landlord." F
 
 Used by landlords who own or are considering buying a property and want to understand whether the rental income pencils out.
 
-The user inputs the property's purchase price or current value: the hero score card asks "What is it worth?" and the report is re-run on that value (`POST /analysis/:token/value`, persisted as `ownerInputs`, D-107). Until a value is entered the card is an operating view — rent, comps, flags, costs, no purchase score (D-104). Current mortgage details and an owned-outright path are not built yet (engine needs a no-debt DSCR path — BACKLOG §8).
+The user inputs the property's purchase price or current value: the hero score card asks "What is it worth?" and the report is re-run on that value (`POST /analysis/:token/value`, persisted as `ownerInputs`, D-107). Until a value is entered the card is an operating view — rent, comps, flags, costs, no purchase score (D-104). "I already own it" adds the mortgage balance (blank = owned outright) and an optional contract rate: the equity share replaces the down payment, no closing costs or LTT are charged, and with no debt service DSCR is not applicable — it reads "No debt" and its score component is at its maximum (D-108). Remaining amortization is not asked for yet.
 
 Rent estimate uses the listed rent as the primary input, with comps run alongside to show whether current/planned rent is at, above, or below market.
 

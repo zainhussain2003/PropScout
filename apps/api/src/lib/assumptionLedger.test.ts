@@ -252,6 +252,68 @@ describe('buildAssumptionLedger', () => {
     expect(buildAssumptionLedger(input).find((x) => x.key === 'value_estimate')).toBeUndefined()
   })
 
+  it('a landlord report with a value carries the financing rows; without one it does not (D-107)', () => {
+    const noValue = buildAssumptionLedger(
+      base({
+        mode: 'landlord',
+        priceEstimated: true,
+        listing: { ...base().listing, price: null, rentMonthly: 3400 },
+      })
+    ).map((e) => e.key)
+    expect(noValue).not.toContain('mortgage_rate')
+    const withValue = buildAssumptionLedger(
+      base({
+        mode: 'landlord',
+        priceEstimated: false,
+        ownerValue: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z' },
+        listing: { ...base().listing, price: null, rentMonthly: 3400 },
+      })
+    ).map((e) => e.key)
+    expect(withValue).toEqual(
+      expect.arrayContaining(['value_owner', 'mortgage_rate', 'down_payment'])
+    )
+  })
+
+  it('an owned position replaces the purchase financing rows with the balance and contract rate (D-108)', () => {
+    const rows = buildAssumptionLedger(
+      base({
+        mode: 'landlord',
+        priceEstimated: false,
+        engine: { ...ENGINE, down_payment_pct: 0.6, mortgage_rate: 0.0389, owned: true },
+        ownerValue: {
+          value: 800000,
+          enteredAt: '2026-09-15T14:00:00.000Z',
+          mortgageBalance: 320000,
+          mortgageRate: 0.0389,
+        },
+        listing: { ...base().listing, price: null, rentMonthly: 3400 },
+      })
+    )
+    const bal = rows.find((e) => e.key === 'mortgage_balance')
+    expect(bal?.value).toBe('$320,000')
+    expect(bal?.basis).toBe('observed')
+    expect(bal?.method).toMatch(/Equity share = \(value − balance\) \/ value = 60%/)
+    const rate = rows.find((e) => e.key === 'mortgage_rate')
+    expect(rate?.basis).toBe('observed')
+    expect(rate?.source).toBe('You entered it')
+    expect(rows.find((e) => e.key === 'down_payment')).toBeUndefined()
+  })
+
+  it('owned outright: one row saying there is no mortgage, no rate or amortization rows', () => {
+    const rows = buildAssumptionLedger(
+      base({
+        mode: 'landlord',
+        priceEstimated: false,
+        engine: { ...ENGINE, down_payment_pct: 1, owned: true },
+        ownerValue: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z', mortgageBalance: 0 },
+        listing: { ...base().listing, price: null, rentMonthly: 3400 },
+      })
+    )
+    expect(rows.find((e) => e.key === 'mortgage_balance')?.value).toBe('none — owned outright')
+    expect(rows.find((e) => e.key === 'mortgage_rate')).toBeUndefined()
+    expect(rows.find((e) => e.key === 'amortization')).toBeUndefined()
+  })
+
   it('tenant mode carries only what a tenant report uses', () => {
     const keys = buildAssumptionLedger(
       base({

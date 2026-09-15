@@ -156,16 +156,20 @@ def _score_cash_on_cash(cash_on_cash: float) -> int:
     return 0
 
 
-def _score_dscr(dscr: float) -> int:
+def _score_dscr(dscr: float | None) -> int:
     """
     Map DSCR to a score between 0 and 15.
 
     Args:
-        dscr: Debt service coverage ratio.
+        dscr: Debt service coverage ratio, or None when there is no debt to
+            service (owned outright, D-108) — the coverage test is met
+            trivially, so the component scores its maximum.
 
     Returns:
         Integer score 0–15.
     """
+    if dscr is None:
+        return 15
     if dscr >= 1.25:
         return 15
     if dscr >= 1.10:
@@ -230,7 +234,7 @@ def calculate_deal_score(
     cap_rate: float,
     cash_flow_monthly: float,
     cash_on_cash: float,
-    dscr: float,
+    dscr: float | None,
     cmhc_vacancy_rate: float,
     rental_days_on_market: int | None,
     rent_trend: str | None,
@@ -248,7 +252,7 @@ def calculate_deal_score(
         cap_rate: Cap rate as a decimal (e.g. 0.045 = 4.5%).
         cash_flow_monthly: Monthly cash flow in dollars.
         cash_on_cash: Cash-on-cash return as a decimal (e.g. 0.06 = 6%).
-        dscr: Debt service coverage ratio.
+        dscr: Debt service coverage ratio; None when there is no debt (scores 15).
         cmhc_vacancy_rate: CMHC vacancy rate as a decimal.
         rental_days_on_market: Median rental days on market in the area;
             None when unobserved (scores 0).
