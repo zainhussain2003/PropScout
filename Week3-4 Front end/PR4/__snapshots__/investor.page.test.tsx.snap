@@ -3399,7 +3399,8 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           </span>
         </div>
         <div
-          style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;"
+          class="grid-1col-mobile"
+          style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start;"
         >
           <div
             class="card"

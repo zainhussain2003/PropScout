@@ -36,6 +36,11 @@ export function maintenanceNote(yearBuilt: number): string {
   return '1.5% of value / yr · pre-1980 build'
 }
 
+/** Property types that carry a maintenance fee even when the listing omits it. */
+export function isStrataType(propertyType: string): boolean {
+  return /condo|apartment|townhouse|townhome|town home|stacked|loft/i.test(propertyType)
+}
+
 export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps): JSX.Element {
   const utilitiesTotal =
     monthly.utilities.hydro +
@@ -64,11 +69,18 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
           ? `${fmtMoney(property.annualTaxes)}/yr · ${property.annualTaxesKnown === false ? 'city-rate estimate; verify' : 'as listed'}`
           : '— · not available',
     },
-    {
-      k: 'Condo fee',
-      v: monthly.condo,
-      note: 'monthly maintenance fee',
-    },
+    // A freehold house has no condo fee; a "$0" row on a detached listing read
+    // as a fact about the house (2026-09-14 review run). The row stays for a
+    // condo/townhouse whose fee the listing did not state, and says so.
+    ...(monthly.condo > 0 || isStrataType(property.propertyType)
+      ? [
+          {
+            k: 'Condo fee',
+            v: monthly.condo,
+            note: monthly.condo > 0 ? 'monthly maintenance fee' : 'not listed · confirm the fee',
+          },
+        ]
+      : []),
     {
       k: 'Insurance',
       v: monthly.insurance,

@@ -41,11 +41,15 @@ export function CashToCloseSection({
         tone="caution"
       />
 
+      {/* Two cards, the bracket table wider: auto-fill at 280px left two narrow
+          cards and half a row of empty space at 1440px (2026-09-14 review). */}
       <div
+        className="grid-1col-mobile"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)',
           gap: 16,
+          alignItems: 'start',
         }}
       >
         <LTTTable ltt={lttResult} price={listing.price} toronto={listing.isToronto} />
