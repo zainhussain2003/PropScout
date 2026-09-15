@@ -34,3 +34,22 @@ export const CALC_ENGINE_TIMEOUT_MS = {
   ANALYSIS: 60_000,
   SUNSCOUT: 30_000,
 } as const
+
+// Market demand measured from the nightly rental_listings table (D-105).
+// Days-on-market = median (last seen − first seen) over listings in the FSA
+// that dropped off in the window; rent trend = median rent of listings first
+// seen in the recent window against those first seen in the rest of the
+// window. Below MIN_SAMPLE the input is "not observed" and scores 0 — the
+// engine never substitutes a default for either any more.
+export const MARKET_DEMAND = {
+  /** How far back listings count, in days. */
+  WINDOW_DAYS: 90,
+  /** The "recent" half of the trend comparison, in days. */
+  RECENT_DAYS: 30,
+  /** A listing not seen for this many days is treated as leased/withdrawn. */
+  GONE_AFTER_DAYS: 2,
+  /** Fewest listings a median may rest on before the input is reported. */
+  MIN_SAMPLE: 8,
+  /** |change| inside this band is "flat"; beyond it, rising or declining. */
+  TREND_FLAT_BAND: 0.02,
+} as const

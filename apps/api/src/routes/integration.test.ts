@@ -37,6 +37,7 @@ import {
   updateAnalysisStatus,
   updateAnalysisByToken,
   fetchRentalComps,
+  fetchMarketDemand,
   getAnalysisStatus,
   getAnalysisByToken,
   getFlagOverrides,
@@ -51,6 +52,7 @@ const mockGetListingByToken = jest.mocked(getListingByToken)
 const mockUpdateAnalysisStatus = jest.mocked(updateAnalysisStatus)
 const mockUpdateAnalysisByToken = jest.mocked(updateAnalysisByToken)
 const mockFetchRentalComps = jest.mocked(fetchRentalComps)
+const mockFetchMarketDemand = jest.mocked(fetchMarketDemand)
 const mockGetAnalysisStatus = jest.mocked(getAnalysisStatus)
 const mockGetAnalysisByToken = jest.mocked(getAnalysisByToken)
 const mockExtractListingFlags = jest.mocked(extractListingFlags)
@@ -175,6 +177,14 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
   })
 
   beforeEach(() => {
+    mockFetchMarketDemand.mockResolvedValue({
+      daysOnMarket: null,
+      domSample: 0,
+      rentTrend: null,
+      trendChangePct: null,
+      recentSample: 0,
+      priorSample: 0,
+    })
     jest.clearAllMocks()
     resetDb()
 

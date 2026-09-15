@@ -3429,3 +3429,77 @@ for it. `ListingData.askingRent` carries the listed rent separately from `rentEs
 14", "Monthly cash flow $1,596" (no mortgage in it), "DSCR 0.00×", "Live recalc · sliders below"
 with no sliders, and the comps median under the label "Asking rent". L-03 (what a landlord score
 should mean) is still the owner's decision; not printing the wrong score meanwhile is not.
+
+### D-105 · Days-on-market and rent trend are measured from the comps table or score nothing
+
+**Chosen.** The two demand inputs the engine used to fill with `21 days` / `"flat"` (4 of the
+score's 10 demand points, awarded to every property in the province) are now measured by the
+API from the nightly `rental_listings` table for the listing's FSA — `lib/marketDemand.ts`,
+constants in `MARKET_DEMAND`:
+
+- **Days on market** = median (last seen − first seen) over listings first seen in the last
+  90 days that have not been seen for 2+ nightly runs, any bedroom count. Needs 8.
+- **Rent trend** = median asking rent of listings first seen in the last 30 days against those
+  first seen in the 60 days before, same bedroom count when the subject's is known. Needs 8 in
+  each window; within ±2% is flat.
+
+Below the sample the input is `null`, the engine scores it **0** (`_score_market_demand` accepts
+`None`), the request model rejects any trend outside `rising|flat|declining`, and the ledger row
+reads "not observed · 0 of 3 points" with the sample it did find. A measured input is an
+`observed` row with the sample size and the FSA. The engine echoes both in
+`AssumptionsAppliedOutput`. The narrative input no longer says `rentTrend: 'flat'` for every
+listing.
+
+**Why.** Audit S-02 / backlog owner decision, taken 2026-09-15: a constant added to every score is
+not information, and #56's labelling left the points counted. Option A alone (always 0) would
+have thrown away the one table that can measure both; option B alone would have needed a
+default for the thin months. Today the table goes back to ~2026-09-05, so most reports land on
+the fallback until November for DOM and December for the trend — which is the honest state.
+
+**Effects on pinned values.** `test_regression.py` and the calibration cases pass DOM / trend
+explicitly to `calculate_deal_score`, so they do not move. A live report loses up to 4 points
+against yesterday's until its FSA has enough departed listings; the ledger says so per row.
+
+**Known limits.** Kijiji re-posts read as new listings, which shortens Toronto DOM until dedupe
+learns to fold re-posts; the DOM measures scraped asking listings, not signed leases; both
+inputs are FSA-wide, not building-level. Tenant-mode ledgers carry the rows too — the tenant has
+no score, but the same measurement sits behind the negotiation copy's "leverage" once it exists.
+
+**Alternatives considered**
+
+| Option                                 | Why not                                                                                         |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Keep the defaults, labelled (#56)      | Still 4 points for nothing; the audit finding stands.                                           |
+| Always 0 (option A alone)              | Throws away a measurement the table can already support in the dense FSAs.                      |
+| Drop the two inputs and rescale demand | Changes spec §10's formula and every pinned score; the inputs are sound, the defaults were not. |
+| Measure city-wide rather than by FSA   | Larger sample sooner, but a Toronto-wide DOM says nothing about M4Y; the sample gate is honest. |
+
+### D-106 · The CMHC vacancy table is the published October 2025 survey, and the fallback is the Ontario aggregate
+
+**Chosen.** `constants/cmhcVacancy.ts` now holds the Total column of CMHC's Rental Market
+Report data tables, Ontario, **Table 1.1.1 "Private Apartment Vacancy Rates (%), by Bedroom
+Type — Ontario 10,000+", Oct-25** (released 2025-12-11) for every CMA and CA row CMHC rates
+a/b/c, with each municipality keyed to the survey area it belongs to (the GTA municipalities to
+Toronto CMA, Burlington to Hamilton CMA, Whitby and Clarington to Oshawa CMA, per the report's
+zone descriptions). `CMHC_VACANCY_SURVEY` records the survey month, release date and table so
+the ledger cites them; the row's basis is `published` with `asOf` = the release date. A
+municipality with no row gets the same table's **Ontario 10,000+ aggregate, 3.2%**, instead of
+the previous unsourced 5%. `cmhcService` strips a scraped neighbourhood suffix ("Toronto
+(Yonge-Eglinton)") the way the tax-rate lookup does, so those listings no longer fell to the
+default.
+
+**Why.** The table was documented as "placeholder starting values keyed to indicative ranges"
+and the ledger had to call it a _default_. The survey is public; the figures above were read
+from CMHC's own `rmr-ontario-2025-en.xlsx` on 2026-09-15 and cross-checked against the report
+text (Toronto 3.0, Ottawa 3.0, Hamilton 3.6, London 4.0, Windsor 3.7, St. Catharines–Niagara
+3.9, Kitchener–Cambridge–Waterloo 4.1). The old placeholders (Toronto 1.8%, Hamilton 3.3%) were
+a full bracket off for most cities — every GTA score has been earning 4 vacancy points on a 2024
+number.
+
+**Effects.** Vacancy points fall from 4 to 1 for the GTA (3.0% is the 3–5% bracket) and for
+Ottawa, and rise for Sudbury and Kingston. `test_regression.py` passes vacancy explicitly and
+does not move. The spec's 5% is the vacancy _allowance_ in the expense model (unchanged); the
+demand input is a market observation and should come from the survey.
+
+**Refresh rule.** Every January, download the new Ontario data table, copy the Oct-NN Total
+column for a/b/c rows, update `CMHC_VACANCY_SURVEY`, run `cmhcService.test.ts`.

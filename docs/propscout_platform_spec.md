@@ -698,6 +698,14 @@ Applies to Report A and Report D. Calculated after all modules run. Reproducible
 | 12-month rent trend flat      | 2      |
 | 12-month rent trend declining | 0      |
 
+Vacancy is the CMHC Rental Market Survey total for the listing's survey area (October survey,
+refreshed each January — D-106; a municipality without a row gets the Ontario 10,000+
+aggregate). Rental DOM and the rent trend are measured from PropScout's nightly comps table for
+the listing's FSA (D-105): DOM = median first-seen → last-seen of listings that left the market
+in the last 90 days; trend = median asking rent of listings first seen in the last 30 days vs the
+60 days before, ±2% = flat. Either input needs 8 listings; below that it is **not observed and
+scores 0** — the engine never substitutes a default for these two.
+
 **Risk flag deductions — applied after subtotal, score floor is 0**
 
 | Flag                                                   | Deduction |

@@ -16,6 +16,9 @@
 
 import type { AssumptionEntry, ReportMode } from '../types/analysis'
 import { RENT_TO_PRICE_MONTHLY } from '../constants/valuation'
+import { MARKET_DEMAND } from '../constants/thresholds'
+import { CMHC_VACANCY_SURVEY } from '../constants/cmhcVacancy'
+import type { MarketDemandObservation } from './marketDemand'
 
 /** The engine's echo of what it applied (models/schemas.py AssumptionsAppliedOutput). */
 export interface EngineAssumptions {
@@ -33,6 +36,9 @@ export interface EngineAssumptions {
   amortization_years: number
   cmhc_vacancy_rate: number
   cmhc_vacancy_rate_supplied: boolean
+  /** What scored the other two demand inputs; null = not observed, 0 points (D-105). */
+  rental_days_on_market?: number | null
+  rent_trend?: string | null
 }
 
 export interface LedgerInput {
@@ -47,6 +53,8 @@ export interface LedgerInput {
     condoFeeMonthly: number | null
     condoFeeKnown: boolean
     yearBuilt: number | null
+    /** For the demand rows' FSA note (D-105). */
+    postalCode?: string | null
   }
   engine: EngineAssumptions | null
   rate: { rate: number; source: 'live' | 'cached' | 'fallback'; fetchedAt: string | null } | null
@@ -59,6 +67,8 @@ export interface LedgerInput {
   annualTaxesEstimated: boolean
   /** Whether the city had its own row in the CMHC table (else the province default). */
   cmhcCityMatched: boolean
+  /** The comps-table measurement behind the engine's DOM / trend inputs (D-105). */
+  demand?: MarketDemandObservation | null
   /** Walk Score result, when the API returned one. */
   walkScore?: { walk: number; transit: number | null; fetchedAt?: string } | null
   /** Whether any nearby-amenity time came from the routing engine (D-096). */
@@ -131,6 +141,7 @@ export function withFacadeRow(
 const TAX_RATE_TABLE_YEAR = '2025'
 
 const PROPSCOUT_DEFAULT = 'PropScout default — no external source'
+const NIGHTLY_COMPS = 'PropScout nightly rental comps (Rentals.ca, Kijiji, PadMapper)'
 
 /** Fixed decimals so "5.20%" reads as a quoted rate, not "5.2". */
 function pct(v: number, digits = 2): string {
@@ -139,6 +150,11 @@ function pct(v: number, digits = 2): string {
 /** Trailing zeros dropped: 0.005 → "0.5%". */
 function pctShort(v: number): string {
   return `${parseFloat((v * 100).toFixed(2))}%`
+}
+/** Signed, one decimal: 0.034 → "+3.4%". */
+function pctSigned(v: number): string {
+  const n = parseFloat((v * 100).toFixed(1))
+  return `${n > 0 ? '+' : ''}${n}%`
 }
 function cad(v: number): string {
   return `$${Math.round(v).toLocaleString('en-CA')}`
@@ -330,22 +346,58 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
   }
 
   if (engine != null) {
+    // The city table is copied from the CMHC survey's own data table with
+    // its survey month (D-106); a city without a row gets the published
+    // Ontario aggregate from the same table — still published, said plainly.
     rows.push({
       key: 'vacancy_market',
       label: 'Market vacancy rate',
       value: pct(engine.cmhc_vacancy_rate, 1),
-      // The per-city table is documented as placeholder values, and the engine's
-      // own fallback has no source at all — neither is "published" yet.
-      basis: 'default',
+      basis: engine.cmhc_vacancy_rate_supplied ? 'published' : 'default',
       source: engine.cmhc_vacancy_rate_supplied
-        ? 'PropScout table keyed to the CMHC Rental Market Survey — placeholder values pending a refresh from the survey'
+        ? `CMHC Rental Market Survey, ${CMHC_VACANCY_SURVEY.survey} (${CMHC_VACANCY_SURVEY.table})`
         : PROPSCOUT_DEFAULT,
-      asOf: null,
+      asOf: engine.cmhc_vacancy_rate_supplied ? CMHC_VACANCY_SURVEY.published : null,
       method: engine.cmhc_vacancy_rate_supplied
         ? input.cmhcCityMatched
-          ? `${listing.city} row of the table. Feeds the demand part of the score.`
-          : `${listing.city} has no CMHC figure on file, so the province-wide default applied. Feeds the demand part of the score.`
+          ? `Purpose-built rental apartment vacancy, all bedroom types, for the CMHC survey area ${listing.city} belongs to. Feeds the demand part of the score.`
+          : `${listing.city} has no row in the survey table, so the Ontario-wide aggregate (Ontario 10,000+) applied. Feeds the demand part of the score.`
         : 'The engine default applied. Feeds the demand part of the score.',
+    })
+
+    // Days on market and rent trend: measured from the nightly comps table or
+    // not observed at all (0 points). There is no default row to label (D-105).
+    const d = input.demand ?? null
+    const fsaNote = `${input.listing.postalCode ? input.listing.postalCode.slice(0, 3).toUpperCase() : 'the'} FSA`
+    rows.push({
+      key: 'rental_dom',
+      label: 'Rental days on market',
+      value:
+        engine.rental_days_on_market != null
+          ? `${engine.rental_days_on_market} days`
+          : 'not observed · 0 of 3 points',
+      basis: engine.rental_days_on_market != null ? 'observed' : 'default',
+      source: NIGHTLY_COMPS,
+      asOf: engine.rental_days_on_market != null ? input.createdAt.slice(0, 10) : null,
+      method:
+        engine.rental_days_on_market != null
+          ? `Median days from first to last seen across ${d?.domSample ?? 0} listings in ${fsaNote} that left the market in the last ${MARKET_DEMAND.WINDOW_DAYS} days. Feeds the demand part of the score.`
+          : `Fewer than ${MARKET_DEMAND.MIN_SAMPLE} listings in ${fsaNote} left the market in the last ${MARKET_DEMAND.WINDOW_DAYS} days (${d?.domSample ?? 0} did), so this input was not scored rather than assumed.`,
+    })
+    rows.push({
+      key: 'rent_trend',
+      label: 'Rent trend',
+      value:
+        engine.rent_trend != null
+          ? `${engine.rent_trend}${d?.trendChangePct != null ? ` · ${pctSigned(d.trendChangePct)}` : ''}`
+          : 'not observed · 0 of 3 points',
+      basis: engine.rent_trend != null ? 'observed' : 'default',
+      source: NIGHTLY_COMPS,
+      asOf: engine.rent_trend != null ? input.createdAt.slice(0, 10) : null,
+      method:
+        engine.rent_trend != null
+          ? `Median asking rent of the ${d?.recentSample ?? 0} listings first seen in the last ${MARKET_DEMAND.RECENT_DAYS} days against the ${d?.priorSample ?? 0} seen in the ${MARKET_DEMAND.WINDOW_DAYS - MARKET_DEMAND.RECENT_DAYS} days before, same bedroom count in ${fsaNote}; within ±${pctShort(MARKET_DEMAND.TREND_FLAT_BAND)} is flat. Feeds the demand part of the score.`
+          : `Needs ${MARKET_DEMAND.MIN_SAMPLE} listings in each of the last ${MARKET_DEMAND.RECENT_DAYS} days and the ${MARKET_DEMAND.WINDOW_DAYS - MARKET_DEMAND.RECENT_DAYS} before (${d?.recentSample ?? 0} and ${d?.priorSample ?? 0} in ${fsaNote}), so this input was not scored rather than assumed.`,
     })
   }
 

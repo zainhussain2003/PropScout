@@ -4,6 +4,12 @@ import type { Analysis, ReportMode, SchoolsResult, NearbySchool, CompRow } from 
 import type { Listing } from '../types/property'
 import { FREE_TIER } from '../constants/tiers'
 import { startOfCurrentMonth } from '../lib/billingMonth'
+import {
+  computeMarketDemand,
+  type DemandSourceRow,
+  type MarketDemandObservation,
+} from '../lib/marketDemand'
+import { MARKET_DEMAND } from '../constants/thresholds'
 
 // Lazy singleton — only created on first DB call so tests can import
 // this module without needing SUPABASE_URL set at load time.
@@ -462,6 +468,33 @@ export async function getAnalysisByToken(
  *
  * Returns null if 0 comps found after all fallback attempts.
  */
+/**
+ * Days-on-market and rent trend for the listing's FSA, measured from the
+ * nightly comps table (D-105). Every row first seen in the window is read;
+ * the measurement itself is in lib/marketDemand. Never throws — a read
+ * failure is "not observed", which the engine scores 0.
+ */
+export async function fetchMarketDemand(
+  postalCode: string,
+  beds: number | null
+): Promise<MarketDemandObservation> {
+  const fsa = postalCode.trim().toUpperCase().slice(0, 3)
+  const cutoff = new Date(
+    Date.now() - MARKET_DEMAND.WINDOW_DAYS * 24 * 60 * 60 * 1000
+  ).toISOString()
+  try {
+    const { data, error } = await db()
+      .from('rental_listings')
+      .select('rent_monthly, beds, first_seen_at, scraped_at')
+      .gte('first_seen_at', cutoff)
+      .ilike('postal_code', `${fsa}%`)
+    if (error) throw error
+    return computeMarketDemand((data ?? []) as DemandSourceRow[], beds)
+  } catch {
+    return computeMarketDemand([], beds)
+  }
+}
+
 export async function fetchRentalComps(
   postalCode: string,
   beds: number | null,

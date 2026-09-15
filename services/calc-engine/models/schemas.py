@@ -205,6 +205,10 @@ class AssumptionsAppliedOutput(BaseModel):
     cmhc_vacancy_rate: float
     # False when the API sent none and the engine's own default scored demand.
     cmhc_vacancy_rate_supplied: bool
+    # What scored the other two demand inputs: the API's measurement from the
+    # nightly comps table, or None = not observed, 0 points (D-105).
+    rental_days_on_market: int | None
+    rent_trend: str | None
 
 
 class AnalysisOutput(BaseModel):

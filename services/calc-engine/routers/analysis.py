@@ -4,6 +4,7 @@ Route handlers call services and calculations. No business logic here.
 """
 
 import logging
+from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -58,10 +59,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# ── CMHC defaults (nightly scraper not yet wired — Week 5–6) ─────────────────
+# ── CMHC default (the API normally supplies the per-city rate) ───────────────
 _DEFAULT_CMHC_VACANCY_RATE: float = 0.02
-_DEFAULT_RENTAL_DOM: int = 21
-_DEFAULT_RENT_TREND: str = "flat"
 
 # Points deducted from the deal score per confirmed STANDARD red flag
 _DEDUCTION_PER_RED_FLAG: int = 5
@@ -89,6 +88,10 @@ class AnalysisRequest(BaseModel):
     # Fastify API from cmhcService; falls back to the default when omitted so
     # the demand score reflects the actual market, not a flat assumption.
     cmhc_vacancy_rate: float | None = None
+    # Demand inputs the API measured from the nightly comps table (D-105).
+    # None means "not observed" and scores 0 — there is no default any more.
+    rental_days_on_market: int | None = Field(default=None, ge=0)
+    rent_trend: Literal["rising", "flat", "declining"] | None = None
     # Flag IDs the user has dismissed for this analysis (from flag_overrides).
     # Dismissed red flags are still returned in risk_flags (so the UI can show
     # them greyed out) but no longer deduct from the deal score on re-run.
@@ -379,8 +382,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             merged_flags.append(condo_fee_flag)
 
     # ── 4. Deal score ─────────────────────────────────────────────────────────
-    # Use the real per-city vacancy rate when the API supplies it; the DOM and
-    # rent-trend inputs stay on defaults until a data source exists for them.
+    # Use the real per-city vacancy rate when the API supplies it. DOM and
+    # rent trend come from the API's comps-table measurement or score 0.
     vacancy_rate = (
         body.cmhc_vacancy_rate
         if body.cmhc_vacancy_rate is not None
@@ -394,8 +397,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         cash_on_cash=cash_on_cash,
         dscr=dscr,
         cmhc_vacancy_rate=vacancy_rate,
-        rental_days_on_market=_DEFAULT_RENTAL_DOM,
-        rent_trend=_DEFAULT_RENT_TREND,
+        rental_days_on_market=body.rental_days_on_market,
+        rent_trend=body.rent_trend,
         risk_flag_deductions=risk_flag_deductions,
         severe_flag_count=gate_count,
     )
@@ -510,6 +513,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         amortization_years=fin.amortization_years,
         cmhc_vacancy_rate=vacancy_rate,
         cmhc_vacancy_rate_supplied=body.cmhc_vacancy_rate is not None,
+        rental_days_on_market=body.rental_days_on_market,
+        rent_trend=body.rent_trend,
     )
 
     return AnalysisOutput(

@@ -40,6 +40,7 @@ function base(overrides: Partial<LedgerInput> = {}): LedgerInput {
       condoFeeMonthly: 761,
       condoFeeKnown: true,
       yearBuilt: 2018,
+      postalCode: 'M5V 3L9',
     },
     engine: { ...ENGINE },
     rate: { rate: 0.052, source: 'live', fetchedAt: '2026-09-13T11:00:00.000Z' },
@@ -160,18 +161,66 @@ describe('buildAssumptionLedger', () => {
     expect(on.method).not.toMatch(/not included/i)
   })
 
-  it('CMHC vacancy for a matched city is a default until the table is refreshed from the survey', () => {
-    // The city table is documented as placeholder values, so it is not "published".
+  it('CMHC vacancy for a matched city is published, dated to the survey release (D-106)', () => {
     const e = entry(base(), 'vacancy_market')
-    expect(e.basis).toBe('default')
+    expect(e.basis).toBe('published')
     expect(e.value).toBe('1.8%')
-    expect(e.source).toMatch(/CMHC/)
+    expect(e.source).toMatch(/CMHC Rental Market Survey, October 2025/)
+    expect(e.asOf).toBe('2025-12-11')
     expect(e.method).toMatch(/Toronto/)
   })
 
   it('an unmatched city says the province-wide default was used', () => {
     const e = entry(base({ cmhcCityMatched: false }), 'vacancy_market')
-    expect(e.method).toMatch(/no CMHC figure on file/i)
+    expect(e.basis).toBe('published')
+    expect(e.method).toMatch(/Ontario-wide aggregate/i)
+  })
+
+  it('unobserved days-on-market and rent trend say they scored nothing, not a default (D-105)', () => {
+    const input = base({
+      demand: {
+        daysOnMarket: null,
+        domSample: 3,
+        rentTrend: null,
+        trendChangePct: null,
+        recentSample: 5,
+        priorSample: 2,
+      },
+    })
+    const dom = entry(input, 'rental_dom')
+    expect(dom.value).toBe('not observed · 0 of 3 points')
+    expect(dom.basis).toBe('default')
+    expect(dom.asOf).toBeNull()
+    expect(dom.method).toMatch(/Fewer than 8 listings in M5V FSA/)
+    expect(dom.method).toMatch(/\(3 did\)/)
+    expect(dom.method).toMatch(/not scored rather than assumed/)
+    const trend = entry(input, 'rent_trend')
+    expect(trend.value).toBe('not observed · 0 of 3 points')
+    expect(trend.method).toMatch(/\(5 and 2 in M5V FSA\)/)
+  })
+
+  it('measured days-on-market and rent trend are observed, dated, with their sample sizes', () => {
+    const input = base({
+      engine: { ...ENGINE, rental_days_on_market: 11, rent_trend: 'rising' },
+      demand: {
+        daysOnMarket: 11,
+        domSample: 14,
+        rentTrend: 'rising',
+        trendChangePct: 0.034,
+        recentSample: 9,
+        priorSample: 21,
+      },
+    })
+    const dom = entry(input, 'rental_dom')
+    expect(dom.value).toBe('11 days')
+    expect(dom.basis).toBe('observed')
+    expect(dom.asOf).toBe('2026-09-13')
+    expect(dom.source).toMatch(/nightly rental comps/)
+    expect(dom.method).toMatch(/across 14 listings in M5V FSA/)
+    const trend = entry(input, 'rent_trend')
+    expect(trend.value).toBe('rising · +3.4%')
+    expect(trend.basis).toBe('observed')
+    expect(trend.method).toMatch(/the 9 listings first seen in the last 30 days against the 21/)
   })
 
   it('a for-rent listing gets a value estimate entry; a sale does not', () => {

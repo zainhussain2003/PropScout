@@ -171,6 +171,19 @@ Also test a Toronto address — LTT should be approximately double.
 6. Verify score falls in the 50–64 caution range
 7. Pass: scores are consistent, deterministic (same inputs = same score every time)
 
+**🤖 Test 15a — Demand inputs are measured or score nothing (D-105)**
+
+1. `npx jest src/lib/marketDemand.test.ts` — DOM needs 8 departed listings in the FSA; trend needs 8 in each window; anything less is `null`
+2. `pytest routers/analysis_test.py -k demand` — a request without `rental_days_on_market` / `rent_trend` scores 0 for both; `"up"` is a 422
+3. Open any live report's Sources section: "Rental days on market" and "Rent trend" rows read either a figure with its sample size, or "not observed · 0 of 3 points"
+4. Pass: no live report shows a DOM or trend that the comps table did not measure
+
+**🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
+
+1. `npx jest src/services/cmhcService.test.ts`
+2. In the Sources section, "Market vacancy rate" is `published`, dated 2025-12-11, and names the October 2025 survey; a GTA listing shows 3.0%
+3. Pass: no vacancy figure on a report is outside CMHC's Ontario Table 1.1.1
+
 **✋ Test 16 — Maintenance reserve by age**
 
 1. Input a post-2010 property — verify reserve = 0.5% of value / 12

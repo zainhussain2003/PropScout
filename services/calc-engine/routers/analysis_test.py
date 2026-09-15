@@ -494,9 +494,46 @@ def test_cmhc_vacancy_rate_defaults_when_omitted() -> None:
     response = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
     assert response.status_code == 200, response.text
 
-    # Vaughan: DOM default 21 (2 pts) + flat trend (2 pts) + 2% vacancy (3 pts) = 7.
+    # Vaughan: 2% vacancy (3 pts); DOM and trend not sent → not observed → 0 (D-105).
     demand = response.json()["deal_score"]["breakdown"]["demand"]
-    assert demand == 7, f"Expected demand 7 with default 2% vacancy, got {demand}"
+    assert demand == 3, f"Expected demand 3 with default 2% vacancy, got {demand}"
+
+
+def test_unobserved_demand_inputs_score_zero_and_are_echoed() -> None:
+    """
+    D-105: when the API sends no days-on-market and no rent trend, those two
+    inputs contribute 0 of their 6 points — the engine no longer substitutes
+    21 days / 'flat' (4 points for nothing). The echo says what ran.
+    """
+    body = {**_VAUGHAN_PAYLOAD, "cmhc_vacancy_rate": 0.06}  # 0 vacancy pts
+    resp = client.post("/analysis/", json=body)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["deal_score"]["breakdown"]["demand"] == 0
+    assert data["assumptions"]["rental_days_on_market"] is None
+    assert data["assumptions"]["rent_trend"] is None
+
+
+def test_observed_demand_inputs_are_scored_and_echoed() -> None:
+    """A measured 9-day DOM (3 pts) and rising trend (3 pts) count and are echoed."""
+    body = {
+        **_VAUGHAN_PAYLOAD,
+        "cmhc_vacancy_rate": 0.06,
+        "rental_days_on_market": 9,
+        "rent_trend": "rising",
+    }
+    resp = client.post("/analysis/", json=body)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["deal_score"]["breakdown"]["demand"] == 6
+    assert data["assumptions"]["rental_days_on_market"] == 9
+    assert data["assumptions"]["rent_trend"] == "rising"
+
+
+def test_rent_trend_outside_the_vocabulary_is_rejected() -> None:
+    """'up' is not a trend the score understands; a 422 beats a silent 0."""
+    body = {**_VAUGHAN_PAYLOAD, "rent_trend": "up"}
+    assert client.post("/analysis/", json=body).status_code == 422
 
 
 def test_dismissed_red_flag_removes_its_score_deduction() -> None:
