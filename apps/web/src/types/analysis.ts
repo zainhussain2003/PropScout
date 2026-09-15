@@ -544,6 +544,14 @@ export interface ListingData {
   askingRent?: number | null
   /** The landlord's own value behind `price` on a rental listing, when entered (D-107). */
   ownerValue?: number | null
+  /** Where the listing's own facts came from (D-111): a scraped page or the person. */
+  provenance?: {
+    kind: 'listing' | 'entered'
+    /** e.g. "realtor.ca" or "details you entered". */
+    source: string | null
+    /** ISO time the page was scraped / the details were entered. */
+    asOf: string | null
+  }
   /** The landlord's mortgage balance when they own it (D-108); 0 = outright; null = purchase case. */
   ownerMortgageBalance?: number | null
   /** Their contract rate as a decimal, when entered with the balance. */

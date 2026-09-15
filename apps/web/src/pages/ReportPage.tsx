@@ -11,6 +11,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getAnalysisByToken } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
 import { useOwnerValue } from '../hooks/useOwnerValue'
+import { listingProvenance } from '../lib/provenance'
 import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
@@ -144,6 +145,7 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     rentIsProxy: analysis.metrics?.rentIsProxy === true,
     askingRent: listing.rentMonthly ?? null,
     ownerValue,
+    provenance: listingProvenance(listing),
     ownerMortgageBalance: analysis.ownerInputs?.mortgageBalance ?? null,
     ownerMortgageRate: analysis.ownerInputs?.mortgageRate ?? null,
     rentLow: analysis.rentalComps?.low ?? 0,
@@ -676,7 +678,11 @@ function InvestorReportContent({
         )}
       </div>
 
-      <InvestmentMetricsSection metrics={metrics} listing={listingData} />
+      <InvestmentMetricsSection
+        metrics={metrics}
+        listing={listingData}
+        assumptions={analysis.assumptions ?? null}
+      />
       {/* Financing / cash-to-close / OSFI / equity are PURCHASE economics that
           need a sale price. A for-rent listing (landlord mode) has none, so those
           sections would render $0 / NaN — gate them all on a real price. The

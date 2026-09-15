@@ -19,6 +19,8 @@ import { Icon } from '../shared/Icon'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
 import { scoreBreakdownBars } from '../../lib/scoreBreakdown'
 import { OwnerValueForm, type OwnerValueSubmission } from '../landlord/OwnerValueForm'
+import { ProvenanceBadge } from '../shared/ProvenanceBadge'
+import { priceProvenance } from '../../lib/provenance'
 
 interface PropertyHeroProps {
   listing: ListingData
@@ -184,6 +186,21 @@ export function PropertyHero({
               {listing.addressLine1}
             </h1>
             <div style={{ fontSize: 16, color: 'var(--muted)' }}>{listing.addressLine2}</div>
+            {/* Where the facts on this page came from, and when (D-111). */}
+            {listing.provenance != null && (
+              <div
+                className="mono"
+                style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}
+                data-testid="listing-provenance"
+              >
+                {listing.provenance.kind === 'listing'
+                  ? `Listing facts from ${listing.provenance.source ?? 'the listing'}`
+                  : 'Listing facts as you entered them'}
+                {listing.provenance.asOf
+                  ? ` · ${listing.provenance.kind === 'listing' ? 'read' : 'entered'} ${new Date(listing.provenance.asOf).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                  : ''}
+              </div>
+            )}
 
             <div
               style={{
@@ -331,6 +348,12 @@ export function PropertyHero({
                   {listing.price > 0
                     ? fmtMoney(listing.price)
                     : `${fmtMoney(listing.rentEstimate)}/mo`}
+                  {listing.price > 0 && listing.provenance != null && (
+                    <>
+                      {' '}
+                      <ProvenanceBadge provenance={priceProvenance(listing)} />
+                    </>
+                  )}
                   {listing.ownerValue != null && onSetValue != null && !editingValue && (
                     <>
                       {' '}

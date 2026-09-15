@@ -13,15 +13,20 @@ import type { ComputedInvestorMetrics, ListingData } from '../../types/analysis'
 import { SectionHead } from '../shared/SectionHead'
 import { Metric } from '../analysis/Metric'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
+import { tileProvenance } from '../../lib/provenance'
+import type { AssumptionEntry } from '../../types/analysis'
 
 interface InvestmentMetricsSectionProps {
   metrics: ComputedInvestorMetrics
   listing: ListingData
+  /** The §12 ledger; with it each tile carries a provenance tag naming its assumed inputs (D-111). */
+  assumptions?: AssumptionEntry[] | null
 }
 
 export function InvestmentMetricsSection({
   metrics,
   listing,
+  assumptions = null,
 }: InvestmentMetricsSectionProps): JSX.Element {
   const grossYield = metrics.grossRentAnnual / listing.price
 
@@ -223,6 +228,7 @@ export function InvestmentMetricsSection({
             sub={tile.sub}
             plainEnglish={tile.plainEnglish}
             status={tile.status}
+            provenance={assumptions != null ? tileProvenance(tile.label, assumptions) : undefined}
           />
         ))}
       </div>

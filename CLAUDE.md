@@ -1096,6 +1096,7 @@ propscout/
 │       ├── lib/sunCoverage.ts + sunCoverage.test.ts       # Obstruction coverage → checked / indicative (D-085)
 │       ├── lib/scanState.ts + scanState.test.ts           # no text / failed / partial / clean — one rule for empty flag sections (D-090)
 │       ├── lib/exitScenarios.ts + exitScenarios.test.ts   # Stress / flat / conservative / base exit after selling costs and the balance owed (D-110)
+│       ├── lib/provenance.ts + provenance.test.ts         # Tile → ledger inputs; listing / price provenance for the hero (D-111)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css
@@ -1106,6 +1107,7 @@ propscout/
 │   │       │   │   ├── ScoutMark.tsx          # Standalone glyph — used as watermark on dark cards
 │   │       │   │   ├── Icon.tsx               # Full line-icon library
 │   │       │   │   ├── Chip.tsx               # Inline pill tag
+│   │       │   │   ├── ProvenanceBadge.tsx    # listing says / you entered / calculated · N assumed (D-111)
 │   │       │   │   ├── Button.tsx             # primary / ghost / accent variants
 │   │       │   │   ├── Card.tsx               # Surface + line + shadow + radius-lg
 │   │       │   │   ├── SectionHead.tsx        # Every report section header — shared across all 4 reports
@@ -1132,7 +1134,7 @@ propscout/
 │   │       │   │   └── landingHelpers.ts      # clampStr, detectKindFromUrl
 │   │       │   ├── analysis/          # Domain components — used across investor + landlord reports
 │   │       │   │   ├── DealScore.tsx          # Radial gauge with animation
-│   │       │   │   ├── Metric.tsx             # Headline metric tile
+│   │       │   │   ├── Metric.tsx             # Headline metric tile, optional provenance tag (D-111)
 │   │       │   │   ├── RentalCompsBar.tsx     # Percentile range bar + hover marker
 │   │       │   │   ├── AIVerdictBlock.tsx     # Dark full-bleed AI verdict card
 │   │       │   │   ├── RiskRow.tsx            # Inline risk flag row

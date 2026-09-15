@@ -205,6 +205,12 @@ Also test a Toronto address — LTT should be approximately double.
 2. On any report with a price, §07 shows "What does a sale return?" with Stress / Flat / Conservative / Base columns; the 5 / 10 / 20 chips change every figure; flat's sale price equals the price the report ran on
 3. Pass: profit and the annualized figure are red when negative, green when positive; the footnote states the selling-cost assumption and that tax is not deducted
 
+**🤖 Test 15g — Provenance tags (D-111)**
+
+1. `npx vitest run src/lib/provenance.test.ts src/pages/ReportPage.test.tsx -t D-111`
+2. On a live report: the hero reads "Listing facts from realtor.ca · read <date>" (or "as you entered them"), the asking price carries "listing says" / "you entered", each §01 tile carries "calculated" with the count of assumed inputs and names them on hover
+3. Pass: the counts agree with the §12 rows marked estimate/default among that tile's inputs
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

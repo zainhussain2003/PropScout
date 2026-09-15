@@ -88,8 +88,8 @@ From the four per-report audits' "field to work on" columns, grouped. None start
 - **Comparables:** rows (#79, D-099), similarity weighting and the comps map shipped (D-109).
   Still to do: a building/type factor (needs a property-type column on `rental_listings`, a
   migration); licensed Ontario sold-sales feed for personal FMV (blocked on a provider decision).
-- **Provenance:** field-level badges (listing says / you entered / calculated / assumed as of),
-  extraction confidence, scrape timestamps, geocoder match type.
+- **Provenance:** badges and the scrape line shipped (D-111). Still to do: geocoder match type
+  (not stored); badges on the tenant and personal reports' own tiles.
 - **Schools:** attendance-boundary polygons, grades, Fraser data (pedestrian routing shipped —
   #80, D-100).
 - **Location:** routed walking/driving times shipped (#76, D-096); transit times would need a
