@@ -695,10 +695,10 @@ function CostBreakdownSection({ lines }: { lines: TenantCostLine[] }): JSX.Eleme
                 color: 'var(--muted)',
               }}
             >
-              True monthly cost
+              Estimated monthly cash outflow
             </span>
             <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-              Including utilities &amp; parking
+              Rent plus estimated utilities &amp; parking
             </span>
           </div>
           <div className="col" style={{ alignItems: 'flex-end', gap: 2 }}>

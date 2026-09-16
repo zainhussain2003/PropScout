@@ -473,7 +473,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent);"
             >
-              True monthly cost
+              Est. monthly cash outflow
             </span>
             <span
               class="serif tabular"
@@ -830,7 +830,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
     <div
       class="tr-section-head"
       data-section-n="01"
-      data-section-topic="True monthly cost"
+      data-section-topic="Estimated monthly cash outflow"
     >
       <div
         class="col gap-12"
@@ -849,24 +849,24 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           <span
             style="margin-left: 12px; color: var(--muted);"
           >
-            True monthly cost
+            Estimated monthly cash outflow
           </span>
         </span>
         <h2
           class="serif"
           style="text-wrap: balance;"
         >
-          What will it 
+          What goes 
           <em>
-            really
+            out
           </em>
-           cost to live here?
+           every month to live here?
         </h2>
       </div>
       <span
         class="verdict-pill pass"
       >
-        $6,038/mo · all-in
+        $6,038/mo · all-in estimate
       </span>
     </div>
     <div
@@ -893,7 +893,14 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              20% down · 4.79% · 25-yr amort
+              <span
+                data-basis="calculated"
+                style="color: var(--muted);"
+              >
+                Calculated
+              </span>
+               · 
+              20% down · 4.79% · 25-yr amort · principal and interest
             </span>
           </div>
           <span
@@ -919,6 +926,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="listing"
+                style="color: var(--muted);"
+              >
+                From listing
+              </span>
+               · 
               $4,280/yr · as listed
             </span>
           </div>
@@ -945,7 +959,14 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
-              0.35% of value · confirm quote
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
+              0.35% of value / yr · confirm a quote
             </span>
           </div>
           <span
@@ -971,6 +992,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
               hydro · gas · water · internet
             </span>
           </div>
@@ -997,6 +1025,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
               size-based estimate · confirm
             </span>
           </div>
@@ -1023,6 +1058,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
               size-based estimate · confirm
             </span>
           </div>
@@ -1049,6 +1091,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
               estimate · confirm
             </span>
           </div>
@@ -1075,6 +1124,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
               estimate · confirm
             </span>
           </div>
@@ -1101,6 +1157,13 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; color: var(--muted);"
             >
+              <span
+                data-basis="estimated"
+                style="color: var(--caution);"
+              >
+                Estimated
+              </span>
+               · 
               1.5% of value / yr · pre-1980 build
             </span>
           </div>
@@ -1122,12 +1185,16 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               class="mono"
               style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
             >
-              True monthly cost
+              Estimated monthly cash outflow
             </span>
             <span
+              data-testid="modelled-share"
               style="font-size: 13px; color: var(--ink-2);"
             >
-              Including everything you pay to keep the keys
+              $1,694
+               (
+              28%
+              ) based on modelled assumptions
             </span>
           </div>
           <span

@@ -61,12 +61,12 @@ Location: `apps/web/src/components/investor/`
 
 Location: `apps/web/src/components/personal/`
 
-| Component                                | Purpose                                                 | Design source             |
-| ---------------------------------------- | ------------------------------------------------------- | ------------------------- |
-| `<SchoolCard school>` + `<SchoolColumn>` | Single school card with EQAO + Fraser + catchment badge | `personal-sections-2.jsx` |
-| `<PBTrueCostSection property monthly>`   | Itemized monthly cost table                             | `personal-sections.jsx`   |
-| `<PBFMVSection property score>`          | FMV positioning bar                                     | `personal-sections-2.jsx` |
-| `<PBSalesSection comps>`                 | Comparable sales table                                  | `personal-sections-2.jsx` |
+| Component                                 | Purpose                                                               | Design source             |
+| ----------------------------------------- | --------------------------------------------------------------------- | ------------------------- |
+| `<SchoolCard school>` + `<SchoolColumn>`  | Single school card with EQAO + Fraser + catchment badge               | `personal-sections-2.jsx` |
+| `<PBCashOutflowSection property monthly>` | Itemized monthly cash-outflow table, each row with its source (D-114) | `personal-sections.jsx`   |
+| `<PBFMVSection property score>`           | FMV positioning bar                                                   | `personal-sections-2.jsx` |
+| `<PBSalesSection comps>`                  | Comparable sales table                                                | `personal-sections-2.jsx` |
 
 ---
 

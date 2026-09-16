@@ -53,7 +53,7 @@ const MODE_OPTIONS: Record<'sale' | 'rent', [ModeOption, ModeOption]> = {
       sub: 'I want to know the real monthly cost and the right offer.',
       icon: 'house',
       hints: [
-        'True monthly cost of ownership',
+        'Estimated monthly cash outflow',
         'Nearby schools with EQAO scores · walkability',
         'Sun exposure, window by window',
       ],

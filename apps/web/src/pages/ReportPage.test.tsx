@@ -353,7 +353,9 @@ describe('ReportPage — risk-flag overrides', () => {
     listOverrides.mockResolvedValue([])
     renderReport()
 
-    expect(await screen.findByText('$5,218/yr · city-rate estimate; verify')).toBeInTheDocument()
+    expect(
+      await screen.findByText(/\$5,218\/yr · from the municipal rate · verify/)
+    ).toBeInTheDocument()
     expect(screen.queryByText('$0/yr')).not.toBeInTheDocument()
   })
 

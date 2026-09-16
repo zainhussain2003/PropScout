@@ -25,7 +25,7 @@ export function ReportsSection(): JSX.Element {
       who: 'Personal buyer',
       tag: 'For sale',
       title: "I'm buying a home to live in",
-      copy: 'True monthly cost of ownership, walk/transit, nearby schools with EQAO scores, sun exposure. The home you can live in, not just close on.',
+      copy: 'Estimated monthly cash outflow, walk/transit, nearby schools with EQAO scores, sun exposure. The home you can live in, not just close on.',
       stats: [
         ['Monthly cost', '$4,733', ''],
         ['Walk score', '80', 'pass'],

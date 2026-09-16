@@ -252,9 +252,10 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                 }}
               >
                 Paste a listing link, or just type the address. In under a minute you get rental
-                comps from live Ontario data, true monthly costs with the OSFI stress test applied,
-                risk flags, and a written verdict. Built for Canadian rules — semi-annual
-                compounding, land transfer tax, CMHC — not US math with a maple leaf on it.
+                comps from live Ontario data, estimated monthly cash outflow with the OSFI stress
+                test applied, risk flags, and a written verdict. Built for Canadian rules —
+                semi-annual compounding, land transfer tax, CMHC — not US math with a maple leaf on
+                it.
               </p>
             </div>
 
