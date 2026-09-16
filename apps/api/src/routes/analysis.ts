@@ -222,6 +222,8 @@ interface PyAnalysisOutput {
   shadow_score?: PyShadowScore | null
   risk_flags: PyRiskFlag[]
   has_sanity_warnings: boolean
+  /** What the plausibility checks said (D-118); absent from an older engine build. */
+  sanity_warnings?: string[]
   /** Present only when lat/lng were sent and the sun-path calc succeeded. */
   sun_scout?: PySunScout | null
   /** Optional so an analysis stored before the hold case shipped still parses. */
@@ -785,6 +787,7 @@ export async function runAnalysisPipeline(
     coordinates: coords != null ? { lat: coords.lat, lng: coords.lng } : null,
     schools,
     hasSanityWarnings: pyData.has_sanity_warnings,
+    sanityWarnings: pyData.sanity_warnings ?? [],
     ownerInputs: ownerInputs ?? null,
     rentControl,
     shadowScore: toShadowScore(pyData.shadow_score),

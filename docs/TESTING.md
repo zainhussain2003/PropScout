@@ -427,7 +427,9 @@ Note: aim for at least 10 examples of each flag type, including negative example
 **✋ Test 33a — Sanity bounds on score outputs**
 
 1. The calc engine flags implausible outputs without crashing. Confirm `sanity_check_metrics` covers: cap rate (0–20%), rent ($500–15k), price ($50k–10M), DSCR (≤5×), break-even ratio (≤3×), **deal score (0–95)**, **monthly cash flow (±$20k)**, **negative break-even**, and **non-finite break-even (inf/NaN)**
-2. Any failure sets `has_sanity_warnings=true` (UI notice) but the analysis still returns
+2. Any failure sets `has_sanity_warnings=true` and returns the failed checks as `sanity_warnings` (D-118); the analysis still returns
+   🤖 `pytest routers/analysis_test.py -k sanity_warnings` (a $2.5M house on a $2,616 rent fails two checks, in words) · `npx jest src/routes/analysis.test.ts -t D-118` (carried through and stored; empty list from an older engine) · `npx vitest run src/pages/ReportPage.test.tsx -t D-118` (notice above §01 on investor; flag-only analyses get it without the list; nothing when clean)
+   ✋ Run 1 Caldow Road as investor: "2 figures failed a plausibility check" sits between the verdict and §01 with the cap-rate and break-even sentences
 3. The API rejects implausible monthly rents at the boundary ($500–$10,000/mo): a for-rent scrape with a unit-error price routes to manual entry (`rent_monthly` in `missingFields`); an analysis whose fallback rent is out of bounds returns 422 `RENT_OUT_OF_BOUNDS` instead of scoring garbage — coverage in `apps/api/src/routes/scrape.test.ts` + `analysis.test.ts`
 
    🤖 Automated coverage: `services/calc-engine/calculations/sanity_test.py`

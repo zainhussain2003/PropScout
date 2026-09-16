@@ -588,6 +588,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         shadow_score=shadow_score,
         risk_flags=serialised_flags,
         has_sanity_warnings=has_sanity_warnings,
+        sanity_warnings=sanity_warnings,
         sun_scout=sun_scout_result,
         hold_case=[HoldCaseOutput(**row) for row in hold_case],
         assumptions=assumptions,

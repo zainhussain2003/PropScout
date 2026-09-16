@@ -259,6 +259,10 @@ class AnalysisOutput(BaseModel):
     shadow_score: ShadowScoreOutput | None = None
     risk_flags: list[dict[str, object]]
     has_sanity_warnings: bool
+    # The plausibility checks that failed, in the words of calculations/sanity
+    # (D-118). Empty when none did. The report shows them; a bare boolean
+    # told the reader nothing about which figure to doubt.
+    sanity_warnings: list[str] = []
     sun_scout: SunScoutOutput | None = None
     # Defaults to empty so an older stored analysis deserialises unchanged.
     hold_case: list[HoldCaseOutput] = []

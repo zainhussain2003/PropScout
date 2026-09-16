@@ -14,6 +14,7 @@ import { useOwnerValue } from '../hooks/useOwnerValue'
 import { listingProvenance } from '../lib/provenance'
 import { RentControlNote } from '../components/shared/RentControlNote'
 import { GuestNudge } from '../components/shared/GuestNudge'
+import { SanityNotice } from '../components/shared/SanityNotice'
 import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
@@ -682,6 +683,13 @@ function InvestorReportContent({
           />
         )}
       </div>
+
+      {/* The engine's own plausibility checks, above the figures they are
+          about (D-118). Nothing here is computed on the client. */}
+      <SanityNotice
+        warnings={analysis.sanityWarnings}
+        hasSanityWarnings={analysis.hasSanityWarnings}
+      />
 
       <InvestmentMetricsSection
         metrics={metrics}

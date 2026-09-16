@@ -912,6 +912,8 @@ Process: scrape all active rentals across Ontario by FSA, normalise (geocode add
 
 Python FastAPI microservice. Stateless — no database calls. Takes a JSON payload, returns complete analysis JSON.
 
+Every analysis ends with the plausibility checks in `calculations/sanity.py` (cap rate 0–20%, rent $500–15k, price $50k–10M, DSCR ≤ 5×, break-even ≤ 3× market rent and finite, score 0–95, cash flow within ±$20k, break-even appreciation within ±50%/yr). A failure never blocks the response: it sets `has_sanity_warnings` and returns the failed checks as `sanity_warnings: string[]` in the checks' own words; the API stores them and the investor and landlord reports show them above §01 (D-118).
+
 ```json
 Input payload structure:
 {

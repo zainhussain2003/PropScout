@@ -3968,3 +3968,32 @@ filter makes it visible instead of averaging it away.
 | Down-weight the other market, never drop   | Ten apartments at 0.2 weight still made the band for a house and still let the count reach "high".                                    |
 | Filter on type only, no near/unknown tiers | Kijiji titles that say nothing would have vanished for every condo in Toronto — most of the table.                                    |
 | Leave it and note it in the ledger         | The verdict, score and cash flow all inherit the rent; a footnote does not fix a hard pass built on the wrong market.                 |
+
+### D-118 · The engine's plausibility checks are shown on the report, in their own words
+
+**Chosen (2026-09-16, found on a live run).** `calculations/sanity.py` runs after every analysis
+— cap rate outside 0–20%, break-even rent more than 3× the market rent, cash flow beyond ±$20k,
+and the rest — and CLAUDE.md §12 has always said a failure is "shown as a flag in the UI".
+It was not: the engine returned `has_sanity_warnings: true`, the API stored it, and nothing
+rendered it. 1 Caldow Road failed two checks and the report showed −0.59% and −$12,228 as if
+nothing had fired. The engine now returns **`sanity_warnings: list[str]`** beside the boolean
+(empty when every check passed), the API carries it as `Analysis.sanityWarnings` and stores it
+with the analysis, and **`SanityNotice`** renders the sentences above §01 on the investor and
+landlord reports — "2 figures failed a plausibility check", the checks' own words, and one line
+saying the numbers still show because a failed check usually means an input is wrong for this
+property, not the deal. An analysis stored before D-118 has only the flag; it gets the notice
+without the list. The personal-buyer and tenant reports do not show it: the checks are on
+investment figures those reports do not display.
+
+The sentences are the engine's (`"Cap rate -0.59% is outside the expected range (0%–20%). Check
+rent and purchase price inputs."`) — they were written for a reader, name the figure and say
+what to verify, and copying them into the client would be a second source of truth.
+
+**Alternatives considered**
+
+| Option                                | Why not                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Hide or blur the failed figures       | The reader needs to see what the inputs produced to know what to fix.                    |
+| Suppress the score when a check fails | A 3/100 on a $2.5M house is a true statement about the inputs; the notice explains it.   |
+| Rewrite the sentences in the client   | Two wordings of one check drift; the engine's are already reader-facing.                 |
+| Show on every mode                    | A cap-rate warning on a personal-buyer report explains a figure that report never shows. |

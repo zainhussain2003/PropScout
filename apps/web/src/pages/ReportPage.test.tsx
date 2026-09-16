@@ -890,6 +890,55 @@ describe('ReportPage — rent-control note (D-113)', () => {
   })
 })
 
+describe('ReportPage — sanity notice (D-118)', () => {
+  const WARNING =
+    'Cap rate -0.59% is outside the expected range (0%–20%). Check rent and purchase price inputs.'
+  const RATIO =
+    'Break-even rent ($15,487/mo) is more than 3× the estimated market rent ($2,616/mo). Verify expense inputs.'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+    listOverrides.mockResolvedValue([])
+  })
+
+  it('shows the failed checks in the engine’s words above the metrics on an investor report', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, hasSanityWarnings: true, sanityWarnings: [WARNING, RATIO] },
+      listing: SALE_LISTING,
+    })
+    renderReport()
+    const notice = await screen.findByRole('status', { name: /plausibility check/i })
+    expect(notice).toHaveTextContent('2 figures failed a plausibility check')
+    expect(notice).toHaveTextContent(WARNING)
+    expect(notice).toHaveTextContent(RATIO)
+    // Above §01, not buried below it.
+    const metrics = await screen.findByText(/Investment metrics/i)
+    expect(notice.compareDocumentPosition(metrics) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('an analysis stored before D-118 with the flag set still gets a notice, without the list', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, hasSanityWarnings: true },
+      listing: SALE_LISTING,
+    })
+    renderReport()
+    const notice = await screen.findByRole('status', { name: /plausibility check/i })
+    expect(notice).toHaveTextContent('Some figures failed a plausibility check')
+    expect(notice).toHaveTextContent('marked this analysis as outside its plausible bounds')
+  })
+
+  it('renders nothing when every check passed', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, hasSanityWarnings: false, sanityWarnings: [] },
+      listing: SALE_LISTING,
+    })
+    renderReport()
+    await screen.findByText(/Investment metrics/i)
+    expect(screen.queryByRole('status', { name: /plausibility check/i })).not.toBeInTheDocument()
+  })
+})
+
 describe('ReportPage — guest nudge (D-116)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
