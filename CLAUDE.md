@@ -1113,6 +1113,7 @@ propscout/
 │   │       │   │   ├── ProvenanceBadge.tsx    # listing says / you entered / calculated · N assumed (D-111)
 │   │       │   │   ├── RentControlNote.tsx    # Ontario rent-control status + rules, landlord or tenant side (D-113)
 │   │       │   │   ├── GuestNudge.tsx         # "Sign in to keep this report" on a guest's own report (D-116)
+│   │       │   │   ├── SanityNotice.tsx       # The engine's failed plausibility checks, above §01 on investor + landlord (D-118)
 │   │       │   │   ├── Button.tsx             # primary / ghost / accent variants
 │   │       │   │   ├── Card.tsx               # Surface + line + shadow + radius-lg
 │   │       │   │   ├── SectionHead.tsx        # Every report section header — shared across all 4 reports

@@ -14,6 +14,7 @@ Calibration properties used:
   - Toronto MLTT property              — verifies municipal LTT is applied
 """
 
+import json
 import sys
 import os
 from unittest.mock import patch, AsyncMock
@@ -173,6 +174,45 @@ def test_analysis_vaughan_buttermill() -> None:
 
     # ── Risk flags ─────────────────────────────────────────────────────────────
     assert data["risk_flags"] == [], f"Expected no risk flags, got {data['risk_flags']}"
+
+
+def test_sanity_warnings_are_returned_in_words() -> None:
+    """
+    A $2.5M house priced off a $2,616 rent (1 Caldow Road, 2026-09-16): the
+    cap rate goes negative and the break-even rent passes 3x the market rent.
+    The checks already fired and were logged; the response now carries what
+    they said, so the report can show which figures to doubt (D-118).
+    """
+    payload = json.loads(json.dumps(_VAUGHAN_PAYLOAD))
+    payload["property_data"].update(
+        {
+            "address": "1 Caldow Road, Toronto, ON",
+            "price": 2_498_000,
+            "annual_taxes": 10_771,
+            "condo_fee_monthly": 0,
+            "condo_fee_known": False,
+            "property_type": "detached",
+            "is_toronto": True,
+        }
+    )
+    payload["rental"].update({"low": 2373, "mid": 2616, "high": 2723, "comp_count": 10})
+
+    resp = client.post("/analysis", json=payload)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+
+    assert data["has_sanity_warnings"] is True
+    warnings = data["sanity_warnings"]
+    assert len(warnings) >= 2
+    assert any("Cap rate" in w for w in warnings)
+    assert any("Break-even rent" in w and "3" in w for w in warnings)
+    # Each is a sentence a reader can act on, not a code.
+    assert all(w.endswith(".") for w in warnings)
+
+    # And a plausible property carries an empty list, not a missing field.
+    clean = client.post("/analysis", json=_VAUGHAN_PAYLOAD).json()
+    assert clean["has_sanity_warnings"] is False
+    assert clean["sanity_warnings"] == []
 
 
 def test_analysis_hamilton_duplex() -> None:

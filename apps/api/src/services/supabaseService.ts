@@ -182,6 +182,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     comparableSales?: Analysis['comparableSales']
     comparableSalesAreSample?: Analysis['comparableSalesAreSample']
     hasSanityWarnings?: boolean
+    sanityWarnings?: string[]
   } | null
   const dealScore = marketData?.dealScore ?? null
   const riskFlags = Array.isArray(row.risk_flags) ? (row.risk_flags as Analysis['riskFlags']) : []
@@ -206,6 +207,7 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     riskFlags,
     narrative: row.ai_narrative,
     hasSanityWarnings: marketData?.hasSanityWarnings ?? false,
+    sanityWarnings: marketData?.sanityWarnings ?? undefined,
     walkScore: marketData?.walkScore ?? null,
     neighbourhood: null,
     sunScout: marketData?.sunScout ?? null,
@@ -390,6 +392,7 @@ export async function saveAnalysis(
         comparableSales: analysis.comparableSales ?? [],
         comparableSalesAreSample: analysis.comparableSalesAreSample ?? false,
         hasSanityWarnings: analysis.hasSanityWarnings,
+        sanityWarnings: analysis.sanityWarnings ?? [],
       },
       calculated_metrics: analysis.metrics ?? null,
       deal_score: analysis.dealScore?.total ?? null,
@@ -1296,6 +1299,7 @@ export async function updateAnalysisByToken(
       comparableSales: analysis.comparableSales ?? [],
       comparableSalesAreSample: analysis.comparableSalesAreSample ?? false,
       hasSanityWarnings: analysis.hasSanityWarnings,
+      sanityWarnings: analysis.sanityWarnings ?? [],
     },
     calculated_metrics: analysis.metrics ?? null,
     deal_score: analysis.dealScore?.total ?? null,

@@ -353,6 +353,13 @@ export interface Analysis {
   riskFlags: RiskFlag[]
   narrative: string | null
   hasSanityWarnings: boolean
+  /**
+   * The plausibility checks that failed, in the engine's words (D-118) —
+   * "Cap rate -0.59% is outside the expected range (0%–20%). Check rent and
+   * purchase price inputs." The report shows them. Absent on analyses stored
+   * before D-118; empty when every check passed.
+   */
+  sanityWarnings?: string[]
   walkScore: WalkScoreResult | null
   neighbourhood: null // placeholder for Phase 2; always null in MVP
   /** Nearest transit/grocery/highway/pharmacy distances (Google Places). */

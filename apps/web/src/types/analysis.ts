@@ -397,6 +397,11 @@ export interface Analysis {
    */
   comparableSalesAreSample?: boolean
   hasSanityWarnings: boolean
+  /**
+   * The plausibility checks that failed, in the engine's words (D-118).
+   * Absent on analyses stored before D-118; empty when every check passed.
+   */
+  sanityWarnings?: string[]
   sunScout: SunScoutResult | null
   /**
    * Break-even appreciation per hold period. Optional: analyses stored before

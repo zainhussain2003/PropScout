@@ -282,6 +282,38 @@ describe('POST / — analysis orchestrator', () => {
     expect((res.json() as { analysis: Analysis }).analysis.extractionStatus).toBeNull()
   })
 
+  it('carries the engine’s sanity warnings through in its words, and an empty list from an older engine (D-118)', async () => {
+    const warning =
+      'Cap rate -0.59% is outside the expected range (0%–20%). Check rent and purchase price inputs.'
+    global.fetch = jest.fn().mockResolvedValue(
+      makeCalcResponse({
+        ...CALC_ENGINE_FIXTURE,
+        has_sanity_warnings: true,
+        sanity_warnings: [warning],
+      })
+    )
+    let res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    let analysis = (res.json() as { analysis: Analysis }).analysis
+    expect(analysis.hasSanityWarnings).toBe(true)
+    expect(analysis.sanityWarnings).toEqual([warning])
+    // Stored with the analysis, so GET /analysis/:token shows the same notice.
+    const saved = mockSaveAnalysis.mock.calls.at(-1)?.[1] as Analysis
+    expect(saved.sanityWarnings).toEqual([warning])
+
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+    res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    analysis = (res.json() as { analysis: Analysis }).analysis
+    expect(analysis.sanityWarnings).toEqual([])
+  })
+
   it('an older engine without the echo still yields the non-engine ledger rows', async () => {
     const res = await app.inject({
       method: 'POST',
