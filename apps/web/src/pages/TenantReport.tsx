@@ -89,6 +89,7 @@ import { scanState, SCAN_VERDICT, SCAN_NOTE, type ScanState } from '../lib/scanS
 import { useChecklist } from '../hooks/useChecklist'
 import { CompRowsTable } from '../components/analysis/CompRowsTable'
 import { CompsMap, compPins } from '../components/analysis/CompsMap'
+import { RentControlNote } from '../components/shared/RentControlNote'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -1735,6 +1736,13 @@ export function TenantReport({
         })()
       ) : (
         <UnitDetailsSection />
+      )}
+
+      {/* What the rules say about increases after signing (D-113) — real reports only. */}
+      {isReal && realAnalysis?.rentControl != null && (
+        <div className="container" style={{ marginTop: 16 }}>
+          <RentControlNote rentControl={realAnalysis.rentControl} perspective="tenant" />
+        </div>
       )}
 
       {/* §12 Confirm before signing */}

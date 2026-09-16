@@ -1098,6 +1098,7 @@ propscout/
 │       ├── lib/exitScenarios.ts + exitScenarios.test.ts   # Stress / flat / conservative / base exit after selling costs and the balance owed (D-110)
 │       ├── lib/provenance.ts + provenance.test.ts         # Tile → ledger inputs; listing / price provenance for the hero (D-111)
 │       ├── lib/rentalEconomics.ts + rentalEconomics.test.ts  # The client's one copy of the engine's break-even / cash-flow identity, parity-tested (D-112)
+│       ├── lib/rentControlCopy.ts + rentControlCopy.test.ts  # The rent-control note's sentences from the stored rules (D-113)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css
@@ -1109,6 +1110,7 @@ propscout/
 │   │       │   │   ├── Icon.tsx               # Full line-icon library
 │   │       │   │   ├── Chip.tsx               # Inline pill tag
 │   │       │   │   ├── ProvenanceBadge.tsx    # listing says / you entered / calculated · N assumed (D-111)
+│   │       │   │   ├── RentControlNote.tsx    # Ontario rent-control status + rules, landlord or tenant side (D-113)
 │   │       │   │   ├── Button.tsx             # primary / ghost / accent variants
 │   │       │   │   ├── Card.tsx               # Surface + line + shadow + radius-lg
 │   │       │   │   ├── SectionHead.tsx        # Every report section header — shared across all 4 reports
@@ -1284,6 +1286,7 @@ propscout/
 │           ├── lib/
 │           │   ├── assumptionLedger.ts + .test.ts  # Rows for the report's Sources section from engine echo + pipeline provenance (D-088)
 │           │   ├── billingMonth.ts    # UTC calendar-month window for the free quota (D-071)
+│           │   ├── rentControl.ts + .test.ts  # Tri-state rent-control hint from the build year; guideline by effective year (D-113)
 │           │   ├── marketDemand.ts + .test.ts  # Days-on-market + rent trend from the comps table, or "not observed" (D-105)
 │           │   ├── buildInfo.ts + .test.ts  # Deployed commit for /health (RAILWAY_GIT_COMMIT_SHA, D-094)
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
@@ -1301,6 +1304,7 @@ propscout/
 │               ├── thresholds.ts
 │               ├── flagLabels.ts      # Risk-flag id → human-readable label
 │               ├── cmhcVacancy.ts     # CMHC Oct-2025 survey totals by municipality + CMHC_VACANCY_SURVEY (refresh every January, D-106)
+│               ├── ontarioRentRules.ts  # Ontario rent-increase rules with source + dates; guidelines by year (D-113)
 │               ├── propertyTaxRates.ts # Ontario municipal property-tax rates (refresh annually)
 │               ├── valuation.ts       # Fallback rent↔price proxies (~6% gross yield) for missing data
 │               └── provinces.ts       # Ontario FSA prefixes, LTT brackets

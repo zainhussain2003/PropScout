@@ -709,15 +709,15 @@ scores 0** — the engine never substitutes a default for these two.
 
 **Risk flag deductions — applied after subtotal, score floor is 0**
 
-| Flag                                                   | Deduction |
-| ------------------------------------------------------ | --------- |
-| Ontario rent control (pre-Nov 2018)                    | -5        |
-| Condo fee over 25% of gross rent                       | -4        |
-| Pre-1980 build                                         | -3        |
-| Flood zone or conservation overlay                     | -4        |
-| Unverified rental unit (basement etc.)                 | -3        |
-| High supply pressure (20+ competing + declining rents) | -2        |
-| Year built unknown (rent control undetermined)         | -1        |
+| Flag                                                                                                                                                                          | Deduction        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Ontario rent control (pre-Nov 2018) — information flag only while the status is inferred from the build year; no deduction until the first-occupancy date is verified (D-113) | -5 (not applied) |
+| Condo fee over 25% of gross rent                                                                                                                                              | -4               |
+| Pre-1980 build                                                                                                                                                                | -3               |
+| Flood zone or conservation overlay                                                                                                                                            | -4               |
+| Unverified rental unit (basement etc.)                                                                                                                                        | -3               |
+| High supply pressure (20+ competing + declining rents)                                                                                                                        | -2               |
+| Year built unknown (rent control undetermined)                                                                                                                                | -1               |
 
 Maximum total deduction: -15. Score never goes below 0.
 

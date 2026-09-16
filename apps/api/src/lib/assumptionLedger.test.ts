@@ -314,6 +314,38 @@ describe('buildAssumptionLedger', () => {
     expect(rows.find((e) => e.key === 'amortization')).toBeUndefined()
   })
 
+  it('rent control is an estimate from the build year with the Ontario source and both guideline years (D-113)', () => {
+    const e = entry(
+      base({
+        rentControl: {
+          status: 'likely_exempt',
+          basis: 'listing_build_year',
+          requiresVerification: true,
+          yearBuilt: 2019,
+          exemptionFirstOccupancyAfter: '2018-11-15',
+          noticeDays: 90,
+          minMonthsBetweenIncreases: 12,
+          guidelines: [
+            { year: 2026, rate: 0.021 },
+            { year: 2027, rate: 0.019 },
+          ],
+          source: 'https://www.ontario.ca/page/residential-rent-increases',
+          sourceTitle: 'Ontario — Residential rent increases',
+          sourceUpdatedAt: '2026-06-23',
+          checkedAt: '2026-09-16',
+        },
+      }),
+      'rent_control'
+    )
+    expect(e.value).toBe('likely exempt from the guideline · confirm')
+    expect(e.basis).toBe('estimate')
+    expect(e.source).toMatch(/ontario\.ca.*updated 2026-06-23/)
+    expect(e.asOf).toBe('2026-09-16')
+    expect(e.method).toMatch(/build year \(2019\)/)
+    expect(e.method).toMatch(/2\.1% for 2026, 1\.9% for 2027/)
+    expect(e.method).toMatch(/Not a score input/)
+  })
+
   it('tenant mode carries only what a tenant report uses', () => {
     const keys = buildAssumptionLedger(
       base({

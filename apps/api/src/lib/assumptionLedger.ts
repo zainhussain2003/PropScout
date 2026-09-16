@@ -14,7 +14,7 @@
  * never from a copy kept here, so the ledger cannot drift from what ran.
  */
 
-import type { AssumptionEntry, ReportMode } from '../types/analysis'
+import type { AssumptionEntry, ReportMode, RentControlInfo } from '../types/analysis'
 import { RENT_TO_PRICE_MONTHLY } from '../constants/valuation'
 import { MARKET_DEMAND } from '../constants/thresholds'
 import { CMHC_VACANCY_SURVEY } from '../constants/cmhcVacancy'
@@ -79,6 +79,8 @@ export interface LedgerInput {
   cmhcCityMatched: boolean
   /** The comps-table measurement behind the engine's DOM / trend inputs (D-105). */
   demand?: MarketDemandObservation | null
+  /** Ontario rent-control status inferred for the unit (D-113). */
+  rentControl?: RentControlInfo | null
   /** Walk Score result, when the API returned one. */
   walkScore?: { walk: number; transit: number | null; fetchedAt?: string } | null
   /** Whether any nearby-amenity time came from the routing engine (D-096). */
@@ -475,6 +477,32 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
         engine.rent_trend != null
           ? `Median asking rent of the ${d?.recentSample ?? 0} listings first seen in the last ${MARKET_DEMAND.RECENT_DAYS} days against the ${d?.priorSample ?? 0} seen in the ${MARKET_DEMAND.WINDOW_DAYS - MARKET_DEMAND.RECENT_DAYS} days before, same bedroom count in ${fsaNote}; within ±${pctShort(MARKET_DEMAND.TREND_FLAT_BAND)} is flat. Feeds the demand part of the score.`
           : `Needs ${MARKET_DEMAND.MIN_SAMPLE} listings in each of the last ${MARKET_DEMAND.RECENT_DAYS} days and the ${MARKET_DEMAND.WINDOW_DAYS - MARKET_DEMAND.RECENT_DAYS} before (${d?.recentSample ?? 0} and ${d?.priorSample ?? 0} in ${fsaNote}), so this input was not scored rather than assumed.`,
+    })
+  }
+
+  // ── Rent control (D-113) ──────────────────────────────────────────────────
+  // Inferred from the build year, never from the first-occupancy date the law
+  // actually turns on — so it is an estimate that says so, with the source.
+  if (input.rentControl != null) {
+    const rc = input.rentControl
+    const label =
+      rc.status === 'likely_controlled'
+        ? 'likely rent-controlled'
+        : rc.status === 'likely_exempt'
+          ? 'likely exempt from the guideline'
+          : 'unknown'
+    const guide = rc.guidelines.map((g) => `${pctShort(g.rate)} for ${g.year}`).join(', ')
+    rows.push({
+      key: 'rent_control',
+      label: 'Rent control',
+      value: `${label} · confirm`,
+      basis: 'estimate',
+      source: `${rc.sourceTitle} (${rc.source}) · page updated ${rc.sourceUpdatedAt}`,
+      asOf: rc.checkedAt,
+      method:
+        rc.basis === 'listing_build_year'
+          ? `Inferred from the listed build year (${rc.yearBuilt}); the law turns on the date the unit was first occupied for residential purposes (exempt if after ${rc.exemptionFirstOccupancyAfter}). Guideline ${guide} by the year an increase takes effect; ${rc.minMonthsBetweenIncreases}-month spacing and ${rc.noticeDays} days' notice apply either way. Not a score input while inferred.`
+          : `No build year on the listing, so nothing to infer from. Guideline ${guide} by the year an increase takes effect. Not a score input.`,
     })
   }
 
