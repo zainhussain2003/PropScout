@@ -10,7 +10,7 @@
 
 import { SectionHead } from '../shared/SectionHead'
 import { RentalCompsBar } from '../analysis/RentalCompsBar'
-import type { CompRow } from '../../types/analysis'
+import type { CompRow, CompUnitTypes } from '../../types/analysis'
 import { CompRowsTable } from '../analysis/CompRowsTable'
 import { CompsMap } from '../analysis/CompsMap'
 
@@ -29,6 +29,8 @@ export interface RentalCompsSectionProps {
     radiusKm?: number | null
     /** The comps behind the band (D-099); absent on the demo and older analyses. */
     rows?: CompRow[]
+    /** How the comps' dwelling types compare with the subject's (D-117). */
+    unitTypes?: CompUnitTypes
   } | null
   /** The rent the report is evaluating against the range. */
   askingRent: number
@@ -139,7 +141,7 @@ export function RentalCompsSection({
 
       {/* The comps themselves (D-099): the rows after outlier removal,
           nearest first when the search used a radius. Sanitised. */}
-      <CompRowsTable rows={comps.rows} compCount={compCount} />
+      <CompRowsTable rows={comps.rows} compCount={compCount} unitTypes={comps.unitTypes} />
       <CompsMap
         rows={comps.rows}
         center={mapCenter}

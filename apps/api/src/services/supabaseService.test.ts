@@ -323,6 +323,7 @@ describe('fetchRentalComps', () => {
       seenAt: null,
       distanceKm: null,
       similarity: 1,
+      unitType: 'unknown',
       approxLat: null,
       approxLng: null,
     })
@@ -1409,5 +1410,172 @@ describe('updateAnalysisStatus', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
     await expect(updateAnalysisStatus('tok', 'failed', 'X')).resolves.toBeUndefined()
     spy.mockRestore()
+  })
+})
+
+// ── fetchRentalComps — dwelling type (D-117) ──────────────────────────────────
+
+describe('fetchRentalComps — the comps must be the subject’s kind of dwelling (D-117)', () => {
+  const KIJIJI = 'https://www.kijiji.ca/v-apartments-condos/city-of-toronto/x/1'
+  const apt = (rent: number): Record<string, unknown> => ({
+    rent_monthly: rent,
+    beds: 3,
+    source: 'kijiji',
+    source_url: KIJIJI,
+    address: `${rent} Condo Ave, Toronto`,
+  })
+  const house = (rent: number): Record<string, unknown> => ({
+    rent_monthly: rent,
+    beds: 3,
+    source: 'rentals_ca',
+    source_url: 'https://rentals.ca/toronto/x',
+    address: `${rent} Maple Rd, Toronto`,
+    raw_json: { listingType: 'residential:house:house' },
+  })
+  const room = (rent: number): Record<string, unknown> => ({
+    rent_monthly: rent,
+    beds: 1,
+    source: 'kijiji',
+    source_url: KIJIJI,
+    address: 'Private room for rent, Toronto',
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('does not price a detached house off apartment ads — it widens the search instead', async () => {
+    // 1 Caldow Road, 2026-09-16: ten 2–3 bed condo ads in M5N gave a $2.5M
+    // house a $2,616 "high confidence" rent. With every row the wrong
+    // dwelling type there are no comps in the FSA, and the search falls back.
+    mockFrom.mockReturnValue(
+      makeQueryChain({
+        data: Array.from({ length: 10 }, (_, i) => apt(2400 + i * 50)),
+        error: null,
+      })
+    )
+
+    const result = await fetchRentalComps('M5N2P4', 3, null, 2000, 'detached')
+    expect(result).toBeNull()
+  })
+
+  it('prices a house off houses and reports the match', async () => {
+    mockFrom.mockReturnValue(
+      makeQueryChain({
+        data: [house(6500), house(7200), house(7800), house(8100), apt(2500), apt(2600)],
+        error: null,
+      })
+    )
+
+    const result = await fetchRentalComps('M5N2P4', 3, null, 2000, 'detached')
+    expect(result).not.toBeNull()
+    expect(result!.compCount).toBe(4)
+    expect(result!.mid).toBeGreaterThan(6500)
+    expect(result!.unitTypes).toEqual({ subject: 'house', matched: 4, near: 0, unknown: 0 })
+    expect(result!.rows.every((r) => r.unitType === 'house')).toBe(true)
+  })
+
+  it('prices a condo off apartments and never off rooms', async () => {
+    mockFrom.mockReturnValue(
+      makeQueryChain({
+        data: [apt(2600), apt(2700), apt(2800), room(900), room(950), house(7000)],
+        error: null,
+      })
+    )
+
+    const result = await fetchRentalComps('M4S0E3', 2, null, 700, 'condo')
+    expect(result!.compCount).toBe(3)
+    expect(result!.low).toBeGreaterThanOrEqual(2600)
+    expect(result!.unitTypes).toEqual({ subject: 'apartment', matched: 3, near: 0, unknown: 0 })
+  })
+
+  it('caps confidence at medium when fewer than three comps are the subject’s own type', async () => {
+    // Eight rows would be "high" on count; only two are houses, the rest are
+    // townhouses at reduced weight. The band stands, the confidence does not.
+    const town = (rent: number): Record<string, unknown> => ({
+      rent_monthly: rent,
+      beds: 3,
+      source: 'rentals_ca',
+      raw_json: { listingType: 'residential:house:town-house' },
+    })
+    mockFrom.mockReturnValue(
+      makeQueryChain({
+        data: [
+          house(6300),
+          house(6600),
+          town(5500),
+          town(5600),
+          town(5700),
+          town(5800),
+          town(5900),
+          town(6000),
+        ],
+        error: null,
+      })
+    )
+
+    const result = await fetchRentalComps('L4K5W4', 3, null, null, 'detached')
+    expect(result!.compCount).toBe(8)
+    expect(result!.confidence).toBe('medium')
+    expect(result!.unitTypes).toEqual({ subject: 'house', matched: 2, near: 6, unknown: 0 })
+  })
+
+  it('matches nothing when the listing stated no type, and only rooms are dropped', async () => {
+    mockFrom.mockReturnValue(
+      makeQueryChain({
+        data: [apt(2600), house(7000), room(900), { rent_monthly: 3000, beds: 2 }],
+        error: null,
+      })
+    )
+
+    const result = await fetchRentalComps('L4K5W4', 2, null, null, 'unknown')
+    expect(result!.compCount).toBe(3)
+    expect(result!.confidence).toBe('medium')
+    expect(result!.unitTypes.subject).toBeNull()
+    expect(result!.unitTypes.unknown).toBe(1)
+  })
+
+  it('applies the type filter on the radius fallback too', async () => {
+    const VAUGHAN = { lat: 43.7963, lng: -79.5293 }
+    const near = (row: Record<string, unknown>, km: number): Record<string, unknown> => ({
+      ...row,
+      lat: VAUGHAN.lat + km / 111.2,
+      lng: VAUGHAN.lng,
+    })
+    const empty = (): QueryChain => makeQueryChain({ data: [], error: null })
+    mockFrom
+      .mockReturnValueOnce(empty())
+      .mockReturnValueOnce(empty())
+      .mockReturnValueOnce(empty())
+      .mockReturnValueOnce(empty())
+      .mockReturnValue(
+        makeQueryChain({
+          data: [
+            near(house(6500), 1),
+            near(house(7000), 2),
+            near(house(7500), 3),
+            near(apt(2500), 1),
+          ],
+          error: null,
+        })
+      )
+
+    const result = await fetchRentalComps('L4K5W4', 3, VAUGHAN, null, 'detached')
+    expect(result!.radiusKm).toBe(5)
+    expect(result!.compCount).toBe(3)
+    expect(result!.unitTypes.matched).toBe(3)
+  })
+
+  it('never returns the address, URL or raw source of a comp', async () => {
+    mockFrom.mockReturnValue(
+      makeQueryChain({ data: [house(6500), house(7000), house(7500)], error: null })
+    )
+    const result = await fetchRentalComps('L4K5W4', 3, null, null, 'detached')
+    for (const row of result!.rows) {
+      expect(row).not.toHaveProperty('address')
+      expect(row).not.toHaveProperty('source_url')
+      expect(row).not.toHaveProperty('raw_json')
+      expect(row).not.toHaveProperty('unit_type')
+    }
   })
 })

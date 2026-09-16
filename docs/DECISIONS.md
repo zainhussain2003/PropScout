@@ -3926,3 +3926,45 @@ through), marking is a no-op, claiming returns 0, and the nudge does not appear.
 | Enforce now                         | The sign-in the wall demands depends on email delivery that is not yet reliable.    |
 | Leave guests uncounted (status quo) | Signing out was a quota bypass and guest reports could never be owned or dismissed. |
 | Guest report free on top of the ten | The commercial promise is ten free a month; the claimed report is one of them.      |
+
+### D-117 · Comps must be the subject's kind of dwelling; the type is read back out of what the scrapers stored
+
+**Chosen (2026-09-16, found on a live run).** 1 Caldow Road — a $2.5M, 2,000 sqft detached in
+Forest Hill — was priced at **$2,616/mo "high confidence"** from ten two-bedroom condo ads in
+M5N, and the whole investor verdict rested on it. The comps query matched on FSA, bedrooms and
+recency alone; `rental_listings` has no dwelling-type column. Each source does carry the type,
+just not in a column — rentals.ca in `raw_json.listingType` (`residential:house:town-house`),
+Kijiji in the ad's URL category and in the title the scraper stores at the front of `address`,
+PadMapper in its `/buildings/` path — so `lib/compUnitType.ts` reads it back at query time:
+**apartment / house / townhouse / house-unit** (a floor of a house let on its own) **/ basement
+/ room / unknown**, structured field first, then title words, then the source's category.
+
+The subject's need comes from its listing's `propertyType`: condo → apartment, detached and
+semi → house, townhouse → townhouse; multiplex, commercial and unknown ask for nothing. Each
+pair gets a **fifth similarity factor** (D-109's four stay): the same type 1; a near type
+(townhouse for a house or an apartment, a floor of a house for an apartment) 0.5; a comp whose
+type could not be read 0.7; the other market — an apartment for a house — **0, and dropped
+before the count decides whether to widen the search**, so a house in an FSA of condo ads
+widens by radius rather than pricing off them. A room is never a whole-unit comp; a basement
+is not one for any subject that stated its type. **Confidence is capped at medium** when fewer
+than three comps are the subject's own type, whatever the count says. The band's rows carry
+`unitType`, the estimate carries `unitTypes {subject, matched, near, unknown}`, the comps table
+shows a Type column with one sentence on the match, and the Sources ledger's rent row says
+"13 of 14 the same dwelling type (house)". Analyses from before D-117 carry neither and read as
+before; a listing that stated no type claims nothing.
+
+**What it did to Caldow.** The FSA pass now finds nothing of the right type and the 5 km pass
+returns 14 houses at $2,563 medium confidence — still wrong for Forest Hill, and the rows show
+why: they are Scarborough and North York house ads whose Kijiji titles ("South Cedarbrae",
+"Bendale-Glen Andrew") the geocoder placed in midtown postal codes. That is a scraper-side
+geocoding fault, not a matching one, and is logged in BACKLOG §5 as the next fix; the type
+filter makes it visible instead of averaging it away.
+
+**Alternatives considered**
+
+| Option                                     | Why not                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A `unit_type` column + backfill migration  | A human gate for what the stored columns already say; the classifier can move into the nightly job later without changing the report. |
+| Down-weight the other market, never drop   | Ten apartments at 0.2 weight still made the band for a house and still let the count reach "high".                                    |
+| Filter on type only, no near/unknown tiers | Kijiji titles that say nothing would have vanished for every condo in Toronto — most of the table.                                    |
+| Leave it and note it in the ledger         | The verdict, score and cash flow all inherit the rent; a footnote does not fix a hard pass built on the wrong market.                 |

@@ -11,6 +11,7 @@
  *   recency    exp(−days since seen / 90)   — unknown date: 1
  *   size       exp(−|Δ sqft| / 300)         — either sqft unknown: 1
  *   bedrooms   1 exact, 0.6 for ±1          — unknown: 1
+ *   dwelling   1 same type, 0.5 near, 0.7 unreadable — subject type unknown: 1 (D-117)
  *
  * Missing information is neutral, never a penalty: a comp is only pulled
  * down for a known difference. With every factor unknown the weights are
@@ -21,12 +22,15 @@
  */
 
 import { COMP_WEIGHTS } from '../constants/thresholds'
+import { unitTypeFactor, type CompUnitType, type SubjectUnitType } from './compUnitType'
 
 /** What the subject offers for comparison; any field may be unknown. */
 export interface CompSubject {
   beds: number | null
   sqft: number | null
   coords: { lat: number; lng: number } | null
+  /** Apartment / house / townhouse from the listing's propertyType; null when it did not say (D-117). */
+  unitType?: SubjectUnitType | null
 }
 
 /** The comp facts the weighting reads (a subset of the rental_listings row). */
@@ -37,13 +41,15 @@ export interface WeightableComp {
   scraped_at?: string | null
   lat?: number | null
   lng?: number | null
+  /** Read from the stored row by compUnitType (D-117); absent rows are unknown. */
+  unit_type?: CompUnitType
 }
 
 export interface WeightedComp<T extends WeightableComp = WeightableComp> {
   row: T
   /** Straight-line km from the subject, when both sides have coordinates. */
   distanceKm: number | null
-  /** Product of the four factors, in (0, 1]. */
+  /** Product of the five factors, in [0, 1]; 0 only for a comp of the wrong dwelling type. */
   weight: number
 }
 
@@ -89,7 +95,9 @@ export function weightComp<T extends WeightableComp>(
         : COMP_WEIGHTS.BEDS_ADJACENT
       : 1
 
-  return { row, distanceKm, weight: distance * recency * size * beds }
+  const unitType = unitTypeFactor(subject.unitType ?? null, row.unit_type ?? 'unknown')
+
+  return { row, distanceKm, weight: distance * recency * size * beds * unitType }
 }
 
 /**

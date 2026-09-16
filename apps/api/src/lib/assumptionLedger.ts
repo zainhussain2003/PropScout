@@ -43,6 +43,14 @@ export interface EngineAssumptions {
   rent_trend?: string | null
 }
 
+/** How the comps' dwelling types compared with the subject's (D-117). */
+export interface CompUnitTypeInfo {
+  subject: string | null
+  matched: number
+  near: number
+  unknown: number
+}
+
 export interface LedgerInput {
   mode: ReportMode
   /** ISO time of the analysis — the "as of" for anything read from our tables. */
@@ -61,7 +69,13 @@ export interface LedgerInput {
   engine: EngineAssumptions | null
   rate: { rate: number; source: 'live' | 'cached' | 'fallback'; fetchedAt: string | null } | null
   /** Comps behind the rent estimate; null when the rent was proxied or observed. */
-  comps: { compCount: number; radiusKm: number | null; confidence: string } | null
+  comps: {
+    compCount: number
+    radiusKm: number | null
+    confidence: string
+    /** D-117; null on the owner-value rerun of an older analysis. */
+    unitTypes?: CompUnitTypeInfo | null
+  } | null
   rentMid: number
   /** True on a for-rent listing whose value was modelled from rent. */
   priceEstimated: boolean
@@ -172,6 +186,20 @@ function cad(v: number): string {
   return `$${Math.round(v).toLocaleString('en-CA')}`
 }
 
+/**
+ * How many of the comps were the subject's own dwelling type (D-117). Empty
+ * when the analysis predates D-117 or the listing stated no type — nothing
+ * was matched, so nothing is claimed.
+ */
+function unitTypeClause(unitTypes: CompUnitTypeInfo | null | undefined): string {
+  if (unitTypes == null || unitTypes.subject == null) return ''
+  const total = unitTypes.matched + unitTypes.near + unitTypes.unknown
+  const parts = [`${unitTypes.matched} of ${total} the same dwelling type (${unitTypes.subject})`]
+  if (unitTypes.near > 0) parts.push(`${unitTypes.near} a near type at reduced weight`)
+  if (unitTypes.unknown > 0) parts.push(`${unitTypes.unknown} of unread type at reduced weight`)
+  return `${parts.join(', ')}; rooms, basements and the other market excluded; `
+}
+
 const MAINTENANCE_BAND: Record<string, string> = {
   post_2010: 'built 2010 or later',
   '1980_2010': 'built 1980–2009',
@@ -199,7 +227,8 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       asOf: input.createdAt,
       method:
         `Weighted median of asking rents ${comps.radiusKm != null ? `within ${comps.radiusKm} km` : 'in the same FSA'} with outliers removed — ` +
-        `each comp weighted by distance, how recently it was seen, size and bedroom match (D-109); ` +
+        `each comp weighted by distance, how recently it was seen, size, bedroom match and dwelling type (D-109, D-117); ` +
+        unitTypeClause(comps.unitTypes) +
         `${comps.confidence} confidence. Asking rents, not signed leases.`,
     })
   } else if (listing.rentMonthly != null && listing.rentMonthly > 0) {
