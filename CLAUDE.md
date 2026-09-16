@@ -1325,7 +1325,8 @@ propscout/
 │   │   │   ├── mortgage.py + mortgage_test.py
 │   │   │   ├── investment.py + investment_test.py   # Cap rate, CoC, DSCR, GRM, cash flow, NOI
 │   │   │   ├── closing_costs.py + closing_costs_test.py  # LTT by province
-│   │   │   ├── deal_score.py + deal_score_test.py   # Spec Section 10 formula
+│   │   │   ├── deal_score.py + deal_score_test.py   # Spec Section 10 formula — score version 2, no display floor (D-115)
+│   │   │   ├── score_v3.py + score_v3_test.py       # Version-3 shadow: property economics / financing resilience / risk status (D-115)
 │   │   │   ├── hold_case.py + hold_case_test.py     # Break-even appreciation (spec §6, D-062)
 │   │   │   └── osfi.py + osfi_test.py
 │   │   ├── extraction/                # Listing description pipeline — spec Section 19 (TEMPLATE)
@@ -1339,6 +1340,8 @@ propscout/
 │   │   │   └── schemas.py             # Pydantic models for all inputs/outputs — no raw dicts
 │   │   ├── constants/
 │   │   │   ├── thresholds.py          # Confidence thresholds, deal score brackets, INFO_FLAG_IDS
+│   │   │   ├── score_versions.py      # SCORE_VERSION_CURRENT = 2, SCORE_VERSION_SHADOW = 3 (D-115)
+│   │   │   ├── score_v3.py            # Uncalibrated brackets for the shadow score (D-115)
 │   │   │   ├── flag_matrix.py + flag_matrix_test.py  # Per-flag × per-mode severity tiers (docs/FLAG_SEVERITY_MATRIX.md)
 │   │   │   ├── rates.py               # Vacancy allowance, management fee, insurance rate
 │   │   │   └── provinces.py           # Ontario FSA prefixes, LTT brackets by province

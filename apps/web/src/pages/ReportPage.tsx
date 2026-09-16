@@ -656,6 +656,7 @@ function InvestorReportContent({
         }
         valueBusy={ownerValue.busy}
         valueError={ownerValue.error}
+        shadowScore={analysis.shadowScore ?? null}
       />
 
       <div className="container" style={{ marginBottom: 32 }}>

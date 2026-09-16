@@ -777,9 +777,15 @@ model. Order of operations for the investment score (A/D):
        1 severe → 40 ("marginal") · 2 → 30 · 3 → 20 · 4+ → 10
 5. raw   = max(0, min(additive_score, severe_ceiling))
 6. label = verdictFromScore(raw)          ← label from the TRUE score
-7. floor = max(5, raw)                     ← "a property is always worth something"
-8. display = round(floor × 100 / 95)       ← display-normalize to /100, brackets unchanged
+7. (no floor since D-115 — a raw 0 displays as 0)
+8. display = round(raw × 100 / 95)         ← display-normalize to /100, brackets unchanged
 ```
+
+This is **score version 2** (`analyses.score_version`; D-115). A **version-3 shadow** runs beside
+it on every analysis and is stored, never shown as the headline until calibrated: property
+economics (cap rate, operating margin, demand) and financing resilience (DSCR, debt burden, rent
+cushion) scored separately out of 100; cash flow and cash-on-cash reported, not scored; a severe
+flag a `risk_status` of critical rather than a numeric cap.
 
 > **Consequence of the v1 matrix worth knowing:** the investor/landlord columns
 > contain no plain-red cells — every non-severe flag is amber for those modes, so
@@ -788,9 +794,8 @@ model. Order of operations for the investment score (A/D):
 > HomeScore's riskPts). The deduction machinery stays for future red cells.
 
 The cap applies to the standard-deduction subtotal (per tier); the severe gate is a
-**ceiling on the whole score**; the floor is applied last (after the label) so it can
-never lift a property into a better verdict band — it only stops a genuine 0–4 from
-displaying as 0. Internal scale stays 0–95; the verdict brackets above are unchanged.
+**ceiling on the whole score**. There is no display floor (D-115). Internal scale stays 0–95;
+the verdict brackets above are unchanged.
 
 ### 10b. HomeScore severe gate (Report B) + gauge suppression
 

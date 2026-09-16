@@ -55,6 +55,14 @@ export const MORTGAGE_RATE_BOUNDS = {
   MAX: 0.25,
 } as const
 
+/**
+ * Deal-score model versions (D-115; mirrors services/calc-engine/constants/
+ * score_versions.py). The analyses.score_version column defaults to 1 (the
+ * flat per-flag model); an analysis saved without the engine's version — a
+ * failure path — is written as 1 rather than claiming a model it did not run.
+ */
+export const SCORE_VERSION_LEGACY = 1
+
 // Similarity weighting for rental comps (D-109, lib/compWeighting.ts). Each
 // factor is 1 when the fact is unknown; only a known difference lowers it.
 export const COMP_WEIGHTS = {

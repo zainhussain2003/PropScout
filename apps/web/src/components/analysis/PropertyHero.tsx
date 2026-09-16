@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import type { ListingData, DealScoreData } from '../../types/analysis'
+import type { ListingData, DealScoreData, ShadowScore } from '../../types/analysis'
 import { DealScore } from './DealScore'
 import { MiniMap } from './MiniMap'
 import { ListingVisual } from './ListingVisual'
@@ -44,6 +44,8 @@ interface PropertyHeroProps {
   onSetValue?: (submission: OwnerValueSubmission) => void
   valueBusy?: boolean
   valueError?: string | null
+  /** The version-3 shadow score (D-115) — shown on dev builds only, for calibration. */
+  shadowScore?: ShadowScore | null
 }
 
 export function PropertyHero({
@@ -58,6 +60,7 @@ export function PropertyHero({
   onSetValue,
   valueBusy = false,
   valueError = null,
+  shadowScore = null,
 }: PropertyHeroProps): JSX.Element {
   // "Change" on a card scored on the landlord's own value re-opens the form.
   const [editingValue, setEditingValue] = useState(false)
@@ -333,6 +336,14 @@ export function PropertyHero({
                 Components use a 95-point scale. The score above is shown out of 100; risk limits
                 can lower the final verdict.
               </p>
+              {/* Shadow model readout for calibration — dev builds only (D-115). */}
+              {import.meta.env.DEV && shadowScore != null && (
+                <p className="scorecard-caption mono" data-testid="shadow-score">
+                  Shadow v{shadowScore.version} · property {shadowScore.propertyEconomics} ·
+                  financing {shadowScore.financingResilience} · composite {shadowScore.composite} ·
+                  risk {shadowScore.riskStatus}
+                </p>
+              )}
             </div>
 
             <dl className="scorecard-facts">

@@ -46,8 +46,6 @@ _SEVERE_GATE_STEP = 10  # each additional severe flag lowers the ceiling
 _SEVERE_GATE_FLOOR = 10  # never gate below this ("hard pass" band)
 _NO_GATE = _COMPONENT_MAX  # no severe flags → no ceiling
 
-_DISPLAY_FLOOR = 5  # a property is always worth something (applied at display only)
-
 
 def severe_ceiling(severe_flag_count: int) -> int:
     """
@@ -70,21 +68,20 @@ def severe_ceiling(severe_flag_count: int) -> int:
 
 def to_display_score(raw: int) -> int:
     """
-    Floor then display-normalise a raw 0–95 score to 0–100 (spec §10a steps 7–8).
+    Display-normalise a raw 0–95 score to 0–100 (spec §10a step 8).
 
-    Floor: max(5, raw) — a property is always worth something. Normalise: × 100/95.
-    The verdict LABEL is taken from the RAW score (get_verdict), never this value,
-    so the floor can't lift a property into a better verdict band.
+    No floor (D-115): a raw 0 displays as 0. The old max(5, raw) said every
+    property is worth something; if that belief belongs anywhere it belongs
+    in the component brackets, not in a clamp on the number shown. The
+    verdict LABEL is taken from the RAW score (get_verdict), never this value.
 
     Args:
-        raw: Raw deal score on the 0–95 scale, before the display floor.
+        raw: Raw deal score on the 0–95 scale.
 
     Returns:
-        Integer display score, rounded after flooring the raw score at 5
-        and normalising to the 100-point scale.
+        Integer display score, rounded after normalising to the 100-point scale.
     """
-    floored = max(_DISPLAY_FLOOR, raw)
-    return round(floored * 100 / _COMPONENT_MAX)
+    return round(max(0, raw) * 100 / _COMPONENT_MAX)
 
 
 def _score_cap_rate(cap_rate: float) -> int:
