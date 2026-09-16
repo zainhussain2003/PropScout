@@ -73,6 +73,11 @@ class InvestmentMetricsOutput(BaseModel):
     amortization_years: int
     mortgage_rate: float
     break_even_rent: float
+    # D-112: the same identity split into its parts. effective_rental_income is
+    # the asking rent after vacancy; asking_rent_gap is break-even minus the
+    # current rent (how far the ASK is from break-even, not the monthly loss).
+    effective_rental_income: float = 0.0
+    asking_rent_gap: float = 0.0
     # Whether the 8% management fee was included in NOI. Echoed so the report
     # can reconcile its expense rows against this NOI: the browser recomputes
     # the expense table and would otherwise add a management fee that none of

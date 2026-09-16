@@ -124,8 +124,11 @@ export function InvestmentMetricsSection({
     {
       label: 'Break-even rent',
       value: fmtMoney(metrics.breakEvenRent),
-      sub: 'to cover all costs',
-      plainEnglish: `The rent you would need to stop losing money. ${listing.rentIsProxy ? `No comparable rentals were found, so this assumes ${fmtMoney(listing.rentEstimate)} (0.5% of the price)` : `The market pays about ${fmtMoney(listing.rentEstimate)}`}, so you are ${metrics.breakEvenRent > listing.rentEstimate ? `${fmtMoney(metrics.breakEvenRent - listing.rentEstimate)} short` : 'clear of it'}.`,
+      sub: 'asking rent · after 5% vacancy',
+      // Three distinct quantities (D-112): the break-even ASK, the gap between
+      // it and today's rent, and the monthly shortfall — which is the gap after
+      // vacancy, and is what the cash-flow tile shows.
+      plainEnglish: `The rent you would need to ask, with 5% of it lost to vacancy, to stop losing money. ${listing.rentIsProxy ? `No comparable rentals were found, so this assumes ${fmtMoney(listing.rentEstimate)} (0.5% of the price)` : `The market pays about ${fmtMoney(listing.rentEstimate)}`}, so the ask is ${metrics.breakEvenRent > listing.rentEstimate ? `${fmtMoney(metrics.breakEvenRent - listing.rentEstimate)} below break-even — the monthly shortfall after vacancy is the cash-flow figure, not this gap` : 'clear of break-even'}.`,
       status: metrics.breakEvenRent <= listing.rentEstimate ? 'pass' : 'fail',
     },
     {

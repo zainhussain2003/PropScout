@@ -253,7 +253,7 @@ Calculated outputs:
 - Total cash invested = down payment + LTT + closing costs
 - DSCR = NOI / annual debt service
 - GRM — Gross Rent Multiplier = purchase price / annual gross rent
-- Break-even rent = all monthly expenses combined
+- Break-even rent = the asking rent at which expected revenue equals expenses: fixed monthly costs (mortgage, tax, insurance, condo fee, maintenance) ÷ (1 − vacancy allowance − management fee when on). Reported beside it: effective rental income (rent × (1 − vacancy)) and the asking-rent gap (break-even − current rent). The monthly shortfall is −cash flow = gap × (1 − vacancy), not the gap (D-112).
 - Equity build at 5, 10, and 20 years (mortgage paydown + 3% appreciation, user-adjustable)
 - Exit scenarios at the chosen hold (5/10/20): sale price under stress −2%, flat, conservative +2% and the slider rate, less the cost of selling (5% commission + HST + legal) and the mortgage balance, against cash in including any shortfall funded; profit and annualized return before tax (D-110)
 - Break-even appreciation at 5, 10, and 20 years — the minimum annual price growth required to return all cash the hold consumes, before the costs of selling

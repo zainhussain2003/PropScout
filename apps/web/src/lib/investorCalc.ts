@@ -28,6 +28,7 @@ import type {
   ListingData,
 } from '../types/analysis'
 import { DEAL_SCORE } from '../constants/thresholds'
+import { computeRentalEconomics } from './rentalEconomics'
 import { PROPERTY_COST_ESTIMATES } from '../constants/defaults'
 import { OSFI_STRESS } from '../constants/osfi'
 
@@ -525,7 +526,31 @@ export function computeDemoMetrics(
     computeMonthlyPayment(mortgageAmount, financing.mortgageRate, financing.amortizationYears)
   )
   const annualMortgagePayments = mortgagePaymentMonthly * 12
-  const cashFlowMonthly = Math.round(noi / 12 - mortgagePaymentMonthly)
+
+  // One identity for cash flow, break-even and the gap (D-112). NOI is
+  // gross rent less operating expenses, and those expenses include the
+  // vacancy allowance and (when on) the management fee at TODAY's rent; the
+  // fixed part is what remains once the rent-proportional parts are taken out.
+  const annualGrossRent = listing.rentEstimate * 12
+  const rentProportional =
+    PROPERTY_COST_ESTIMATES.VACANCY_ALLOWANCE +
+    (financing.includeManagementFee ? PROPERTY_COST_ESTIMATES.MANAGEMENT_FEE : 0)
+  const fixedOperatingMonthly = Math.max(
+    0,
+    (annualGrossRent - noi - annualGrossRent * rentProportional) / 12
+  )
+  const rentKnown = listing.rentEstimate > 0
+  const economics = computeRentalEconomics({
+    rentMonthly: listing.rentEstimate,
+    mortgagePaymentMonthly,
+    fixedOperatingMonthly,
+    includeManagementFee: financing.includeManagementFee,
+  })
+  // Without a rent the identity has nothing to evaluate; NOI still carries
+  // the engine's answer, so cash flow falls back to NOI − mortgage.
+  const cashFlowMonthly = Math.round(
+    rentKnown ? economics.monthlyCashFlow : noi / 12 - mortgagePaymentMonthly
+  )
   const cashFlowAnnual = cashFlowMonthly * 12
   // No debt, no coverage ratio (D-108) — null, never 0 or Infinity.
   const dscr = annualMortgagePayments > 0 ? noi / annualMortgagePayments : null
@@ -538,11 +563,16 @@ export function computeDemoMetrics(
     : downPayment + lttResult.provincial + lttResult.municipal + closingCostsTotal
   const cashOnCashReturn = totalCashInvested > 0 ? cashFlowAnnual / totalCashInvested : 0
 
-  // Break-even rent: (annual mortgage + annual operating expenses) / 12
-  // Operating expenses = annualGrossRent − noi  (since NOI = grossRent − opex)
-  const annualGrossRent = listing.rentEstimate * 12
-  const operatingExpenses = Math.max(0, annualGrossRent - noi)
-  const breakEvenRent = Math.round((annualMortgagePayments + operatingExpenses) / 12)
+  // Break-even ASKING rent: grossed up for vacancy (and management), so
+  // that at this rent the identity above yields zero cash flow. The old
+  // (mortgage + operating expenses at today's rent) held vacancy at the
+  // current rent and disagreed with the engine by ~$140 on the calibration
+  // unit (D-112).
+  const breakEvenRent = Math.round(
+    rentKnown
+      ? economics.breakEvenAskingRent
+      : (annualMortgagePayments + Math.max(0, -noi)) / 12 / (1 - rentProportional)
+  )
 
   return {
     cashFlowMonthly,
@@ -558,6 +588,8 @@ export function computeDemoMetrics(
     amortizationYears: financing.amortizationYears,
     mortgageRate: financing.mortgageRate,
     breakEvenRent,
+    effectiveRentalIncome: rentKnown ? Math.round(economics.effectiveRentalIncome) : undefined,
+    askingRentGap: rentKnown ? Math.round(economics.askingRentGap) : undefined,
     closingCostsTotal: financing.owned
       ? 0
       : closingCostsTotal + lttResult.provincial + lttResult.municipal,

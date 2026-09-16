@@ -326,3 +326,64 @@ def test_toronto_property_higher_cash_invested() -> None:
 
     # Compare base scenario only (LTT is financing-independent)
     assert toronto[0]["total_cash_invested"] > non_toronto[0]["total_cash_invested"]
+
+
+class TestRentalEconomics:
+    """D-112: one identity for break-even, effective income, cash flow and the gap."""
+
+    _KW = dict(
+        mortgage_payment=3_326.0,
+        annual_taxes=3_326.0,
+        insurance_value=729_900.0,
+        condo_fee_monthly=761.0,
+        maintenance_rate=0.005,
+        property_value=729_900.0,
+    )
+
+    def test_break_even_is_grossed_up_for_vacancy(self) -> None:
+        from .investment import calculate_rental_economics, calculate_break_even_rent
+
+        e = calculate_rental_economics(monthly_rent=2_900.0, **self._KW)
+        assert e.break_even_asking_rent == pytest.approx(
+            calculate_break_even_rent(**self._KW)
+        )
+        # At the break-even ask, the same identity yields zero cash flow.
+        at_be = calculate_rental_economics(
+            monthly_rent=e.break_even_asking_rent, **self._KW
+        )
+        assert at_be.monthly_cash_flow == pytest.approx(0.0, abs=1e-6)
+        assert at_be.asking_rent_gap == pytest.approx(0.0, abs=1e-6)
+
+    def test_cash_flow_matches_the_existing_function(self) -> None:
+        from .investment import calculate_rental_economics, calculate_cash_flow_monthly
+
+        e = calculate_rental_economics(monthly_rent=2_900.0, **self._KW)
+        assert e.monthly_cash_flow == pytest.approx(
+            calculate_cash_flow_monthly(monthly_rent=2_900.0, **self._KW)
+        )
+        assert e.effective_rental_income == pytest.approx(2_900.0 * 0.95)
+
+    def test_gap_is_not_the_monthly_shortfall(self) -> None:
+        """Being $X below the break-even ASK is not losing $X a month."""
+        from .investment import calculate_rental_economics
+
+        e = calculate_rental_economics(monthly_rent=2_900.0, **self._KW)
+        assert e.asking_rent_gap > 0
+        assert e.asking_rent_gap != pytest.approx(-e.monthly_cash_flow)
+        # The shortfall is the gap after vacancy: -cash_flow == gap * (1 - v).
+        assert -e.monthly_cash_flow == pytest.approx(e.asking_rent_gap * 0.95)
+
+    def test_management_is_proportional_to_rent(self) -> None:
+        from .investment import calculate_rental_economics
+
+        without = calculate_rental_economics(monthly_rent=2_900.0, **self._KW)
+        with_mgmt = calculate_rental_economics(
+            monthly_rent=2_900.0, include_management=True, **self._KW
+        )
+        assert with_mgmt.break_even_asking_rent > without.break_even_asking_rent
+        at_be = calculate_rental_economics(
+            monthly_rent=with_mgmt.break_even_asking_rent,
+            include_management=True,
+            **self._KW,
+        )
+        assert at_be.monthly_cash_flow == pytest.approx(0.0, abs=1e-6)

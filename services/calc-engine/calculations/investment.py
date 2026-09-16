@@ -3,6 +3,8 @@ Investment metric calculations: cap rate, CoC, DSCR, GRM, cash flow, NOI.
 Pure functions — no database, no API calls, fully testable.
 """
 
+from dataclasses import dataclass
+
 from constants.rates import VACANCY_ALLOWANCE, MANAGEMENT_FEE, INSURANCE_RATE
 from .mortgage import calculate_monthly_payment, calculate_osfi_stress_rate
 from .closing_costs import estimate_closing_costs
@@ -366,3 +368,78 @@ def calculate_financing_scenarios(
         )
 
     return results
+
+
+@dataclass(frozen=True)
+class RentalEconomics:
+    """
+    The rent-side figures that must agree with each other (D-112).
+
+    Three distinct quantities the report used to blur:
+
+      break_even_asking_rent  the rent to ASK so that, after vacancy (and
+                              management when included), every cost is covered:
+                              fixed_costs / (1 - v - m)
+      effective_rental_income what the asking rent yields after vacancy (and
+                              management): rent * (1 - v - m)
+      monthly_cash_flow       effective income less every fixed cost and the
+                              mortgage
+      asking_rent_gap         break_even_asking_rent - current rent — how far
+                              the ASK is from break-even, which is NOT the
+                              monthly shortfall (that is -monthly_cash_flow)
+    """
+
+    break_even_asking_rent: float
+    effective_rental_income: float
+    monthly_cash_flow: float
+    asking_rent_gap: float
+
+
+def calculate_rental_economics(
+    monthly_rent: float,
+    mortgage_payment: float,
+    annual_taxes: float,
+    insurance_value: float,
+    condo_fee_monthly: float,
+    maintenance_rate: float,
+    property_value: float,
+    include_management: bool = False,
+    vacancy_allowance: float = VACANCY_ALLOWANCE,
+) -> RentalEconomics:
+    """
+    One canonical computation of the rent-side economics (D-112). Break-even
+    solves expected revenue(R) - expenses(R) = 0 with vacancy and management
+    proportional to R and everything else fixed; cash flow evaluates the same
+    identity at the current rent.
+
+    Args:
+        monthly_rent: Monthly rent at full occupancy in dollars.
+        mortgage_payment: Monthly mortgage payment in dollars (0 when owned outright).
+        annual_taxes: Annual property tax in dollars.
+        insurance_value: Property value used for insurance calculation.
+        condo_fee_monthly: Monthly condo / maintenance fee in dollars.
+        maintenance_rate: Annual maintenance reserve as a decimal of property value.
+        property_value: Property value in dollars used for maintenance only.
+        include_management: Whether the management fee (a share of rent) applies.
+        vacancy_allowance: Fraction of rent lost to vacancy.
+
+    Returns:
+        RentalEconomics with the four figures.
+    """
+    management_rate = MANAGEMENT_FEE if include_management else 0.0
+    net_factor = 1 - vacancy_allowance - management_rate
+    fixed_costs = (
+        mortgage_payment
+        + annual_taxes / 12
+        + (insurance_value * INSURANCE_RATE) / 12
+        + condo_fee_monthly
+        + (property_value * maintenance_rate) / 12
+    )
+    break_even = fixed_costs / net_factor if net_factor > 0 else float("inf")
+    effective_income = monthly_rent * net_factor
+    return RentalEconomics(
+        break_even_asking_rent=break_even,
+        effective_rental_income=monthly_rent * (1 - vacancy_allowance),
+        monthly_cash_flow=effective_income - fixed_costs,
+        asking_rent_gap=break_even - monthly_rent,
+    )
