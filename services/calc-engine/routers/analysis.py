@@ -16,6 +16,8 @@ from models.schemas import (
     InvestmentMetricsOutput,
     DealScoreOutput,
     DealScoreBreakdownOutput,
+    ShadowScoreOutput,
+    ShadowScoreOutcomes,
     ComponentMaxes,
     SunScoutOutput,
     SunScoutRequest,
@@ -37,6 +39,8 @@ from constants.rates import (
 )
 from calculations.mortgage import calculate_monthly_payment
 from calculations.closing_costs import estimate_closing_costs
+from calculations.score_v3 import calculate_score_v3
+from constants.score_versions import SCORE_VERSION_CURRENT
 from calculations.investment import (
     calculate_noi,
     calculate_cap_rate,
@@ -346,6 +350,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     merged_flags: list = []
     risk_flag_deductions: float = 0.0
     severe_flag_count: int = 0
+    standard_red_count: int = 0
+    amber_flag_count: int = 0
 
     dismissed_flags = set(body.dismissed_flag_ids)
 
@@ -374,12 +380,15 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
             active = [f for f in merged_flags if f.flag_id not in dismissed_flags]
             severe_flag_count = sum(1 for f in active if f.tier == "severe")
             standard_red_count = sum(1 for f in active if f.tier == "red")
+            amber_flag_count = sum(1 for f in active if f.tier == "amber")
             risk_flag_deductions = float(standard_red_count * _DEDUCTION_PER_RED_FLAG)
         except Exception as exc:  # noqa: BLE001 — non-fatal; rest of report still loads
             logger.error("Extraction pipeline failed for %s: %s", prop.address, exc)
             merged_flags = []
             risk_flag_deductions = 0.0
             severe_flag_count = 0
+            standard_red_count = 0
+            amber_flag_count = 0
             extraction_status = "failed"
 
     # ── 3c. Structural flag — condo with unknown fee ──────────────────────────
@@ -428,6 +437,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     br = score_result["breakdown"]
     cm = br["component_maxes"]
     deal_score = DealScoreOutput(
+        version=SCORE_VERSION_CURRENT,
         total=score_result["total"],
         display_total=to_display_score(int(score_result["total"])),
         verdict=score_result["verdict"],
@@ -447,6 +457,36 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
                 demand=cm["demand"],
             ),
         ),
+    )
+
+    # ── 4b. Version-3 shadow score (D-115) — stored beside the headline ─────
+    shadow = calculate_score_v3(
+        cap_rate=cap_rate,
+        noi=noi,
+        gross_annual_rent=gross_annual_rent,
+        dscr=dscr,
+        mortgage_payment_monthly=mortgage_payment_monthly,
+        effective_rental_income_monthly=economics.effective_rental_income,
+        monthly_rent=monthly_rent,
+        break_even_asking_rent=economics.break_even_asking_rent,
+        cash_flow_monthly=cash_flow_monthly,
+        cash_on_cash=cash_on_cash,
+        cmhc_vacancy_rate=vacancy_rate,
+        rental_days_on_market=body.rental_days_on_market,
+        rent_trend=body.rent_trend,
+        severe_flag_count=gate_count,
+        red_flag_count=standard_red_count,
+        amber_flag_count=amber_flag_count,
+    )
+    shadow_score = ShadowScoreOutput(
+        version=int(shadow["version"]),  # type: ignore[arg-type]
+        property_economics=int(shadow["property_economics"]),  # type: ignore[arg-type]
+        financing_resilience=int(shadow["financing_resilience"]),  # type: ignore[arg-type]
+        composite=int(shadow["composite"]),  # type: ignore[arg-type]
+        risk_status=str(shadow["risk_status"]),
+        outcomes=ShadowScoreOutcomes(**shadow["outcomes"]),  # type: ignore[arg-type]
+        breakdown=shadow["breakdown"],  # type: ignore[arg-type]
+        flags=shadow["flags"],  # type: ignore[arg-type]
     )
 
     # ── 5. Sanity checks ──────────────────────────────────────────────────────
@@ -545,6 +585,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
     return AnalysisOutput(
         metrics=metrics,
         deal_score=deal_score,
+        shadow_score=shadow_score,
         risk_flags=serialised_flags,
         has_sanity_warnings=has_sanity_warnings,
         sun_scout=sun_scout_result,

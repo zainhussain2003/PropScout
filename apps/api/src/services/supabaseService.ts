@@ -9,7 +9,7 @@ import {
   type DemandSourceRow,
   type MarketDemandObservation,
 } from '../lib/marketDemand'
-import { MARKET_DEMAND, COMP_WEIGHTS } from '../constants/thresholds'
+import { MARKET_DEMAND, COMP_WEIGHTS, SCORE_VERSION_LEGACY } from '../constants/thresholds'
 import {
   keepRowsForRents,
   weightComp,
@@ -172,6 +172,8 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     extractionStatus?: Analysis['extractionStatus']
     ownerInputs?: Analysis['ownerInputs']
     rentControl?: Analysis['rentControl']
+    shadowScore?: Analysis['shadowScore']
+    scoreVersion?: Analysis['scoreVersion']
     walkScore?: Analysis['walkScore']
     coordinates?: Analysis['coordinates']
     schools?: Analysis['schools']
@@ -212,6 +214,8 @@ function rowToAnalysis(row: AnalysisRow): Analysis {
     extractionStatus: marketData?.extractionStatus ?? null,
     ownerInputs: marketData?.ownerInputs ?? null,
     rentControl: marketData?.rentControl ?? null,
+    shadowScore: marketData?.shadowScore ?? null,
+    scoreVersion: marketData?.scoreVersion ?? undefined,
     coordinates: marketData?.coordinates ?? null,
     schools: marketData?.schools ?? null,
     nearbyDistances: marketData?.nearbyDistances ?? null,
@@ -376,6 +380,8 @@ export async function saveAnalysis(
         extractionStatus: analysis.extractionStatus ?? null,
         ownerInputs: analysis.ownerInputs ?? null,
         rentControl: analysis.rentControl ?? null,
+        shadowScore: analysis.shadowScore ?? null,
+        scoreVersion: analysis.scoreVersion ?? null,
         walkScore: analysis.walkScore,
         coordinates: analysis.coordinates ?? null,
         schools: analysis.schools ?? null,
@@ -387,13 +393,19 @@ export async function saveAnalysis(
       },
       calculated_metrics: analysis.metrics ?? null,
       deal_score: analysis.dealScore?.total ?? null,
+      score_version: analysis.scoreVersion ?? SCORE_VERSION_LEGACY,
       risk_flags: analysis.riskFlags,
       ai_narrative: analysis.narrative,
       share_token: token,
       share_expires_at: expiresAt,
     }
 
-    const { error: analysisError } = await db().from('analyses').insert(analysisPayload)
+    let { error: analysisError } = await db().from('analyses').insert(analysisPayload)
+    // See updateAnalysisByToken: save without score_version if the column is not applied.
+    if (analysisError != null && isMissingColumn(analysisError)) {
+      const withoutVersion = { ...analysisPayload, score_version: undefined }
+      ;({ error: analysisError } = await db().from('analyses').insert(withoutVersion))
+    }
 
     if (analysisError != null) {
       console.error('[supabaseService] saveAnalysis: analysis insert failed', analysisError)
@@ -1195,37 +1207,45 @@ export async function updateAnalysisByToken(
     landlord: 'landlord',
   }
 
-  const { error } = await db()
-    .from('analyses')
-    .update({
-      report_mode: modeMap[analysis.mode],
-      rental_estimate: analysis.rentalComps ?? null,
-      market_data: {
-        // See saveAnalysis: the report must render the listing it was computed
-        // from, not whatever a later scrape wrote over that row.
-        listingSnapshot: listing,
-        dealScore: analysis.dealScore,
-        sunScout: analysis.sunScout,
-        holdCase: analysis.holdCase ?? null,
-        assumptions: analysis.assumptions ?? null,
-        extractionStatus: analysis.extractionStatus ?? null,
-        ownerInputs: analysis.ownerInputs ?? null,
-        rentControl: analysis.rentControl ?? null,
-        walkScore: analysis.walkScore,
-        coordinates: analysis.coordinates ?? null,
-        schools: analysis.schools ?? null,
-        nearbyDistances: analysis.nearbyDistances ?? null,
-        neighbourhoodStats: analysis.neighbourhoodStats ?? null,
-        comparableSales: analysis.comparableSales ?? [],
-        comparableSalesAreSample: analysis.comparableSalesAreSample ?? false,
-        hasSanityWarnings: analysis.hasSanityWarnings,
-      },
-      calculated_metrics: analysis.metrics ?? null,
-      deal_score: analysis.dealScore?.total ?? null,
-      risk_flags: analysis.riskFlags,
-      ai_narrative: analysis.narrative,
-    })
-    .eq('share_token', token)
+  const payload = {
+    report_mode: modeMap[analysis.mode],
+    rental_estimate: analysis.rentalComps ?? null,
+    market_data: {
+      // See saveAnalysis: the report must render the listing it was computed
+      // from, not whatever a later scrape wrote over that row.
+      listingSnapshot: listing,
+      dealScore: analysis.dealScore,
+      sunScout: analysis.sunScout,
+      holdCase: analysis.holdCase ?? null,
+      assumptions: analysis.assumptions ?? null,
+      extractionStatus: analysis.extractionStatus ?? null,
+      ownerInputs: analysis.ownerInputs ?? null,
+      rentControl: analysis.rentControl ?? null,
+      shadowScore: analysis.shadowScore ?? null,
+      scoreVersion: analysis.scoreVersion ?? null,
+      walkScore: analysis.walkScore,
+      coordinates: analysis.coordinates ?? null,
+      schools: analysis.schools ?? null,
+      nearbyDistances: analysis.nearbyDistances ?? null,
+      neighbourhoodStats: analysis.neighbourhoodStats ?? null,
+      comparableSales: analysis.comparableSales ?? [],
+      comparableSalesAreSample: analysis.comparableSalesAreSample ?? false,
+      hasSanityWarnings: analysis.hasSanityWarnings,
+    },
+    calculated_metrics: analysis.metrics ?? null,
+    deal_score: analysis.dealScore?.total ?? null,
+    score_version: analysis.scoreVersion ?? SCORE_VERSION_LEGACY,
+    risk_flags: analysis.riskFlags,
+    ai_narrative: analysis.narrative,
+  }
+  let { error } = await db().from('analyses').update(payload).eq('share_token', token)
+  // score_version is a migration (20260623); if it is not applied, save
+  // without it rather than lose the analysis. The version still rides in
+  // market_data.scoreVersion.
+  if (error != null && isMissingColumn(error)) {
+    const withoutVersion = { ...payload, score_version: undefined }
+    ;({ error } = await db().from('analyses').update(withoutVersion).eq('share_token', token))
+  }
 
   if (error != null) {
     throw new Error(`updateAnalysisByToken failed: ${error.message}`)

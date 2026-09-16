@@ -44,9 +44,31 @@ export interface DealScoreBreakdown {
 
 export interface DealScore {
   total: number // 0–95 raw gated score (verdict derives from this)
-  displayTotal: number // 0–100 floored + normalised for the gauge
+  displayTotal: number // 0–100 normalised for the gauge — no floor since D-115
   verdict: DealVerdict
   breakdown: DealScoreBreakdown
+  /** Which model produced it (2 = the tiered/gating model). Absent on older analyses. */
+  version?: number
+}
+
+/**
+ * The version-3 shadow score (D-115): the redesign run beside the headline
+ * on every analysis, stored for calibration, never the headline itself.
+ */
+export interface ShadowScore {
+  version: number
+  /** 0–100: what the property earns regardless of financing. */
+  propertyEconomics: number
+  /** 0–100: whether this financing survives a bad year. */
+  financingResilience: number
+  /** Provisional 0–100 for side-by-side comparison with the headline only. */
+  composite: number
+  /** A severe flag is a status here, not a cap on the number. */
+  riskStatus: 'clear' | 'flagged' | 'critical'
+  /** Reported, not scored. */
+  outcomes: { cashFlowMonthly: number; cashOnCash: number }
+  breakdown: Record<string, unknown>
+  flags: { severe: number; red: number; amber: number }
 }
 
 export interface InvestmentMetrics {
@@ -399,6 +421,10 @@ export interface Analysis {
   ownerInputs?: OwnerInputs | null
   /** Ontario rent-control status and the applicable guidelines (D-113). Absent on older analyses. */
   rentControl?: RentControlInfo | null
+  /** The version-3 shadow score, stored for calibration (D-115). Absent on older analyses. */
+  shadowScore?: ShadowScore | null
+  /** Deal-score model version of `dealScore` (D-115). Absent on older analyses. */
+  scoreVersion?: number
 }
 
 /**

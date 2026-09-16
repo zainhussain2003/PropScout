@@ -19,6 +19,7 @@ import type {
   WalkScoreResult,
   ExtractionStatus,
   OwnerInputs,
+  ShadowScore,
 } from '../types/analysis'
 import type { Listing } from '../types/property'
 import {
@@ -115,6 +116,35 @@ interface PyDealScore {
   display_total: number
   verdict: string
   breakdown: PyDealScoreBreakdown
+  version?: number
+}
+
+interface PyShadowScore {
+  version: number
+  property_economics: number
+  financing_resilience: number
+  composite: number
+  risk_status: 'clear' | 'flagged' | 'critical'
+  outcomes: { cash_flow_monthly: number; cash_on_cash: number }
+  breakdown: Record<string, unknown>
+  flags: { severe: number; red: number; amber: number }
+}
+
+function toShadowScore(py: PyShadowScore | null | undefined): ShadowScore | null {
+  if (py == null) return null
+  return {
+    version: py.version,
+    propertyEconomics: py.property_economics,
+    financingResilience: py.financing_resilience,
+    composite: py.composite,
+    riskStatus: py.risk_status,
+    outcomes: {
+      cashFlowMonthly: py.outcomes.cash_flow_monthly,
+      cashOnCash: py.outcomes.cash_on_cash,
+    },
+    breakdown: py.breakdown,
+    flags: py.flags,
+  }
 }
 
 interface PyInvestmentMetrics {
@@ -185,6 +215,7 @@ interface PyHoldCaseRow {
 interface PyAnalysisOutput {
   metrics: PyInvestmentMetrics
   deal_score: PyDealScore
+  shadow_score?: PyShadowScore | null
   risk_flags: PyRiskFlag[]
   has_sanity_warnings: boolean
   /** Present only when lat/lng were sent and the sun-path calc succeeded. */
@@ -303,6 +334,7 @@ function toDealScore(py: PyDealScore): DealScore {
     displayTotal: py.display_total,
     verdict: py.verdict as DealScore['verdict'],
     breakdown,
+    version: py.version,
   }
 }
 
@@ -742,6 +774,8 @@ export async function runAnalysisPipeline(
     hasSanityWarnings: pyData.has_sanity_warnings,
     ownerInputs: ownerInputs ?? null,
     rentControl,
+    shadowScore: toShadowScore(pyData.shadow_score),
+    scoreVersion: pyData.deal_score.version,
   }
 
   // Step 10 — save and return

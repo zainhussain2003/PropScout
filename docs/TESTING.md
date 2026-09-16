@@ -231,6 +231,12 @@ Also test a Toronto address — LTT should be approximately double.
 2. On a personal report: §01 is "Estimated monthly cash outflow · $X/mo · all-in estimate"; every row reads From listing / You entered / Calculated / Estimated; the total row says "$Y (Z%) based on modelled assumptions"
 3. Pass: "True monthly cost" appears nowhere in the product
 
+**🤖 Test 15k — Score versioning and the shadow (D-115)**
+
+1. `pytest calculations/deal_score_test.py calculations/score_v3_test.py routers/analysis_test.py -k "display or shadow or version"` — 0 displays as 0; `deal_score.version` 2; `shadow_score` bounded, outcomes reported, a severe flag changes the status and no number
+2. On a dev build, the hero's score breakdown ends with "Shadow v3 · property N · financing N · composite N · risk clear"; production shows nothing
+3. Pass: a new analysis row has `score_version` 2 (or 1 with the version in `market_data.scoreVersion` if the column is not applied)
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

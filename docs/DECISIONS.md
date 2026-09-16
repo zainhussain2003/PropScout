@@ -3840,3 +3840,49 @@ counts toward the share.
 | Keep "True monthly cost", change the pill | The heading is the claim; the pill is the small print.                          |
 | "Estimated monthly cost"                  | Still calls principal repayment a cost.                                         |
 | Hand-maintain the modelled list           | Wrong the first time a tax estimate is used; the rows already know their basis. |
+
+### D-115 · No display floor; the score is versioned; the redesign runs as a shadow until calibrated
+
+**Chosen (owner decision 2026-09-16).** Three things, in the order they were asked for:
+
+1. **The 5-point display floor is gone now.** `to_display_score` is `round(raw × 100 / 95)`; a raw
+   0 displays as 0. "A property is always worth something" was never a scoring rule, only a
+   clamp on the number shown; if the belief belongs anywhere it belongs in the component
+   brackets. The verdict label was already taken from the raw score, so nothing else moves.
+2. **The score is versioned.** `constants/score_versions.py`: the headline model that runs
+   today — the mode-aware tiered/gating model — is **version 2** (the `analyses.score_version`
+   column, migration 20260623, reserved that number for it while rows kept defaulting to 1).
+   The engine stamps `deal_score.version`, the API stores `scoreVersion` in `market_data` and
+   writes the column (falling back without it if the migration is not applied), and older
+   rows keep the default 1 they were written under. The owner's "V1" is this version 2; the
+   owner's "V2 architecture" is version 3.
+3. **Version 3 runs as a shadow** (`calculations/score_v3.py`, brackets in `constants/score_v3.py`,
+   marked uncalibrated): **property economics** 0–100 (cap rate 60, operating margin = NOI ÷
+   gross rent 20, the version-2 demand brackets rescaled 20) and **financing resilience** 0–100
+   (DSCR 50 — 50 when there is no debt, debt burden = payment ÷ effective income 25, rent cushion
+   = (rent − break-even ask) ÷ rent 25); **cash flow and cash-on-cash are reported, not scored**;
+   a severe flag sets `risk_status = critical` (`flagged` for standard reds, else `clear`) and
+   changes no number; a provisional composite (0.6 / 0.4) exists only for side-by-side
+   comparison. It is computed on every analysis, returned as `shadow_score`, stored as
+   `Analysis.shadowScore`, and shown on dev builds only, under the score breakdown. Nothing in a
+   report is decided by it.
+
+**Why.** S-03 was a defect and a one-line fix. S-01 (four correlated components rewarding one
+financing scenario four times) and S-04 (severe caps of 40/30/20/10 with no source) are
+structural; reweighting the headline without a calibration set would be guessing in a new
+direction, and waiting until 40 could be proven to be 35 would leave the structure in place.
+So the structure is built and running in the shadow, and the headline waits for data.
+
+**Before version 3 can be the headline.** A calibration set of 20–30 properties with the
+verdict the owner would give; compare version 2, version 3 and the expected classification;
+fit the brackets and the composite weights; a DECISIONS entry; `SCORE_VERSION_CURRENT = 3`.
+The set is an owner data item in BACKLOG §4.
+
+**Alternatives considered**
+
+| Option                                  | Why not                                                                                                 |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Reweight the headline now (CoC 20 → 10) | Still four correlated components; new weights with no data behind them.                                 |
+| Keep the floor                          | A clamp on the number shown is not a belief about properties; it damaged the scale's meaning.           |
+| Number the shadow "2"                   | The column already means the gating model by 2; reusing it would mix scales in storage.                 |
+| Drop the severe caps from version 2 now | Changes the headline's meaning before the replacement is calibrated; version 3 carries the gate design. |

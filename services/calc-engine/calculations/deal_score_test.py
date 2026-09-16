@@ -43,7 +43,7 @@ def test_severe_gate_ladder_and_display_helpers() -> None:
     assert severe_ceiling(3) == 20
     assert severe_ceiling(4) == 10
     assert severe_ceiling(5) == 10  # floored
-    assert to_display_score(0) == 5  # floor: a property is always worth something
+    assert to_display_score(0) == 0  # no floor (D-115): a zero displays as zero
     assert to_display_score(40) == 42  # round(40 × 100/95)
     assert to_display_score(95) == 100
 
@@ -78,7 +78,7 @@ def test_severe_plus_standard_order_cap_then_subtract_then_gate() -> None:
     assert res["total"] == expected
     # The composed chain end-to-end: label from raw, then displayed number.
     assert res["verdict"] == get_verdict(res["total"])
-    assert to_display_score(res["total"]) == round(max(5, res["total"]) * 100 / 95)
+    assert to_display_score(res["total"]) == round(res["total"] * 100 / 95)
 
 
 def test_no_severe_flags_is_backward_compatible() -> None:

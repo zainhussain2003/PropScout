@@ -117,9 +117,35 @@ class DealScoreOutput(BaseModel):
     """Deal score result with component breakdown."""
 
     total: int  # 0–95 — the raw gated score (verdict is derived from THIS)
-    display_total: int  # 0–100 — floored + normalised for the gauge (spec §10a)
+    display_total: int  # 0–100 — normalised for the gauge, no floor (D-115)
     verdict: str
     breakdown: DealScoreBreakdownOutput
+    # Which model produced it (constants/score_versions.py). Default keeps
+    # older stored payloads deserialising.
+    version: int = 2
+
+
+class ShadowScoreOutcomes(BaseModel):
+    """Investor outcomes the shadow model reports rather than scores."""
+
+    cash_flow_monthly: float
+    cash_on_cash: float
+
+
+class ShadowScoreOutput(BaseModel):
+    """
+    The version-3 shadow score (D-115): computed and stored beside the
+    headline on every analysis, never shown as the headline until calibrated.
+    """
+
+    version: int
+    property_economics: int  # 0–100
+    financing_resilience: int  # 0–100
+    composite: int  # provisional 0–100 for side-by-side comparison only
+    risk_status: str  # "clear" | "flagged" | "critical"
+    outcomes: ShadowScoreOutcomes
+    breakdown: dict[str, object]
+    flags: dict[str, int]
 
 
 class SunScoutOutput(BaseModel):
@@ -229,6 +255,8 @@ class AnalysisOutput(BaseModel):
 
     metrics: InvestmentMetricsOutput
     deal_score: DealScoreOutput
+    # The redesign, run in the shadow of deal_score (D-115).
+    shadow_score: ShadowScoreOutput | None = None
     risk_flags: list[dict[str, object]]
     has_sanity_warnings: bool
     sun_scout: SunScoutOutput | None = None

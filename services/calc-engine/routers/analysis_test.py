@@ -582,6 +582,27 @@ def test_owned_with_a_mortgage_keeps_debt_service_but_drops_closing_costs() -> N
     assert m["down_payment"] == pytest.approx(729900 * 0.4)
 
 
+def test_headline_is_version_2_with_no_floor_and_a_version_3_shadow_rides_along() -> (
+    None
+):
+    """D-115: deal_score.version 2; a zero displays as zero; shadow_score stored beside it."""
+    resp = client.post("/analysis/", json=_VAUGHAN_PAYLOAD)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["deal_score"]["version"] == 2
+    assert data["deal_score"]["display_total"] == round(
+        data["deal_score"]["total"] * 100 / 95
+    )
+    shadow = data["shadow_score"]
+    assert shadow["version"] == 3
+    assert 0 <= shadow["property_economics"] <= 100
+    assert 0 <= shadow["financing_resilience"] <= 100
+    assert shadow["risk_status"] in {"clear", "flagged", "critical"}
+    assert shadow["outcomes"]["cash_flow_monthly"] == pytest.approx(
+        data["metrics"]["cash_flow_monthly"], abs=0.01
+    )
+
+
 def test_rent_trend_outside_the_vocabulary_is_rejected() -> None:
     """'up' is not a trend the score understands; a 422 beats a silent 0."""
     body = {**_VAUGHAN_PAYLOAD, "rent_trend": "up"}
