@@ -44,7 +44,7 @@ from calculations.investment import (
     calculate_dscr,
     calculate_grm,
     calculate_cash_on_cash,
-    calculate_break_even_rent,
+    calculate_rental_economics,
 )
 from calculations.deal_score import calculate_deal_score, to_display_score
 from calculations.hold_case import calculate_break_even_appreciation
@@ -311,7 +311,10 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         total_cash_invested=total_cash_invested,
     )
 
-    break_even_rent = calculate_break_even_rent(
+    # One identity for break-even, effective income and the asking-rent gap
+    # (D-112); cash_flow_monthly above is the same identity at today's rent.
+    economics = calculate_rental_economics(
+        monthly_rent=monthly_rent,
         mortgage_payment=mortgage_payment_monthly,
         annual_taxes=float(prop.annual_taxes),
         insurance_value=float(prop.price),
@@ -320,6 +323,7 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         property_value=float(prop.price),
         include_management=fin.include_management_fee,
     )
+    break_even_rent = economics.break_even_asking_rent
 
     # Break-even economics: what price growth this hold must deliver to return
     # the cash it consumes. Derived from the same financing the metrics above
@@ -495,6 +499,8 @@ async def run_analysis(body: AnalysisRequest) -> AnalysisOutput:
         amortization_years=fin.amortization_years,
         mortgage_rate=fin.mortgage_rate,
         break_even_rent=round(break_even_rent, 2),
+        effective_rental_income=round(economics.effective_rental_income, 2),
+        asking_rent_gap=round(economics.asking_rent_gap, 2),
         management_fee_included=fin.include_management_fee,
         closing_costs_total=round(closing["total"], 2),
         ltt_provincial=round(closing["ltt_provincial"], 2),

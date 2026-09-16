@@ -69,6 +69,13 @@ export interface InvestmentMetrics {
 
   // Costs
   breakEvenRent: number
+  /** The asking rent after the vacancy allowance (D-112). Optional on older analyses. */
+  effectiveRentalIncome?: number
+  /**
+   * breakEvenRent − current rent: how far the ASK is from break-even. Not the
+   * monthly shortfall — that is −cashFlowMonthly (D-112).
+   */
+  askingRentGap?: number
   /**
    * Whether the 8% management fee is inside `noi`. The report recomputes its
    * expense table in the browser, so without this it could show a management

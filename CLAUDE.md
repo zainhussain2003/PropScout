@@ -1097,6 +1097,7 @@ propscout/
 │       ├── lib/scanState.ts + scanState.test.ts           # no text / failed / partial / clean — one rule for empty flag sections (D-090)
 │       ├── lib/exitScenarios.ts + exitScenarios.test.ts   # Stress / flat / conservative / base exit after selling costs and the balance owed (D-110)
 │       ├── lib/provenance.ts + provenance.test.ts         # Tile → ledger inputs; listing / price provenance for the hero (D-111)
+│       ├── lib/rentalEconomics.ts + rentalEconomics.test.ts  # The client's one copy of the engine's break-even / cash-flow identity, parity-tested (D-112)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css

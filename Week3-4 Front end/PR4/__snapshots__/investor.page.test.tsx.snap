@@ -2461,12 +2461,12 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="mono"
               style="font-size: 11px; color: var(--muted);"
             >
-              to cover all costs
+              asking rent · after 5% vacancy
             </div>
             <div
               style="font-size: 12.5px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; padding-top: 8px; border-top: 1px solid var(--line);"
             >
-              The rent you would need to stop losing money. The market pays about $2,900, so you are $1,685 short.
+              The rent you would need to ask, with 5% of it lost to vacancy, to stop losing money. The market pays about $2,900, so the ask is $1,685 below break-even — the monthly shortfall after vacancy is the cash-flow figure, not this gap.
             </div>
           </div>
           <div

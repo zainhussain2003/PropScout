@@ -3725,3 +3725,43 @@ line and price badge apply wherever `PropertyHero` renders.
 | One badge per tile input           | Nine tiles × up to twelve inputs is a table, not a tag; the count + hover + §12 is enough. |
 | Amber whenever anything is assumed | Every tile on every report would be amber; the tone would stop meaning anything.           |
 | Compute provenance in the API      | The ledger is already the API's answer; mapping tiles to it is presentation.               |
+
+### D-112 · Break-even is the grossed-up asking rent, from one identity, and the gap is not the shortfall
+
+**Chosen (owner decision 2026-09-16).** Break-even rent is the rent to **ask** so that, after the
+vacancy allowance (and the management fee when it is on), every fixed cost is covered:
+`fixed costs / (1 − v − m)`. The engine already computed it that way; the web's live recompute
+did not — it held vacancy at today's rent (`mortgage + operating expenses at current rent`),
+so §01 showed a break-even ~$140 lower than the ledger and the narrative on the calibration
+unit. Both now come from one identity:
+
+- **engine**: `calculations/investment.py::calculate_rental_economics` returns
+  `break_even_asking_rent`, `effective_rental_income` (rent × (1 − v)), `monthly_cash_flow`
+  (rent × (1 − v − m) − fixed) and `asking_rent_gap` (break-even − rent); the router uses it and
+  the API passes `effectiveRentalIncome` / `askingRentGap` through on `InvestmentMetrics`.
+- **web**: `lib/rentalEconomics.ts` is the client's only copy of the formula; every slider
+  recompute goes through it, and `rentalEconomics.test.ts` pins it to the engine's own numbers
+  for 5702 Buttermill (break-even $5,138.76, cash flow −$2,126.82, gap $2,238.76) so the two
+  cannot drift silently. When the rent is unknown the client falls back to NOI − mortgage for
+  cash flow rather than evaluating an identity with nothing in it.
+
+Three quantities the copy used to blur are now kept apart: the **break-even ask**, the
+**asking-rent gap** (how far the ask is from break-even), and the **monthly shortfall**
+(−cash flow, which is the gap after vacancy: −cash flow = gap × (1 − v)). The §01 tile reads
+"asking rent · after 5% vacancy" and says the shortfall is the cash-flow figure, not the gap.
+
+**Why one identity in two languages.** The engine is Python, the sliders are TypeScript; a
+shared package is not available across that boundary. The honest equivalent is one stated
+definition, one client module, and a parity test against the engine's output — the client
+never invents a second formula again.
+
+**Effects.** Pinned engine values do not move (same formula). On the live page the base-case
+break-even now equals the ledger's; the slider-driven figure moves with the sliders as before.
+
+**Alternatives considered**
+
+| Option                                        | Why not                                                               |
+| --------------------------------------------- | --------------------------------------------------------------------- |
+| Current-rent basis (the web's old formula)    | Not a break-even: the vacancy expense changes with the required rent. |
+| Recompute on the server per slider move       | The design requires instant, synchronous recalculation on drag.       |
+| Keep two formulas and document the difference | The report would keep disagreeing with itself by $140.                |

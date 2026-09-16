@@ -211,6 +211,13 @@ Also test a Toronto address — LTT should be approximately double.
 2. On a live report: the hero reads "Listing facts from realtor.ca · read <date>" (or "as you entered them"), the asking price carries "listing says" / "you entered", each §01 tile carries "calculated" with the count of assumed inputs and names them on hover
 3. Pass: the counts agree with the §12 rows marked estimate/default among that tile's inputs
 
+**🤖 Test 15h — Break-even identity (D-112)**
+
+1. `pytest calculations/investment_test.py -k RentalEconomics` — at the break-even ask the cash flow is 0; the gap ≠ the shortfall
+2. `npx vitest run src/lib/rentalEconomics.test.ts` — the client reproduces the engine's Buttermill figures to the cent
+3. On a live report at base financing, §01 "Break-even rent" equals the figure the narrative quotes; move a slider and both cash flow and break-even move
+4. Pass: the tile says "asking rent · after 5% vacancy" and never equates the gap with the monthly shortfall
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`
