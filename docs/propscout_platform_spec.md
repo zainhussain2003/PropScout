@@ -299,7 +299,7 @@ Rules this figure is presented under:
 
 **4. Rental comps engine** (all tiers)
 
-Comp selection logic: same FSA or within 1km radius, same bedroom count (±1 if fewer than 5 results), listed within 90 days (expand to 180 if needed), outliers removed.
+Comp selection logic: same FSA or within 1km radius, same bedroom count (±1 if fewer than 5 results), listed within 90 days (expand to 180 if needed), outliers removed. Only the subject's kind of dwelling counts (D-117): a condo is priced off apartments, a detached or semi off houses, a townhouse off townhouses; a near type at reduced weight, a comp of unread type at reduced weight, the other market and rooms and basements dropped before the search decides to widen. Fewer than three comps of the subject's own type caps confidence at medium.
 
 Output: low/mid/high rent range (weighted 25th/50th/75th percentile — each comp weighted by distance, recency, size and bedroom match, D-109), number of comps, confidence level (0–4: low, 5–9: medium, 10+: high), the comps behind the band with their match and approximate (~100 m) positions on a Mapbox map (D-099, D-109), rental days-on-market, 12-month rent trend, CMHC vacancy rate.
 
@@ -902,8 +902,9 @@ Process: scrape all active rentals across Ontario by FSA, normalise (geocode add
 1. Same FSA (first 3 postal code characters) OR within 1km radius, whichever returns more results — max 3km
 2. Same bedroom count ±0, expand to ±1 if fewer than 5 results
 3. Listed within 90 days, expand to 180 days if fewer than 5
-4. Remove outliers: exclude listings over 1.5x or under 0.5x the set median
-5. Return 25th/50th/75th percentile rent, comp count, and confidence level
+4. Same kind of dwelling (D-117): the type is read from `raw_json.listingType` (rentals.ca), the Kijiji URL category and title words, or PadMapper's `/buildings/` path — `apps/api/src/lib/compUnitType.ts`. Rooms, basements and the other market (apartment ↔ house) are dropped before steps 2–3 count; a near type (townhouse) and an unread type stay at reduced weight
+5. Remove outliers: exclude listings over 1.5x or under 0.5x the set median
+6. Return 25th/50th/75th percentile rent (similarity-weighted, D-109 + D-117), comp count, confidence level (capped at medium when fewer than three comps are the subject's own type), and `unitTypes {subject, matched, near, unknown}`
 
 ### 11.3 Calc engine
 

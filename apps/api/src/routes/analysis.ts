@@ -390,11 +390,14 @@ export async function runAnalysisPipeline(
   // dense condo FSAs such as Vaughan's L4K had none while dozens of comps
   // sat within 5km. Without them the report fell back to a gross-yield
   // proxy and told the user there were no comps for the area.
+  // The listing's dwelling type keeps a house from being priced off
+  // apartment ads in the same FSA (D-117).
   const comps = await fetchRentalComps(
     listing.postalCode,
     listing.beds,
     coords,
-    listing.sqft
+    listing.sqft,
+    listing.propertyType
   ).catch(() => null)
   // Days-on-market and rent trend from the same table (D-105); either
   // may be "not observed", in which case the engine scores it 0.
@@ -713,7 +716,12 @@ export async function runAnalysisPipeline(
       ? { rate: liveRate.rate, source: liveRate.source, fetchedAt: liveRate.fetchedAt }
       : null,
     comps: comps
-      ? { compCount: comps.compCount, radiusKm: comps.radiusKm, confidence: comps.confidence }
+      ? {
+          compCount: comps.compCount,
+          radiusKm: comps.radiusKm,
+          confidence: comps.confidence,
+          unitTypes: comps.unitTypes ?? null,
+        }
       : null,
     rentMid: rentalForCalc.mid,
     priceEstimated: listing.price == null && ownerInputs == null,
@@ -761,6 +769,7 @@ export async function runAnalysisPipeline(
           postalCode: listing.postalCode,
           radiusKm: comps.radiusKm,
           rows: comps.rows,
+          unitTypes: comps.unitTypes,
         }
       : null,
     riskFlags: resolvedFlags,

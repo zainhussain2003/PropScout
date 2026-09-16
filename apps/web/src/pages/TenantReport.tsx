@@ -1425,7 +1425,11 @@ export function TenantReport({
                   · {comps.confidence} confidence
                 </p>
               </div>
-              <CompRowsTable rows={comps.rows} compCount={comps.compCount} />
+              <CompRowsTable
+                rows={comps.rows}
+                compCount={comps.compCount}
+                unitTypes={comps.unitTypes}
+              />
             </section>
           )
         })()

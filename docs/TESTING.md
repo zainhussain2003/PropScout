@@ -245,6 +245,13 @@ Also test a Toronto address — LTT should be approximately double.
 4. ✋ With `GUEST_ANALYSIS_LIMIT_ENABLED=true`: a second guest run shows "Your free report is used — sign in to run another"; signing in runs it
 5. Pass: no fingerprinting, no IP checks; a cleared cookie simply starts over
 
+**🤖 Test 15m — Comps are the subject's kind of dwelling (D-117)**
+
+1. `npx jest src/lib/compUnitType.test.ts src/lib/compWeighting.test.ts src/services/supabaseService.test.ts -t "D-117|dwelling"` — the classifier on real rentals.ca / Kijiji / PadMapper rows, the fifth factor, a house never priced off apartment ads, rooms never counted, confidence capped at medium under three same-type comps, the radius pass filtered too, no address/URL/raw source leaves the API
+2. `npx vitest run src/components/investor/RentalCompsSection.test.tsx -t D-117` — the Type column and the one-sentence match caption; nothing claimed on an older analysis or a listing with no type
+3. ✋ Run a detached listing (1 Caldow Road) and a condo (1210-25 Holly St): the house's comps table shows House / Townhouse rows only, the condo's Apartment rows only; the Sources rent row says "N of M the same dwelling type"
+4. Pass: a listing whose type the source did not give (`propertyType: unknown`) reads exactly as before D-117
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

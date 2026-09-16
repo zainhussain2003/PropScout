@@ -76,6 +76,12 @@ export const COMP_WEIGHTS = {
   BEDS_ADJACENT: 0.6,
   /** Decimal places kept on a comp's published position (~110 m); D-109. */
   POSITION_DECIMALS: 3,
+  /** Factor for a comp of a near dwelling type — townhouse for a house, a floor of a house for an apartment (D-117). */
+  UNIT_TYPE_NEAR: 0.5,
+  /** Factor for a comp whose dwelling type could not be read from its source (D-117). */
+  UNIT_TYPE_UNKNOWN: 0.7,
+  /** Same-type comps needed before a band may be called high confidence (D-117). */
+  TYPE_MATCHED_FOR_HIGH: 3,
 } as const
 
 // Market demand measured from the nightly rental_listings table (D-105).

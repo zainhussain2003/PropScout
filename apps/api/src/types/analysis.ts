@@ -158,6 +158,12 @@ export interface CompRow {
    */
   approxLat?: number | null
   approxLng?: number | null
+  /**
+   * Dwelling type read from the comp's source (D-117): apartment, house,
+   * townhouse, house-unit (a floor of a house), basement, room, unknown.
+   * Absent on analyses saved before D-117.
+   */
+  unitType?: string
 }
 
 export interface RentalEstimate {
@@ -182,6 +188,19 @@ export interface RentalEstimate {
    * D-099 don't carry it.
    */
   rows?: CompRow[]
+  /**
+   * How the comps' dwelling types compare with the subject's (D-117):
+   * `subject` is what the listing's propertyType asked for (null when it
+   * did not say), `matched` the comps of that type, `near` the adjacent
+   * types, `unknown` the ones whose source did not say. Comps of the wrong
+   * type never reach the band. Absent on analyses saved before D-117.
+   */
+  unitTypes?: {
+    subject: 'apartment' | 'house' | 'townhouse' | null
+    matched: number
+    near: number
+    unknown: number
+  }
 }
 
 export interface SunScoutResult {

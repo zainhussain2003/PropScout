@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Analysis, ReportMode, SchoolsResult, NearbySchool, CompRow } from '../types/analysis'
-import type { Listing } from '../types/property'
+import type { Listing, PropertyType } from '../types/property'
 import { FREE_TIER } from '../constants/tiers'
 import { startOfCurrentMonth } from '../lib/billingMonth'
 import {
@@ -17,6 +17,13 @@ import {
   type CompSubject,
   type WeightedComp,
 } from '../lib/compWeighting'
+import {
+  classifyCompUnitType,
+  subjectUnitType,
+  unitTypeFactor,
+  type CompUnitType,
+  type SubjectUnitType,
+} from '../lib/compUnitType'
 
 // Lazy singleton — only created on first DB call so tests can import
 // this module without needing SUPABASE_URL set at load time.
@@ -257,9 +264,73 @@ interface CompSourceRow {
   scraped_at?: string | null
   lat?: number | null
   lng?: number | null
+  // Read for the dwelling type only (D-117); never leave the API.
+  source_url?: string | null
+  address?: string | null
+  raw_json?: unknown
+  /** Set by prepareComps from the three columns above. */
+  unit_type?: CompUnitType
 }
 
-const COMP_SELECT = 'rent_monthly, beds, sqft, postal_code, source, scraped_at, lat, lng'
+const COMP_SELECT =
+  'rent_monthly, beds, sqft, postal_code, source, scraped_at, lat, lng, source_url, address, raw_json'
+
+/** How the comps' dwelling types compare with the subject's (D-117). */
+export interface CompUnitTypeSummary {
+  subject: SubjectUnitType | null
+  /** Comps of the subject's own type. */
+  matched: number
+  /** Comps of a near type (townhouse for a house; a floor of a house for an apartment). */
+  near: number
+  /** Comps whose type could not be read from their source. */
+  unknown: number
+}
+
+/**
+ * Classify each row's dwelling type and drop the ones that are no evidence
+ * for this subject — the other rental market, rooms, basements (D-117).
+ * The survivors carry `unit_type` for the weighting and the report.
+ */
+function prepareComps(rows: CompSourceRow[], subject: CompSubject): CompSourceRow[] {
+  return rows
+    .filter((r) => r.rent_monthly > 0)
+    .map((r) => ({ ...r, unit_type: classifyCompUnitType(r) }))
+    .filter((r) => unitTypeFactor(subject.unitType ?? null, r.unit_type ?? 'unknown') > 0)
+}
+
+function summariseUnitTypes(
+  rows: ReadonlyArray<CompSourceRow>,
+  subject: CompSubject
+): CompUnitTypeSummary {
+  const subjectType = subject.unitType ?? null
+  let matched = 0
+  let near = 0
+  let unknown = 0
+  for (const r of rows) {
+    const t = r.unit_type ?? 'unknown'
+    if (t === 'unknown') unknown += 1
+    else if (subjectType != null && t === subjectType) matched += 1
+    else near += 1
+  }
+  return { subject: subjectType, matched, near, unknown }
+}
+
+/**
+ * Confidence from the count, then capped when too few comps are the
+ * subject's own type: ten apartments are not high-confidence evidence for
+ * a house, whatever the count says (D-117). A subject with no stated type
+ * is not capped — there is nothing to match.
+ */
+function confidenceFor(
+  compCount: number,
+  unitTypes: CompUnitTypeSummary
+): 'low' | 'medium' | 'high' {
+  const byCount: 'low' | 'medium' | 'high' =
+    compCount >= 8 ? 'high' : compCount >= 3 ? 'medium' : 'low'
+  if (unitTypes.subject == null) return byCount
+  if (byCount === 'high' && unitTypes.matched < COMP_WEIGHTS.TYPE_MATCHED_FOR_HIGH) return 'medium'
+  return byCount
+}
 
 /** How many individual comps the report shows. */
 export const COMP_ROWS_MAX = 12
@@ -282,6 +353,7 @@ function toCompRows(weighted: ReadonlyArray<WeightedComp<CompSourceRow>>): CompR
       seenAt: r.scraped_at ?? null,
       distanceKm: distanceKm != null ? Number(distanceKm.toFixed(2)) : null,
       similarity: Number(weight.toFixed(3)),
+      unitType: r.unit_type ?? 'unknown',
       approxLat: r.lat != null ? round(r.lat) : null,
       approxLng: r.lng != null ? round(r.lng) : null,
     }))
@@ -296,16 +368,25 @@ function bandFor(
   sourceRows: CompSourceRow[],
   subject: CompSubject,
   now: Date
-): { low: number; mid: number; high: number; compCount: number; rows: CompRow[] } | null {
+): {
+  low: number
+  mid: number
+  high: number
+  compCount: number
+  rows: CompRow[]
+  unitTypes: CompUnitTypeSummary
+} | null {
   const cleaned = removeOutliers(sourceRows.map((r) => r.rent_monthly))
   if (cleaned.length === 0) return null
-  const weighted = keepRowsForRents(sourceRows, cleaned).map((r) => weightComp(r, subject, now))
+  const kept = keepRowsForRents(sourceRows, cleaned)
+  const weighted = kept.map((r) => weightComp(r, subject, now))
   return {
     low: Math.round(weightedPercentile(weighted, 25)),
     mid: Math.round(weightedPercentile(weighted, 50)),
     high: Math.round(weightedPercentile(weighted, 75)),
     compCount: weighted.length,
     rows: toCompRows(weighted),
+    unitTypes: summariseUnitTypes(kept, subject),
   }
 }
 
@@ -533,7 +614,8 @@ export async function fetchRentalComps(
   postalCode: string,
   beds: number | null,
   coords?: { lat: number; lng: number } | null,
-  sqft?: number | null
+  sqft?: number | null,
+  propertyType?: PropertyType | null
 ): Promise<{
   low: number
   mid: number
@@ -544,10 +626,17 @@ export async function fetchRentalComps(
   radiusKm: number | null
   /** The comps behind the band, sanitised (D-099). */
   rows: CompRow[]
+  /** How the comps' dwelling types compare with the subject's (D-117). */
+  unitTypes: CompUnitTypeSummary
 } | null> {
   const fsa = postalCode.trim().toUpperCase().slice(0, 3)
   const now = new Date()
-  const subject: CompSubject = { beds, sqft: sqft ?? null, coords: coords ?? null }
+  const subject: CompSubject = {
+    beds,
+    sqft: sqft ?? null,
+    coords: coords ?? null,
+    unitType: subjectUnitType(propertyType),
+  }
 
   const windowDays = [90, 180] as const
   const bedFilters: Array<{ exact: boolean }> = [{ exact: true }, { exact: false }]
@@ -577,35 +666,29 @@ export async function fetchRentalComps(
         return null
       }
 
-      const sourceRows = ((data ?? []) as CompSourceRow[]).filter((r) => r.rent_monthly > 0)
-      const rents = sourceRows.map((r) => r.rent_monthly)
+      // Rows of the wrong dwelling type are dropped here, before the count
+      // decides whether to widen the search (D-117): a house in an FSA of
+      // apartment ads widens rather than pricing off them.
+      const sourceRows = prepareComps((data ?? []) as CompSourceRow[], subject)
 
-      if (rents.length < 3) {
+      if (sourceRows.length < 3) {
         // Try next fallback (wider beds or wider date window)
         continue
       }
 
       const band = bandFor(sourceRows, subject, now)
       if (band == null) continue
-      const { low, mid, high, compCount, rows: compRows } = band
-
-      let confidence: 'low' | 'medium' | 'high'
-      if (compCount >= 8) {
-        confidence = 'high'
-      } else if (compCount >= 3) {
-        confidence = 'medium'
-      } else {
-        confidence = 'low'
-      }
+      const { low, mid, high, compCount, rows: compRows, unitTypes } = band
 
       return {
         low,
         mid,
         high,
         compCount,
-        confidence,
+        confidence: confidenceFor(compCount, unitTypes),
         radiusKm: null,
         rows: compRows,
+        unitTypes,
       }
     }
   }
@@ -649,6 +732,7 @@ async function fetchRentalCompsByRadius(
   confidence: 'low' | 'medium' | 'high'
   radiusKm: number
   rows: CompRow[]
+  unitTypes: CompUnitTypeSummary
 } | null> {
   const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -678,11 +762,10 @@ async function fetchRentalCompsByRadius(
       return null
     }
 
-    const rows = (data ?? []) as CompSourceRow[]
+    const rows = prepareComps((data ?? []) as CompSourceRow[], subject)
 
     const inRadius = rows.filter(
       (r) =>
-        r.rent_monthly > 0 &&
         r.lat != null &&
         r.lng != null &&
         haversineKm(coords.lat, coords.lng, r.lat, r.lng) <= radiusKm
