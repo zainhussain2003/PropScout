@@ -5,9 +5,9 @@
  * Demo data: 248 Mountcrest Avenue, Burlington (PB_PROPERTY / PB_SCHOOLS / etc.)
  *
  * Sections:
- *   PropertyHero        — photo grid + home score gauge + asking / true monthly cost
+ *   PropertyHero        — photo grid + home score gauge + asking / estimated monthly cash outflow
  *   VerdictHero         — dark deterministic verdict card
- *   §01  True monthly cost       → PBTrueCostSection
+ *   §01  Estimated monthly cash outflow → PBCashOutflowSection
  *   §02  Fair market value       → PBFMVSection
  *   §03  Comparable sales        → PBSalesSection
  *   §04  Schools                 → SchoolColumn × 3
@@ -48,7 +48,7 @@ import { ScoutMark } from '../components/shared/ScoutMark'
 import { ListingVisual } from '../components/analysis/ListingVisual'
 import { DealScore } from '../components/analysis/DealScore'
 import { RiskRow } from '../components/analysis/RiskRow'
-import { PBTrueCostSection } from '../components/personal/PBTrueCostSection'
+import { PBCashOutflowSection } from '../components/personal/PBCashOutflowSection'
 import { PBFMVSection } from '../components/personal/PBFMVSection'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
@@ -279,7 +279,7 @@ function PersonalPropertyHero({
 
           <div className="divider" />
 
-          {/* Asking + true monthly cost */}
+          {/* Asking + estimated monthly cash outflow */}
           <div className="col" style={{ gap: 12 }}>
             <div
               className="row"
@@ -320,7 +320,7 @@ function PersonalPropertyHero({
                   color: 'var(--accent)',
                 }}
               >
-                True monthly cost
+                Est. monthly cash outflow
               </span>
               <span
                 className="serif tabular"
@@ -1622,7 +1622,7 @@ export function PersonalBuyerPage({
       )}
       <PersonalVerdictHero monthly={monthly} narrative={realAnalysis?.narrative} isReal={isReal} />
 
-      <PBTrueCostSection property={property} monthly={monthly} />
+      <PBCashOutflowSection property={property} monthly={monthly} />
       <PBFMVSection
         property={property}
         score={score}

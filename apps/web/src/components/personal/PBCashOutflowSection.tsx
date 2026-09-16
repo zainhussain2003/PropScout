@@ -1,9 +1,16 @@
 /**
- * PBTrueCostSection — §01 True monthly cost of ownership.
+ * PBCashOutflowSection — §01 Estimated monthly cash outflow (D-114).
  *
- * Shows an itemised table of every monthly cost (mortgage, taxes, insurance,
- * utilities, maintenance) with a highlighted total row, plus a right-side column
- * with the "mortgage vs. everything else" split and an affordability-income check.
+ * An itemised table of every monthly dollar out — mortgage payment (principal
+ * and interest), taxes, condo fee, insurance, utilities, maintenance reserve —
+ * each row saying where its figure came from, a highlighted total with the
+ * modelled share, plus a right-side column with the "mortgage vs. everything
+ * else" split and an affordability-income check. The lines and the share come
+ * from lib/personalCashOutflow; this file only renders them.
+ *
+ * "Cash outflow", not "cost": the mortgage payment includes principal, which
+ * is money moved, not money spent. "Estimated", not "true": a quarter of it
+ * is modelled, and the rows say which.
  *
  * Design source: personal-sections.jsx > PBTrueCostSection
  */
@@ -11,104 +18,28 @@
 import type { PersonalProperty, PersonalMonthlyCost } from '../../types/personal'
 import { SectionHead } from '../shared/SectionHead'
 import { fmtMoney, fmtPct } from '../../lib/investorCalc'
+import {
+  buildCashOutflowLines,
+  modelledShare,
+  COST_BASIS_LABEL,
+  isStrataType,
+  maintenanceNote,
+} from '../../lib/personalCashOutflow'
 
-interface PBTrueCostSectionProps {
+// Re-exported for existing tests and callers.
+export { isStrataType, maintenanceNote }
+
+interface PBCashOutflowSectionProps {
   property: PersonalProperty
   monthly: PersonalMonthlyCost
 }
 
-/**
- * Describe the maintenance reserve rate and the build era it came from.
- *
- * `yearBuilt` is 0 when the listing did not state one — address-entered
- * listings never do. That used to fall through to the last branch and print
- * "pre-1980 build", asserting an age we do not know about a building that may
- * be brand new. The 1.5% rate is kept for the unknown case because it is the
- * conservative choice, but the note says why rather than inventing an era.
- *
- * @param yearBuilt - year of construction, or 0 when unknown
- * @returns the reserve rate with the reason for it
- */
-export function maintenanceNote(yearBuilt: number): string {
-  if (yearBuilt <= 0) return '1.5% of value / yr · build year unknown'
-  if (yearBuilt >= 2010) return '0.5% of value / yr · 2010+ build'
-  if (yearBuilt >= 1980) return '1.0% of value / yr · 1980-era build'
-  return '1.5% of value / yr · pre-1980 build'
-}
-
-/** Property types that carry a maintenance fee even when the listing omits it. */
-export function isStrataType(propertyType: string): boolean {
-  return /condo|apartment|townhouse|townhome|town home|stacked|loft/i.test(propertyType)
-}
-
-export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps): JSX.Element {
-  const utilitiesTotal =
-    monthly.utilities.hydro +
-    monthly.utilities.gas +
-    monthly.utilities.water +
-    monthly.utilities.internet
-
-  interface CostLine {
-    k: string
-    v: number
-    note: string
-    indent?: boolean
-  }
-
-  const topLines: CostLine[] = [
-    {
-      k: 'Mortgage',
-      v: monthly.mortgage,
-      note: `${Math.round(property.defaultDownPct * 100)}% down · ${(property.defaultRate * 100).toFixed(2)}% · ${property.defaultAmort}-yr amort`,
-    },
-    {
-      k: 'Property tax',
-      v: monthly.tax,
-      note:
-        property.annualTaxes > 0
-          ? `${fmtMoney(property.annualTaxes)}/yr · ${property.annualTaxesKnown === false ? 'city-rate estimate; verify' : 'as listed'}`
-          : '— · not available',
-    },
-    // A freehold house has no condo fee; a "$0" row on a detached listing read
-    // as a fact about the house (2026-09-14 review run). The row stays for a
-    // condo/townhouse whose fee the listing did not state, and says so.
-    ...(monthly.condo > 0 || isStrataType(property.propertyType)
-      ? [
-          {
-            k: 'Condo fee',
-            v: monthly.condo,
-            note: monthly.condo > 0 ? 'monthly maintenance fee' : 'not listed · confirm the fee',
-          },
-        ]
-      : []),
-    {
-      k: 'Insurance',
-      v: monthly.insurance,
-      note: '0.35% of value · confirm quote',
-    },
-  ]
-
-  const utilitiesSubRows: CostLine[] = [
-    { k: 'Hydro', v: monthly.utilities.hydro, note: 'size-based estimate · confirm', indent: true },
-    { k: 'Gas', v: monthly.utilities.gas, note: 'size-based estimate · confirm', indent: true },
-    { k: 'Water', v: monthly.utilities.water, note: 'estimate · confirm', indent: true },
-    { k: 'Internet', v: monthly.utilities.internet, note: 'estimate · confirm', indent: true },
-  ]
-
-  const bottomLines: CostLine[] = [
-    {
-      k: 'Maintenance reserve',
-      v: monthly.maintenance,
-      note: maintenanceNote(property.yearBuilt),
-    },
-  ]
-
-  const allLines: CostLine[] = [
-    ...topLines,
-    { k: 'Utilities', v: utilitiesTotal, note: 'hydro · gas · water · internet' },
-    ...utilitiesSubRows,
-    ...bottomLines,
-  ]
+export function PBCashOutflowSection({
+  property,
+  monthly,
+}: PBCashOutflowSectionProps): JSX.Element {
+  const allLines = buildCashOutflowLines(property, monthly)
+  const modelled = modelledShare(allLines)
 
   const everythingElse = monthly.total - monthly.mortgage
   const impliedIncome = (monthly.total * 12) / 0.32
@@ -117,13 +48,13 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
     <section className="container tr-section">
       <SectionHead
         n="01"
-        topic="True monthly cost"
+        topic="Estimated monthly cash outflow"
         question={
           <>
-            What will it <em>really</em> cost to live here?
+            What goes <em>out</em> every month to live here?
           </>
         }
-        verdict={`${fmtMoney(monthly.total)}/mo · all-in`}
+        verdict={`${fmtMoney(monthly.total)}/mo · all-in estimate`}
         tone="pass"
       />
 
@@ -140,7 +71,7 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {allLines.map((l, i) => (
             <div
-              key={l.k}
+              key={l.key}
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1.4fr 1fr',
@@ -160,9 +91,18 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
                     fontWeight: 500,
                   }}
                 >
-                  {l.k}
+                  {l.label}
                 </span>
                 <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
+                  <span
+                    data-basis={l.basis}
+                    style={{
+                      color: l.basis === 'estimated' ? 'var(--caution)' : 'var(--muted)',
+                    }}
+                  >
+                    {COST_BASIS_LABEL[l.basis]}
+                  </span>
+                  {' · '}
                   {l.note}
                 </span>
               </div>
@@ -175,7 +115,7 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
                   color: l.indent ? 'var(--ink-2)' : 'var(--ink)',
                 }}
               >
-                {fmtMoney(l.v, { decimals: 0 })}
+                {fmtMoney(l.value, { decimals: 0 })}
               </span>
             </div>
           ))}
@@ -200,10 +140,11 @@ export function PBTrueCostSection({ property, monthly }: PBTrueCostSectionProps)
                   color: 'var(--muted)',
                 }}
               >
-                True monthly cost
+                Estimated monthly cash outflow
               </span>
-              <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                Including everything you pay to keep the keys
+              <span style={{ fontSize: 13, color: 'var(--ink-2)' }} data-testid="modelled-share">
+                {fmtMoney(modelled.amount, { decimals: 0 })} ({fmtPct(modelled.share, 0)}) based on
+                modelled assumptions
               </span>
             </div>
             <span

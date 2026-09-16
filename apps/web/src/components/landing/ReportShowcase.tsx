@@ -328,7 +328,7 @@ export function ReportShowcase(): JSX.Element {
               </div>
             </div>
 
-            {/* True monthly cost */}
+            {/* Estimated monthly cash outflow */}
             <div className="card col gap-12" style={{ padding: 22 }}>
               <div
                 className="mono"
@@ -339,7 +339,7 @@ export function ReportShowcase(): JSX.Element {
                   color: 'var(--muted)',
                 }}
               >
-                True monthly cost
+                Est. monthly cash outflow
               </div>
               <div className="col gap-8">
                 {(

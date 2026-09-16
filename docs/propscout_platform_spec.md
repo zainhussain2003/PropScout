@@ -387,7 +387,7 @@ Triggered when a for-sale URL is pasted and the user selects "Personal use." Lif
 **1. Property header**
 Same as Report A.
 
-**2. True monthly cost of ownership**
+**2. Estimated monthly cash outflow** (renamed from "True monthly cost", D-114: each row carries its basis — listing / you entered / calculated / estimated — and the total shows the modelled share computed from the rows)
 
 This is the number that surprises most personal buyers — the full carrying cost, not just the mortgage payment:
 

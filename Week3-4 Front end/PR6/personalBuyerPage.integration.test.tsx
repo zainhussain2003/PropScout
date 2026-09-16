@@ -52,11 +52,11 @@ describe('PersonalBuyerPage — full render', () => {
 // ── Group 2: Section presence ──────────────────────────────────────────────────
 
 describe('PersonalBuyerPage — all section numbers present', () => {
-  it('§01 True monthly cost section is present', () => {
+  it('§01 Estimated monthly cash outflow section is present', () => {
     renderPage()
     // SectionHead splits "§" and "01" as sibling text nodes — no element has sole text "01".
     // Query the section topic text (rendered by SectionHead + repeated in total row) instead.
-    expect(screen.getAllByText(/true monthly cost/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText(/estimated monthly cash outflow/i).length).toBeGreaterThanOrEqual(1)
   })
 
   it('§02 Fair market value section is present', () => {
@@ -131,7 +131,7 @@ describe('PersonalBuyerPage — PBSalesSection', () => {
 
 // ── Group 5: True monthly cost ─────────────────────────────────────────────────
 
-describe('PersonalBuyerPage — PBTrueCostSection total', () => {
+describe('PersonalBuyerPage — PBCashOutflowSection total', () => {
   it('total monthly cost displayed is greater than $4,000', () => {
     renderPage()
     // Burlington semi-detached at 20% down, 4.79%, 25yr:
@@ -140,7 +140,7 @@ describe('PersonalBuyerPage — PBTrueCostSection total', () => {
     // We verify by checking the formatted total contains a "$" and reading its value.
     // Since computeMonthlyCost is a pure function and the page renders it, we test
     // the rendered output indirectly by confirming a "$4" or "$5" or "$6" prefix
-    // appears in the "True monthly cost" display.
+    // appears in the "Estimated monthly cash outflow" display.
     const totalElements = screen.getAllByText(/\$[456789],\d{3}/)
     // At least one element shows a value in the $4k+ range
     expect(totalElements.length).toBeGreaterThanOrEqual(1)

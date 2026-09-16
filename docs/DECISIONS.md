@@ -3809,3 +3809,34 @@ add the year to `guidelinesByYear`, update `sourceUpdatedAt` from the page and `
 | One current-year percentage in the prose     | Wrong for a tenancy whose first increase lands next year — the common case for a new lease. |
 | Separate tenant and landlord interpretations | One law; the perspective changes the sentence, not the rule.                                |
 | Deduct points on the inferred status         | Turns an unverified legal inference into a precise number.                                  |
+
+### D-114 · "Estimated monthly cash outflow", with every row's source and a computed modelled share
+
+**Chosen (owner decision 2026-09-16).** The personal report's §01 is renamed from "True monthly
+cost" to **"Estimated monthly cash outflow"** — the heading, the pill ("$X/mo · all-in
+estimate"), the total row, the hero label, the tenant report's rent-plus-utilities line, and the
+landing copy. Under the total: "$1,140 (24%) based on modelled assumptions", computed from the
+rows, not typed in. Each row carries a `basis` — `listing`, `user_provided` (address path),
+`calculated` (the mortgage payment), `estimated` (municipal-rate tax, insurance, utilities,
+maintenance reserve) — shown as "From listing / You entered / Calculated / Estimated" before its
+note. `lib/personalCashOutflow.ts` builds the lines and the share (`estimated ÷ total`, the
+utilities aggregate skipped so they count once); `PBCashOutflowSection` (renamed from
+`PBTrueCostSection`) only renders. `PersonalProperty.factsEntered` comes from the listing having
+no URL.
+
+**Why.** Two problems with "true": a quarter of the figure is modelled (and the tax is, whenever
+the listing omitted it), and the mortgage payment includes principal — money moved into equity,
+not spent. "Cash outflow" is what the number is; "estimated" is what its rows say. Changing only
+the pill (the earlier proposal) would have left the giant heading overclaiming.
+
+**Effects.** No figures change; the words and the per-row labels do. A listed tax reads "From
+listing · as listed"; a city-rate tax reads "Estimated · from the municipal rate · verify" and
+counts toward the share.
+
+**Alternatives considered**
+
+| Option                                    | Why not                                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| Keep "True monthly cost", change the pill | The heading is the claim; the pill is the small print.                          |
+| "Estimated monthly cost"                  | Still calls principal repayment a cost.                                         |
+| Hand-maintain the modelled list           | Wrong the first time a tax estimate is used; the rows already know their basis. |

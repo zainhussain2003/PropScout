@@ -189,6 +189,7 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
     priceChange: { abs: 0, direction: null },
     annualTaxes: effectiveAnnualTaxes,
     annualTaxesKnown: listedAnnualTaxes != null,
+    factsEntered: listing.url === '',
     condoFeeMonthly: listing.condoFeeMonthly ?? 0,
     utilityEstMonthly: {
       hydro,

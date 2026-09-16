@@ -1099,6 +1099,7 @@ propscout/
 │       ├── lib/provenance.ts + provenance.test.ts         # Tile → ledger inputs; listing / price provenance for the hero (D-111)
 │       ├── lib/rentalEconomics.ts + rentalEconomics.test.ts  # The client's one copy of the engine's break-even / cash-flow identity, parity-tested (D-112)
 │       ├── lib/rentControlCopy.ts + rentControlCopy.test.ts  # The rent-control note's sentences from the stored rules (D-113)
+│       ├── lib/personalCashOutflow.ts + personalCashOutflow.test.ts  # Cash-outflow lines with basis; modelled share from the rows (D-114)
 │   │       ├── styles/
 │   │       │   ├── tokens.css         # Copied from design_handoff — source of all CSS vars
 │   │       │   └── global.css         # Global resets, type scale, @import tokens.css
@@ -1179,7 +1180,7 @@ propscout/
 │   │       │   ├── personal/          # Personal buyer-specific
 │   │       │   │   ├── SchoolCard.tsx
 │   │       │   │   ├── SchoolColumn.tsx
-│   │       │   │   ├── PBTrueCostSection.tsx       # Monthly ownership cost table
+│   │       │   │   ├── PBCashOutflowSection.tsx    # §01 Estimated monthly cash outflow — rows with their source + modelled share (D-114)
 │   │       │   │   ├── PBFMVSection.tsx            # Fair market value positioning bar
 │   │       │   │   └── PBSalesSection.tsx          # Comparable sales table
 │   │       │   │

@@ -16,7 +16,7 @@ import { vi } from 'vitest'
 // ── PR6 components ─────────────────────────────────────────────────────────────
 import { SchoolCard } from '../../apps/web/src/components/personal/SchoolCard'
 import { SchoolColumn } from '../../apps/web/src/components/personal/SchoolColumn'
-import { PBTrueCostSection } from '../../apps/web/src/components/personal/PBTrueCostSection'
+import { PBCashOutflowSection } from '../../apps/web/src/components/personal/PBCashOutflowSection'
 import { PBFMVSection } from '../../apps/web/src/components/personal/PBFMVSection'
 import { PBSalesSection } from '../../apps/web/src/components/personal/PBSalesSection'
 import { LandlordPropertyHero } from '../../apps/web/src/components/landlord/LandlordPropertyHero'
@@ -117,9 +117,11 @@ describe('a11y — SchoolColumn', () => {
   })
 })
 
-describe('a11y — PBTrueCostSection', () => {
+describe('a11y — PBCashOutflowSection', () => {
   it('zero axe violations', async () => {
-    const { container } = render(<PBTrueCostSection property={PB_PROPERTY} monthly={PB_MONTHLY} />)
+    const { container } = render(
+      <PBCashOutflowSection property={PB_PROPERTY} monthly={PB_MONTHLY} />
+    )
     const results = await axe(container)
     expect(results).toHaveNoViolations()
   })

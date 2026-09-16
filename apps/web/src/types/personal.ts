@@ -37,6 +37,8 @@ export interface PersonalProperty {
   // Carrying-cost inputs
   annualTaxes: number
   annualTaxesKnown?: boolean
+  /** True on the address path — the stated facts are the person's, not a listing's (D-114). */
+  factsEntered?: boolean
   condoFeeMonthly: number
   utilityEstMonthly: PersonalUtilities
   insuranceMonthlyEst: number

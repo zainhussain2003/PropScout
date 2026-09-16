@@ -225,6 +225,12 @@ Also test a Toronto address — LTT should be approximately double.
 3. On a live landlord report: the note under §03 reads "Likely … — confirm", both branches, both guideline years, 12 months / 90 days, the ontario.ca source with its update date; the tenant report shows the same facts above §12
 4. Pass: no report ever says "not rent controlled"; §12 Sources has a "Rent control" row marked estimate with the source
 
+**🤖 Test 15j — Estimated monthly cash outflow (D-114)**
+
+1. `npx vitest run src/lib/personalCashOutflow.test.ts "PR6/pbCashOutflowSection"` — bases per row, share = estimated ÷ total with utilities counted once, listed vs estimated tax
+2. On a personal report: §01 is "Estimated monthly cash outflow · $X/mo · all-in estimate"; every row reads From listing / You entered / Calculated / Estimated; the total row says "$Y (Z%) based on modelled assumptions"
+3. Pass: "True monthly cost" appears nowhere in the product
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`
