@@ -218,6 +218,13 @@ Also test a Toronto address — LTT should be approximately double.
 3. On a live report at base financing, §01 "Break-even rent" equals the figure the narrative quotes; move a slider and both cash flow and break-even move
 4. Pass: the tile says "asking rent · after 5% vacancy" and never equates the gap with the monthly shortfall
 
+**🤖 Test 15i — Rent control (D-113)**
+
+1. `npx jest src/lib/rentControl.test.ts` — 2017 → likely controlled, 2018 → unknown, 2019 → likely exempt, none → unknown; guideline picked by the effective year (June 2027 → 1.9%)
+2. `npx vitest run src/lib/rentControlCopy.test.ts src/pages/ReportPage.test.tsx -t D-113`
+3. On a live landlord report: the note under §03 reads "Likely … — confirm", both branches, both guideline years, 12 months / 90 days, the ontario.ca source with its update date; the tenant report shows the same facts above §12
+4. Pass: no report ever says "not rent controlled"; §12 Sources has a "Rent control" row marked estimate with the source
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

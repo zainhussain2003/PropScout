@@ -831,6 +831,63 @@ describe('ReportPage — a landlord states the value and the report is re-run on
   })
 })
 
+describe('ReportPage — rent-control note (D-113)', () => {
+  const RC = {
+    status: 'likely_exempt' as const,
+    basis: 'listing_build_year' as const,
+    requiresVerification: true as const,
+    yearBuilt: 2019,
+    exemptionFirstOccupancyAfter: '2018-11-15',
+    noticeDays: 90,
+    minMonthsBetweenIncreases: 12,
+    guidelines: [
+      { year: 2026, rate: 0.021 },
+      { year: 2027, rate: 0.019 },
+    ],
+    source: 'https://www.ontario.ca/page/residential-rent-increases',
+    sourceTitle: 'Ontario — Residential rent increases',
+    sourceUpdatedAt: '2026-06-23',
+    checkedAt: '2026-09-16',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+    listOverrides.mockResolvedValue([])
+  })
+
+  it('a landlord report shows the note from the landlord side, with both guideline years', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        mode: 'landlord',
+        rentalComps: null,
+        riskFlags: [],
+        rentControl: RC,
+      },
+      listing: { ...LISTING, price: null, rentMonthly: 2650, yearBuilt: 2019 },
+    })
+    renderReport()
+    const note = await screen.findByTestId('rent-control-note')
+    expect(note).toHaveTextContent('Likely exempt from the guideline — confirm')
+    expect(note).toHaveTextContent('you and the tenant agree the starting rent')
+    expect(note).toHaveTextContent('2.1% for increases taking effect in 2026')
+    expect(note).toHaveTextContent('1.9% for increases taking effect in 2027')
+    expect(note).toHaveTextContent("90 days' written notice")
+    expect(note).toHaveTextContent('page updated Jun 23, 2026')
+  })
+
+  it('an investor report carries no note; the checklist boolean follows the status', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, rentControl: RC },
+      listing: SALE_LISTING,
+    })
+    renderReport()
+    await screen.findByText(/Investment metrics/i)
+    expect(screen.queryByTestId('rent-control-note')).not.toBeInTheDocument()
+  })
+})
+
 describe('ReportPage — provenance tags (D-111)', () => {
   beforeEach(() => {
     vi.clearAllMocks()

@@ -275,6 +275,33 @@ export interface HoldCaseRow {
   breakEvenAnnualRate: number
 }
 
+/** Rent-control status inferred from the listing (D-113) — never a boolean. */
+export type RentControlStatus = 'likely_controlled' | 'likely_exempt' | 'unknown'
+
+/**
+ * What Ontario's rent-increase rules mean for this unit, as far as the
+ * listing lets us say (D-113). Stored with the analysis; the source and its
+ * dates travel with the figures.
+ */
+export interface RentControlInfo {
+  status: RentControlStatus
+  /** What the status rests on: the listing's build year, or nothing. */
+  basis: 'listing_build_year' | 'none'
+  /** Always true while the status is inferred — the first-occupancy date decides. */
+  requiresVerification: true
+  yearBuilt: number | null
+  /** Units first occupied after this date are exempt from the cap on the amount. */
+  exemptionFirstOccupancyAfter: string
+  noticeDays: number
+  minMonthsBetweenIncreases: number
+  /** Published guidelines from the analysis year on, by the year an increase takes effect. */
+  guidelines: Array<{ year: number; rate: number }>
+  source: string
+  sourceTitle: string
+  sourceUpdatedAt: string
+  checkedAt: string
+}
+
 /**
  * What a landlord entered about a property the listing never priced (D-107).
  * Persisted with the analysis; every price-dependent figure is re-run on it.
@@ -345,6 +372,8 @@ export interface Analysis {
   extractionStatus?: ExtractionStatus | null
   /** The landlord's own value behind this run, if one was entered (D-107). */
   ownerInputs?: OwnerInputs | null
+  /** Ontario rent-control status and the applicable guidelines (D-113). Absent on older analyses. */
+  rentControl?: RentControlInfo | null
 }
 
 /**

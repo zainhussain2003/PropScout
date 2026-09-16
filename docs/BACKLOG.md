@@ -19,7 +19,6 @@
 | **S-01 / S-03 / S-04 — scoring method** | Overlapping economics in the component weights; the display floor at 5; severe-gate constants documented as unsourced placeholders.                  | Spec §10 is the formula; changing it is a product decision and moves pinned regression values.                      | Audit S-\*     |
 | **Guest policy (A-09)**                 | Spec §5: "a guest gets one free analysis with email capture". Build it, or leave guests uncounted? Should a guest report be claimable after sign-in? | Quota is per account; signing out is a bypass; guest reports are never owned so their flags can never be dismissed. | D-071          |
 | **"True monthly cost" headline**        | ~24% of the personal headline is modelled (insurance, utilities, maintenance from a 1.5% assumption). Keep "true", or "estimated all-in"?            | Rows are labelled estimate/confirm; the headline word is not.                                                       | Counter-review |
-| **Rent control (landlord vs tenant)**   | A landlord task must distinguish vacancy pricing from a sitting-tenant increase; needs an authoritative Ontario source for the guideline.            | Legal behaviour; not to be paraphrased from memory.                                                                 | Counter-review |
 | **Stripe key mode** (lower priority)    | Live or test keys on the production API.                                                                                                             | Checkout answers 503 "paid plans not open yet" until price IDs exist.                                               | D-076          |
 
 ## 2. Credentials and dashboards (owner has access; Claude does not)
@@ -102,6 +101,6 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   (#78, D-098); floor confirmation still to do (needs a floor input in the pipeline).
 - **Equity build:** scenarios shipped (D-110). Still to do: capital-gains tax (needs a marginal-rate input and principal-residence flag); IRR.
 - **STR:** dated rules snapshot with municipal citations until an official source exists.
-- **Landlord:** verified rent-control guidance; remaining-amortization input and OSFI copy
+- **Landlord:** rent-control guidance shipped (D-113); remaining-amortization input and OSFI copy
   for the renewal/refinance case (D-108 known limits); a pricing-health score once the comps
   table has months of DOM / trend history.

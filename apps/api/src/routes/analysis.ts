@@ -60,6 +60,7 @@ import {
 import { estimateValueFromRent } from '../constants/marketCapRates'
 import { applyValidationErrorHandler, analysisTriggerBody } from '../lib/requestSchemas'
 import { withSchoolWalkTimes } from '../lib/schoolWalkTimes'
+import { buildRentControl } from '../lib/rentControl'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -651,6 +652,10 @@ export async function runAnalysisPipeline(
 
   // Step 9 — assemble Analysis object
   const createdAt = new Date().toISOString()
+  // Ontario rent-increase rules as they apply to this unit, as far as the
+  // build year lets us say (D-113). Stored so the report and the ledger cite
+  // the same source and dates.
+  const rentControl = buildRentControl(listing.yearBuilt, new Date(createdAt))
   const assumptions = buildAssumptionLedger({
     mode,
     createdAt,
@@ -664,6 +669,7 @@ export async function runAnalysisPipeline(
       yearBuilt: listing.yearBuilt,
       postalCode: listing.postalCode,
     },
+    rentControl,
     engine: pyData.assumptions ?? null,
     rate: liveRate
       ? { rate: liveRate.rate, source: liveRate.source, fetchedAt: liveRate.fetchedAt }
@@ -735,6 +741,7 @@ export async function runAnalysisPipeline(
     schools,
     hasSanityWarnings: pyData.has_sanity_warnings,
     ownerInputs: ownerInputs ?? null,
+    rentControl,
   }
 
   // Step 10 — save and return

@@ -12,6 +12,7 @@ import { getAnalysisByToken } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
 import { useOwnerValue } from '../hooks/useOwnerValue'
 import { listingProvenance } from '../lib/provenance'
+import { RentControlNote } from '../components/shared/RentControlNote'
 import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
@@ -130,7 +131,9 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     sqft: listing.sqft ?? 0,
     parking: bareCount(listing.parkingSpots),
     yearBuilt,
-    rentControl: yearBuilt <= 2018,
+    // Conservative boolean for the checklist copy; the real answer is the
+    // tri-state on the analysis, rendered by RentControlNote (D-113).
+    rentControl: analysis.rentControl?.status !== 'likely_exempt',
     price,
     annualTaxes,
     annualTaxesKnown: listedAnnualTaxes != null,
@@ -704,6 +707,12 @@ function InvestorReportContent({
         rentIsProxy={listingData.rentIsProxy}
         mapCenter={analysis.coordinates ?? null}
       />
+      {/* What the landlord may charge and raise (D-113) — beside the rent it sets. */}
+      {mode === 'landlord' && analysis.rentControl != null && (
+        <div className="container" style={{ marginTop: 16 }}>
+          <RentControlNote rentControl={analysis.rentControl} perspective="landlord" />
+        </div>
+      )}
       {listingData.price > 0 && (
         <CashToCloseSection metrics={metrics} listing={listingData} financing={financing} />
       )}

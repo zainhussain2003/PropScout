@@ -3765,3 +3765,47 @@ break-even now equals the ledger's; the slider-driven figure moves with the slid
 | Current-rent basis (the web's old formula)    | Not a break-even: the vacancy expense changes with the required rent. |
 | Recompute on the server per slider move       | The design requires instant, synchronous recalculation on drag.       |
 | Keep two formulas and document the difference | The report would keep disagreeing with itself by $140.                |
+
+### D-113 · Rent control is a dated rules module and a tri-state hint, never a build-year boolean
+
+**Chosen (owner decision 2026-09-16).** `apps/api/src/constants/ontarioRentRules.ts` holds
+Ontario's rules with their provenance — source page, `sourceUpdatedAt` 2026-06-23, `checkedAt`
+2026-09-16; exemption for units first occupied after **2018-11-15**; 90 days' notice; 12 months
+between increases; guidelines **by the year an increase takes effect**: 2025 2.5%, 2026 2.1%,
+2027 1.9%. `lib/rentControl.ts` turns the listing's build year into a tri-state with its basis:
+`likely_controlled` (built before 2018), `unknown` (built in 2018 — January and December differ;
+or no build year), `likely_exempt` (built after 2018), always `requiresVerification: true`; and
+picks the guideline for an increase's effective date (a tenancy from June 2026 gets its first
+increase under 2027's 1.9%, not 2026's 2.1%). The pipeline stores `Analysis.rentControl`
+(`market_data`, no migration) on every run, and the §12 ledger carries a "Rent control" row —
+basis `estimate`, the Ontario page as source with its update date, `checkedAt` as the as-of.
+
+The web renders one `RentControlNote` from `lib/rentControlCopy.ts` for the landlord (under §03,
+beside the rent it sets) and the tenant (above §12 Before you sign): the status as "Likely …
+— confirm" (never "not rent-controlled"), what actually decides it, the starting rent (agreed on
+a new tenancy — the guideline does not cap it), future increases with **both** branches stated
+and the likely one first (the guideline with every published year; or no limit on the amount if
+exempt), and the timing rules that apply either way. Source line and "Not legal advice".
+`ListingData.rentControl` (the checklist's boolean) is now `status !== 'likely_exempt'`.
+
+**Scoring.** No points move on the inferred status. The engine never deducted for rent control;
+spec §10's "-5 pre-Nov-2018" line is annotated as an information flag until the first-occupancy
+date is verified.
+
+**Why.** Counter-review: a landlord task must distinguish vacancy pricing from a sitting-tenant
+increase, and the guideline must come from an authoritative source with its date. `yearBuilt <=
+2018` asserted a legal status the listing cannot establish; one hard-coded percentage would be
+wrong for any tenancy starting now.
+
+**Refresh rule.** When Ontario publishes the next guideline (summer, for the following year),
+add the year to `guidelinesByYear`, update `sourceUpdatedAt` from the page and `checkedAt`, run
+`rentControl.test.ts`.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Keep the boolean, fix the copy               | A boolean says the status is known; the listing cannot know it.                             |
+| One current-year percentage in the prose     | Wrong for a tenancy whose first increase lands next year — the common case for a new lease. |
+| Separate tenant and landlord interpretations | One law; the perspective changes the sentence, not the rule.                                |
+| Deduct points on the inferred status         | Turns an unverified legal inference into a precise number.                                  |
