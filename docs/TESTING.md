@@ -237,6 +237,14 @@ Also test a Toronto address — LTT should be approximately double.
 2. On a dev build, the hero's score breakdown ends with "Shadow v3 · property N · financing N · composite N · risk clear"; production shows nothing
 3. Pass: a new analysis row has `score_version` 2 (or 1 with the version in `market_data.scoreVersion` if the column is not applied)
 
+**🤖 Test 15l — Guest allowance (D-116)**
+
+1. `npx jest src/lib/guestSession.test.ts src/routes/analysis.test.ts -t "guest" src/routes/me.test.ts` — cookie issued once, wall off runs, wall on → 402 `GUEST_LIMIT_REACHED`, tenant exempt, unknown count lets through, signed-in run and `/me` claim the cookie's reports
+2. `npx vitest run src/pages/analyzing.test.tsx src/pages/ReportPage.test.tsx -t D-116` — the sign-in gate, the rerun on sign-in, the nudge copy for wall off / on
+3. ✋ Private window, wall off: run a report → the API response sets `ps_guest`; the report shows "Sign in to keep this report"; sign in → `/me` returns `claimedGuestReports: 1` and the account page lists it
+4. ✋ With `GUEST_ANALYSIS_LIMIT_ENABLED=true`: a second guest run shows "Your free report is used — sign in to run another"; signing in runs it
+5. Pass: no fingerprinting, no IP checks; a cleared cookie simply starts over
+
 **🤖 Test 15b — CMHC vacancy is the published survey (D-106)**
 
 1. `npx jest src/services/cmhcService.test.ts`

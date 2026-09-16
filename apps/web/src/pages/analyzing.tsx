@@ -20,11 +20,15 @@ import {
   triggerAnalysis,
   fetchReport,
   freeLimitDetails,
+  guestLimitDetails,
+  type GuestLimitDetails,
   ApiRequestError,
   type FreeLimitDetails,
 } from '../lib/services/analysisService'
 import { startCheckout } from '../lib/services/billingService'
 import { HardLimitGate } from '../components/paywall/HardLimitGate'
+import { BlockState } from '../components/states/BlockState'
+import { SignInModal } from '../components/shared/SignInModal'
 import { useAuth } from '../hooks/useAuth'
 import type { ReportMode } from '../types/analysis'
 
@@ -182,6 +186,9 @@ export function AnalyzingPage(): JSX.Element {
   // The free-tier quota refusal. Its own state, not `error`: nothing failed,
   // and the way out is a plan change or a calendar, not "try again".
   const [limit, setLimit] = useState<FreeLimitDetails | null>(null)
+  // The guest allowance is used and the wall is on (D-116); sign-in reruns the effect.
+  const [guestGate, setGuestGate] = useState<GuestLimitDetails | null>(null)
+  const [showSignIn, setShowSignIn] = useState(false)
   const [billingError, setBillingError] = useState<string | null>(null)
   // Distinct from `error`: we stopped waiting, which is not the same claim as
   // "it failed". The analysis may still be running server-side.
@@ -212,6 +219,7 @@ export function AnalyzingPage(): JSX.Element {
     // Reset on each effect run so StrictMode remounts don't leave it false.
     mountedRef.current = true
     setStalled(false)
+    setGuestGate(null)
 
     // Demo token — skip the real pipeline and navigate directly to the fixture report.
     if (token === 'demo') {
@@ -241,8 +249,11 @@ export function AnalyzingPage(): JSX.Element {
       } catch (err) {
         if (!mountedRef.current) return
         const quota = freeLimitDetails(err)
+        const guest = guestLimitDetails(err)
         if (quota != null) {
           setLimit(quota)
+        } else if (guest != null) {
+          setGuestGate(guest)
         } else if (err instanceof ApiRequestError) {
           setError(err.message)
         } else {
@@ -454,6 +465,26 @@ export function AnalyzingPage(): JSX.Element {
   // API's, not the client's: `used` is the count it refused on and `resetsAt`
   // is the start of its next UTC month, so the gate cannot disagree with the
   // account page about either.
+
+  if (guestGate != null) {
+    return (
+      <div>
+        <MiniNav onCancel={handleCancel} />
+        <div className="container" style={{ paddingTop: 64, paddingBottom: 64 }}>
+          <BlockState
+            tone="caution"
+            icon="key"
+            eyebrow="Guest allowance"
+            headline="Your free report is used — sign in to run another."
+            body={`You've run ${guestGate.used} of ${guestGate.limit} free report${guestGate.limit === 1 ? '' : 's'} as a guest. Sign in with your email and it comes with you — this one starts the moment you're in.`}
+            primary={{ label: 'Sign in', onClick: () => setShowSignIn(true) }}
+            secondary={{ label: 'Back to home', onClick: handleCancel }}
+          />
+        </div>
+        <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
+      </div>
+    )
+  }
 
   if (limit != null) {
     return (

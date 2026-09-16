@@ -5,6 +5,7 @@ dotenvConfig({ path: resolve(__dirname, '../../../.env') })
 
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import cookie from '@fastify/cookie'
 import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
 import { corsOrigins } from './corsOrigins'
@@ -25,6 +26,9 @@ async function main(): Promise<void> {
     origin: corsOrigins(process.env.FRONTEND_URL ?? 'http://localhost:5173'),
     credentials: true,
   })
+
+  // Guest visitor cookie (D-116) — parsed here, issued by lib/guestSession.
+  await fastify.register(cookie)
 
   // Rate limit — relaxed in dev, tightened before production deploy
   await fastify.register(rateLimit, {

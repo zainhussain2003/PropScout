@@ -11,6 +11,7 @@
  *   - getAnalysisStatus throws → 500 INTERNAL_ERROR
  */
 
+import cookie from '@fastify/cookie'
 import Fastify, { type FastifyInstance } from 'fastify'
 import getAnalysisTokenRoutes from './analysisToken'
 import type { Analysis } from '../types/analysis'
@@ -113,6 +114,7 @@ const LISTING_FIXTURE: Listing = {
 
 async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: false })
+  await fastify.register(cookie)
   await fastify.register(getAnalysisTokenRoutes)
   return fastify
 }

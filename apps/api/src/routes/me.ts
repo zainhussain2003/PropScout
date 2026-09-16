@@ -10,7 +10,13 @@
 
 import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify'
 import { makeError } from '../types/api'
-import { getUserById, upsertUser, getMonthlyAnalysisCount } from '../services/supabaseService'
+import {
+  getUserById,
+  upsertUser,
+  getMonthlyAnalysisCount,
+  claimGuestAnalyses,
+} from '../services/supabaseService'
+import { readGuestId } from '../lib/guestSession'
 import { getSupabase } from '../services/supabaseService'
 
 interface MeReply {
@@ -31,6 +37,8 @@ interface MeReply {
   analysesThisMonth: number
   /** Account creation timestamp from Supabase auth, for "member since". */
   createdAt: string | null
+  /** Guest reports assigned to this account on this request (D-116). */
+  claimedGuestReports: number
 }
 
 async function meRoutes(fastify: FastifyInstance): Promise<void> {
@@ -54,6 +62,12 @@ async function meRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(500).send(makeError('USER_NOT_FOUND', 'Could not load user profile'))
     }
 
+    // A visitor who ran a report before signing in keeps it (D-116): the
+    // guest cookie travels with this request, so the claim happens here,
+    // before the month's count is read.
+    const guestId = readGuestId(req)
+    const claimedGuestReports = guestId != null ? await claimGuestAnalyses(guestId, id) : 0
+
     const result: MeReply = {
       id: user.id,
       email: user.email,
@@ -61,6 +75,7 @@ async function meRoutes(fastify: FastifyInstance): Promise<void> {
       stripeCustomerId: user.stripe_customer_id,
       analysesThisMonth: await getMonthlyAnalysisCount(id),
       createdAt: authData.user.created_at ?? null,
+      claimedGuestReports,
     }
     return reply.send(result)
   })

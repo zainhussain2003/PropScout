@@ -1048,6 +1048,71 @@ export async function saveListing(
  * Insert a pending analysis row with just the listing_id and share_token.
  * The analyze pipeline fills in the remaining fields later.
  */
+// ── Guest attribution (D-116) ─────────────────────────────────────────────────
+// All three run on either side of migration 20260916_add_analyses_guest_id:
+// a missing column reads as "unknown" (null count, nothing claimed) rather
+// than failing the analysis.
+
+/**
+ * How many analyses this guest has run outside the quota-exempt modes, or
+ * null when the column is not applied (the caller treats null as no wall).
+ */
+export async function countGuestAnalyses(guestId: string): Promise<number | null> {
+  const { count, error } = await db()
+    .from('analyses')
+    .select('id', { count: 'exact', head: true })
+    .eq('guest_id', guestId)
+    .not('report_mode', 'in', `(${FREE_TIER.QUOTA_EXEMPT_MODES.join(',')})`)
+  if (error != null) {
+    if (isMissingColumn(error)) return null
+    throw new Error(`countGuestAnalyses failed: ${error.message}`)
+  }
+  return count ?? 0
+}
+
+/** Record the guest that is running this analysis; a no-op when the column is not applied. */
+export async function markAnalysisGuest(token: string, guestId: string): Promise<void> {
+  const { error } = await db()
+    .from('analyses')
+    .update({ guest_id: guestId })
+    .eq('share_token', token)
+    .is('user_id', null)
+  if (error != null && !isMissingColumn(error)) {
+    throw new Error(`markAnalysisGuest failed: ${error.message}`)
+  }
+}
+
+/**
+ * Assign every unclaimed analysis this guest ran to the signed-in user, so
+ * their reports, flags and quota follow them. Returns how many were claimed
+ * (0 when the column is not applied).
+ */
+export async function claimGuestAnalyses(guestId: string, userId: string): Promise<number> {
+  const { data, error } = await db()
+    .from('analyses')
+    .update({ user_id: userId })
+    .eq('guest_id', guestId)
+    .is('user_id', null)
+    .select('id')
+  if (error != null) {
+    if (isMissingColumn(error)) return 0
+    throw new Error(`claimGuestAnalyses failed: ${error.message}`)
+  }
+  return (data ?? []).length
+}
+
+/** The guest id recorded on an analysis, or null (unknown / not applied / claimed). */
+export async function getAnalysisGuestId(token: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('analyses')
+    .select('guest_id, user_id')
+    .eq('share_token', token)
+    .maybeSingle()
+  if (error != null || data == null) return null
+  const row = data as { guest_id?: string | null; user_id?: string | null }
+  return row.user_id == null ? (row.guest_id ?? null) : null
+}
+
 /**
  * Attribute a pending analysis to the signed-in user who triggered it, and
  * record the mode they chose. Only an unowned row is claimed — a share link is

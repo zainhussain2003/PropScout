@@ -3886,3 +3886,43 @@ The set is an owner data item in BACKLOG §4.
 | Keep the floor                          | A clamp on the number shown is not a belief about properties; it damaged the scale's meaning.           |
 | Number the shadow "2"                   | The column already means the gating model by 2; reusing it would mix scales in storage.                 |
 | Drop the severe caps from version 2 now | Changes the headline's meaning before the replacement is calibrated; version 3 carries the gate design. |
+
+### D-116 · One free anonymous report on a server-issued cookie; claimed on sign-in; the wall behind a flag
+
+**Chosen (owner decision 2026-09-16).** Spec §5's "a guest gets one free analysis" is built as
+a **server-issued visitor id**: on a guest's first `POST /analysis` the API issues `ps_guest`
+(random UUID; HttpOnly; Secure + SameSite=None in production because the app and the API are
+on different sites, Lax on localhost; one year) and records it on the analysis row
+(`analyses.guest_id`, migration `20260916_add_analyses_guest_id.sql`). The server counts against
+it — `countGuestAnalyses`, tenant mode exempt as in spec §4 — and, when
+`GUEST_ANALYSIS_LIMIT_ENABLED=true`, refuses the second with **402 `GUEST_LIMIT_REACHED`**; the
+analyzing page then shows a sign-in gate instead of an error, and signing in reruns the trigger
+with the session. Nothing the page's JavaScript holds is the authority; a cleared cookie starts
+over and that is accepted — this is a soft entitlement boundary for one free report, not
+anti-fraud identity. No fingerprinting, no IP joins.
+
+**Claiming.** When a request carries both a session and the guest cookie — `GET /me` on sign-in,
+or a signed-in `POST /analysis` — every unclaimed analysis with that `guest_id` is assigned to
+the `user_id` (`claimGuestAnalyses`; `/me` reports `claimedGuestReports`). The person's reports,
+flags and history follow them, and the claimed analysis counts toward the monthly quota
+(`getMonthlyAnalysisCount` is by `user_id`), so the allowance is one guest report **within** the
+ten, not on top of them. A guest viewing their own report sees a nudge under the nav — "Sign
+in to keep this report" (wall off) or "This was your free report as a guest (1 of 1)" (wall on)
+— from `guest` on `GET /analysis/:token`, returned only when the cookie matches the row.
+
+**The flag.** `GUEST_ANALYSIS_LIMIT_ENABLED` defaults to off. The cookie, the count, the claim and
+the nudge run either way; only the refusal waits. Switch it on when custom SMTP is set (BACKLOG
+§2) — until then the wall would push guests into the rate-limited built-in mailer.
+
+**Either side of the migration.** Until `guest_id` exists, the count reads null (the wall lets
+through), marking is a no-op, claiming returns 0, and the nudge does not appear.
+
+**Alternatives considered**
+
+| Option                              | Why not                                                                             |
+| ----------------------------------- | ----------------------------------------------------------------------------------- |
+| localStorage / a client-minted id   | Client-controlled; the API cannot count against something the page can rewrite.     |
+| Fingerprinting or IP joins          | Privacy and complexity out of proportion to one free report.                        |
+| Enforce now                         | The sign-in the wall demands depends on email delivery that is not yet reliable.    |
+| Leave guests uncounted (status quo) | Signing out was a quota bypass and guest reports could never be owned or dismissed. |
+| Guest report free on top of the ten | The commercial promise is ten free a month; the claimed report is one of them.      |

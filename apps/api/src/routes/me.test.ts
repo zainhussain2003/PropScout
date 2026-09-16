@@ -18,11 +18,18 @@ jest.mock('../services/supabaseService', () => ({
   getUserById: jest.fn(),
   upsertUser: jest.fn().mockResolvedValue(undefined),
   getMonthlyAnalysisCount: jest.fn(),
+  claimGuestAnalyses: jest.fn().mockResolvedValue(0),
 }))
 
+import cookie from '@fastify/cookie'
 import Fastify, { type FastifyInstance } from 'fastify'
 import meRoutes from './me'
-import { getSupabase, getUserById, getMonthlyAnalysisCount } from '../services/supabaseService'
+import {
+  getSupabase,
+  getUserById,
+  getMonthlyAnalysisCount,
+  claimGuestAnalyses,
+} from '../services/supabaseService'
 
 const mockGetSupabase = getSupabase as jest.Mock
 const mockGetUserById = getUserById as jest.Mock
@@ -46,6 +53,7 @@ let app: FastifyInstance
 beforeEach(async () => {
   jest.clearAllMocks()
   app = Fastify({ logger: false })
+  await app.register(cookie)
   await app.register(meRoutes)
   await app.ready()
 })
@@ -94,6 +102,7 @@ describe('GET /me', () => {
       stripeCustomerId: null,
       analysesThisMonth: 3,
       createdAt: CREATED_AT,
+      claimedGuestReports: 0,
     })
     expect(mockCount).toHaveBeenCalledWith('user-abc')
   })
@@ -139,5 +148,23 @@ describe('GET /me', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.json().tier).toBe('pro')
+  })
+
+  it('claims the guest cookie’s reports for the signed-in account (D-116)', async () => {
+    ;(claimGuestAnalyses as jest.Mock).mockResolvedValueOnce(2)
+    const res = await app.inject({
+      method: 'GET',
+      url: '/',
+      headers: {
+        authorization: 'Bearer good',
+        cookie: 'ps_guest=123e4567-e89b-12d3-a456-426614174000',
+      },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(claimGuestAnalyses).toHaveBeenCalledWith(
+      '123e4567-e89b-12d3-a456-426614174000',
+      expect.any(String)
+    )
+    expect((res.json() as { claimedGuestReports: number }).claimedGuestReports).toBe(2)
   })
 })

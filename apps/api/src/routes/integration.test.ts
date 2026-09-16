@@ -16,6 +16,7 @@
  *   5. GET /analysis/:token returns status=complete with the persisted analysis
  */
 
+import cookie from '@fastify/cookie'
 import Fastify, { type FastifyInstance } from 'fastify'
 import scrapeRoutes from './scrape'
 import analysisRoutes from './analysis'
@@ -157,6 +158,7 @@ function routeFetch(url: string): Promise<Response> {
 
 async function buildApp(): Promise<FastifyInstance> {
   const f = Fastify({ logger: false })
+  await f.register(cookie)
   await f.register(scrapeRoutes, { prefix: '/scrape' })
   await f.register(analysisRoutes, { prefix: '/analysis' })
   await f.register(analysisTokenRoutes, { prefix: '/analysis' })

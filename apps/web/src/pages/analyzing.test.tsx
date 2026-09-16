@@ -370,6 +370,70 @@ describe('AnalyzingPage — free-tier quota', () => {
 
 // ── The progress screen describes an attempt, not a result (J-09) ──────────────
 
+describe('AnalyzingPage — guest allowance (D-116)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-16T12:00:00Z'))
+    triggerAnalysis.mockReset()
+    fetchReport.mockReset()
+    navigate.mockReset()
+    useAuthMock.mockReturnValue(AUTH_NONE)
+    fetchReport.mockResolvedValue({ status: 'pending' })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('a refused second guest run shows the sign-in gate, not an error, and polls nothing', async () => {
+    triggerAnalysis.mockRejectedValue(
+      new ApiRequestError('GUEST_LIMIT_REACHED', 'Your free report is used.', 402, {
+        used: 1,
+        limit: 1,
+      })
+    )
+    renderAnalyzing()
+    await advance(POLL_MS)
+    expect(
+      screen.getByText(/Your free report is used — sign in to run another/)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/1 of 1 free report as a guest/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Sign in$/ })).toBeInTheDocument()
+    expect(screen.queryByText(/Analysis could not complete/i)).not.toBeInTheDocument()
+    expect(fetchReport.mock.calls.length).toBeLessThanOrEqual(1)
+  })
+
+  it('signing in reruns the trigger with the session, so the claimed guest report and the new one both run', async () => {
+    triggerAnalysis.mockRejectedValueOnce(
+      new ApiRequestError('GUEST_LIMIT_REACHED', 'Your free report is used.', 402, {
+        used: 1,
+        limit: 1,
+      })
+    )
+    const { rerender } = render(
+      <MemoryRouter
+        initialEntries={[{ pathname: '/analyzing', search: '?token=tok-1&mode=investor' }]}
+      >
+        <AnalyzingPage />
+      </MemoryRouter>
+    )
+    await advance(POLL_MS)
+    expect(triggerAnalysis).toHaveBeenLastCalledWith('tok-1', 'investor', null)
+    triggerAnalysis.mockResolvedValue(undefined)
+    useAuthMock.mockReturnValue(AUTH_SIGNED_IN)
+    rerender(
+      <MemoryRouter
+        initialEntries={[{ pathname: '/analyzing', search: '?token=tok-1&mode=investor' }]}
+      >
+        <AnalyzingPage />
+      </MemoryRouter>
+    )
+    await advance(POLL_MS)
+    expect(triggerAnalysis).toHaveBeenLastCalledWith('tok-1', 'investor', 'jwt-1')
+    expect(screen.queryByText(/Your free report is used/)).not.toBeInTheDocument()
+  })
+})
+
 describe('AnalyzingPage — progress copy makes no claims it cannot know', () => {
   beforeEach(() => {
     vi.useFakeTimers()

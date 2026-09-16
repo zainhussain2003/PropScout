@@ -78,6 +78,8 @@ export function useAccount(): AccountState {
     setLoading(true)
     void fetch(`${BASE_URL}/me`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
+      // Carries the guest cookie so reports run before signing in are claimed (D-116).
+      credentials: 'include',
     })
       .then(async (res) => {
         if (!res.ok) return
