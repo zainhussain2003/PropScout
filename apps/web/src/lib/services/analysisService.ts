@@ -242,6 +242,20 @@ export interface FreeLimitDetails {
   resetsAt: string
 }
 
+/** The body of a 402 GUEST_LIMIT_REACHED response (D-116). */
+export interface GuestLimitDetails {
+  used: number
+  limit: number
+}
+
+/** Narrow an ApiRequestError to the guest-allowance refusal. */
+export function guestLimitDetails(err: unknown): GuestLimitDetails | null {
+  if (!(err instanceof ApiRequestError) || err.code !== 'GUEST_LIMIT_REACHED') return null
+  const { used, limit } = err.details
+  if (typeof used !== 'number' || typeof limit !== 'number') return null
+  return { used, limit }
+}
+
 /** Narrow an ApiRequestError to the quota refusal, with its usage figures. */
 export function freeLimitDetails(err: unknown): FreeLimitDetails | null {
   if (!(err instanceof ApiRequestError) || err.code !== 'FREE_LIMIT_REACHED') return null
@@ -281,6 +295,8 @@ export async function triggerAnalysis(
       method: 'POST',
       headers,
       body: JSON.stringify({ token, mode }),
+      // The guest visitor cookie rides with this call (D-116).
+      credentials: 'include',
     })
   } catch (err) {
     throw new ApiRequestError(
@@ -436,6 +452,11 @@ export interface GetAnalysisResult {
    * default.
    */
   canOverride?: boolean
+  /**
+   * Present when the viewer is the guest who ran this report (D-116): how
+   * much of the guest allowance is used and whether the wall is on.
+   */
+  guest?: { used: number; limit: number; limitEnabled: boolean } | null
 }
 
 /**
@@ -456,7 +477,10 @@ export async function getAnalysisByToken(
     if (accessToken != null && accessToken !== '') {
       headers['Authorization'] = `Bearer ${accessToken}`
     }
-    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`, { headers })
+    response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}`, {
+      headers,
+      credentials: 'include',
+    })
   } catch {
     throw new ApiRequestError(
       'NETWORK_ERROR',

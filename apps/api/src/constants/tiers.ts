@@ -10,6 +10,17 @@ export const FREE_TIER = {
   QUOTA_EXEMPT_MODES: ['tenant'],
 } as const
 
+/**
+ * The guest allowance (D-116, spec §5): one anonymous analysis, then sign in.
+ * Tenant mode stays exempt (spec §4). Enforcement is behind
+ * GUEST_ANALYSIS_LIMIT_ENABLED until auth email is reliable.
+ */
+export const GUEST = {
+  FREE_ANALYSES: 1,
+  /** One year — long enough that the allowance is per visitor, not per visit. */
+  COOKIE_MAX_AGE_SECONDS: 365 * 24 * 60 * 60,
+} as const
+
 export const TIER_PRICES = {
   free: 0,
   pro: 10,

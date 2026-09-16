@@ -14,6 +14,7 @@
  * All service calls are mocked — no real network calls or DB queries are made.
  */
 
+import cookie from '@fastify/cookie'
 import Fastify, { type FastifyInstance } from 'fastify'
 import analysisRoutes from './analysis'
 import type { Analysis, SchoolsResult } from '../types/analysis'
@@ -41,6 +42,9 @@ import {
   claimAnalysisForUser,
   getAnalysisStatus,
   getAnalysisByToken,
+  countGuestAnalyses,
+  markAnalysisGuest,
+  claimGuestAnalyses,
 } from '../services/supabaseService'
 import { extractListingFlags, generateNarrative } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
@@ -149,6 +153,7 @@ function makeCalcResponse(body: object, status = 200): Response {
 
 async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: false })
+  await fastify.register(cookie)
   await fastify.register(analysisRoutes)
   return fastify
 }
@@ -1186,6 +1191,172 @@ describe('POST / — free-tier quota and attribution', () => {
 // Reloading /analyzing re-POSTs the same token. Job status is not persisted
 // (D-068), so the route keeps an in-process set of running tokens and treats a
 // finished analysis as an answer, not a request.
+
+describe('POST / — guest allowance (D-116)', () => {
+  let app: FastifyInstance
+  const GUEST_ID = '123e4567-e89b-12d3-a456-426614174000'
+  const mockCountGuest = jest.mocked(countGuestAnalyses)
+  const mockMarkGuest = jest.mocked(markAnalysisGuest)
+  const mockClaimGuest = jest.mocked(claimGuestAnalyses)
+
+  /** No session: the request carries nothing the API can attribute. */
+  function anonymous(): void {
+    mockGetSupabase.mockReturnValue({
+      auth: { getUser: jest.fn() },
+    } as unknown as ReturnType<typeof getSupabase>)
+  }
+
+  beforeAll(async () => {
+    app = await buildApp()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    delete process.env.GUEST_ANALYSIS_LIMIT_ENABLED
+    anonymous()
+    mockGetListingByToken.mockResolvedValue(LISTING_FIXTURE)
+    mockUpdateAnalysisStatus.mockResolvedValue(undefined)
+    mockSaveAnalysis.mockResolvedValue(undefined)
+    mockExtractListingFlags.mockResolvedValue({})
+    mockGenerateNarrative.mockResolvedValue('Test narrative')
+    mockGeocodeAddress.mockResolvedValue(null)
+    mockGetWalkScore.mockResolvedValue(null)
+    mockFetchRentalComps.mockResolvedValue(null)
+    mockFetchMarketDemand.mockResolvedValue({
+      daysOnMarket: null,
+      domSample: 0,
+      rentTrend: null,
+      trendChangePct: null,
+      recentSample: 0,
+      priorSample: 0,
+    })
+    mockGetFlagOverrides.mockResolvedValue([])
+    mockCountGuest.mockResolvedValue(0)
+    mockMarkGuest.mockResolvedValue(undefined)
+    mockClaimGuest.mockResolvedValue(0)
+    global.fetch = jest.fn().mockResolvedValue(makeCalcResponse(CALC_ENGINE_FIXTURE))
+  })
+
+  afterAll(async () => {
+    await app.close()
+    delete process.env.GUEST_ANALYSIS_LIMIT_ENABLED
+  })
+
+  it('issues a visitor cookie on a first guest run and records the guest on the analysis', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    const setCookie = String(res.headers['set-cookie'] ?? '')
+    expect(setCookie).toMatch(
+      /^ps_guest=[0-9a-f-]{36}; Max-Age=31536000; Path=\/; HttpOnly; SameSite=Lax/
+    )
+    const issued = /ps_guest=([0-9a-f-]{36})/.exec(setCookie)?.[1]
+    expect(mockMarkGuest).toHaveBeenCalledWith('test-token', issued)
+  })
+
+  it('reuses an existing cookie and does not reissue it', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['set-cookie']).toBeUndefined()
+    expect(mockMarkGuest).toHaveBeenCalledWith('test-token', GUEST_ID)
+  })
+
+  it('with the wall off, a second guest analysis runs (only a nudge is shown)', async () => {
+    mockCountGuest.mockResolvedValue(3)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockCountGuest).not.toHaveBeenCalled()
+  })
+
+  it('with the wall on, the second analysis is refused with GUEST_LIMIT_REACHED and nothing runs', async () => {
+    process.env.GUEST_ANALYSIS_LIMIT_ENABLED = 'true'
+    mockCountGuest.mockResolvedValue(1)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(402)
+    const body = res.json() as ApiError & { used: number; limit: number }
+    expect(body.code).toBe('GUEST_LIMIT_REACHED')
+    expect(body.used).toBe(1)
+    expect(body.limit).toBe(1)
+    expect(global.fetch).not.toHaveBeenCalled()
+    expect(mockMarkGuest).not.toHaveBeenCalled()
+  })
+
+  it('with the wall on, the first analysis runs and tenant mode is always exempt', async () => {
+    process.env.GUEST_ANALYSIS_LIMIT_ENABLED = 'true'
+    mockCountGuest.mockResolvedValue(0)
+    const first = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(first.statusCode).toBe(200)
+    mockCountGuest.mockResolvedValue(5)
+    const tenant = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'tenant' },
+    })
+    expect(tenant.statusCode).toBe(200)
+  })
+
+  it('with the wall on but the column not applied (count unknown), the analysis runs', async () => {
+    process.env.GUEST_ANALYSIS_LIMIT_ENABLED = 'true'
+    mockCountGuest.mockResolvedValue(null)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('a signed-in run with a guest cookie claims that guest’s earlier reports', async () => {
+    mockGetSupabase.mockReturnValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'user-1', email: 'u@example.com' } },
+          error: null,
+        }),
+      },
+    } as unknown as ReturnType<typeof getSupabase>)
+    mockGetUserById.mockResolvedValue({
+      id: 'user-1',
+      email: 'u@example.com',
+      tier: 'pro',
+      stripe_customer_id: null,
+    } as unknown as Awaited<ReturnType<typeof getUserById>>)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { authorization: 'Bearer jwt', cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockClaimGuest).toHaveBeenCalledWith(GUEST_ID, 'user-1')
+    expect(mockMarkGuest).not.toHaveBeenCalled()
+  })
+})
 
 describe('POST / — idempotent by token', () => {
   let app: FastifyInstance

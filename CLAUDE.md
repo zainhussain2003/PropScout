@@ -1112,6 +1112,7 @@ propscout/
 │   │       │   │   ├── Chip.tsx               # Inline pill tag
 │   │       │   │   ├── ProvenanceBadge.tsx    # listing says / you entered / calculated · N assumed (D-111)
 │   │       │   │   ├── RentControlNote.tsx    # Ontario rent-control status + rules, landlord or tenant side (D-113)
+│   │       │   │   ├── GuestNudge.tsx         # "Sign in to keep this report" on a guest's own report (D-116)
 │   │       │   │   ├── Button.tsx             # primary / ghost / accent variants
 │   │       │   │   ├── Card.tsx               # Surface + line + shadow + radius-lg
 │   │       │   │   ├── SectionHead.tsx        # Every report section header — shared across all 4 reports
@@ -1293,6 +1294,7 @@ propscout/
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
 │           │   ├── schoolWalkTimes.ts + .test.ts  # Routed walking minutes to the nearby schools (D-100)
 │           │   ├── compWeighting.ts + .test.ts  # Similarity weights + weighted percentile for the rent band (D-109)
+│           │   ├── guestSession.ts + .test.ts  # Server-issued guest cookie, read/issue, the wall's flag (D-116)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)
 │           ├── plugins/
 │           │   └── rateLimit.ts       # @fastify/rate-limit — 10 req/min on analysis endpoint
@@ -1406,7 +1408,8 @@ propscout/
 │       ├── 20260701_add_schools_name_postal_unique.sql  # NOT applied — required by load-schools.mjs upsert
 │       ├── 20260707_add_neighbourhood_stats.sql
 │       ├── 20260906_listings_source_url_nullable.sql
-│       └── 20260913_add_analyses_status.sql  # NOT applied — analyses.status/failure_code; API works either side (D-087)
+│       ├── 20260913_add_analyses_status.sql  # NOT applied — analyses.status/failure_code; API works either side (D-087)
+│       └── 20260916_add_analyses_guest_id.sql  # NOT applied — analyses.guest_id for the guest allowance; API works either side (D-116)
 │
 └── Week3-4 Front end/                 # External test suites — referenced from vite.config.ts includes
     ├── PR4/                           # Investor report + shared component tests

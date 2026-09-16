@@ -36,10 +36,14 @@ import {
   claimAnalysisForUser,
   getAnalysisStatus,
   getAnalysisByToken,
+  countGuestAnalyses,
+  markAnalysisGuest,
+  claimGuestAnalyses,
 } from '../services/supabaseService'
 import { resolveUser } from '../lib/requireUser'
 import { startOfNextMonth } from '../lib/billingMonth'
-import { FREE_TIER } from '../constants/tiers'
+import { FREE_TIER, GUEST } from '../constants/tiers'
+import { ensureGuestId, readGuestId, guestLimitEnabled } from '../lib/guestSession'
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
@@ -853,7 +857,9 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         // The check runs before the pipeline (which costs money) and the claim
         // runs before it too, so a run that dies mid-way is still counted —
         // the quota is on analyses started, not finished. Tenant mode is
-        // exempt (spec §4) and guests are not counted (D-071 known limit).
+        // exempt (spec §4). A guest gets one (D-116): the server issues a
+        // visitor cookie, counts analyses against it, and — when the wall is
+        // switched on — refuses the second until they sign in.
         const auth = await resolveUser(req)
         if (!auth.ok && auth.reason === 'invalid') {
           return reply
@@ -880,6 +886,27 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
             }
           }
           await claimAnalysisForUser(token, auth.userId, mode)
+          // A visitor who ran reports before signing in keeps them (D-116).
+          const priorGuestId = readGuestId(req)
+          if (priorGuestId != null) await claimGuestAnalyses(priorGuestId, auth.userId)
+        } else {
+          const guestId = ensureGuestId(req, reply)
+          const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
+          if (!exempt && guestLimitEnabled()) {
+            // null = the column is not applied yet; the wall cannot count, so it lets through.
+            const used = await countGuestAnalyses(guestId)
+            if (used != null && used >= GUEST.FREE_ANALYSES) {
+              return reply.code(402).send({
+                ...makeError(
+                  'GUEST_LIMIT_REACHED',
+                  'Your free report is used — sign in to run another. Your reports come with you.'
+                ),
+                used,
+                limit: GUEST.FREE_ANALYSES,
+              })
+            }
+          }
+          await markAnalysisGuest(token, guestId)
         }
 
         const result = await runAnalysisPipeline(fastify, { token, mode, listing })

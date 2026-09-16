@@ -8,11 +8,12 @@
 
 import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getAnalysisByToken } from '../lib/services/analysisService'
+import { getAnalysisByToken, type GetAnalysisResult } from '../lib/services/analysisService'
 import { useFlagOverrides } from '../hooks/useFlagOverrides'
 import { useOwnerValue } from '../hooks/useOwnerValue'
 import { listingProvenance } from '../lib/provenance'
 import { RentControlNote } from '../components/shared/RentControlNote'
+import { GuestNudge } from '../components/shared/GuestNudge'
 import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
@@ -760,6 +761,8 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   const [showSignIn, setShowSignIn] = useState(false)
   // Server-decided: false until the API says this viewer owns the analysis.
   const [canOverride, setCanOverride] = useState(false)
+  // Present only when the API says this viewer is the guest who ran it (D-116).
+  const [guest, setGuest] = useState<GetAnalysisResult['guest']>(null)
   const { session } = useAuth()
 
   useEffect(() => {
@@ -776,6 +779,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
           setAnalysis(result.analysis)
           setListing(result.listing)
           setCanOverride(result.canOverride === true)
+          setGuest(result.guest ?? null)
         }
       })
       .catch(() => setLoadFailed(true))
@@ -856,6 +860,16 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
         addressSlug={addressSlug}
       />
       <SignInModal open={showSignIn} onClose={() => setShowSignIn(false)} />
+
+      {/* A guest's own report: keep it by signing in (D-116). */}
+      {!loading && !session && guest != null && (
+        <GuestNudge
+          used={guest.used}
+          limit={guest.limit}
+          limitEnabled={guest.limitEnabled}
+          onSignIn={() => setShowSignIn(true)}
+        />
+      )}
 
       {loading && <LoadingState />}
 

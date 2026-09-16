@@ -166,7 +166,7 @@ For-sale: "Are you analyzing this as an investment or for personal use?" — [In
 
 For-rent: "Are you a tenant evaluating this rental, or a landlord analyzing rental income?" — [I'm a Tenant] [I'm a Landlord]
 
-Report C (tenant) requires no login. All other modes check login state. A guest user gets one free analysis with email capture at the end.
+Report C (tenant) requires no login. All other modes check login state. A guest gets one free analysis on a server-issued visitor cookie; the second asks for sign-in (feature-flagged until auth email is reliable), and signing in claims the guest's reports into the account, where they count toward the monthly ten (D-116).
 
 ### Step 3 — Scraping and progress display
 

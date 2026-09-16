@@ -17,9 +17,13 @@ import {
   getAnalysisStatus,
   getAnalysisByToken,
   getAnalysisOwnerByToken,
+  getAnalysisGuestId,
+  countGuestAnalyses,
 } from '../services/supabaseService'
 import { resolveUser } from '../lib/requireUser'
 import { applyValidationErrorHandler, tokenParams } from '../lib/requestSchemas'
+import { readGuestId, guestLimitEnabled } from '../lib/guestSession'
+import { GUEST } from '../constants/tiers'
 
 async function getAnalysisTokenRoutes(fastify: FastifyInstance): Promise<void> {
   applyValidationErrorHandler(fastify)
@@ -59,11 +63,27 @@ async function getAnalysisTokenRoutes(fastify: FastifyInstance): Promise<void> {
         const owner = auth.ok ? await getAnalysisOwnerByToken(token) : null
         const canOverride = auth.ok && owner?.userId != null && owner.userId === auth.userId
 
+        // A guest viewing their own report (D-116): say what the allowance is
+        // and whether the wall is on, so the page can invite sign-in honestly.
+        let guest: { used: number; limit: number; limitEnabled: boolean } | null = null
+        if (!auth.ok) {
+          const guestId = readGuestId(req)
+          if (guestId != null && (await getAnalysisGuestId(token)) === guestId) {
+            const used = await countGuestAnalyses(guestId)
+            guest = {
+              used: used ?? 1,
+              limit: GUEST.FREE_ANALYSES,
+              limitEnabled: guestLimitEnabled(),
+            }
+          }
+        }
+
         return reply.send({
           status: 'complete',
           analysis: result.analysis,
           listing: result.listing,
           canOverride,
+          guest,
         })
       } catch (err) {
         fastify.log.error({ err }, 'Unexpected error in GET /analysis/:token')

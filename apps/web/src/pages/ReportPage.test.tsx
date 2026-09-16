@@ -890,6 +890,45 @@ describe('ReportPage — rent-control note (D-113)', () => {
   })
 })
 
+describe('ReportPage — guest nudge (D-116)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMapboxToken.mockReturnValue(null)
+    listOverrides.mockResolvedValue([])
+  })
+
+  it('a guest viewing their own report is invited to sign in; wall off → keep-it copy', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+      guest: { used: 1, limit: 1, limitEnabled: false },
+    })
+    renderReport()
+    const nudge = await screen.findByTestId('guest-nudge')
+    expect(nudge).toHaveTextContent('Sign in to keep this report in your account')
+    expect(nudge).not.toHaveTextContent('free report as a guest')
+  })
+
+  it('wall on and used up → says the free report is used', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: INVESTOR_ANALYSIS,
+      listing: SALE_LISTING,
+      guest: { used: 1, limit: 1, limitEnabled: true },
+    })
+    renderReport()
+    expect(await screen.findByTestId('guest-nudge')).toHaveTextContent(
+      'This was your free report as a guest (1 of 1)'
+    )
+  })
+
+  it('no nudge for a stranger viewing a shared link or when the API sends none', async () => {
+    getAnalysisByToken.mockResolvedValue({ analysis: INVESTOR_ANALYSIS, listing: SALE_LISTING })
+    renderReport()
+    await screen.findByText(/Investment metrics/i)
+    expect(screen.queryByTestId('guest-nudge')).not.toBeInTheDocument()
+  })
+})
+
 describe('ReportPage — provenance tags (D-111)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
