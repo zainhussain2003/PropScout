@@ -45,6 +45,21 @@ describe('weightComp (D-109)', () => {
     expect(oneBed.weight).toBe(COMP_WEIGHTS.BEDS_ADJACENT)
   })
 
+  it('dwelling type is a fifth factor: same 1, near reduced, unread reduced, wrong market 0 (D-117)', () => {
+    const house = { beds: 3, sqft: null, coords: null, unitType: 'house' as const }
+    expect(weightComp({ rent_monthly: 7000, unit_type: 'house' }, house, NOW).weight).toBe(1)
+    expect(weightComp({ rent_monthly: 5000, unit_type: 'townhouse' }, house, NOW).weight).toBe(
+      COMP_WEIGHTS.UNIT_TYPE_NEAR
+    )
+    expect(weightComp({ rent_monthly: 5000 }, house, NOW).weight).toBe(
+      COMP_WEIGHTS.UNIT_TYPE_UNKNOWN
+    )
+    expect(weightComp({ rent_monthly: 2600, unit_type: 'apartment' }, house, NOW).weight).toBe(0)
+    // A subject with no stated type matches everything but a room.
+    expect(weightComp({ rent_monthly: 2600, unit_type: 'apartment' }, SUBJECT, NOW).weight).toBe(1)
+    expect(weightComp({ rent_monthly: 900, unit_type: 'room' }, SUBJECT, NOW).weight).toBe(0)
+  })
+
   it('a future-dated row is treated as seen today, not weighted above 1', () => {
     const w = weightComp(
       { rent_monthly: 2000, scraped_at: '2027-01-01T00:00:00Z' },

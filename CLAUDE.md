@@ -1293,7 +1293,8 @@ propscout/
 │           │   ├── buildInfo.ts + .test.ts  # Deployed commit for /health (RAILWAY_GIT_COMMIT_SHA, D-094)
 │           │   ├── requestSchemas.ts  # JSON schemas for public routes + one error shape for validation failures (API-04, D-081)
 │           │   ├── schoolWalkTimes.ts + .test.ts  # Routed walking minutes to the nearby schools (D-100)
-│           │   ├── compWeighting.ts + .test.ts  # Similarity weights + weighted percentile for the rent band (D-109)
+│           │   ├── compWeighting.ts + .test.ts  # Similarity weights + weighted percentile for the rent band (D-109, D-117)
+│           │   ├── compUnitType.ts + .test.ts   # A comp's dwelling type read from its source; the subject's need; the pair's factor (D-117)
 │           │   ├── guestSession.ts + .test.ts  # Server-issued guest cookie, read/issue, the wall's flag (D-116)
 │           │   └── requireUser.ts     # Bearer-token → verified Supabase user (D-065)
 │           ├── plugins/

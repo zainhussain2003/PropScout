@@ -159,4 +159,72 @@ describe('RentalCompsSection — comp rows', () => {
     render(<RentalCompsSection askingRent={2900} comps={BAND} />)
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
+
+  it('shows each comp’s dwelling type and how many matched the subject (D-117)', () => {
+    const row = {
+      beds: 3,
+      sqft: null,
+      fsa: 'M5N',
+      source: 'rentals_ca',
+      seenAt: null,
+      distanceKm: null,
+      similarity: 0.9,
+    }
+    render(
+      <RentalCompsSection
+        askingRent={7000}
+        comps={{
+          ...BAND,
+          compCount: 3,
+          radiusKm: null,
+          rows: [
+            { ...row, rentMonthly: 6500, unitType: 'house' },
+            { ...row, rentMonthly: 7000, unitType: 'townhouse', similarity: 0.45 },
+            { ...row, rentMonthly: 7500, unitType: 'unknown' },
+          ],
+          unitTypes: { subject: 'house', matched: 1, near: 1, unknown: 1 },
+        }}
+      />
+    )
+    expect(screen.getByText('Type')).toBeInTheDocument()
+    expect(screen.getByText('House')).toBeInTheDocument()
+    expect(screen.getByText('Townhouse')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Dwelling type: 1 of 3 the same dwelling type \(house\); 1 a near type at reduced weight, 1 of unread type at reduced weight; rooms, basements and the other market were left out/
+      )
+    ).toBeInTheDocument()
+    expect(screen.getByText(/bedroom count and dwelling type/)).toBeInTheDocument()
+  })
+
+  it('claims nothing about dwelling type on an older analysis or a listing that stated none (D-117)', () => {
+    const rows = [
+      {
+        rentMonthly: 2750,
+        beds: 3,
+        sqft: null,
+        fsa: 'L4K',
+        source: 'kijiji',
+        seenAt: null,
+        distanceKm: null,
+        similarity: 0.8,
+      },
+    ]
+    const { rerender } = render(<RentalCompsSection askingRent={2900} comps={{ ...BAND, rows }} />)
+    expect(screen.queryByText('Type')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Dwelling type:/)).not.toBeInTheDocument()
+
+    rerender(
+      <RentalCompsSection
+        askingRent={2900}
+        comps={{
+          ...BAND,
+          rows: [{ ...rows[0]!, unitType: 'apartment' }],
+          unitTypes: { subject: null, matched: 0, near: 1, unknown: 0 },
+        }}
+      />
+    )
+    expect(screen.getByText('Apartment')).toBeInTheDocument()
+    expect(screen.queryByText(/Dwelling type:/)).not.toBeInTheDocument()
+  })
 })

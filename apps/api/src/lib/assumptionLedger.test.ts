@@ -101,6 +101,38 @@ describe('buildAssumptionLedger', () => {
     expect(e.asOf).toBe('2026-09-13T12:00:00.000Z')
   })
 
+  it('rent from comps says how many were the subject’s own dwelling type (D-117)', () => {
+    const e = entry(
+      base({
+        comps: {
+          compCount: 6,
+          radiusKm: null,
+          confidence: 'medium',
+          unitTypes: { subject: 'house', matched: 4, near: 2, unknown: 0 },
+        },
+      }),
+      'rent'
+    )
+    expect(e.method).toMatch(/4 of 6 the same dwelling type \(house\)/)
+    expect(e.method).toMatch(/2 a near type at reduced weight/)
+    expect(e.method).toMatch(/rooms, basements and the other market excluded/)
+    // No stated type on the listing: nothing was matched, nothing is claimed.
+    const none = entry(
+      base({
+        comps: {
+          compCount: 6,
+          radiusKm: null,
+          confidence: 'medium',
+          unitTypes: { subject: null, matched: 0, near: 6, unknown: 0 },
+        },
+      }),
+      'rent'
+    )
+    expect(none.method).not.toMatch(/same dwelling type/)
+    // An analysis from before D-117 carries no summary and reads as before.
+    expect(entry(base(), 'rent').method).not.toMatch(/same dwelling type/)
+  })
+
   it('rent proxied from the asking price is an estimate with the yield stated', () => {
     const e = entry(base({ comps: null, rentMid: 3650 }), 'rent')
     expect(e.basis).toBe('estimate')
