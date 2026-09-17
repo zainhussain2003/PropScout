@@ -1364,6 +1364,9 @@ propscout/
 │       ├── main.py                    # FastAPI scraper service — POST /scrape (called by the API's scrape route)
 │       ├── realtor_scraper.py         # Per-listing Realtor.ca scraper via ScraperAPI premium (dataLayer + JSON-LD parse)
 │       ├── rental_comps_scraper.py + rental_comps_scraper_test.py  # Nightly pipeline orchestrator
+│       ├── geocoding.py + geocoding_test.py  # Placement rules: street in title / neighbourhood table / Mapbox neighbourhood / unplaced (D-119)
+│       ├── regeocode_kijiji.py        # One-off backfill of stored Kijiji rows by the D-119 rules (dry run by default; ran 2026-09-16)
+│       ├── data/toronto_neighbourhoods.json  # City of Toronto neighbourhoods (2021 + 2016 names) — centroid + postal code; built by scripts/_build_toronto_neighbourhoods.py
 │       ├── normalization.py + normalization_test.py  # Rent/beds/postal parsing — pure functions
 │       ├── dedupe.py + dedupe_test.py # Same address + rent + beds within 7 days = one record
 │       ├── _unported/                # Salvaged, NOT wired in — Zillow scraper (506 ln) +
@@ -1376,7 +1379,7 @@ propscout/
 │       │   └── padmapper.py + padmapper_test.py
 │       └── services/                  # Service layer — external calls never inline
 │           ├── supabase_service.py    # source_url upsert writes (scraped_at refresh, first_seen_at insert-only)
-│           └── mapbox_service.py      # Geocoding, non-fatal on failure
+│           └── mapbox_service.py + mapbox_service_test.py  # Geocoding with types / bbox / proximity, relevance-gated; reverse postcode (D-119)
 │
 ├── scripts/                           # One-off data loaders and builders (not part of a service)
 │   ├── agent-loop/                    # Local Claude/Codex coordinator — `npm run agent:*`
@@ -1391,6 +1394,7 @@ propscout/
 │   │   │   ├── schema.mjs             # JSON Schema subset validator for reviews
 │   │   │   └── claims.mjs, git.mjs, policy.mjs  # claim records, git helpers, path policy
 │   │   └── test/                      # node --test — e2e.test.mjs drives a full loop with fake agents
+│   ├── _build_toronto_neighbourhoods.py  # City of Toronto open data → services/scrapers/data/toronto_neighbourhoods.json (D-119)
 │   ├── _build_fsa_stats.py            # StatsCan 2021 FSA profile → fsa_stats.csv (median income)
 │   ├── _build_fsa_growth.py           # 2016+2021 FSA populations → pop_growth_5y (the 2021 profile
 │   │                                  # leaves that characteristic blank — see docs/DECISIONS.md D-010)

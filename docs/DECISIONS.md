@@ -3997,3 +3997,53 @@ what to verify, and copying them into the client would be a second source of tru
 | Suppress the score when a check fails | A 3/100 on a $2.5M house is a true statement about the inputs; the notice explains it.   |
 | Rewrite the sentences in the client   | Two wordings of one check drift; the engine's are already reader-facing.                 |
 | Show on every mode                    | A cap-rate warning on a personal-buyer report explains a figure that report never shows. |
+
+### D-119 · A Kijiji ad is placed by its neighbourhood, not by geocoding its title; every geocode is relevance-gated
+
+**Chosen (2026-09-16, found on D-117's live run).** Kijiji's card gives a title and a location —
+"Bendale-Glen Andrew, City of Toronto" — and the nightly pipeline geocoded the two joined as
+one string. Mapbox does not know most Toronto neighbourhood names; it answered with the nearest
+thing it could match, at low relevance, and that point's postal code filed the ad. Scarborough
+houses landed in M4S and M4W, "SPACIOUS 2 BED SUITE" landed in Laval, and 1 Caldow Road's 5 km
+comps were Scarborough ads. The placement rules now live in `services/scrapers/geocoding.py`:
+
+1. a postal code in the ad text → the address as one;
+2. a **street address in the title** ("… 155 Wellesley Street East …") → Mapbox as an
+   `address` type across the GTA, accepted only when the answer carries the **same house
+   number**, biased toward the neighbourhood when one is known (Toronto has a Dale Avenue in
+   Rosedale and one in Guildwood);
+3. a name in the **City of Toronto neighbourhood table** → its centroid, no call at all;
+4. any other name → Mapbox as `neighborhood`/`locality` types inside the Toronto box, above
+   a floor tuned for that query shape (0.65 — a correct Scarborough answer scores 0.70 because
+   "Toronto, Ontario" match context, not the feature);
+5. nothing locatable → **no coordinates and no postal code.** Out of the comps, not in the wrong
+   market.
+
+The table (`data/toronto_neighbourhoods.json`, 174 names) is the City of Toronto's open
+Neighbourhoods dataset — the 158 of the 2021 revision plus the 16 names from the 2016 set that
+did not survive it, since Kijiji uses both ("Mount Pleasant West") — with the area-weighted
+centroid and the postal code Mapbox reverse-geocodes there, built once by
+`scripts/_build_toronto_neighbourhoods.py`. Matching normalises "The Annex" → Annex and
+"Church & Wellesley" → Church-Wellesley and accepts a unique containment ("Clairlea" →
+Clairlea-Birchmount); two candidates is no match. The Kijiji card now stores its title and
+location apart in `raw_json`, and every placed row records its method in `raw_json.geocode`.
+For every source, a Mapbox answer below 0.8 relevance is discarded (street addresses from
+rentals.ca and PadMapper score 0.9–1.0).
+
+**The backfill.** `regeocode_kijiji.py` re-placed the 4,739 stored Kijiji rows on 2026-09-16
+(dry run, then `--apply`): 1,974 by a street in the title, 1,967 by the table, 359 by a Mapbox
+neighbourhood, 6 by a postal code in the text, **433 unplaced** — rows whose text names nothing
+locatable ("Jameson Avenue Apartments", "Yonge&Steeles"), whose old points were guesses. 2,994
+rows changed; each keeps its previous lat/lng/postal code in `raw_json.geocode_prev`. The nightly
+upsert re-places every ad it sees again, so live ads correct themselves without the script.
+Caldow's 5 km comps went from Scarborough ads at $2,563 to eleven houses in M5P/M6E/M6C/M5M at
+$2,948, still medium confidence — now an honest thin sample rather than the wrong market.
+
+**Alternatives considered**
+
+| Option                                          | Why not                                                                                                                                                  |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Relevance gate alone, still geocoding the title | Relevance did not separate right from wrong on ad copy (0.59 right, 0.48 wrong, 0.73 right); the type and box constraints and the house-number check do. |
+| Visit each ad page for its own coordinates      | 4.7k page loads at politeness delays every night, against a site that blocks datacentre IPs; the neighbourhood is on the card.                           |
+| Keep an unplaceable row's old point             | "SPACIOUS 2 BED SUITE" at H7N was a Laval comp for downtown; a missing row costs one comp, a wrong one poisons a band.                                   |
+| A `neighbourhood` column + migration            | The card's location already travels in `raw_json`; a column can follow when something queries by it.                                                     |

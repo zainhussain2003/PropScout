@@ -73,6 +73,10 @@ This file tells you exactly what to test after each week of development, how to 
 Run from `services/scrapers/`: `python -m pytest normalization_test.py dedupe_test.py rental_comps_scraper_test.py -v`
 Covers rent parsing (weekly ×4.33, daily discarded, sanity bounds), bed parsing (Studio→0, dens not counted), Ontario postal gate, in-batch + 7-day-window dedupe, geocode failure tolerance, and source-failure isolation. 50 tests — must pass before any scraper change merges. No network required (sources, Supabase, and Mapbox are mocked).
 
+**🤖 Test 6b — Placement (D-119)**
+`python -m pytest geocoding_test.py services/mapbox_service_test.py -v` — the neighbourhood table matches exact, normalised and uniquely-contained names and refuses ambiguous ones; a Kijiji row's neighbourhood is read from `raw_json.location` or the address tail, never from ad copy or a truncated "Ontario"; a table name places with no Mapbox call; an unknown name is asked as a neighbourhood inside the Toronto box at the lower floor; a street in the title is accepted only with the same house number and biased to the neighbourhood; a low-relevance answer is discarded for every source; nothing locatable → no coordinates.
+✋ After a nightly run: `select raw_json->>'geocode', count(*) from rental_listings where source='kijiji' and scraped_at > now() - interval '1 day' group by 1` — no method should dominate `unplaced`; spot-check five `neighbourhood_table` rows against their address. The 2026-09-16 backfill (`regeocode_kijiji.py --apply`) kept each row's previous point in `raw_json.geocode_prev`.
+
 **⚠️ Note:** Full rental comps testing requires the nightly scraper to have run at least once and populated the `rental_listings` table. On day one of building, the database will be empty. Start the scraper running immediately and let it accumulate for several days before testing comp results.
 
 **✋ Test 7 — Nightly scraper runs and stores data**
