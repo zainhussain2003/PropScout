@@ -1375,7 +1375,7 @@ propscout/
 │       ├── sources/                   # One module per rental site (selectors are TEMPLATE)
 │       │   ├── browser.py + browser_test.py  # Shared Playwright launch, politeness delay, PageFetch block detection
 │       │   ├── rentals_ca.py + rentals_ca_test.py
-│       │   ├── kijiji.py + kijiji_test.py    # Gated to Toronto (city slug ignored by Kijiji — enforced by test)
+│       │   ├── kijiji.py + kijiji_test.py    # Gated to Toronto (city slug ignored by Kijiji — enforced by test); unfiltered + house + townhouse feeds; card attributes (D-120)
 │       │   └── padmapper.py + padmapper_test.py
 │       └── services/                  # Service layer — external calls never inline
 │           ├── supabase_service.py    # source_url upsert writes (scraped_at refresh, first_seen_at insert-only)

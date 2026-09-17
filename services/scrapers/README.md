@@ -15,11 +15,12 @@ and why a Kijiji ad is placed by its neighbourhood rather than by geocoding its 
 
 ## Environment variables (set on Railway before the first run)
 
-| Var                         | Required | Purpose                                                       | If missing                                                          |
-| --------------------------- | -------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `SUPABASE_URL`              | **Yes**  | Postgres/Storage endpoint                                     | Run aborts — can't store rows                                       |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Yes**  | Backend write key (service role — **never** ship to frontend) | Run aborts                                                          |
-| `MAPBOX_TOKEN`              | No       | Geocoding addresses → lat/lng                                 | Listings stored **without** coordinates (logged warning, non-fatal) |
+| Var                                  | Required | Purpose                                                            | If missing                                                          |
+| ------------------------------------ | -------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `SUPABASE_URL`                       | **Yes**  | Postgres/Storage endpoint                                          | Run aborts — can't store rows                                       |
+| `SUPABASE_SERVICE_ROLE_KEY`          | **Yes**  | Backend write key (service role — **never** ship to frontend)      | Run aborts                                                          |
+| `MAPBOX_TOKEN`                       | No       | Geocoding addresses → lat/lng                                      | Listings stored **without** coordinates (logged warning, non-fatal) |
+| `SCRAPER_KIJIJI_UNIT_TYPE_MAX_PAGES` | No       | Pages read from each of Kijiji's house and townhouse feeds (D-120) | Default 5 (~200 house + ~90 townhouse ads a night)                  |
 
 > The scraper is the one place a `SERVICE_ROLE_KEY` is correct — it writes server-side.
 > It must never appear in `apps/web`.

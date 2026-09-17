@@ -124,6 +124,63 @@ describe('classifyCompUnitType — kijiji title then category', () => {
   })
 })
 
+describe('classifyCompUnitType — kijiji card label (D-120)', () => {
+  const KIJIJI = 'https://www.kijiji.ca/v-apartments-condos/city-of-toronto/x/1'
+
+  it.each([
+    ['Apartment', 'apartment'],
+    ['Condo', 'apartment'],
+    ['House', 'house'],
+    ['Townhouse', 'townhouse'],
+    ['Basement', 'basement'],
+    ['Duplex/Triplex', 'house-unit'],
+  ])('%s → %s, over the title', (unit_type, expected) => {
+    expect(
+      classifyCompUnitType({
+        source: 'kijiji',
+        source_url: KIJIJI,
+        // A title that says nothing about the type.
+        address: 'For Rent - 560 Crawford Street, Bickford Park, City of Toronto',
+        raw_json: { title: 'For Rent - 560 Crawford Street', location: 'Bickford Park', unit_type },
+      })
+    ).toBe(expected)
+  })
+
+  it('a title that says basement or room outranks the poster’s label', () => {
+    // Live 2026-09-17: "2-Bedroom Walkout Basement Apartment" tagged House.
+    expect(
+      classifyCompUnitType({
+        source: 'kijiji',
+        source_url: KIJIJI,
+        address: '2-Bedroom Walkout Basement Apartment, All-Inclusive, Golfdale Gardens, Toronto',
+        raw_json: {
+          title: '2-Bedroom Walkout Basement Apartment, All-Inclusive',
+          unit_type: 'House',
+        },
+      })
+    ).toBe('basement')
+    expect(
+      classifyCompUnitType({
+        source: 'kijiji',
+        source_url: KIJIJI,
+        address: 'Private room in a house, Willowdale, Toronto',
+        raw_json: { title: 'Private room in a house', unit_type: 'House' },
+      })
+    ).toBe('room')
+  })
+
+  it('an unrecognised label falls through to the title and category', () => {
+    expect(
+      classifyCompUnitType({
+        source: 'kijiji',
+        source_url: KIJIJI,
+        address: 'Stacked townhome 2+1, Liberty Village',
+        raw_json: { unit_type: 'Other' },
+      })
+    ).toBe('townhouse')
+  })
+})
+
 describe('classifyCompUnitType — padmapper and unknowns', () => {
   it('reads a padmapper /buildings/ row as an apartment', () => {
     expect(

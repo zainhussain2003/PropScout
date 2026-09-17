@@ -53,9 +53,8 @@
 
 Ordered by how much a user would notice.
 
-| Item                                       | Notes                                                                                                                                                                                                       |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Kijiji: scrape the houses category too** | The nightly job reads only `v-apartments-condos`; house ads only arrive when posted there. Adding `v-house-rental` gives house subjects (D-117) real comps. Needs one supervised run against the live site. |
+| Item | Notes |
+| ---- | ----- |
 
 ## 6. Paywall / pricing (lower priority per owner)
 
