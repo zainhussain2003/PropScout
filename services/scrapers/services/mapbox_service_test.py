@@ -102,3 +102,86 @@ async def test_raise_for_status_error_returns_none(monkeypatch):
     with _patch_http(http):
         result = await mapbox_service.geocode_address("5 Buttermill Ave, Vaughan")
     assert result is None
+
+
+# ── Relevance gate, type/bbox filters, reverse postcode (D-119) ───────────────
+
+
+@pytest.mark.asyncio
+async def test_low_relevance_match_is_discarded(monkeypatch):
+    # "South Cedarbrae, Toronto" used to come back as a midtown point at 0.5;
+    # that guess became the comp's postal code.
+    monkeypatch.setenv("MAPBOX_TOKEN", "test-token")
+    http = _mock_http_client(
+        features=[
+            {
+                "center": [-79.39, 43.70],
+                "relevance": 0.5,
+                "place_type": ["neighborhood"],
+            }
+        ]
+    )
+    with _patch_http(http):
+        assert await mapbox_service.geocode_address("South Cedarbrae, Toronto") is None
+        # The caller can lower the floor when it has reason to.
+        result = await mapbox_service.geocode_address(
+            "South Cedarbrae, Toronto", min_relevance=0.4
+        )
+    assert result is not None
+    assert result.relevance == 0.5
+    assert result.place_type == "neighborhood"
+
+
+@pytest.mark.asyncio
+async def test_types_and_bbox_are_sent_as_mapbox_params(monkeypatch):
+    monkeypatch.setenv("MAPBOX_TOKEN", "test-token")
+    http = _mock_http_client(
+        features=[
+            {
+                "center": [-79.23, 43.76],
+                "relevance": 0.9,
+                "place_type": ["neighborhood"],
+            }
+        ]
+    )
+    with _patch_http(http):
+        await mapbox_service.geocode_address(
+            "Cedarbrae, Toronto, Ontario",
+            types="neighborhood,locality",
+            bbox=(-79.64, 43.58, -79.11, 43.86),
+        )
+    params = http.get.call_args.kwargs["params"]
+    assert params["types"] == "neighborhood,locality"
+    assert params["bbox"] == "-79.64,43.58,-79.11,43.86"
+    assert params["country"] == "ca"
+
+
+@pytest.mark.asyncio
+async def test_a_feature_without_relevance_is_treated_as_certain(monkeypatch):
+    monkeypatch.setenv("MAPBOX_TOKEN", "test-token")
+    http = _mock_http_client(features=[{"center": [-79.53, 43.79]}])
+    with _patch_http(http):
+        result = await mapbox_service.geocode_address("5 Buttermill Ave, Vaughan")
+    assert result is not None and result.relevance == 1.0
+
+
+@pytest.mark.asyncio
+async def test_reverse_postal_code_reads_the_postcode_feature(monkeypatch):
+    monkeypatch.setenv("MAPBOX_TOKEN", "test-token")
+    http = _mock_http_client(
+        features=[{"id": "postcode.123", "text": "M1H 2K3", "center": [-79.23, 43.76]}]
+    )
+    with _patch_http(http):
+        assert await mapbox_service.reverse_postal_code(43.76, -79.23) == "M1H2K3"
+    url = http.get.call_args.args[0]
+    assert url.startswith(
+        "https://api.mapbox.com/geocoding/v5/mapbox.places/-79.23,43.76"
+    )
+    assert http.get.call_args.kwargs["params"]["types"] == "postcode"
+
+
+@pytest.mark.asyncio
+async def test_reverse_postal_code_is_none_on_failure(monkeypatch):
+    monkeypatch.setenv("MAPBOX_TOKEN", "test-token")
+    with _patch_http(_mock_http_client(features=[])):
+        assert await mapbox_service.reverse_postal_code(43.76, -79.23) is None

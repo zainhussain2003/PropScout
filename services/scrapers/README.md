@@ -5,7 +5,11 @@ cron job (`railway.json`: `0 6 * * *` UTC = 01:00 EST / 02:00 EDT). Scrapes thre
 (Rentals.ca, Kijiji, PadMapper) across the Ontario target cities, normalises, dedupes,
 geocodes, and **inserts only — historical rows are never deleted** (accumulation is the moat).
 
-Pipeline detail lives in `rental_comps_scraper.py`; spec Section 11.2.
+Pipeline detail lives in `rental_comps_scraper.py`; spec Section 11.2. Where a row is placed —
+and why a Kijiji ad is placed by its neighbourhood rather than by geocoding its title — is in
+`geocoding.py` (D-119). `regeocode_kijiji.py` re-places the stored Kijiji rows by the same rules
+(dry run by default, `--apply` to write; each row keeps its previous point in
+`raw_json.geocode_prev`).
 
 ---
 

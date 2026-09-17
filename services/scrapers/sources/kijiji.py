@@ -162,6 +162,9 @@ async def _parse_card(card: object) -> RawRentalListing | None:
             address=address,
             rent_raw=(await rent_el.inner_text()).strip(),
             beds_raw=beds_raw,
+            # The two halves of `address`, kept apart: the location is what
+            # places the ad (D-119) and the title is what names its type (D-117).
+            raw_json={"title": title, "location": location},
         )
     except Exception:
         logger.exception("Failed to parse a kijiji card")

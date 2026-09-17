@@ -1,0 +1,1401 @@
+{
+  "source": "City of Toronto Open Data — Neighbourhoods (158, 2021 revision) + the 2016 set of 140 it replaced",
+  "source_url": "https://open.toronto.ca/dataset/neighbourhoods/",
+  "licence": "Open Government Licence – Toronto",
+  "built_at": "2026-09-16",
+  "postal_code_method": "Mapbox reverse geocode of the area-weighted centroid",
+  "neighbourhoods": [
+    {
+      "name": "Agincourt North",
+      "code": 129,
+      "revision": 2021,
+      "lat": 43.80544,
+      "lng": -79.26671,
+      "postal_code": "M1S3X1"
+    },
+    {
+      "name": "Agincourt South-Malvern West",
+      "code": 128,
+      "revision": 2021,
+      "lat": 43.78866,
+      "lng": -79.26561,
+      "postal_code": "M1S1V2"
+    },
+    {
+      "name": "Alderwood",
+      "code": 20,
+      "revision": 2021,
+      "lat": 43.60494,
+      "lng": -79.54161,
+      "postal_code": "M8W2G5"
+    },
+    {
+      "name": "Annex",
+      "code": 95,
+      "revision": 2021,
+      "lat": 43.67159,
+      "lng": -79.404,
+      "postal_code": "M5R2S3"
+    },
+    {
+      "name": "Avondale",
+      "code": 153,
+      "revision": 2021,
+      "lat": 43.76096,
+      "lng": -79.40084,
+      "postal_code": "M2N2W4"
+    },
+    {
+      "name": "Banbury-Don Mills",
+      "code": 42,
+      "revision": 2021,
+      "lat": 43.73766,
+      "lng": -79.34972,
+      "postal_code": "M3B1B5"
+    },
+    {
+      "name": "Bathurst Manor",
+      "code": 34,
+      "revision": 2021,
+      "lat": 43.76481,
+      "lng": -79.45606,
+      "postal_code": "M3H4T8"
+    },
+    {
+      "name": "Bay Street Corridor",
+      "code": 76,
+      "revision": 2016,
+      "lat": 43.65751,
+      "lng": -79.38572,
+      "postal_code": "M5G1H9"
+    },
+    {
+      "name": "Bay-Cloverhill",
+      "code": 169,
+      "revision": 2021,
+      "lat": 43.6649,
+      "lng": -79.38895,
+      "postal_code": "M5S3C2"
+    },
+    {
+      "name": "Bayview Village",
+      "code": 52,
+      "revision": 2021,
+      "lat": 43.77636,
+      "lng": -79.37712,
+      "postal_code": "M2K1V3"
+    },
+    {
+      "name": "Bayview Woods-Steeles",
+      "code": 49,
+      "revision": 2021,
+      "lat": 43.7968,
+      "lng": -79.38212,
+      "postal_code": "M2K2P5"
+    },
+    {
+      "name": "Bedford Park-Nortown",
+      "code": 39,
+      "revision": 2021,
+      "lat": 43.73149,
+      "lng": -79.42023,
+      "postal_code": "M5M2G3"
+    },
+    {
+      "name": "Beechborough-Greenbrook",
+      "code": 112,
+      "revision": 2021,
+      "lat": 43.69322,
+      "lng": -79.47947,
+      "postal_code": "M6M2A1"
+    },
+    {
+      "name": "Bendale",
+      "code": 127,
+      "revision": 2016,
+      "lat": 43.76037,
+      "lng": -79.2574,
+      "postal_code": "M1P4C3"
+    },
+    {
+      "name": "Bendale South",
+      "code": 157,
+      "revision": 2021,
+      "lat": 43.74865,
+      "lng": -79.25244,
+      "postal_code": "M1J1S2"
+    },
+    {
+      "name": "Bendale-Glen Andrew",
+      "code": 156,
+      "revision": 2021,
+      "lat": 43.76643,
+      "lng": -79.25997,
+      "postal_code": "M1P3G5"
+    },
+    {
+      "name": "Birchcliffe-Cliffside",
+      "code": 122,
+      "revision": 2021,
+      "lat": 43.69468,
+      "lng": -79.26509,
+      "postal_code": "M1N2C8"
+    },
+    {
+      "name": "Black Creek",
+      "code": 24,
+      "revision": 2021,
+      "lat": 43.76489,
+      "lng": -79.52198,
+      "postal_code": "M3N1R6"
+    },
+    {
+      "name": "Blake-Jones",
+      "code": 69,
+      "revision": 2021,
+      "lat": 43.67617,
+      "lng": -79.33739,
+      "postal_code": "M4J3L3"
+    },
+    {
+      "name": "Briar Hill-Belgravia",
+      "code": 108,
+      "revision": 2021,
+      "lat": 43.69902,
+      "lng": -79.45287,
+      "postal_code": "M6E2S8"
+    },
+    {
+      "name": "Bridle Path-Sunnybrook-York Mills",
+      "code": 41,
+      "revision": 2021,
+      "lat": 43.73101,
+      "lng": -79.3789,
+      "postal_code": "M2L1A2"
+    },
+    {
+      "name": "Broadview North",
+      "code": 57,
+      "revision": 2021,
+      "lat": 43.68883,
+      "lng": -79.35563,
+      "postal_code": "M4K2S5"
+    },
+    {
+      "name": "Brookhaven-Amesbury",
+      "code": 30,
+      "revision": 2021,
+      "lat": 43.70133,
+      "lng": -79.48559,
+      "postal_code": "M6M4K9"
+    },
+    {
+      "name": "Cabbagetown-South St.James Town",
+      "code": 71,
+      "revision": 2021,
+      "lat": 43.66765,
+      "lng": -79.36611,
+      "postal_code": "M4X1S9"
+    },
+    {
+      "name": "Caledonia-Fairbank",
+      "code": 109,
+      "revision": 2021,
+      "lat": 43.68857,
+      "lng": -79.45521,
+      "postal_code": "M6E4L8"
+    },
+    {
+      "name": "Casa Loma",
+      "code": 96,
+      "revision": 2021,
+      "lat": 43.68185,
+      "lng": -79.40801,
+      "postal_code": "M4V2T2"
+    },
+    {
+      "name": "Centennial Scarborough",
+      "code": 133,
+      "revision": 2021,
+      "lat": 43.78238,
+      "lng": -79.15084,
+      "postal_code": "M1C3C4"
+    },
+    {
+      "name": "Church-Wellesley",
+      "code": 167,
+      "revision": 2021,
+      "lat": 43.66635,
+      "lng": -79.38176,
+      "postal_code": "M4Y1K3"
+    },
+    {
+      "name": "Church-Yonge Corridor",
+      "code": 75,
+      "revision": 2016,
+      "lat": 43.65965,
+      "lng": -79.37902,
+      "postal_code": "M5B1G3"
+    },
+    {
+      "name": "Clairlea-Birchmount",
+      "code": 120,
+      "revision": 2021,
+      "lat": 43.71359,
+      "lng": -79.28138,
+      "postal_code": "M1L0G6"
+    },
+    {
+      "name": "Clanton Park",
+      "code": 33,
+      "revision": 2021,
+      "lat": 43.74198,
+      "lng": -79.44637,
+      "postal_code": "M3H2B2"
+    },
+    {
+      "name": "Cliffcrest",
+      "code": 123,
+      "revision": 2021,
+      "lat": 43.72112,
+      "lng": -79.23553,
+      "postal_code": "M1M2P9"
+    },
+    {
+      "name": "Corso Italia-Davenport",
+      "code": 92,
+      "revision": 2021,
+      "lat": 43.67766,
+      "lng": -79.4475,
+      "postal_code": "M6E4A7"
+    },
+    {
+      "name": "Danforth",
+      "code": 66,
+      "revision": 2021,
+      "lat": 43.68403,
+      "lng": -79.32982,
+      "postal_code": "M4J1R7"
+    },
+    {
+      "name": "Danforth East York",
+      "code": 59,
+      "revision": 2021,
+      "lat": 43.68947,
+      "lng": -79.3314,
+      "postal_code": "M4J4N3"
+    },
+    {
+      "name": "Don Valley Village",
+      "code": 47,
+      "revision": 2021,
+      "lat": 43.78329,
+      "lng": -79.35364,
+      "postal_code": "M2J2K7"
+    },
+    {
+      "name": "Dorset Park",
+      "code": 126,
+      "revision": 2021,
+      "lat": 43.75928,
+      "lng": -79.27891,
+      "postal_code": "M1P2L5"
+    },
+    {
+      "name": "Dovercourt Village",
+      "code": 172,
+      "revision": 2021,
+      "lat": 43.66623,
+      "lng": -79.4288,
+      "postal_code": "M6H2P8"
+    },
+    {
+      "name": "Dovercourt-Wallace Emerson-Junction",
+      "code": 93,
+      "revision": 2016,
+      "lat": 43.66568,
+      "lng": -79.43854,
+      "postal_code": "M6H1W4"
+    },
+    {
+      "name": "Downsview",
+      "code": 155,
+      "revision": 2021,
+      "lat": 43.7387,
+      "lng": -79.47424,
+      "postal_code": "M3K0B7"
+    },
+    {
+      "name": "Downsview-Roding-CFB",
+      "code": 26,
+      "revision": 2016,
+      "lat": 43.73329,
+      "lng": -79.49049,
+      "postal_code": "M3M2N9"
+    },
+    {
+      "name": "Downtown Yonge East",
+      "code": 168,
+      "revision": 2021,
+      "lat": 43.65503,
+      "lng": -79.37713,
+      "postal_code": "M5B1Z2"
+    },
+    {
+      "name": "Dufferin Grove",
+      "code": 83,
+      "revision": 2021,
+      "lat": 43.65543,
+      "lng": -79.43734,
+      "postal_code": "M6H3N8"
+    },
+    {
+      "name": "East End-Danforth",
+      "code": 62,
+      "revision": 2021,
+      "lat": 43.68417,
+      "lng": -79.29936,
+      "postal_code": "M4E2E1"
+    },
+    {
+      "name": "East L'Amoreaux",
+      "code": 148,
+      "revision": 2021,
+      "lat": 43.79897,
+      "lng": -79.30567,
+      "postal_code": "M1T2Z7"
+    },
+    {
+      "name": "East Willowdale",
+      "code": 152,
+      "revision": 2021,
+      "lat": 43.77345,
+      "lng": -79.40031,
+      "postal_code": "M2N3Z2"
+    },
+    {
+      "name": "Edenbridge-Humber Valley",
+      "code": 9,
+      "revision": 2021,
+      "lat": 43.67089,
+      "lng": -79.52246,
+      "postal_code": "M9A3H4"
+    },
+    {
+      "name": "Eglinton East",
+      "code": 138,
+      "revision": 2021,
+      "lat": 43.74092,
+      "lng": -79.2456,
+      "postal_code": "M1J1E8"
+    },
+    {
+      "name": "Elms-Old Rexdale",
+      "code": 5,
+      "revision": 2021,
+      "lat": 43.72152,
+      "lng": -79.54898,
+      "postal_code": "M9W3V4"
+    },
+    {
+      "name": "Englemount-Lawrence",
+      "code": 32,
+      "revision": 2021,
+      "lat": 43.72035,
+      "lng": -79.43741,
+      "postal_code": "M6A2K2"
+    },
+    {
+      "name": "Eringate-Centennial-West Deane",
+      "code": 11,
+      "revision": 2021,
+      "lat": 43.65802,
+      "lng": -79.58044,
+      "postal_code": "M9C4C5"
+    },
+    {
+      "name": "Etobicoke City Centre",
+      "code": 159,
+      "revision": 2021,
+      "lat": 43.62571,
+      "lng": -79.54078,
+      "postal_code": "M8Z2L6"
+    },
+    {
+      "name": "Etobicoke West Mall",
+      "code": 13,
+      "revision": 2021,
+      "lat": 43.64506,
+      "lng": -79.56894,
+      "postal_code": "M9C3K6"
+    },
+    {
+      "name": "Fenside-Parkwoods",
+      "code": 150,
+      "revision": 2021,
+      "lat": 43.76157,
+      "lng": -79.33092,
+      "postal_code": "M3A2A4"
+    },
+    {
+      "name": "Flemingdon Park",
+      "code": 44,
+      "revision": 2021,
+      "lat": 43.71593,
+      "lng": -79.33265,
+      "postal_code": "M3C1C3"
+    },
+    {
+      "name": "Forest Hill North",
+      "code": 102,
+      "revision": 2021,
+      "lat": 43.70421,
+      "lng": -79.42816,
+      "postal_code": "M6C2J9"
+    },
+    {
+      "name": "Forest Hill South",
+      "code": 101,
+      "revision": 2021,
+      "lat": 43.69453,
+      "lng": -79.41432,
+      "postal_code": "M5P2T6"
+    },
+    {
+      "name": "Fort York-Liberty Village",
+      "code": 163,
+      "revision": 2021,
+      "lat": 43.63427,
+      "lng": -79.413,
+      "postal_code": "M6K3C3"
+    },
+    {
+      "name": "Glenfield-Jane Heights",
+      "code": 25,
+      "revision": 2021,
+      "lat": 43.74563,
+      "lng": -79.51346,
+      "postal_code": "M3L2G4"
+    },
+    {
+      "name": "Golfdale-Cedarbrae-Woburn",
+      "code": 141,
+      "revision": 2021,
+      "lat": 43.76002,
+      "lng": -79.22,
+      "postal_code": "M1G1P7"
+    },
+    {
+      "name": "Greenwood-Coxwell",
+      "code": 65,
+      "revision": 2021,
+      "lat": 43.67261,
+      "lng": -79.32432,
+      "postal_code": "M4L2X1"
+    },
+    {
+      "name": "Guildwood",
+      "code": 140,
+      "revision": 2021,
+      "lat": 43.74883,
+      "lng": -79.19504,
+      "postal_code": "M1E1P7"
+    },
+    {
+      "name": "Harbourfront-CityPlace",
+      "code": 165,
+      "revision": 2021,
+      "lat": 43.64012,
+      "lng": -79.39038,
+      "postal_code": "M5V3V3"
+    },
+    {
+      "name": "Henry Farm",
+      "code": 53,
+      "revision": 2021,
+      "lat": 43.77114,
+      "lng": -79.34124,
+      "postal_code": "M2J0C2"
+    },
+    {
+      "name": "High Park North",
+      "code": 88,
+      "revision": 2021,
+      "lat": 43.65756,
+      "lng": -79.4663,
+      "postal_code": "M6P1G3"
+    },
+    {
+      "name": "High Park-Swansea",
+      "code": 87,
+      "revision": 2021,
+      "lat": 43.64506,
+      "lng": -79.46787,
+      "postal_code": "M6S2X4"
+    },
+    {
+      "name": "Highland Creek",
+      "code": 134,
+      "revision": 2021,
+      "lat": 43.79077,
+      "lng": -79.17747,
+      "postal_code": "M1C3R5"
+    },
+    {
+      "name": "Hillcrest Village",
+      "code": 48,
+      "revision": 2021,
+      "lat": 43.80299,
+      "lng": -79.3548,
+      "postal_code": "M2H3H3"
+    },
+    {
+      "name": "Humber Bay Shores",
+      "code": 161,
+      "revision": 2021,
+      "lat": 43.62239,
+      "lng": -79.48064,
+      "postal_code": "M8V0B7"
+    },
+    {
+      "name": "Humber Heights-Westmount",
+      "code": 8,
+      "revision": 2021,
+      "lat": 43.69223,
+      "lng": -79.52242,
+      "postal_code": "M9P2X4"
+    },
+    {
+      "name": "Humber Summit",
+      "code": 21,
+      "revision": 2021,
+      "lat": 43.75892,
+      "lng": -79.55617,
+      "postal_code": "M9L1X6"
+    },
+    {
+      "name": "Humbermede",
+      "code": 22,
+      "revision": 2021,
+      "lat": 43.74343,
+      "lng": -79.54237,
+      "postal_code": "M9M2V4"
+    },
+    {
+      "name": "Humewood-Cedarvale",
+      "code": 106,
+      "revision": 2021,
+      "lat": 43.69137,
+      "lng": -79.42768,
+      "postal_code": "M6C1M8"
+    },
+    {
+      "name": "Ionview",
+      "code": 125,
+      "revision": 2021,
+      "lat": 43.73536,
+      "lng": -79.27247,
+      "postal_code": "M1K3A9"
+    },
+    {
+      "name": "Islington",
+      "code": 158,
+      "revision": 2021,
+      "lat": 43.64634,
+      "lng": -79.54753,
+      "postal_code": "M9B4K6"
+    },
+    {
+      "name": "Islington-City Centre West",
+      "code": 14,
+      "revision": 2016,
+      "lat": 43.63347,
+      "lng": -79.54332,
+      "postal_code": "M9B1B4"
+    },
+    {
+      "name": "Junction Area",
+      "code": 90,
+      "revision": 2021,
+      "lat": 43.66789,
+      "lng": -79.47144,
+      "postal_code": "M6N3C9"
+    },
+    {
+      "name": "Junction-Wallace Emerson",
+      "code": 171,
+      "revision": 2021,
+      "lat": 43.6653,
+      "lng": -79.44512,
+      "postal_code": "M6H1Y8"
+    },
+    {
+      "name": "Keelesdale-Eglinton West",
+      "code": 110,
+      "revision": 2021,
+      "lat": 43.68573,
+      "lng": -79.47144,
+      "postal_code": "M6M3W5"
+    },
+    {
+      "name": "Kennedy Park",
+      "code": 124,
+      "revision": 2021,
+      "lat": 43.72556,
+      "lng": -79.26038,
+      "postal_code": "M1K3C7"
+    },
+    {
+      "name": "Kensington-Chinatown",
+      "code": 78,
+      "revision": 2021,
+      "lat": 43.65355,
+      "lng": -79.39724,
+      "postal_code": "M5T1G9"
+    },
+    {
+      "name": "Kingsview Village-The Westway",
+      "code": 6,
+      "revision": 2021,
+      "lat": 43.69899,
+      "lng": -79.54786,
+      "postal_code": "M9P3N6"
+    },
+    {
+      "name": "Kingsway South",
+      "code": 15,
+      "revision": 2021,
+      "lat": 43.65352,
+      "lng": -79.51058,
+      "postal_code": "M8X2T9"
+    },
+    {
+      "name": "L'Amoreaux",
+      "code": 117,
+      "revision": 2016,
+      "lat": 43.79572,
+      "lng": -79.31408,
+      "postal_code": "M1W2V3"
+    },
+    {
+      "name": "L'Amoreaux West",
+      "code": 147,
+      "revision": 2021,
+      "lat": 43.79225,
+      "lng": -79.32306,
+      "postal_code": "M1W1N6"
+    },
+    {
+      "name": "Lambton Baby Point",
+      "code": 114,
+      "revision": 2021,
+      "lat": 43.65742,
+      "lng": -79.49604,
+      "postal_code": "M6S2G3"
+    },
+    {
+      "name": "Lansing-Westgate",
+      "code": 38,
+      "revision": 2021,
+      "lat": 43.75427,
+      "lng": -79.42475,
+      "postal_code": "M2N2L7"
+    },
+    {
+      "name": "Lawrence Park North",
+      "code": 105,
+      "revision": 2021,
+      "lat": 43.73006,
+      "lng": -79.40398,
+      "postal_code": "M4N2L6"
+    },
+    {
+      "name": "Lawrence Park South",
+      "code": 103,
+      "revision": 2021,
+      "lat": 43.71721,
+      "lng": -79.40604,
+      "postal_code": "M4R1N1"
+    },
+    {
+      "name": "Leaside-Bennington",
+      "code": 56,
+      "revision": 2021,
+      "lat": 43.7038,
+      "lng": -79.36607,
+      "postal_code": "M4G1M5"
+    },
+    {
+      "name": "Little Portugal",
+      "code": 84,
+      "revision": 2021,
+      "lat": 43.64754,
+      "lng": -79.43032,
+      "postal_code": "M6K2B1"
+    },
+    {
+      "name": "Long Branch",
+      "code": 19,
+      "revision": 2021,
+      "lat": 43.59236,
+      "lng": -79.53334,
+      "postal_code": "M8W3H9"
+    },
+    {
+      "name": "Malvern",
+      "code": 132,
+      "revision": 2016,
+      "lat": 43.80366,
+      "lng": -79.22252,
+      "postal_code": "M1B1K3"
+    },
+    {
+      "name": "Malvern East",
+      "code": 146,
+      "revision": 2021,
+      "lat": 43.80202,
+      "lng": -79.21565,
+      "postal_code": "M1B1L7"
+    },
+    {
+      "name": "Malvern West",
+      "code": 145,
+      "revision": 2021,
+      "lat": 43.8056,
+      "lng": -79.23075,
+      "postal_code": "M1B5K1"
+    },
+    {
+      "name": "Maple Leaf",
+      "code": 29,
+      "revision": 2021,
+      "lat": 43.71557,
+      "lng": -79.48076,
+      "postal_code": "M6L2P6"
+    },
+    {
+      "name": "Markland Wood",
+      "code": 12,
+      "revision": 2021,
+      "lat": 43.63354,
+      "lng": -79.57343,
+      "postal_code": "M9C2V7"
+    },
+    {
+      "name": "Milliken",
+      "code": 130,
+      "revision": 2021,
+      "lat": 43.82069,
+      "lng": -79.27501,
+      "postal_code": "M1V4L8"
+    },
+    {
+      "name": "Mimico (includes Humber Bay Shores)",
+      "code": 17,
+      "revision": 2016,
+      "lat": 43.61592,
+      "lng": -79.50013,
+      "postal_code": "M8Z1A6"
+    },
+    {
+      "name": "Mimico-Queensway",
+      "code": 160,
+      "revision": 2021,
+      "lat": 43.61406,
+      "lng": -79.50575,
+      "postal_code": "M8Z1A4"
+    },
+    {
+      "name": "Morningside",
+      "code": 135,
+      "revision": 2021,
+      "lat": 43.7824,
+      "lng": -79.20704,
+      "postal_code": "M1E4C4"
+    },
+    {
+      "name": "Morningside Heights",
+      "code": 144,
+      "revision": 2021,
+      "lat": 43.8279,
+      "lng": -79.19772,
+      "postal_code": "M1X1R8"
+    },
+    {
+      "name": "Moss Park",
+      "code": 73,
+      "revision": 2021,
+      "lat": 43.65653,
+      "lng": -79.36745,
+      "postal_code": "M5A1W1"
+    },
+    {
+      "name": "Mount Dennis",
+      "code": 115,
+      "revision": 2021,
+      "lat": 43.68814,
+      "lng": -79.49999,
+      "postal_code": "M6M2B4"
+    },
+    {
+      "name": "Mount Olive-Silverstone-Jamestown",
+      "code": 2,
+      "revision": 2021,
+      "lat": 43.74687,
+      "lng": -79.58726,
+      "postal_code": "M9V3G4"
+    },
+    {
+      "name": "Mount Pleasant East",
+      "code": 99,
+      "revision": 2021,
+      "lat": 43.70483,
+      "lng": -79.38494,
+      "postal_code": "M4S1S3"
+    },
+    {
+      "name": "Mount Pleasant West",
+      "code": 104,
+      "revision": 2016,
+      "lat": 43.70444,
+      "lng": -79.39336,
+      "postal_code": "M4S1T5"
+    },
+    {
+      "name": "New Toronto",
+      "code": 18,
+      "revision": 2021,
+      "lat": 43.60058,
+      "lng": -79.51036,
+      "postal_code": "M8V4G6"
+    },
+    {
+      "name": "Newtonbrook East",
+      "code": 50,
+      "revision": 2021,
+      "lat": 43.79154,
+      "lng": -79.40594,
+      "postal_code": "M2M2H9"
+    },
+    {
+      "name": "Newtonbrook West",
+      "code": 36,
+      "revision": 2021,
+      "lat": 43.78583,
+      "lng": -79.43142,
+      "postal_code": "M2M1G2"
+    },
+    {
+      "name": "Niagara",
+      "code": 82,
+      "revision": 2016,
+      "lat": 43.63668,
+      "lng": -79.41242,
+      "postal_code": "M6K3C3"
+    },
+    {
+      "name": "North Riverdale",
+      "code": 68,
+      "revision": 2021,
+      "lat": 43.672,
+      "lng": -79.35126,
+      "postal_code": "M4K1G7"
+    },
+    {
+      "name": "North St.James Town",
+      "code": 74,
+      "revision": 2021,
+      "lat": 43.66962,
+      "lng": -79.37525,
+      "postal_code": "M4X1W6"
+    },
+    {
+      "name": "North Toronto",
+      "code": 173,
+      "revision": 2021,
+      "lat": 43.71025,
+      "lng": -79.39507,
+      "postal_code": "M4P1T9"
+    },
+    {
+      "name": "O'Connor-Parkview",
+      "code": 54,
+      "revision": 2021,
+      "lat": 43.7068,
+      "lng": -79.31223,
+      "postal_code": "M4B2S9"
+    },
+    {
+      "name": "Oakdale-Beverley Heights",
+      "code": 154,
+      "revision": 2021,
+      "lat": 43.72656,
+      "lng": -79.51074,
+      "postal_code": "M3L1K8"
+    },
+    {
+      "name": "Oakridge",
+      "code": 121,
+      "revision": 2021,
+      "lat": 43.69741,
+      "lng": -79.27971,
+      "postal_code": "M1L3V2"
+    },
+    {
+      "name": "Oakwood Village",
+      "code": 107,
+      "revision": 2021,
+      "lat": 43.68857,
+      "lng": -79.43979,
+      "postal_code": "M6E1T2"
+    },
+    {
+      "name": "Old East York",
+      "code": 58,
+      "revision": 2021,
+      "lat": 43.69678,
+      "lng": -79.33549,
+      "postal_code": "M4J2W3"
+    },
+    {
+      "name": "Palmerston-Little Italy",
+      "code": 80,
+      "revision": 2021,
+      "lat": 43.65916,
+      "lng": -79.41841,
+      "postal_code": "M6G1H3"
+    },
+    {
+      "name": "Parkwoods-Donalda",
+      "code": 45,
+      "revision": 2016,
+      "lat": 43.75503,
+      "lng": -79.33018,
+      "postal_code": "M3A1X3"
+    },
+    {
+      "name": "Parkwoods-O'Connor Hills",
+      "code": 149,
+      "revision": 2021,
+      "lat": 43.7498,
+      "lng": -79.32958,
+      "postal_code": "M3A1S3"
+    },
+    {
+      "name": "Pelmo Park-Humberlea",
+      "code": 23,
+      "revision": 2021,
+      "lat": 43.71752,
+      "lng": -79.52828,
+      "postal_code": "M9M1B2"
+    },
+    {
+      "name": "Playter Estates-Danforth",
+      "code": 67,
+      "revision": 2021,
+      "lat": 43.6797,
+      "lng": -79.35489,
+      "postal_code": "M4K2W1"
+    },
+    {
+      "name": "Pleasant View",
+      "code": 46,
+      "revision": 2021,
+      "lat": 43.78698,
+      "lng": -79.33495,
+      "postal_code": "M2J4C5"
+    },
+    {
+      "name": "Princess-Rosethorn",
+      "code": 10,
+      "revision": 2021,
+      "lat": 43.66605,
+      "lng": -79.54456,
+      "postal_code": "M9A1W9"
+    },
+    {
+      "name": "Regent Park",
+      "code": 72,
+      "revision": 2021,
+      "lat": 43.65999,
+      "lng": -79.36051,
+      "postal_code": "M5A0C6"
+    },
+    {
+      "name": "Rexdale-Kipling",
+      "code": 4,
+      "revision": 2021,
+      "lat": 43.72373,
+      "lng": -79.56623,
+      "postal_code": "M9W2R3"
+    },
+    {
+      "name": "Rockcliffe-Smythe",
+      "code": 111,
+      "revision": 2021,
+      "lat": 43.67479,
+      "lng": -79.49442,
+      "postal_code": "M6N4C4"
+    },
+    {
+      "name": "Roncesvalles",
+      "code": 86,
+      "revision": 2021,
+      "lat": 43.64612,
+      "lng": -79.44299,
+      "postal_code": "M6R2G1"
+    },
+    {
+      "name": "Rosedale-Moore Park",
+      "code": 98,
+      "revision": 2021,
+      "lat": 43.68281,
+      "lng": -79.37965,
+      "postal_code": "M4W2Y3"
+    },
+    {
+      "name": "Rouge",
+      "code": 131,
+      "revision": 2016,
+      "lat": 43.8212,
+      "lng": -79.18635,
+      "postal_code": "M1B5W6"
+    },
+    {
+      "name": "Runnymede-Bloor West Village",
+      "code": 89,
+      "revision": 2021,
+      "lat": 43.65927,
+      "lng": -79.48571,
+      "postal_code": "M6S3R9"
+    },
+    {
+      "name": "Rustic",
+      "code": 28,
+      "revision": 2021,
+      "lat": 43.71161,
+      "lng": -79.49809,
+      "postal_code": "M6L3A3"
+    },
+    {
+      "name": "Scarborough Village",
+      "code": 139,
+      "revision": 2021,
+      "lat": 43.73865,
+      "lng": -79.21681,
+      "postal_code": "M1M1R7"
+    },
+    {
+      "name": "South Eglinton-Davisville",
+      "code": 174,
+      "revision": 2021,
+      "lat": 43.70193,
+      "lng": -79.39262,
+      "postal_code": "M4S2H9"
+    },
+    {
+      "name": "South Parkdale",
+      "code": 85,
+      "revision": 2021,
+      "lat": 43.6367,
+      "lng": -79.43934,
+      "postal_code": "M6K1J3"
+    },
+    {
+      "name": "South Riverdale",
+      "code": 70,
+      "revision": 2021,
+      "lat": 43.6492,
+      "lng": -79.33562,
+      "postal_code": "M4M1A9"
+    },
+    {
+      "name": "St Lawrence-East Bayfront-The Islands",
+      "code": 166,
+      "revision": 2021,
+      "lat": 43.63224,
+      "lng": -79.37435,
+      "postal_code": "M5J0C5"
+    },
+    {
+      "name": "St.Andrew-Windfields",
+      "code": 40,
+      "revision": 2021,
+      "lat": 43.75626,
+      "lng": -79.37914,
+      "postal_code": "M2L2A8"
+    },
+    {
+      "name": "Steeles",
+      "code": 116,
+      "revision": 2021,
+      "lat": 43.81296,
+      "lng": -79.32121,
+      "postal_code": "M1W3M2"
+    },
+    {
+      "name": "Stonegate-Queensway",
+      "code": 16,
+      "revision": 2021,
+      "lat": 43.63552,
+      "lng": -79.50113,
+      "postal_code": "M8Y2C2"
+    },
+    {
+      "name": "Tam O'Shanter-Sullivan",
+      "code": 118,
+      "revision": 2021,
+      "lat": 43.78013,
+      "lng": -79.30292,
+      "postal_code": "M1T3K7"
+    },
+    {
+      "name": "Taylor-Massey",
+      "code": 61,
+      "revision": 2021,
+      "lat": 43.695,
+      "lng": -79.2959,
+      "postal_code": "M4C2C9"
+    },
+    {
+      "name": "The Beaches",
+      "code": 63,
+      "revision": 2021,
+      "lat": 43.67105,
+      "lng": -79.2996,
+      "postal_code": "M4L3V2"
+    },
+    {
+      "name": "Thistletown-Beaumond Heights",
+      "code": 3,
+      "revision": 2021,
+      "lat": 43.73799,
+      "lng": -79.56349,
+      "postal_code": "M9V2V6"
+    },
+    {
+      "name": "Thorncliffe Park",
+      "code": 55,
+      "revision": 2021,
+      "lat": 43.70775,
+      "lng": -79.34998,
+      "postal_code": "M4H1H1"
+    },
+    {
+      "name": "Trinity-Bellwoods",
+      "code": 81,
+      "revision": 2021,
+      "lat": 43.65018,
+      "lng": -79.41534,
+      "postal_code": "M6J1W4"
+    },
+    {
+      "name": "University",
+      "code": 79,
+      "revision": 2021,
+      "lat": 43.66251,
+      "lng": -79.40118,
+      "postal_code": "M5S2H4"
+    },
+    {
+      "name": "Victoria Village",
+      "code": 43,
+      "revision": 2021,
+      "lat": 43.72849,
+      "lng": -79.31487,
+      "postal_code": "M4A2T6"
+    },
+    {
+      "name": "Waterfront Communities-The Island",
+      "code": 77,
+      "revision": 2016,
+      "lat": 43.63388,
+      "lng": -79.3772,
+      "postal_code": "M5J0C5"
+    },
+    {
+      "name": "Wellington Place",
+      "code": 164,
+      "revision": 2021,
+      "lat": 43.64585,
+      "lng": -79.39463,
+      "postal_code": "M5V1K3"
+    },
+    {
+      "name": "West Hill",
+      "code": 136,
+      "revision": 2021,
+      "lat": 43.76749,
+      "lng": -79.17668,
+      "postal_code": "M1E0B8"
+    },
+    {
+      "name": "West Humber-Clairville",
+      "code": 1,
+      "revision": 2021,
+      "lat": 43.71619,
+      "lng": -79.59636,
+      "postal_code": "M9W0G4"
+    },
+    {
+      "name": "West Queen West",
+      "code": 162,
+      "revision": 2021,
+      "lat": 43.64293,
+      "lng": -79.41091,
+      "postal_code": "M6J2R7"
+    },
+    {
+      "name": "West Rouge",
+      "code": 143,
+      "revision": 2021,
+      "lat": 43.7986,
+      "lng": -79.14802,
+      "postal_code": "M1B1G8"
+    },
+    {
+      "name": "Westminster-Branson",
+      "code": 35,
+      "revision": 2021,
+      "lat": 43.77881,
+      "lng": -79.45242,
+      "postal_code": "M2R0A5"
+    },
+    {
+      "name": "Weston",
+      "code": 113,
+      "revision": 2021,
+      "lat": 43.70272,
+      "lng": -79.51572,
+      "postal_code": "M9N3B5"
+    },
+    {
+      "name": "Weston-Pelham Park",
+      "code": 91,
+      "revision": 2021,
+      "lat": 43.67395,
+      "lng": -79.46025,
+      "postal_code": "M6N1J4"
+    },
+    {
+      "name": "Wexford/Maryvale",
+      "code": 119,
+      "revision": 2021,
+      "lat": 43.74857,
+      "lng": -79.29864,
+      "postal_code": "M1R3S9"
+    },
+    {
+      "name": "Willowdale East",
+      "code": 51,
+      "revision": 2016,
+      "lat": 43.7706,
+      "lng": -79.40148,
+      "postal_code": "M2N3S2"
+    },
+    {
+      "name": "Willowdale West",
+      "code": 37,
+      "revision": 2021,
+      "lat": 43.77121,
+      "lng": -79.42756,
+      "postal_code": "M2N2A7"
+    },
+    {
+      "name": "Willowridge-Martingrove-Richview",
+      "code": 7,
+      "revision": 2021,
+      "lat": 43.68364,
+      "lng": -79.55422,
+      "postal_code": "M9R1Z9"
+    },
+    {
+      "name": "Woburn",
+      "code": 137,
+      "revision": 2016,
+      "lat": 43.76674,
+      "lng": -79.22859,
+      "postal_code": "M1H1T7"
+    },
+    {
+      "name": "Woburn North",
+      "code": 142,
+      "revision": 2021,
+      "lat": 43.77318,
+      "lng": -79.23681,
+      "postal_code": "M1H2J6"
+    },
+    {
+      "name": "Woodbine Corridor",
+      "code": 64,
+      "revision": 2021,
+      "lat": 43.67677,
+      "lng": -79.31541,
+      "postal_code": "M4L2B3"
+    },
+    {
+      "name": "Woodbine-Lumsden",
+      "code": 60,
+      "revision": 2021,
+      "lat": 43.69411,
+      "lng": -79.31116,
+      "postal_code": "M4C4N5"
+    },
+    {
+      "name": "Wychwood",
+      "code": 94,
+      "revision": 2021,
+      "lat": 43.67692,
+      "lng": -79.42551,
+      "postal_code": "M6G3H7"
+    },
+    {
+      "name": "Yonge-Bay Corridor",
+      "code": 170,
+      "revision": 2021,
+      "lat": 43.65295,
+      "lng": -79.38373,
+      "postal_code": "M5H2N1"
+    },
+    {
+      "name": "Yonge-Doris",
+      "code": 151,
+      "revision": 2021,
+      "lat": 43.77154,
+      "lng": -79.41191,
+      "postal_code": "M2N7H7"
+    },
+    {
+      "name": "Yonge-Eglinton",
+      "code": 100,
+      "revision": 2021,
+      "lat": 43.70469,
+      "lng": -79.40359,
+      "postal_code": "M5P2E6"
+    },
+    {
+      "name": "Yonge-St.Clair",
+      "code": 97,
+      "revision": 2021,
+      "lat": 43.68786,
+      "lng": -79.39787,
+      "postal_code": "M4V1M7"
+    },
+    {
+      "name": "York University Heights",
+      "code": 27,
+      "revision": 2021,
+      "lat": 43.76574,
+      "lng": -79.48888,
+      "postal_code": "M3J2G2"
+    },
+    {
+      "name": "Yorkdale-Glen Park",
+      "code": 31,
+      "revision": 2021,
+      "lat": 43.71467,
+      "lng": -79.45711,
+      "postal_code": "M6A1C4"
+    }
+  ]
+}

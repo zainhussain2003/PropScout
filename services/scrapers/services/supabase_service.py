@@ -128,3 +128,71 @@ def insert_rental_listings(listings: list[CleanRentalListing]) -> int:
         return 0
 
     return len(response.data)
+
+
+def fetch_kijiji_rows_for_regeocode() -> list[dict[str, object]]:
+    """
+    Every Kijiji row, with what re-placing it needs (D-119 backfill).
+
+    Returns:
+        Rows of id, address, postal_code, lat, lng, raw_json. Empty on failure.
+    """
+    rows: list[dict[str, object]] = []
+    page = 1000
+    start = 0
+    try:
+        while True:
+            response = (
+                get_client()
+                .table("rental_listings")
+                .select("id, address, postal_code, lat, lng, raw_json")
+                .eq("source", "kijiji")
+                .order("id")
+                .range(start, start + page - 1)
+                .execute()
+            )
+            batch = list(response.data)
+            rows.extend(batch)
+            if len(batch) < page:
+                break
+            start += page
+    except Exception:
+        logger.exception("Failed to fetch Kijiji rows for re-geocoding")
+        return []
+    return rows
+
+
+def update_listing_placement(
+    row_id: str,
+    *,
+    lat: float | None,
+    lng: float | None,
+    postal_code: str | None,
+    raw_json: dict[str, object] | None,
+) -> bool:
+    """
+    Overwrite one row's placement (D-119 backfill). The caller keeps the
+    previous values in ``raw_json["geocode_prev"]`` so the change is traceable.
+
+    Returns:
+        True when the update succeeded.
+    """
+    try:
+        (
+            get_client()
+            .table("rental_listings")
+            .update(
+                {
+                    "lat": lat,
+                    "lng": lng,
+                    "postal_code": postal_code,
+                    "raw_json": raw_json,
+                }
+            )
+            .eq("id", row_id)
+            .execute()
+        )
+    except Exception:
+        logger.exception("Failed to update placement for %s", row_id)
+        return False
+    return True

@@ -162,3 +162,47 @@ RENTALS_CA_RADIUS_M = _env_int("SCRAPER_RENTALS_CA_RADIUS_M", 20_000)  # 20 km
 # selector can't masquerade as a successful deploy. Conservative starting floor;
 # raise it once real per-night baselines exist (TEMPLATE — spec Section 11.2).
 MIN_RAW_ROWS_PER_SOURCE = 5
+
+# ── Geocoding (D-119) ─────────────────────────────────────────────────────────
+# Mapbox's relevance is its own confidence in a match, 0–1. Below this the
+# point is a guess — the geocoder answered "South Cedarbrae, Toronto" with a
+# midtown point at 0.5 — and a guessed postal code files the comp in the wrong
+# market. Full street addresses from rentals.ca / padmapper score 0.9–1.0.
+GEOCODE_MIN_RELEVANCE = 0.8
+# A query asked as a neighbourhood only ("Golfdale Gardens, Toronto, Ontario",
+# types=neighborhood) scores lower because the city and province words match
+# context, not the feature — 0.70 is a correct Scarborough answer. The type
+# and box constraints do the guarding there; the floor only rejects a fragment.
+GEOCODE_NEIGHBOURHOOD_MIN_RELEVANCE = 0.65
+
+# Kijiji ads carry a neighbourhood name and a city, not an address. A name not
+# in the City of Toronto table is asked of Mapbox as a neighbourhood inside
+# this box only (min_lng, min_lat, max_lng, max_lat — the City of Toronto),
+# never as a street or a city, so a name it does not know returns nothing
+# rather than the city centre.
+TORONTO_BBOX = (-79.64, 43.58, -79.11, 43.86)
+# A street address in a Kijiji title may be in Markham or Vaughan under a
+# "City of Toronto" label; it is looked for across the GTA and accepted when
+# Mapbox returns an address feature carrying the same house number — a
+# stronger check than relevance, which drops to ~0.7 on a Scarborough
+# address asked with "Toronto" (min_lng, min_lat, max_lng, max_lat).
+GTA_BBOX = (-79.9, 43.4, -78.9, 44.1)
+GEOCODE_STREET_MIN_RELEVANCE = 0.6
+
+# The city labels Kijiji appends to a Toronto ad's location. The segment
+# before one of these is the neighbourhood.
+KIJIJI_CITY_LABELS = frozenset(
+    {
+        "toronto",
+        "city of toronto",
+        "old toronto",
+        "north york",
+        "scarborough",
+        "etobicoke",
+        "york",
+        "east york",
+    }
+)
+
+# Path of the neighbourhood centroid table, relative to this package.
+TORONTO_NEIGHBOURHOODS_FILE = "data/toronto_neighbourhoods.json"

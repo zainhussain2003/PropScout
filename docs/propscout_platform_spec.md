@@ -897,6 +897,8 @@ Sources: Rentals.ca, Kijiji (rental category), PadMapper
 Schedule: Nightly at 2am ET
 Process: scrape all active rentals across Ontario by FSA, normalise (geocode address, convert weekly rents to monthly, parse beds to integer), deduplicate (same address + rent + beds within 7 days = one record), store with timestamp. Never delete historical records — accumulation is the moat.
 
+Placement (D-119, `services/scrapers/geocoding.py`): a street address geocodes as one, discarded below 0.8 Mapbox relevance. A Kijiji ad carries a title and a neighbourhood, not an address: a postal code or a street in the title places it exactly (the answer must carry the same house number); otherwise the City of Toronto neighbourhood table (`data/toronto_neighbourhoods.json`, centroid + postal code) places it with no call; otherwise Mapbox as a neighbourhood inside the Toronto box; otherwise the row stores no coordinates and no postal code and never enters a band. `raw_json.geocode` records the method on every placed row.
+
 **Comp selection at query time:**
 
 1. Same FSA (first 3 postal code characters) OR within 1km radius, whichever returns more results — max 3km

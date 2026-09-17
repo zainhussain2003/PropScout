@@ -65,9 +65,10 @@ def mock_pipeline():
         patch.object(
             rental_comps_scraper.supabase_service, "insert_rental_listings"
         ) as insert,
-        patch.object(
-            rental_comps_scraper.mapbox_service,
-            "geocode_address",
+        # The pipeline places rows through `geocoding` (D-119), which calls
+        # Mapbox through its own import of the service.
+        patch(
+            "geocoding.mapbox_service.geocode_address",
             new_callable=AsyncMock,
         ) as geocode,
     ):
@@ -234,7 +235,9 @@ async def test_partial_geocode_failure_all_listings_still_inserted(mock_pipeline
             _raw(address="10 Main St, Toronto, ON M5V 1J1", source="kijiji"),
         ]
     )
-    geocode.side_effect = [GeocodeResult(43.79, -79.53, None), None]
+    # The Kijiji row is tried as an address, then by the street in its title
+    # (D-119); both come back empty.
+    geocode.side_effect = [GeocodeResult(43.79, -79.53, None), None, None]
 
     outcome = await rental_comps_scraper.run_nightly_scrape()
     inserted = outcome.inserted

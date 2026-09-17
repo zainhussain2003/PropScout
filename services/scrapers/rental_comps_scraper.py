@@ -31,7 +31,8 @@ from normalization import (
     is_ontario_postal_code,
     normalize_listing,
 )
-from services import mapbox_service, supabase_service
+from geocoding import Placement, place_listing
+from services import supabase_service
 from sources import kijiji, padmapper, rentals_ca
 from sources.browser import PageFetch, SourceFetchResult, launch_browser
 
@@ -152,9 +153,15 @@ async def geocode_listings(listings: list[CleanRentalListing]) -> None:
     postal codes are accepted (MVP scope; a geocode landing out-of-province is
     left null rather than stored wrong).
 
+    The rules per source are in ``geocoding`` (D-119): a Kijiji ad is placed
+    by its neighbourhood, not by geocoding its title, and every Mapbox answer
+    is discarded below the relevance floor. How each row was placed is kept
+    in ``raw_json["geocode"]`` so a wrong placement can be traced.
+
     Args:
         listings: New listings to geocode. Failures leave lat/lng as None.
     """
+    cache: dict[str, Placement | None] = {}
     for listing in listings:
         # Some sources (rentals.ca GraphQL) already carry exact coordinates AND a
         # postal code — skip the redundant Mapbox call. This keeps geocoding cost
@@ -167,12 +174,15 @@ async def geocode_listings(listings: list[CleanRentalListing]) -> None:
             and listing.postal_code is not None
         ):
             continue
-        geo = await mapbox_service.geocode_address(listing.address)
-        if geo is None:
+        placed = await place_listing(listing, cache)
+        if placed is None:
             continue
-        listing.lat, listing.lng = geo.lat, geo.lng
-        if listing.postal_code is None and is_ontario_postal_code(geo.postal_code):
-            listing.postal_code = geo.postal_code
+        listing.lat, listing.lng = placed.lat, placed.lng
+        if listing.postal_code is None and is_ontario_postal_code(placed.postal_code):
+            listing.postal_code = placed.postal_code
+        raw = dict(listing.raw_json) if isinstance(listing.raw_json, dict) else {}
+        raw["geocode"] = placed.method
+        listing.raw_json = raw
 
 
 async def run_nightly_scrape() -> NightlyOutcome:
