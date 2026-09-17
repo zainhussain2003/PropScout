@@ -37,6 +37,7 @@ def _card(
     missing_rent: bool = False,
     missing_title: bool = False,
     missing_location: bool = False,
+    attrs: dict[str, str] | None = None,
 ) -> AsyncMock:
     selector_map = {
         _TITLE_SELECTOR: None if missing_title else _el(title),
@@ -44,6 +45,9 @@ def _card(
         _LOCATION_SELECTOR: None if missing_location else _el(location),
         _LINK_SELECTOR: _el("", href=href) if href is not None else None,
     }
+    # The card's labelled attribute items (D-120): Bedrooms, Unit type, …
+    for label, text in (attrs or {}).items():
+        selector_map[kijiji._ATTR_SELECTOR.format(label=label)] = _el(text)
     card = AsyncMock()
 
     async def qs(selector: str) -> AsyncMock | None:
@@ -237,6 +241,7 @@ def _listing(url: str = "https://kijiji.ca/x") -> RawRentalListing:
 async def test_fetch_records_per_page_rows_status_blocked(monkeypatch):
     # A clean 200 page with 3 cards must record rows=3, status=200, blocked=False.
     monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_FEEDS", ())
     page = AsyncMock()
     page.query_selector_all.return_value = [object(), object(), object()]
 
@@ -263,6 +268,7 @@ async def test_fetch_records_blocked_page_distinct_from_empty(monkeypatch):
     # A blocked page (403) is recorded as blocked=True — NOT the same as a real
     # empty page. This is the ambiguity the change exists to end.
     monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_FEEDS", ())
     page = AsyncMock()
     page.query_selector_all.return_value = []  # block pages carry no listing cards
 
@@ -286,6 +292,7 @@ async def test_fetch_records_navigation_failure(monkeypatch):
     # A navigation failure (page None, status 0) is recorded — distinguishable
     # from both a block and an end-of-results page.
     monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_FEEDS", ())
 
     async def fake_open_page(_browser: object, _url: str) -> PageResult:
         return PageResult(page=None, status=0, blocked=False)
@@ -300,3 +307,103 @@ async def test_fetch_records_navigation_failure(monkeypatch):
     assert pf.rows == 0
     assert pf.blocked is False
     assert result.listings == []
+
+
+# ── Structured attributes and the unit-type feeds (D-120) ─────────────────────
+
+
+@pytest.mark.asyncio
+async def test_card_attributes_give_beds_baths_sqft_and_unit_type():
+    # The card's labelled items win over the free text: this title says
+    # nothing about beds and the description would have said "3 bedroom".
+    card = _card(
+        title="For Rent - 560 Crawford Street - $5100/month",
+        location="Bickford Park, City of Toronto",
+        card_text="For Rent - 560 Crawford Street - $5100/month lovely 3 bedroom home",
+        attrs={
+            "Bedrooms": "2.5",
+            "Bathrooms": "1.5",
+            "Unit type": "Townhouse",
+            "Size (sqft)": "1190 sqft",
+        },
+    )
+    result = await kijiji._parse_card(card)
+    assert result.beds_raw == "2.5 bed"
+    assert result.baths_raw == "1.5"
+    assert result.sqft_raw == "1190 sqft"
+    assert result.raw_json == {
+        "title": "For Rent - 560 Crawford Street - $5100/month",
+        "location": "Bickford Park, City of Toronto",
+        "unit_type": "Townhouse",
+    }
+
+
+@pytest.mark.asyncio
+async def test_card_without_attributes_falls_back_to_text_and_omits_unit_type():
+    result = await kijiji._parse_card(_card(title="Bright 2 bedroom apt"))
+    assert result.beds_raw == "2 bedroom"
+    assert result.baths_raw is None
+    assert result.sqft_raw is None
+    assert "unit_type" not in result.raw_json
+
+
+@pytest.mark.asyncio
+async def test_unit_type_feeds_are_crawled_after_the_main_feed(monkeypatch):
+    # Houses have no category of their own on Kijiji; the Unit Type filter is
+    # a path segment. The house and townhouse feeds follow the unfiltered
+    # one, each to its own depth, and each page records which feed it was.
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_FEEDS", ("house", "townhouse"))
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_MAX_PAGES", 2)
+    called: list[str] = []
+
+    async def fake_open_page(_browser: object, url: str) -> PageResult:
+        called.append(url)
+        page = AsyncMock()
+        page.query_selector_all.return_value = [object()]
+        return PageResult(page=page, status=200, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+    monkeypatch.setattr(kijiji, "_parse_card", AsyncMock(return_value=_listing()))
+
+    result = await kijiji.fetch_listings(object())
+
+    assert called == [
+        "https://www.kijiji.ca/b-apartments-condos/toronto/page-1/c37l1700273",
+        "https://www.kijiji.ca/b-apartments-condos/toronto/house/page-1/c37l1700273a29276001",
+        "https://www.kijiji.ca/b-apartments-condos/toronto/house/page-2/c37l1700273a29276001",
+        "https://www.kijiji.ca/b-apartments-condos/toronto/townhouse/page-1/c37l1700273a29276001",
+        "https://www.kijiji.ca/b-apartments-condos/toronto/townhouse/page-2/c37l1700273a29276001",
+    ]
+    assert [(p.city, p.page) for p in result.pages] == [
+        ("toronto", 1),
+        ("toronto/house", 1),
+        ("toronto/house", 2),
+        ("toronto/townhouse", 1),
+        ("toronto/townhouse", 2),
+    ]
+    assert len(result.listings) == 5
+
+
+@pytest.mark.asyncio
+async def test_an_empty_unit_type_page_stops_that_feed_only(monkeypatch):
+    monkeypatch.setattr(kijiji, "MAX_PAGES_PER_CITY", 1)
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_FEEDS", ("house", "townhouse"))
+    monkeypatch.setattr(kijiji, "KIJIJI_UNIT_TYPE_MAX_PAGES", 3)
+
+    async def fake_open_page(_browser: object, url: str) -> PageResult:
+        page = AsyncMock()
+        # The house feed runs dry on page 2; the townhouse feed is unaffected.
+        page.query_selector_all.return_value = (
+            [] if "/house/page-2" in url else [object()]
+        )
+        return PageResult(page=page, status=200, blocked=False)
+
+    monkeypatch.setattr(kijiji, "open_page", fake_open_page)
+    monkeypatch.setattr(kijiji, "_parse_card", AsyncMock(return_value=_listing()))
+
+    result = await kijiji.fetch_listings(object())
+    feeds = [(p.city, p.page, p.rows) for p in result.pages]
+    assert ("toronto/house", 2, 0) in feeds
+    assert ("toronto/house", 3, 1) not in feeds
+    assert ("toronto/townhouse", 3, 1) in feeds

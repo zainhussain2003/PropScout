@@ -4047,3 +4047,38 @@ $2,948, still medium confidence — now an honest thin sample rather than the wr
 | Visit each ad page for its own coordinates      | 4.7k page loads at politeness delays every night, against a site that blocks datacentre IPs; the neighbourhood is on the card.                           |
 | Keep an unplaceable row's old point             | "SPACIOUS 2 BED SUITE" at H7N was a Laval comp for downtown; a missing row costs one comp, a wrong one poisons a band.                                   |
 | A `neighbourhood` column + migration            | The card's location already travels in `raw_json`; a column can follow when something queries by it.                                                     |
+
+### D-120 · Kijiji's house and townhouse feeds are crawled nightly; the card's own attributes are read
+
+**Chosen (2026-09-17, supervised live run).** The comps table was thin on whole houses because
+the nightly job read only the first two pages of Kijiji's long-term rental feed — about 90 of
+~7,350 Toronto ads, in whatever order Kijiji ranked them. Kijiji has no houses category (the old
+`b-house-rental` slug returns "no results in all categories"; c37 is now "Apartments, Condos &
+Houses"), but its **Unit Type filter is a path segment**: `/b-apartments-condos/toronto/house/
+page-N/c37l1700273a29276001` holds ~418 house ads and `/townhouse/` ~90. The Kijiji source now
+reads the unfiltered feed as before and then those two feeds to their own depth
+(`KIJIJI_UNIT_TYPE_FEEDS`, `KIJIJI_UNIT_TYPE_MAX_PAGES` = 5, env-overridable like the other load
+knobs). An ad in both feeds is one row — the upsert keys on `source_url`.
+
+The card markup has changed since the selectors were written: every card now carries labelled
+attribute items (`li[aria-label='Bedrooms' | 'Bathrooms' | 'Unit type' | 'Size (sqft)']`). The
+parser reads them — beds from the attribute when present, else the free-text rule; baths and
+sqft, which Kijiji rows never had; and the **poster's unit type** into `raw_json.unit_type`
+(Apartment, Condo, House, Townhouse, Basement, Duplex/Triplex). The API's classifier (D-117)
+reads that label ahead of the title and the URL category, except that a title saying _basement_
+or _room_ outranks it — posters tag a basement let "in a house" as House.
+
+**The run.** From this machine, 12 pages, none blocked: 466 raw → 356 unique rows upserted,
+**183 houses and 87 townhouses**, beds on every row, sqft on 88%, baths on every row; placed
+208 by the neighbourhood table, 51 by a street in the title, 55 by Mapbox neighbourhood, 42
+unplaced. 1 Caldow Road's 5 km comps went from 11 to 23 (17 houses), median $2,895 — Kijiji's
+house ads near Forest Hill are mostly two- and three-bed semis at $2,300–$3,750, which is what
+the table now says instead of pricing a 2,000 sqft detached off condo ads.
+
+**Alternatives considered**
+
+| Option                                | Why not                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------- |
+| Deepen the unfiltered feed instead    | 10 more pages a night for ~5 houses each; the filtered feed is all houses.      |
+| Trust the poster's unit type outright | "2-Bedroom Walkout Basement Apartment" was tagged House on the first live page. |
+| Keep parsing beds from free text only | The attribute is the poster's own field; the text rule stays as the fallback.   |

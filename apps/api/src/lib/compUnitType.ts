@@ -7,9 +7,12 @@
  * confidence". Each source does carry the type, just not in a column:
  *
  *   rentals.ca   raw_json.listingType  "residential:house:town-house" …
- *   kijiji       the category in the URL (/v-apartments-condos/, /v-house-rental/,
- *                /v-room-rental-roommate/) and the words in the title, which the
- *                scraper stores as the front of `address`
+ *   kijiji       raw_json.unit_type — the card's own label, since D-120
+ *                ("Apartment" | "Condo" | "House" | "Townhouse" | "Basement" |
+ *                "Duplex/Triplex"); on older rows the category in the URL
+ *                (/v-apartments-condos/, /v-house-rental/, /v-room-rental-roommate/)
+ *                and the words in the title, which the scraper stores as the
+ *                front of `address`
  *   padmapper    /buildings/ — apartment buildings
  *
  * This module reads the type back out of what is stored, decides what the
@@ -82,6 +85,16 @@ function fromRentalsCa(listingType: string): CompUnitType | null {
   return null
 }
 
+/** Kijiji's card label (D-120). "Duplex/Triplex" is a unit in one, not the building. */
+const KIJIJI_UNIT_TYPE: Record<string, CompUnitType> = {
+  apartment: 'apartment',
+  condo: 'apartment',
+  house: 'house',
+  townhouse: 'townhouse',
+  basement: 'basement',
+  'duplex/triplex': 'house-unit',
+}
+
 /** Kijiji's category is the first path segment of the ad URL. */
 function fromKijijiUrl(url: string): CompUnitType | null {
   if (url.includes('/v-room-rental-roommate/')) return 'room'
@@ -102,6 +115,18 @@ export function classifyCompUnitType(row: UnitTypeSource): CompUnitType {
     const lt = (raw as { listingType?: unknown }).listingType
     if (typeof lt === 'string') {
       const t = fromRentalsCa(lt)
+      if (t != null) return t
+    }
+  }
+  if (raw != null && typeof raw === 'object' && 'unit_type' in raw) {
+    const ut = (raw as { unit_type?: unknown }).unit_type
+    if (typeof ut === 'string') {
+      const t = KIJIJI_UNIT_TYPE[ut.trim().toLowerCase()]
+      // The label is the poster's, and a basement let "in a house" is often
+      // tagged House. A title that says room or basement is believed first.
+      const title = String((raw as { title?: unknown }).title ?? row.address ?? '')
+      if (ROOM_RE.test(title)) return 'room'
+      if (BASEMENT_RE.test(title)) return 'basement'
       if (t != null) return t
     }
   }

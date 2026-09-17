@@ -110,6 +110,16 @@ TARGET_CITIES = (
 # limitation, not a silent skip — change it only when the map is built and verified.
 KIJIJI_CITIES = ("toronto",)
 
+# Kijiji's long-term rental category (c37) is "Apartments, Condos & Houses";
+# houses have no category of their own (verified 2026-09-17 — the old
+# b-house-rental slug returns "no results in all categories"). Its Unit Type
+# filter is a path segment, so besides the unfiltered feed the crawl reads
+# the feeds for the types the comps table is thin on: ~418 house and ~90
+# townhouse ads in Toronto against ~7,350 in all (D-120). Each feed is paged
+# to its own depth; env-overridable like the other load knobs.
+KIJIJI_UNIT_TYPE_FEEDS = ("house", "townhouse")
+KIJIJI_UNIT_TYPE_MAX_PAGES = _env_int("SCRAPER_KIJIJI_UNIT_TYPE_MAX_PAGES", 5)
+
 # ── Politeness ────────────────────────────────────────────────────────────────
 # Env-overridable (see _env_int) — raise from Railway without a redeploy if the
 # datacenter IP gets throttled on the first unattended runs.

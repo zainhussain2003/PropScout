@@ -893,7 +893,7 @@ If either scraper fails or required fields are missing:
 
 **Rental comps scraper — nightly scheduled job**
 
-Sources: Rentals.ca, Kijiji (rental category), PadMapper
+Sources: Rentals.ca, Kijiji (long-term rental category — the unfiltered feed plus its house and townhouse Unit Type feeds, D-120), PadMapper
 Schedule: Nightly at 2am ET
 Process: scrape all active rentals across Ontario by FSA, normalise (geocode address, convert weekly rents to monthly, parse beds to integer), deduplicate (same address + rent + beds within 7 days = one record), store with timestamp. Never delete historical records — accumulation is the moat.
 
