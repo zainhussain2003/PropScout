@@ -447,7 +447,7 @@ Help a tenant answer three questions: Is this accurately listed? Is it fairly pr
 ### Sections (in display order)
 
 **1. Property header**
-Address, floor (if available), monthly rent, unit tags (beds, baths, sqft, balcony, parking status, availability date), tenant score badge.
+Address, floor (if available), monthly rent, unit tags (beds, baths, sqft, balcony, parking status, availability date), tenant score badge. The tenant score (`apps/web/src/lib/tenantScore.ts`, provisional calibration) is rent fairness 50 / listing honesty 25 / livability 25; below eight comps the gap above the median counts at compCount / 8 and the hero says how much was counted (D-121). Suppressed entirely with no comps.
 
 ---
 

@@ -253,6 +253,11 @@ Also test a Toronto address — LTT should be approximately double.
 4. ✋ With `GUEST_ANALYSIS_LIMIT_ENABLED=true`: a second guest run shows "Your free report is used — sign in to run another"; signing in runs it
 5. Pass: no fingerprinting, no IP checks; a cleared cookie simply starts over
 
+**🤖 Test 15n — Tenant score small-sample damping (D-121)**
+
+1. `npx vitest run src/lib/tenantScore.test.ts src/lib/reportShims.tenantScore.test.ts src/pages/ReportPage.test.tsx -t "D-121|damping|thin"` — the gap counts at compCount / 8; under-median rents never marked down; the Holly six→five case stays in one band; the note only when something was damped; the hero renders it
+2. ✋ Run 1210-25 Holly St as tenant: "Negotiate first" with "Thin sample: N comparables — X% of the gap above the median is counted" under the verdict; a listing with 8+ comps shows no such line
+
 **🤖 Test 15m — Comps are the subject's kind of dwelling (D-117)**
 
 1. `npx jest src/lib/compUnitType.test.ts src/lib/compWeighting.test.ts src/services/supabaseService.test.ts -t "D-117|dwelling"` — the classifier on real rentals.ca / Kijiji / PadMapper rows, the fifth factor, a house never priced off apartment ads, rooms never counted, confidence capped at medium under three same-type comps, the radius pass filtered too, no address/URL/raw source leaves the API

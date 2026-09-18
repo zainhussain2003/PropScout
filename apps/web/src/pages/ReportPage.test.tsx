@@ -383,6 +383,31 @@ describe('ReportPage — risk-flag overrides', () => {
     expect(screen.queryByText(/Sample report/i)).not.toBeInTheDocument()
   })
 
+  it('a live tenant report says how much of the rent gap counted when the comps are thin (D-121)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...ANALYSIS,
+        mode: 'tenant',
+        riskFlags: [],
+        rentalComps: {
+          low: 2274,
+          mid: 2451,
+          high: 2581,
+          compCount: 5,
+          confidence: 'medium',
+          postalCode: 'M4S0E3',
+        },
+      },
+      listing: { ...LISTING, listingType: 'for-rent', rentMonthly: 2750 },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    const note = await screen.findByTestId('tenant-sample-note')
+    expect(note).toHaveTextContent(
+      'Thin sample: 5 comparables — 63% of the gap above the median is counted'
+    )
+  })
+
   it('renders the assumption ledger the API stored, and nothing when a report predates it', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: {

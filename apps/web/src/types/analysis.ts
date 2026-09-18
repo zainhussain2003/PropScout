@@ -833,6 +833,12 @@ export interface TenantListingData {
    * NIGHT_NOTES follow-up on redesigning the tenant score entirely.
    */
   scoreSuppressed: boolean
+  /**
+   * Shown under the verdict when the rent-fairness signal rested on fewer
+   * comps than count in full (D-121) — how many, and how much of the gap
+   * above the median was counted. Null when there is nothing damped to say.
+   */
+  sampleNote?: string | null
   targetLow: number
   targetHigh: number
   chips: string[]
