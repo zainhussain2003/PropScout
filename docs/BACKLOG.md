@@ -84,9 +84,11 @@ rate, Toronto LTT, real maps, schools, SunScout obstruction, 60-comp rent band.
 
 From the four per-report audits' "field to work on" columns, grouped. None started.
 
-- **Comparables:** rows (#79, D-099), similarity weighting and the comps map shipped (D-109).
-  Still to do: a building/type factor (needs a property-type column on `rental_listings`, a
-  migration); licensed Ontario sold-sales feed for personal FMV (blocked on a provider decision).
+- **Comparables:** rows (#79, D-099), similarity weighting and the comps map (D-109), the
+  dwelling-type factor read from each source (D-117), neighbourhood placement for Kijiji
+  (D-119) and the house/townhouse feeds (D-120) shipped. Still to do: licensed Ontario
+  sold-sales feed for personal FMV (blocked on a provider decision); a `unit_type` column once
+  something queries by it (the classifier reads `raw_json` today).
 - **Provenance:** badges and the scrape line shipped (D-111). Still to do: geocoder match type
   (not stored); badges on the tenant and personal reports' own tiles.
 - **Schools:** attendance-boundary polygons (blocked on data — see §4), grades, Fraser data
