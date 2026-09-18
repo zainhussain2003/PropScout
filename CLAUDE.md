@@ -1092,6 +1092,7 @@ propscout/
 │   │       ├── App.tsx                # Root component — router, theme, global providers
 │   │       │
 │   │       ├── lib/scoreBreakdown.ts + scoreBreakdown.test.ts # Weighted component bar presentation
+│   │       ├── lib/tenantScore.ts + tenantScore.test.ts       # Tenant score: rent fairness / honesty / livability; thin-sample damping (D-121)
 │       ├── lib/listingFacts.ts + listingFacts.test.ts     # One rule for counts a source may not provide (D-072)
 │       ├── lib/sunCoverage.ts + sunCoverage.test.ts       # Obstruction coverage → checked / indicative (D-085)
 │       ├── lib/scanState.ts + scanState.test.ts           # no text / failed / partial / clean — one rule for empty flag sections (D-090)

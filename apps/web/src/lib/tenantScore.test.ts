@@ -12,7 +12,10 @@ import {
   listingHonestyScore,
   livabilityScore,
   tenantVerdict,
+  rentSampleWeight,
+  rentSampleNote,
   LIVABILITY_NEUTRAL,
+  RENT_SAMPLE,
 } from './tenantScore'
 import type { RentalEstimate, RiskFlag } from '../types/analysis'
 
@@ -49,6 +52,77 @@ describe('rentFairnessScore', () => {
     expect(rentFairnessScore(2900 * 1.5, 2900)).toBe(10)
     expect(rentFairnessScore(0, 2900)).toBe(LIVABILITY_NEUTRAL)
     expect(rentFairnessScore(2900, 0)).toBe(LIVABILITY_NEUTRAL)
+  })
+})
+
+describe('small-sample damping (D-121)', () => {
+  it('the gap above the median counts at compCount / FULL, capped at 1', () => {
+    expect(rentSampleWeight(RENT_SAMPLE.FULL)).toBe(1)
+    expect(rentSampleWeight(20)).toBe(1)
+    expect(rentSampleWeight(5)).toBeCloseTo(5 / RENT_SAMPLE.FULL)
+    expect(rentSampleWeight(1)).toBeCloseTo(1 / RENT_SAMPLE.FULL)
+    expect(rentSampleWeight(0)).toBe(0)
+  })
+
+  it('a thin sample counts less of the gap; a full one counts all of it', () => {
+    // 12% above the median: 8 comps → the curve at 12%; 5 comps → the curve at 7.5%.
+    const full = rentFairnessScore(2900 * 1.12, 2900, rentSampleWeight(8))
+    const thin = rentFairnessScore(2900 * 1.12, 2900, rentSampleWeight(5))
+    expect(full).toBe(rentFairnessScore(2900 * 1.12, 2900))
+    expect(thin).toBeGreaterThan(full)
+    expect(thin).toBeCloseTo(rentFairnessScore(2900 * 1.075, 2900), 5)
+  })
+
+  it('a rent at or below the median is never marked down for a thin sample', () => {
+    expect(rentFairnessScore(2850, 2900, rentSampleWeight(1))).toBe(100)
+    expect(rentFairnessScore(2900, 2900, rentSampleWeight(2))).toBe(100)
+  })
+
+  it('25 Holly St, 2026-09-18: the verdict no longer flips a band when one comp drops out', () => {
+    // Six comps at a $2,600 median, then five at $2,451 — the same $2,750 ask.
+    const six = computeTenantScore({
+      askingRent: 2750,
+      comps: { ...COMPS, mid: 2600, compCount: 6 },
+      flags: [],
+      walk: 99,
+      transit: 92,
+      light: null,
+    })
+    const five = computeTenantScore({
+      askingRent: 2750,
+      comps: { ...COMPS, mid: 2451, compCount: 5 },
+      flags: [],
+      walk: 99,
+      transit: 92,
+      light: null,
+    })
+    expect(six.rentSampleWeight).toBeCloseTo(0.75)
+    expect(five.rentSampleWeight).toBeCloseTo(0.625)
+    expect(six.tone).toBe('caution')
+    expect(five.tone).toBe('caution')
+    expect(Math.abs(six.total - five.total)).toBeLessThan(10)
+  })
+
+  it('the score carries the weight and count, and the note says both only when something was damped', () => {
+    const thin = computeTenantScore({
+      askingRent: 2750,
+      comps: { ...COMPS, mid: 2451, compCount: 5 },
+      flags: [],
+      walk: null,
+      transit: null,
+      light: null,
+    })
+    expect(thin.compCount).toBe(5)
+    expect(rentSampleNote(thin, 2750, 2451)).toBe(
+      'Thin sample: 5 comparables — 63% of the gap above the median is counted'
+    )
+    expect(rentSampleNote({ rentSampleWeight: 1 / 8, compCount: 1 }, 3000, 2451)).toMatch(
+      /1 comparable — 13%/
+    )
+    // Nothing damped: a full sample, or a rent at or under the median.
+    expect(rentSampleNote({ rentSampleWeight: 1, compCount: 12 }, 2750, 2451)).toBeNull()
+    expect(rentSampleNote(thin, 2400, 2451)).toBeNull()
+    expect(rentSampleNote(thin, null, 2451)).toBeNull()
   })
 })
 

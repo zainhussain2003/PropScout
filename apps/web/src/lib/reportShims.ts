@@ -39,7 +39,7 @@ import {
   PROPERTY_COST_ESTIMATES,
   formatPropertyType,
 } from '../constants/defaults'
-import { computeTenantScore } from './tenantScore'
+import { computeTenantScore, rentSampleNote } from './tenantScore'
 import {
   bareCount,
   bedBathLabel,
@@ -375,6 +375,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
   let scoreNumber = 50
   let scoreTone: TenantListingData['scoreTone'] = 'caution'
   let verdictLabel = 'Rent not yet assessable'
+  let sampleNote: string | null = null
   if (comps && comps.compCount > 0) {
     const ts = computeTenantScore({
       askingRent: listing.rentMonthly,
@@ -387,6 +388,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     scoreNumber = ts.total
     scoreTone = ts.tone
     verdictLabel = ts.verdictLabel
+    sampleNote = rentSampleNote(ts, listing.rentMonthly, comps.mid)
   }
   const targetHigh = comps?.mid ?? 0
   const targetLow = comps?.low ?? 0
@@ -409,6 +411,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     scoreSuppressed,
     verdictLabel,
     verdictSub: analysis.narrative?.split('. ')[0] ?? '',
+    sampleNote,
     targetLow,
     targetHigh,
     chips: buildTenantChips(listing),

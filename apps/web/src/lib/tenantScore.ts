@@ -9,6 +9,14 @@
  *   2. Listing honesty          (weight 25) — deductions for red/amber flags.
  *   3. Livability               (weight 25) — Walk/Transit + SunScout light.
  *
+ * Small samples (D-121): the rent-fairness signal is the asking rent against
+ * a median, and a median of five ads moves $150 when one ad drops out — on
+ * 2026-09-18 that alone took 25 Holly St from "Negotiate first" to "Overpriced
+ * — push hard". Below RENT_SAMPLE.FULL comps the gap above the median is
+ * counted at compCount / FULL: five comps count 62.5% of it, one comp 12.5%.
+ * A rent at or below the median is never marked down for a thin sample. The
+ * score reports the weight so the hero can say how much of the gap counted.
+ *
  * IMPORTANT: the weights, the rent-fairness curve, the flag deductions, and the
  * verdict bands below are a STARTING CALIBRATION — tuned to feel right, not
  * researched against outcome data. They live here as named constants so they can
@@ -51,6 +59,21 @@ export const HONESTY_DEDUCTIONS = {
 /** Neutral livability sub-score when no location/light signal is available. */
 export const LIVABILITY_NEUTRAL = 50
 
+/**
+ * How many comps it takes for the gap above the median to count in full (the
+ * API's own "high confidence" threshold). Below it the gap is scaled by
+ * compCount / FULL (D-121).
+ */
+export const RENT_SAMPLE = {
+  FULL: 8,
+} as const
+
+/** Share of the gap above the median that a sample of `compCount` earns, in [0, 1]. */
+export function rentSampleWeight(compCount: number): number {
+  if (!Number.isFinite(compCount) || compCount <= 0) return 0
+  return Math.min(1, compCount / RENT_SAMPLE.FULL)
+}
+
 /** Verdict bands — tuned to the existing VerdictPill tones (pass / caution / fail). */
 export const TENANT_VERDICT_BANDS: ReadonlyArray<{
   min: number
@@ -87,6 +110,10 @@ export interface TenantScore {
     listingHonesty: number
     livability: number
   }
+  /** How much of the gap above the median counted, from the comp count (D-121). 1 = all of it. */
+  rentSampleWeight: number
+  /** The comps behind the rent-fairness signal. */
+  compCount: number
 }
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -96,10 +123,12 @@ function clamp(n: number, lo: number, hi: number): number {
 /**
  * Rent-fairness sub-score for an asking rent vs the comp median.
  * Returns 0–100. At/below median → 100; interpolates down through the anchors.
+ * With fewer than RENT_SAMPLE.FULL comps only `sampleWeight` of the gap above
+ * the median counts (D-121); the default 1 is the old behaviour.
  */
-export function rentFairnessScore(askingRent: number, median: number): number {
+export function rentFairnessScore(askingRent: number, median: number, sampleWeight = 1): number {
   if (median <= 0 || askingRent <= 0) return LIVABILITY_NEUTRAL // no usable benchmark → neutral
-  const pctAbove = ((askingRent - median) / median) * 100
+  const pctAbove = ((askingRent - median) / median) * 100 * sampleWeight
   if (pctAbove <= 0) return 100
 
   const anchors = RENT_FAIRNESS_ANCHORS
@@ -157,7 +186,8 @@ export function tenantVerdict(total: number): { label: string; tone: 'pass' | 'c
  * NOTE: caller passes `comps` only when compCount > 0 (score suppressed otherwise).
  */
 export function computeTenantScore(input: TenantScoreInput): TenantScore {
-  const rentFairness = rentFairnessScore(input.askingRent ?? 0, input.comps.mid)
+  const sampleWeight = rentSampleWeight(input.comps.compCount)
+  const rentFairness = rentFairnessScore(input.askingRent ?? 0, input.comps.mid, sampleWeight)
   const listingHonesty = listingHonestyScore(input.flags)
   const livability = livabilityScore(input.walk, input.transit, input.light)
 
@@ -175,5 +205,24 @@ export function computeTenantScore(input: TenantScoreInput): TenantScore {
     verdictLabel: label,
     tone,
     breakdown: { rentFairness, listingHonesty, livability },
+    rentSampleWeight: sampleWeight,
+    compCount: input.comps.compCount,
   }
+}
+
+/**
+ * One line for the hero when the sample is thin (D-121): how many comps, and
+ * how much of the gap above the median counted. Null at a full sample or when
+ * the rent is not above the median — there is nothing damped to explain.
+ */
+export function rentSampleNote(
+  score: Pick<TenantScore, 'rentSampleWeight' | 'compCount'>,
+  askingRent: number | null | undefined,
+  median: number
+): string | null {
+  if (score.rentSampleWeight >= 1) return null
+  if (askingRent == null || askingRent <= median) return null
+  const pct = Math.round(score.rentSampleWeight * 100)
+  const noun = score.compCount === 1 ? 'comparable' : 'comparables'
+  return `Thin sample: ${score.compCount} ${noun} — ${pct}% of the gap above the median is counted`
 }

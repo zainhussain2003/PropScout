@@ -358,6 +358,24 @@ function TenantPropertyHero({
                 >
                   {listing.verdictSub}
                 </div>
+                {/* A thin comp set moves the median a lot; say how much of the
+                    gap the score counted rather than let the number imply a
+                    certainty five ads cannot give (D-121). */}
+                {listing.sampleNote && (
+                  <p
+                    data-testid="tenant-sample-note"
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      lineHeight: 1.5,
+                      color: 'var(--muted)',
+                      margin: 0,
+                      maxWidth: 280,
+                    }}
+                  >
+                    {listing.sampleNote}
+                  </p>
+                )}
               </div>
             </>
           )}

@@ -107,6 +107,20 @@ describe('shimToTenantListingData — score suppression', () => {
     expect(data.scoreNumber).toBeGreaterThanOrEqual(75)
     expect(data.scoreTone).toBe('pass')
     expect(data.verdictLabel).toBe('Fair rent')
+    expect(data.sampleNote).toBeNull()
+  })
+
+  it('carries the thin-sample note when the ask is above a median from few comps (D-121)', () => {
+    const data = shimToTenantListingData(
+      { ...LISTING, rentMonthly: 2750 },
+      baseAnalysis({ ...COMPS, mid: 2451, compCount: 5 })
+    )
+    expect(data.sampleNote).toBe(
+      'Thin sample: 5 comparables — 63% of the gap above the median is counted'
+    )
+    // Below the median there is nothing damped to say, however few the comps.
+    const under = shimToTenantListingData(LISTING, baseAnalysis({ ...COMPS, compCount: 3 }))
+    expect(under.sampleNote).toBeNull()
   })
 })
 

@@ -4082,3 +4082,33 @@ the table now says instead of pricing a 2,000 sqft detached off condo ads.
 | Deepen the unfiltered feed instead    | 10 more pages a night for ~5 houses each; the filtered feed is all houses.      |
 | Trust the poster's unit type outright | "2-Bedroom Walkout Basement Apartment" was tagged House on the first live page. |
 | Keep parsing beds from free text only | The attribute is the poster's own field; the text rule stays as the fallback.   |
+
+### D-121 · The tenant score counts less of the rent gap when the comp set is thin, and says so
+
+**Chosen (owner go-ahead 2026-09-18).** The tenant score's largest input (50 of 100 points) is
+the asking rent against the comp median, and a median of five ads moves when one ad drops out:
+on 2026-09-18, 25 Holly St went from **67 "Negotiate first"** to **"Overpriced — push hard"** on
+the same $2,750 ask because the set went from six comps at $2,600 to five at $2,451. Nothing
+about the unit changed; the sample did.
+
+Below `RENT_SAMPLE.FULL` (8 — the API's own "high confidence" threshold) the **gap above the
+median is scaled by compCount / FULL** before it meets the fairness curve: five comps count
+62.5% of the gap, one comp 12.5%. A rent at or below the median is never marked down for a thin
+sample — the tenant is not penalised for renting where few ads are posted. The score carries
+`rentSampleWeight` and `compCount`, and the hero prints one line under the verdict when
+something was damped: _"Thin sample: 5 comparables — 63% of the gap above the median is
+counted."_ Nothing is printed at a full sample or when the rent is under the median. Holly now
+reads **58 · Negotiate first**, and the six-comp and five-comp cases land within ten points of
+each other in the same band.
+
+The weights and the curve remain the provisional calibration the file has always declared;
+this changes how much a thin sample is allowed to say, not what a full one says.
+
+**Alternatives considered**
+
+| Option                               | Why not                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Shrink the score toward 50           | Marks a plainly under-median rent down to "negotiate" for having few neighbours' ads.      |
+| Suppress the score under eight comps | The §01 empty state exists for zero comps; five real comps are evidence, just less of it.  |
+| Show a band instead of a number      | A range under a gauge needs a design; the note says the same thing in the existing layout. |
+| Raise the API's comp minimum         | Would drop the rent band, the negotiation target and §01 along with the score.             |
