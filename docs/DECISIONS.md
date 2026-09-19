@@ -4112,3 +4112,37 @@ this changes how much a thin sample is allowed to say, not what a full one says.
 | Suppress the score under eight comps | The §01 empty state exists for zero comps; five real comps are evidence, just less of it.  |
 | Show a band instead of a number      | A range under a gauge needs a design; the note says the same thing in the existing layout. |
 | Raise the API's comp minimum         | Would drop the rent band, the negotiation target and §01 along with the score.             |
+
+### D-122 · Provenance on the tenant and personal reports' own tiles; the "read" date moves with a re-analysis
+
+**Chosen (owner go-ahead 2026-09-19).** D-111 put "listing says / you entered / calculated ·
+N assumed" on the investor and landlord tiles and a "Listing facts from realtor.ca · read …" line
+under their address. The tenant and personal reports had neither, though their headline figures
+rest on the same kinds of source. Now:
+
+- **Both heroes** carry the source line (`ListingSourceLine`, shared with the investor hero
+  instead of three copies of the same markup).
+- **Tenant**: _Asking_ is `listing says` / `you entered`; _Your target_ is `calculated`, and
+  its hover says what it is — "25th to 50th percentile of 5 asking rents in the same postal
+  area, medium confidence. Asking rents, not signed leases." (`rentTargetProvenance`; the
+  radius is named when the search widened).
+- **Personal**: _Asking_ is `listing says` / `you entered`; _Est. monthly cash outflow_ is
+  `calculated · N assumed`, N being the §01 rows whose basis is _estimated_ — insurance,
+  utilities, maintenance — counted by the same rule as §01's modelled share (D-114): an
+  aggregate row once, its indented breakdown not again (`cashOutflowProvenance`).
+
+The `Provenance` type moved to `types/analysis.ts` so the shims' data can carry one, and
+`assumed` widened from ledger rows to any labelled input. The badge and its tone are unchanged.
+
+**A bug the line exposed.** `saveListing` upserts by URL and never wrote `scraped_at`, so the
+column kept its insert-time default: a listing first read Sep 16 and re-analysed Sep 19 still
+said "read Sep 16, 2026" while the numbers were from today's page. The upsert now writes the
+read time every time.
+
+**Alternatives considered**
+
+| Option                                       | Why not                                                                                                              |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Badges on every tenant / personal row        | §01's cost rows already say their basis (D-114) and the tenant cost lines say "(est.)"; the hero tiles were the gap. |
+| Count the utility sub-rows as assumed inputs | Four badges' worth of "assumed" for one modelled row; §01's share counts it once.                                    |
+| Leave `scraped_at` as the first read         | The line claims a date; a stale one is a false claim, not a conservative one.                                        |

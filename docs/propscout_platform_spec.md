@@ -376,6 +376,8 @@ defaults ("10 of 13 are defaults"). Rows differ by mode: purchase modes carry fi
 costs; landlord carries operating costs; tenant carries only rent, the value proxy and market
 vacancy. A report saved before 2026-09-13 has no ledger and renders no section.
 
+Field-level provenance (D-111, D-122; `apps/web/src/lib/provenance.ts`): every report hero carries "Listing facts from <host> · read <date>" (or "as you entered them"), and the headline tiles carry a badge — `listing says` / `you entered` for the asking price or rent, `calculated · N assumed` for engine figures naming the estimates and defaults among their inputs, `calculated` on the tenant's negotiation target with the comps behind it on hover, `calculated · N assumed` on the personal cash outflow counting §01's estimated rows. The read date is the latest scrape of that page, not the first.
+
 ---
 
 ## 7. Report B — Personal purchase report

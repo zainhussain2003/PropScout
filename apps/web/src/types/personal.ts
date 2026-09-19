@@ -39,6 +39,12 @@ export interface PersonalProperty {
   annualTaxesKnown?: boolean
   /** True on the address path — the stated facts are the person's, not a listing's (D-114). */
   factsEntered?: boolean
+  /** Where the listing's facts came from — the scraped page or the person (D-122). */
+  provenance?: {
+    kind: 'listing' | 'entered'
+    source: string | null
+    asOf: string | null
+  }
   condoFeeMonthly: number
   utilityEstMonthly: PersonalUtilities
   insuranceMonthlyEst: number

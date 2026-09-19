@@ -1062,6 +1062,65 @@ describe('ReportPage — provenance tags (D-111)', () => {
     )
     expect(screen.getAllByText('you entered').length).toBeGreaterThan(0)
   })
+
+  it('a tenant report carries the source line, the asking-rent badge and the target’s comps (D-122)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...ANALYSIS,
+        mode: 'tenant',
+        riskFlags: [],
+        rentalComps: {
+          low: 2274,
+          mid: 2451,
+          high: 2581,
+          compCount: 5,
+          confidence: 'medium',
+          postalCode: 'M4S0E3',
+        },
+      },
+      listing: {
+        ...LISTING,
+        listingType: 'for-rent',
+        rentMonthly: 2750,
+        url: 'https://www.realtor.ca/real-estate/2/x',
+        scrapedAt: '2026-09-19T15:00:00Z',
+      },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByTestId('listing-provenance')).toHaveTextContent(
+      'Listing facts from realtor.ca · read Sep 19, 2026'
+    )
+    expect(screen.getByTitle('Asking rent as stated on realtor.ca.')).toHaveTextContent(
+      'listing says'
+    )
+    expect(
+      screen.getByTitle(
+        '25th to 50th percentile of 5 asking rents in the same postal area, medium confidence. Asking rents, not signed leases.'
+      )
+    ).toHaveTextContent('calculated')
+  })
+
+  it('a personal report carries the source line, the asking-price badge and the cash outflow’s estimates (D-122)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...PERSONAL_ANALYSIS, riskFlags: [] },
+      listing: {
+        ...SALE_LISTING,
+        url: 'https://www.realtor.ca/real-estate/3/x',
+        scrapedAt: '2026-09-19T15:00:00Z',
+      },
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(await screen.findByTestId('listing-provenance')).toHaveTextContent(
+      'Listing facts from realtor.ca · read Sep 19, 2026'
+    )
+    expect(screen.getByTitle('Asking price as stated on realtor.ca.')).toHaveTextContent(
+      'listing says'
+    )
+    const outflow = screen.getByTitle(/Sum of the rows in §01; estimates/)
+    expect(outflow).toHaveTextContent(/calculated · \d+ assumed/)
+  })
 })
 
 describe('ReportPage — live financing sliders recompute every dependent metric', () => {

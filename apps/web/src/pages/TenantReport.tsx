@@ -90,6 +90,9 @@ import { useChecklist } from '../hooks/useChecklist'
 import { CompRowsTable } from '../components/analysis/CompRowsTable'
 import { CompsMap, compPins } from '../components/analysis/CompsMap'
 import { RentControlNote } from '../components/shared/RentControlNote'
+import { ListingSourceLine } from '../components/shared/ListingSourceLine'
+import { ProvenanceBadge } from '../components/shared/ProvenanceBadge'
+import { askingProvenance } from '../lib/provenance'
 
 /** Copy the report URL; the button shows "Link copied" for two seconds. */
 function useCopyLink(): { copied: boolean; copy: () => void } {
@@ -242,6 +245,8 @@ function TenantPropertyHero({
               {listing.addressLine1}
             </h1>
             <div style={{ fontSize: 16, color: 'var(--muted)' }}>{listing.addressLine2}</div>
+            {/* Where the facts on this page came from, and when (D-122). */}
+            <ListingSourceLine provenance={listing.provenance} />
 
             <div
               style={{
@@ -398,9 +403,16 @@ function TenantPropertyHero({
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
                   color: 'var(--muted)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
                 }}
               >
                 Asking
+                {/* The listing's figure or the person's (D-122). */}
+                {listing.asking > 0 && listing.provenance != null && (
+                  <ProvenanceBadge provenance={askingProvenance(listing.provenance, 'rent')} />
+                )}
               </span>
               <span className="serif tabular" style={{ fontSize: 34, lineHeight: 1 }}>
                 {listing.asking > 0 ? fmtCAD(listing.asking) : '—'}
@@ -430,9 +442,16 @@ function TenantPropertyHero({
                     letterSpacing: '0.16em',
                     textTransform: 'uppercase',
                     color: 'var(--pass)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
                   }}
                 >
                   Your target
+                  {/* The comps behind the band, on hover (D-122). */}
+                  {listing.targetProvenance != null && (
+                    <ProvenanceBadge provenance={listing.targetProvenance} />
+                  )}
                 </span>
                 <span
                   className="serif tabular"

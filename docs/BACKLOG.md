@@ -89,8 +89,8 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   (D-119) and the house/townhouse feeds (D-120) shipped. Still to do: licensed Ontario
   sold-sales feed for personal FMV (blocked on a provider decision); a `unit_type` column once
   something queries by it (the classifier reads `raw_json` today).
-- **Provenance:** badges and the scrape line shipped (D-111). Still to do: geocoder match type
-  (not stored); badges on the tenant and personal reports' own tiles.
+- **Provenance:** badges and the scrape line shipped on all four reports (D-111, D-122). Still
+  to do: geocoder match type (not stored).
 - **Schools:** attendance-boundary polygons (blocked on data — see §4), grades, Fraser data
   (pedestrian routing shipped — #80, D-100).
 - **Location:** routed walking/driving times shipped (#76, D-096); transit times would need a

@@ -101,8 +101,12 @@ interface AnalysisRow {
 function listingToRow(
   listing: Listing,
   source: 'manual' | 'realtor_ca' | 'zillow_ca' = 'manual'
-): Omit<ListingRow, 'id' | 'scraped_at'> {
+): Omit<ListingRow, 'id'> {
   return {
+    // The time the facts were read. Written on every upsert, not only on
+    // insert: a re-analysis of the same URL re-reads the page, and the hero's
+    // "read Sep 16" line must move with it (D-111, corrected in D-122).
+    scraped_at: listing.scrapedAt,
     // NULL, not '', when the listing came from a person rather than a page.
     // source_url is UNIQUE: every empty string competes for one row, so '' made
     // address-entered listings overwrite each other. Postgres treats NULLs as

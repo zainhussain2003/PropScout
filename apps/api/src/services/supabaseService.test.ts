@@ -1217,6 +1217,25 @@ describe('saveListing — how a listing is keyed', () => {
     expect(chain.insert).not.toHaveBeenCalled()
   })
 
+  it('writes the read time on every upsert so a re-analysis moves the "read" date (D-122)', async () => {
+    // The column defaulted on insert only: a listing first read Sep 16 and
+    // re-analysed Sep 19 kept saying "read Sep 16" on the hero.
+    const chain = makeQueryChain({ data: { id: 'listing-2' }, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await saveListing(
+      listingFixture({
+        url: 'https://www.realtor.ca/real-estate/28145902/x',
+        scrapedAt: '2026-09-19T15:00:00.000Z',
+      }),
+      'realtor_ca'
+    )
+
+    expect(chain.upsert.mock.calls[0][0]).toMatchObject({
+      scraped_at: '2026-09-19T15:00:00.000Z',
+    })
+  })
+
   it('gives two different addresses two different rows', async () => {
     const first = makeQueryChain({ data: { id: 'listing-a' }, error: null })
     const second = makeQueryChain({ data: { id: 'listing-b' }, error: null })

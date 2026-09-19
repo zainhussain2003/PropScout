@@ -49,6 +49,10 @@ import { ListingVisual } from '../components/analysis/ListingVisual'
 import { DealScore } from '../components/analysis/DealScore'
 import { RiskRow } from '../components/analysis/RiskRow'
 import { PBCashOutflowSection } from '../components/personal/PBCashOutflowSection'
+import { ListingSourceLine } from '../components/shared/ListingSourceLine'
+import { ProvenanceBadge } from '../components/shared/ProvenanceBadge'
+import { askingProvenance, cashOutflowProvenance } from '../lib/provenance'
+import { buildCashOutflowLines } from '../lib/personalCashOutflow'
 import { PBFMVSection } from '../components/personal/PBFMVSection'
 import { SunScoutPanel } from '../components/sunscout/SunScoutPanel'
 import { PBSalesSection } from '../components/personal/PBSalesSection'
@@ -171,6 +175,8 @@ function PersonalPropertyHero({
               {property.addressLine1}
             </h1>
             <div style={{ fontSize: 16, color: 'var(--muted)' }}>{property.addressLine2}</div>
+            {/* Where the facts on this page came from, and when (D-122). */}
+            <ListingSourceLine provenance={property.provenance} />
 
             <div
               className="row gap-20"
@@ -292,9 +298,16 @@ function PersonalPropertyHero({
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
                   color: 'var(--muted)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
                 }}
               >
                 Asking
+                {/* The listing's figure or the person's (D-122). */}
+                {property.provenance != null && (
+                  <ProvenanceBadge provenance={askingProvenance(property.provenance, 'price')} />
+                )}
               </span>
               <span className="serif tabular" style={{ fontSize: 32, lineHeight: 1 }}>
                 {fmtMoney(property.price)}
@@ -318,9 +331,19 @@ function PersonalPropertyHero({
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
                   color: 'var(--accent)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  flexWrap: 'wrap',
                 }}
               >
                 Est. monthly cash outflow
+                {/* Calculated from the §01 rows; the estimated ones counted (D-122). */}
+                {property.provenance != null && (
+                  <ProvenanceBadge
+                    provenance={cashOutflowProvenance(buildCashOutflowLines(property, monthly))}
+                  />
+                )}
               </span>
               <span
                 className="serif tabular"

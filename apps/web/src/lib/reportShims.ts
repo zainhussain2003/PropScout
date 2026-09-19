@@ -40,6 +40,7 @@ import {
   formatPropertyType,
 } from '../constants/defaults'
 import { computeTenantScore, rentSampleNote } from './tenantScore'
+import { listingProvenance, rentTargetProvenance } from './provenance'
 import {
   bareCount,
   bedBathLabel,
@@ -190,6 +191,7 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
     annualTaxes: effectiveAnnualTaxes,
     annualTaxesKnown: listedAnnualTaxes != null,
     factsEntered: listing.url === '',
+    provenance: listingProvenance(listing),
     condoFeeMonthly: listing.condoFeeMonthly ?? 0,
     utilityEstMonthly: {
       hydro,
@@ -409,6 +411,8 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     scoreNumber,
     scoreTone,
     scoreSuppressed,
+    provenance: listingProvenance(listing),
+    targetProvenance: rentTargetProvenance(comps),
     verdictLabel,
     verdictSub: analysis.narrative?.split('. ')[0] ?? '',
     sampleNote,

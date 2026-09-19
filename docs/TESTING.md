@@ -253,6 +253,12 @@ Also test a Toronto address — LTT should be approximately double.
 4. ✋ With `GUEST_ANALYSIS_LIMIT_ENABLED=true`: a second guest run shows "Your free report is used — sign in to run another"; signing in runs it
 5. Pass: no fingerprinting, no IP checks; a cleared cookie simply starts over
 
+**🤖 Test 15o — Provenance on the tenant and personal heroes (D-122)**
+
+1. `npx vitest run src/lib/provenance.test.ts src/pages/ReportPage.test.tsx -t "D-122|tenant and personal tiles"` — asking rent / price badge from the listing or the person; the target's hover names the comps, where from and how sure; the cash outflow counts the estimated §01 rows once; both heroes carry the source line
+2. `npx jest src/services/supabaseService.test.ts -t "read time"` — the listing upsert writes `scraped_at` every time
+3. ✋ Re-analyse a listing analysed on an earlier day: the hero's "read" date is today's; hover the tenant target and the personal cash-outflow badge
+
 **🤖 Test 15n — Tenant score small-sample damping (D-121)**
 
 1. `npx vitest run src/lib/tenantScore.test.ts src/lib/reportShims.tenantScore.test.ts src/pages/ReportPage.test.tsx -t "D-121|damping|thin"` — the gap counts at compCount / 8; under-median rents never marked down; the Holly six→five case stays in one band; the note only when something was damped; the hero renders it
