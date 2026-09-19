@@ -10,12 +10,20 @@
  *
  * Pure: reads the ledger the API already produces (D-088) and the listing's
  * own source fields; nothing here decides a number.
+ *
+ * D-122 extends the badges to the tenant and personal reports' own tiles:
+ * the asking rent, the negotiation target, the asking price and the
+ * estimated monthly cash outflow. Those rest on the comps and the cash-
+ * outflow rows rather than the ledger, so `assumed` is any labelled input,
+ * not only a ledger row.
  */
 
-import type { AssumptionEntry, ListingData } from '../types/analysis'
+import type { AssumptionEntry, ListingData, RentalEstimate } from '../types/analysis'
 import type { Listing } from '../types/property'
+import type { CashOutflowLine } from './personalCashOutflow'
 
-export type ProvenanceKind = 'listing' | 'entered' | 'calculated' | 'assumed' | 'published'
+export type { Provenance, ProvenanceKind } from '../types/analysis'
+import type { Provenance, ProvenanceKind } from '../types/analysis'
 
 export const PROVENANCE_LABEL: Record<ProvenanceKind, string> = {
   listing: 'listing says',
@@ -25,13 +33,8 @@ export const PROVENANCE_LABEL: Record<ProvenanceKind, string> = {
   published: 'published',
 }
 
-export interface Provenance {
-  kind: ProvenanceKind
-  /** What to say on hover / in the small print: the sources behind it. */
-  detail: string
-  /** Ledger rows that are estimates or defaults among this figure's inputs. */
-  assumed: AssumptionEntry[]
-}
+/** The listing's source line, as ListingData and the tenant / personal shims carry it. */
+export type ListingSource = NonNullable<ListingData['provenance']>
 
 /** Operating inputs every rent-side figure depends on. */
 const OPERATING = [
@@ -86,9 +89,7 @@ export function tileProvenance(
 }
 
 /** Where the listing's own facts came from: a scraped page or the person. */
-export function listingProvenance(
-  listing: Pick<Listing, 'url' | 'scrapedAt'>
-): NonNullable<ListingData['provenance']> {
+export function listingProvenance(listing: Pick<Listing, 'url' | 'scrapedAt'>): ListingSource {
   const scraped = listing.url != null && listing.url !== ''
   let host: string | null = null
   if (scraped) {
@@ -117,5 +118,65 @@ export function priceProvenance(listing: ListingData): Provenance {
     kind: 'listing',
     detail: `Asking price as stated on ${listing.provenance?.source ?? 'the listing'}.`,
     assumed: [],
+  }
+}
+
+/** The asking rent or price on a tenant / personal hero: the listing's or the person's (D-122). */
+export function askingProvenance(
+  source: ListingSource | null | undefined,
+  what: 'rent' | 'price'
+): Provenance {
+  if (source?.kind === 'entered') {
+    return {
+      kind: 'entered',
+      detail: `The asking ${what} you entered with the address.`,
+      assumed: [],
+    }
+  }
+  return {
+    kind: 'listing',
+    detail: `Asking ${what} as stated on ${source?.source ?? 'the listing'}.`,
+    assumed: [],
+  }
+}
+
+/**
+ * The tenant's negotiation target — the comps' 25th to 50th percentile (D-122).
+ * Calculated from asking rents, never from leases; the detail says how many,
+ * where from, and at what confidence, so a thin band reads as thin.
+ */
+export function rentTargetProvenance(
+  comps: Pick<RentalEstimate, 'compCount' | 'confidence' | 'radiusKm'> | null | undefined
+): Provenance {
+  if (comps == null || comps.compCount === 0) {
+    return { kind: 'calculated', detail: 'No comparable rentals were found.', assumed: [] }
+  }
+  const where = comps.radiusKm != null ? `within ${comps.radiusKm} km` : 'in the same postal area'
+  return {
+    kind: 'calculated',
+    detail:
+      `25th to 50th percentile of ${comps.compCount} asking rent${comps.compCount === 1 ? '' : 's'} ` +
+      `${where}, ${comps.confidence} confidence. Asking rents, not signed leases.`,
+    assumed: [],
+  }
+}
+
+/**
+ * The personal hero's estimated monthly cash outflow (D-122): calculated,
+ * with the modelled rows named so the reader sees what the total rests on.
+ * Indented utility sub-rows are the breakdown of their aggregate row and
+ * are not counted again — the same rule as §01's modelled share (D-114).
+ */
+export function cashOutflowProvenance(lines: CashOutflowLine[]): Provenance {
+  const counted = lines.filter((l) => !l.indent)
+  const assumed = counted.filter((l) => l.basis === 'estimated')
+  const detail =
+    assumed.length === 0
+      ? 'Sum of the listed and calculated rows in §01.'
+      : `Sum of the rows in §01; estimates ${assumed.map((l) => l.label.toLowerCase()).join(', ')}.`
+  return {
+    kind: 'calculated',
+    detail,
+    assumed: assumed.map((l) => ({ key: l.key, label: l.label })),
   }
 }

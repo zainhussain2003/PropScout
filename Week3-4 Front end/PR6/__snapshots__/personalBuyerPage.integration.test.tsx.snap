@@ -454,7 +454,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           >
             <span
               class="mono"
-              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 8px;"
             >
               Asking
             </span>
@@ -471,7 +471,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
           >
             <span
               class="mono"
-              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent);"
+              style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;"
             >
               Est. monthly cash outflow
             </span>

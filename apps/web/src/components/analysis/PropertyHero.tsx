@@ -21,6 +21,7 @@ import { scoreBreakdownBars } from '../../lib/scoreBreakdown'
 import { OwnerValueForm, type OwnerValueSubmission } from '../landlord/OwnerValueForm'
 import { ProvenanceBadge } from '../shared/ProvenanceBadge'
 import { priceProvenance } from '../../lib/provenance'
+import { ListingSourceLine } from '../shared/ListingSourceLine'
 
 interface PropertyHeroProps {
   listing: ListingData
@@ -190,20 +191,7 @@ export function PropertyHero({
             </h1>
             <div style={{ fontSize: 16, color: 'var(--muted)' }}>{listing.addressLine2}</div>
             {/* Where the facts on this page came from, and when (D-111). */}
-            {listing.provenance != null && (
-              <div
-                className="mono"
-                style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}
-                data-testid="listing-provenance"
-              >
-                {listing.provenance.kind === 'listing'
-                  ? `Listing facts from ${listing.provenance.source ?? 'the listing'}`
-                  : 'Listing facts as you entered them'}
-                {listing.provenance.asOf
-                  ? ` · ${listing.provenance.kind === 'listing' ? 'read' : 'entered'} ${new Date(listing.provenance.asOf).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                  : ''}
-              </div>
-            )}
+            <ListingSourceLine provenance={listing.provenance} />
 
             <div
               style={{

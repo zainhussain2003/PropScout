@@ -810,6 +810,17 @@ export interface TenantChecklistItem {
  * Tenant-specific listing data.
  * Separate from ListingData (investor) — rental listings have different fields.
  */
+/** Where a figure came from, said next to it (D-111, D-122). */
+export type ProvenanceKind = 'listing' | 'entered' | 'calculated' | 'assumed' | 'published'
+
+export interface Provenance {
+  kind: ProvenanceKind
+  /** What to say on hover / in the small print: the sources behind it. */
+  detail: string
+  /** Inputs that are estimates or defaults — ledger rows, or cash-outflow lines (D-122). */
+  assumed: Array<Pick<AssumptionEntry, 'key' | 'label'>>
+}
+
 export interface TenantListingData {
   id: string
   addressLine1: string
@@ -833,6 +844,10 @@ export interface TenantListingData {
    * NIGHT_NOTES follow-up on redesigning the tenant score entirely.
    */
   scoreSuppressed: boolean
+  /** Where the listing's facts came from — the scraped page or the person (D-122). */
+  provenance?: ListingData['provenance']
+  /** How the negotiation target was arrived at — the comps behind it (D-122). */
+  targetProvenance?: Provenance
   /**
    * Shown under the verdict when the rent-fairness signal rested on fewer
    * comps than count in full (D-121) — how many, and how much of the gap

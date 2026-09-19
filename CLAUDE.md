@@ -1097,7 +1097,7 @@ propscout/
 │       ├── lib/sunCoverage.ts + sunCoverage.test.ts       # Obstruction coverage → checked / indicative (D-085)
 │       ├── lib/scanState.ts + scanState.test.ts           # no text / failed / partial / clean — one rule for empty flag sections (D-090)
 │       ├── lib/exitScenarios.ts + exitScenarios.test.ts   # Stress / flat / conservative / base exit after selling costs and the balance owed (D-110)
-│       ├── lib/provenance.ts + provenance.test.ts         # Tile → ledger inputs; listing / price provenance for the hero (D-111)
+│       ├── lib/provenance.ts + provenance.test.ts         # Tile → ledger inputs; listing / price / asking / rent-target / cash-outflow provenance (D-111, D-122)
 │       ├── lib/rentalEconomics.ts + rentalEconomics.test.ts  # The client's one copy of the engine's break-even / cash-flow identity, parity-tested (D-112)
 │       ├── lib/rentControlCopy.ts + rentControlCopy.test.ts  # The rent-control note's sentences from the stored rules (D-113)
 │       ├── lib/personalCashOutflow.ts + personalCashOutflow.test.ts  # Cash-outflow lines with basis; modelled share from the rows (D-114)
@@ -1111,7 +1111,8 @@ propscout/
 │   │       │   │   ├── ScoutMark.tsx          # Standalone glyph — used as watermark on dark cards
 │   │       │   │   ├── Icon.tsx               # Full line-icon library
 │   │       │   │   ├── Chip.tsx               # Inline pill tag
-│   │       │   │   ├── ProvenanceBadge.tsx    # listing says / you entered / calculated · N assumed (D-111)
+│   │       │   │   ├── ProvenanceBadge.tsx    # listing says / you entered / calculated · N assumed (D-111, D-122)
+│   │       │   │   ├── ListingSourceLine.tsx  # "Listing facts from realtor.ca · read <date>" under every hero's address (D-122)
 │   │       │   │   ├── RentControlNote.tsx    # Ontario rent-control status + rules, landlord or tenant side (D-113)
 │   │       │   │   ├── GuestNudge.tsx         # "Sign in to keep this report" on a guest's own report (D-116)
 │   │       │   │   ├── SanityNotice.tsx       # The engine's failed plausibility checks, above §01 on investor + landlord (D-118)
