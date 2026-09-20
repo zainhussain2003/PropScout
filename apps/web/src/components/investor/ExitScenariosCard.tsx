@@ -65,8 +65,10 @@ export function ExitScenariosCard({
     { label: 'Cash in, all told', cell: (s) => fmtMoney(s.cashIn) },
     { label: 'Profit before tax', cell: (s) => fmtSignedMoney(s.profit), strong: true },
     {
-      label: 'A year, on your cash',
-      cell: (s) => fmtSignedPct(s.annualizedReturn),
+      // IRR on the dated stream (D-123), not the simple multiple: a shortfall
+      // funded in year nine is not the same money as the down payment.
+      label: 'IRR, before tax',
+      cell: (s) => fmtSignedPct(s.irr),
       strong: true,
     },
   ]
@@ -190,7 +192,8 @@ export function ExitScenariosCard({
         Cost of selling = {Math.round(EXIT_COSTS.COMMISSION_RATE * 100)}% commission + HST +{' '}
         {fmtMoney(EXIT_COSTS.LEGAL_FEES)} legal, a starting assumption. Capital gains tax (half the
         gain at your marginal rate) is not deducted. Maintenance is already inside the cash flow; a
-        major repair would come off these figures.
+        major repair would come off these figures. IRR counts your cash at closing, each year&apos;s
+        cash flow when it happens, and the sale at the end of the hold.
       </p>
     </div>
   )

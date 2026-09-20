@@ -253,6 +253,11 @@ Also test a Toronto address — LTT should be approximately double.
 4. ✋ With `GUEST_ANALYSIS_LIMIT_ENABLED=true`: a second guest run shows "Your free report is used — sign in to run another"; signing in runs it
 5. Pass: no fingerprinting, no IP checks; a cleared cookie simply starts over
 
+**🤖 Test 15p — Rate provenance under the slider; IRR on the exit scenarios (D-123)**
+
+1. `npx vitest run src/lib/irr.test.ts src/lib/rateProvenance.test.ts src/lib/exitScenarios.test.ts src/components/investor/ExitScenariosCard.test.tsx src/pages/ReportPage.test.tsx -t "D-123|irr|rateBaseNote|rateLedgerRow"` — known IRR streams (10% on −100/+110, the annuity rate, total loss −100%, nothing in null, NPV zero at the answer); the exit stream is outlay + one entry a year with the sale last; live / cached / default / you-entered sentences; the slider note on a live report and none without a ledger; the card row reads "IRR, before tax"
+2. ✋ Open an investor report: under the mortgage-rate slider, "Base X% is the Bank of Canada prime rate, read <date>…"; in §07's exit table the last row is IRR and the footnote says what it counts
+
 **🤖 Test 15o — Provenance on the tenant and personal heroes (D-122)**
 
 1. `npx vitest run src/lib/provenance.test.ts src/pages/ReportPage.test.tsx -t "D-122|tenant and personal tiles"` — asking rent / price badge from the listing or the person; the target's hover names the comps, where from and how sure; the cash outflow counts the estimated §01 rows once; both heroes carry the source line

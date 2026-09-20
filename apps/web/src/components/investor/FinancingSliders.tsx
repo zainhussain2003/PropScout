@@ -20,6 +20,8 @@ import { DEFAULT_FINANCING_INPUTS } from '../../constants/demoData'
 import { OSFI_STRESS } from '../../constants/osfi'
 import { fmtMoney } from '../../lib/investorCalc'
 import { FINANCING_SLIDER, EQUITY_SLIDER } from '../../constants/thresholds'
+import { rateBaseNote } from '../../lib/rateProvenance'
+import type { AssumptionEntry } from '../../types/analysis'
 
 /** The three financing terms a preset is expressed relative to. */
 export type FinancingBase = Pick<
@@ -41,6 +43,11 @@ interface FinancingSlidersProps {
    * too, and "vs Base +0.00%" then described a rate the analysis never used.
    */
   base?: FinancingBase
+  /**
+   * The ledger's mortgage-rate row (D-123): says under the slider what the
+   * base rate is and when it was read. Absent on the demo routes.
+   */
+  rateRow?: AssumptionEntry | null
 }
 
 // ── Presets ────────────────────────────────────────────────────────────────────
@@ -81,6 +88,7 @@ export function FinancingSliders({
   price,
   onChange,
   base = DEFAULT_BASE,
+  rateRow,
 }: FinancingSlidersProps): JSX.Element {
   const set = (patch: Partial<FinancingInputs>): void => onChange({ ...financing, ...patch })
   const presets = presetsFor(base)
@@ -186,6 +194,9 @@ export function FinancingSliders({
           value={financing.mortgageRate * 100}
           onChange={(v) => set({ mortgageRate: v / 100 })}
           ticks={['2%', '4.79%', '6.79%', '10%']}
+          note={
+            rateBaseNote(rateRow ?? null, `${(base.mortgageRate * 100).toFixed(2)}%`) ?? undefined
+          }
         />
 
         {/* Amortization */}

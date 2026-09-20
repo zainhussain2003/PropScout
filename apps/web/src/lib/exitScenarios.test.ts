@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { computeExitScenarios, sellingCosts } from './exitScenarios'
 import { EXIT_COSTS, EXIT_SCENARIOS } from '../constants/thresholds'
+import { npv } from './irr'
 
 // 5702 Buttermill: $729,900, 20% down, 4.79% / 25 yr, −$1,833/mo, $169,776 cash in.
 const BUTTERMILL = {
@@ -98,6 +99,42 @@ describe('computeExitScenarios (D-110)', () => {
     })[1]!
     expect(nothingIn.multiple).toBeNull()
     expect(nothingIn.annualizedReturn).toBeNull()
+  })
+
+  it('IRR is solved on the dated stream: outlay, each year’s cash flow, the sale (D-123)', () => {
+    const flat = computeExitScenarios(BUTTERMILL)[1]!
+    // Ten entries after the outlay; every year carries the shortfall; the last adds the sale.
+    expect(flat.cashFlows).toHaveLength(11)
+    expect(flat.cashFlows[0]).toBe(-169_776)
+    expect(flat.cashFlows[1]).toBe(-1_833 * 12)
+    expect(flat.cashFlows[10]).toBeCloseTo(-1_833 * 12 + flat.netProceeds, 6)
+    expect(flat.irr).not.toBeNull()
+    expect(npv(flat.cashFlows, flat.irr!)).toBeCloseTo(0, 1)
+    // The flat hold loses money. The simple multiple treats every dollar of
+    // shortfall as put in on day one; in fact most arrived later and had less
+    // time in the deal, so losing the same amount is a worse rate per year.
+    expect(flat.profit).toBeLessThan(0)
+    expect(flat.irr!).toBeLessThan(flat.annualizedReturn!)
+  })
+
+  it('IRR: positive cash flow raises it above the multiple’s rate; nothing in is null; a wipe-out is −100%', () => {
+    const paying = computeExitScenarios({ ...BUTTERMILL, cashFlowMonthly: 500 })[3]!
+    expect(paying.irr!).toBeGreaterThan(paying.annualizedReturn!)
+    const nothingIn = computeExitScenarios({
+      ...BUTTERMILL,
+      totalCashInvested: 0,
+      cashFlowMonthly: 0,
+    })[1]!
+    expect(nothingIn.irr).toBeNull()
+    const wiped = computeExitScenarios({
+      ...BUTTERMILL,
+      holdYears: 1,
+      cashFlowMonthly: -1,
+      // A sale that clears less than the shortfall: every later flow ≤ 0.
+      price: 1,
+      principal: 1,
+    })[0]!
+    expect(wiped.irr).toBe(-1)
   })
 
   it('no price, no scenarios', () => {

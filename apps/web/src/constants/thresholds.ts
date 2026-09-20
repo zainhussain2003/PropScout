@@ -98,6 +98,14 @@ export const EXIT_SCENARIOS = {
   CONSERVATIVE: 0.02,
 } as const
 
+/** Bisection bounds for the IRR solver (D-123): −99% to +1,000% a year, 12 significant bits. */
+export const IRR_SOLVER = {
+  MIN_RATE: -0.99,
+  MAX_RATE: 10,
+  TOLERANCE: 1e-7,
+  MAX_ITERATIONS: 200,
+} as const
+
 /**
  * Cost of selling in Ontario (D-110): a typical total commission (both
  * sides), HST on it, and a legal fee — starting assumptions, labelled as such.
