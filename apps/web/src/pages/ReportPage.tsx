@@ -15,6 +15,7 @@ import { listingProvenance } from '../lib/provenance'
 import { RentControlNote } from '../components/shared/RentControlNote'
 import { GuestNudge } from '../components/shared/GuestNudge'
 import { SanityNotice } from '../components/shared/SanityNotice'
+import { rateLedgerRow } from '../lib/rateProvenance'
 import { useAuth } from '../hooks/useAuth'
 import { PersonalBuyerPage } from './PersonalBuyerPage'
 import { TenantReport } from './TenantReport'
@@ -708,6 +709,7 @@ function InvestorReportContent({
             financing={financing}
             onFinancingChange={setFinancing}
             base={baseFinancing}
+            rateRow={rateLedgerRow(analysis.assumptions)}
           />
         </>
       )}

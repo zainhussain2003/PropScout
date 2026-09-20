@@ -16,6 +16,7 @@
 
 import { EXIT_COSTS, EXIT_SCENARIOS } from '../constants/thresholds'
 import { remainingBalance } from './investorCalc'
+import { irr } from './irr'
 
 export interface ExitScenarioInput {
   price: number
@@ -53,6 +54,14 @@ export interface ExitScenario {
   multiple: number | null
   /** Simple annualized return on cashIn over the hold; null when nothing was put in. */
   annualizedReturn: number | null
+  /**
+   * Internal rate of return on the dated stream (D-123): the cash invested at
+   * closing, each year's cash flow when it happens, the net proceeds at the
+   * sale. Null when nothing was put in; −1 on a total loss.
+   */
+  irr: number | null
+  /** The stream the IRR was solved on: outlay, then one entry per year of the hold. */
+  cashFlows: number[]
 }
 
 /** The cost of selling at a given price: commission, HST on it, legal. */
@@ -87,6 +96,13 @@ function scenario(
   const multiple = cashIn > 0 ? cashOut / cashIn : null
   const annualizedReturn =
     cashIn > 0 && cashOut > 0 ? Math.pow(cashOut / cashIn, 1 / years) - 1 : cashIn > 0 ? -1 : null
+  // The dated stream: the outlay at closing, each year's cash flow as it
+  // happens (a shortfall is a further outlay that year), the sale at the end.
+  const cashFlows = [-input.totalCashInvested]
+  for (let y = 1; y <= years; y += 1) {
+    cashFlows.push(annualCashFlow + (y === years ? netProceeds : 0))
+  }
+  const rate = input.totalCashInvested > 0 ? irr(cashFlows) : null
   return {
     key,
     label,
@@ -102,6 +118,8 @@ function scenario(
     profit,
     multiple,
     annualizedReturn,
+    irr: rate,
+    cashFlows,
   }
 }
 

@@ -10,7 +10,7 @@
 
 import { SectionHead } from '../shared/SectionHead'
 import { FinancingSliders, type FinancingBase } from './FinancingSliders'
-import type { FinancingInputs } from '../../types/analysis'
+import type { AssumptionEntry, FinancingInputs } from '../../types/analysis'
 
 export interface FinancingSectionProps {
   price: number
@@ -18,6 +18,8 @@ export interface FinancingSectionProps {
   onFinancingChange: (f: FinancingInputs) => void
   /** What the analysis ran with; presets are relative to it. See FinancingSliders. */
   base?: FinancingBase
+  /** The ledger's mortgage-rate row — what the base rate is and when it was read (D-123). */
+  rateRow?: AssumptionEntry | null
 }
 
 export function FinancingSection({
@@ -25,6 +27,7 @@ export function FinancingSection({
   financing,
   onFinancingChange,
   base,
+  rateRow,
 }: FinancingSectionProps): JSX.Element {
   return (
     <section className="container tr-section" data-section="02">
@@ -50,6 +53,7 @@ export function FinancingSection({
         price={price}
         onChange={onFinancingChange}
         base={base}
+        rateRow={rateRow}
       />
     </section>
   )

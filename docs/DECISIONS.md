@@ -4146,3 +4146,37 @@ read time every time.
 | Badges on every tenant / personal row        | §01's cost rows already say their basis (D-114) and the tenant cost lines say "(est.)"; the hero tiles were the gap. |
 | Count the utility sub-rows as assumed inputs | Four badges' worth of "assumed" for one modelled row; §01's share counts it once.                                    |
 | Leave `scraped_at` as the first read         | The line claims a date; a stale one is a false claim, not a conservative one.                                        |
+
+### D-123 · The financing slider says what its base rate is and when it was read; the exit scenarios report IRR
+
+**Chosen (owner go-ahead 2026-09-20).** Two roadmap rows from the report audits, both pure code:
+
+**Rate provenance.** The analysis runs at the Bank of Canada prime rate the API fetched (or a
+still-fresh cached one, or PropScout's default when the feed was down, or the contract rate a
+landlord entered — D-108), and the ledger's `mortgage_rate` row has recorded which since D-088.
+The slider said "vs Base +0.00%" without saying what the base was. `lib/rateProvenance.ts` turns
+that row into one sentence under the slider — _"Base 4.45% is the Bank of Canada prime rate, read
+Sep 15, 2026. A quoted mortgage rate will differ — set yours here."_; the cached, default and
+you-entered cases each have their own wording. The rate in the sentence is the slider's own base,
+so the two cannot disagree. A report with no ledger (a demo route, or one saved before D-088)
+shows nothing rather than a guess.
+
+**IRR.** The exit scenarios (D-110) reported "a year, on your cash" as the simple annualised
+multiple, (cashOut / cashIn)^(1/years) − 1, which treats every dollar of a hold's shortfall as put
+in at closing and every dollar as returned at the sale. `lib/irr.ts` solves the internal rate of
+return on the dated stream instead — the cash invested at closing, each year's cash flow when it
+happens, the net proceeds in the final year — by bisection on NPV. The card's row is now **"IRR,
+before tax"**, with the footnote saying what it counts. The change moves the demo's flat path
+from −5.4% to −9.0% a year and its base path from +1.0% to +1.5%: on a losing hold the late
+shortfalls had less time in the deal, so losing the same amount is a worse rate; on a winning one
+the same timing works the other way. A total loss reads −100%; nothing put in reads null. The
+simple figure stays on the scenario object for anyone who wants it; the card no longer shows it.
+
+**Alternatives considered**
+
+| Option                                    | Why not                                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Monthly cash flows in the IRR stream      | 240 periods for the same answer within rounding; the equity chart and the exit table are yearly.         |
+| Newton's method                           | Converges faster but can diverge on a stream with small early flows; bisection on a monotone NPV cannot. |
+| Show both the multiple and the IRR        | Two annual rates for one row invites the wrong one to be quoted.                                         |
+| Fetch the rate on the client for the note | The number that ran is the one to name; the ledger already has it with its fetch time.                   |

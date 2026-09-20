@@ -54,6 +54,10 @@ describe('ExitScenariosCard (D-110)', () => {
     ).toBeInTheDocument()
     expect(within(card).getByText(/Before tax/)).toBeInTheDocument()
     expect(within(card).getByText(/Capital gains tax .* is not deducted/)).toBeInTheDocument()
+    // The return row is the IRR on the dated stream (D-123), labelled as such.
+    expect(within(card).getByText('IRR, before tax')).toBeInTheDocument()
+    expect(within(card).getByText(/IRR counts your cash at closing/)).toBeInTheDocument()
+    expect(within(card).queryByText('A year, on your cash')).not.toBeInTheDocument()
   })
 
   it('the hold-period chips change the figures', () => {

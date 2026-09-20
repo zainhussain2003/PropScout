@@ -1063,6 +1063,47 @@ describe('ReportPage — provenance tags (D-111)', () => {
     expect(screen.getAllByText('you entered').length).toBeGreaterThan(0)
   })
 
+  it('the mortgage-rate slider says what the base rate is and when it was read (D-123)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: {
+        ...INVESTOR_ANALYSIS,
+        riskFlags: [],
+        assumptions: [
+          {
+            key: 'mortgage_rate',
+            label: 'Mortgage rate',
+            value: '4.45%',
+            basis: 'published',
+            source: 'Bank of Canada Valet — prime business rate (series V80691311)',
+            asOf: '2026-09-19T15:00:00.000Z',
+            method:
+              'Prime rate at the time of analysis. A quoted mortgage rate will differ; use the slider.',
+          },
+        ],
+      },
+      listing: SALE_LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    expect(
+      await screen.findByText(
+        /Base [\d.]+% is the Bank of Canada prime rate, read Sep 19, 2026\. A quoted mortgage rate will differ/
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('a report with no ledger claims nothing about its base rate (D-123)', async () => {
+    getAnalysisByToken.mockResolvedValue({
+      analysis: { ...INVESTOR_ANALYSIS, riskFlags: [], assumptions: undefined },
+      listing: SALE_LISTING,
+    })
+    listOverrides.mockResolvedValue([])
+    renderReport()
+    await screen.findByText(/Investment metrics/i)
+    expect(screen.queryByText(/is the Bank of Canada prime rate/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/PropScout's default/)).not.toBeInTheDocument()
+  })
+
   it('a tenant report carries the source line, the asking-rent badge and the target’s comps (D-122)', async () => {
     getAnalysisByToken.mockResolvedValue({
       analysis: {

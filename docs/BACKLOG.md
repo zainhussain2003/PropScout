@@ -96,13 +96,13 @@ From the four per-report audits' "field to work on" columns, grouped. None start
   (pedestrian routing shipped — #80, D-100).
 - **Location:** routed walking/driving times shipped (#76, D-096); transit times would need a
   transit routing source.
-- **Financing:** rate provenance/date, fixed vs variable, CMHC rules, renewal scenarios, saved
-  side-by-side cases; personal-report financing controls.
+- **Financing:** rate provenance/date shipped (D-123). Still to do: fixed vs variable, CMHC
+  rules, renewal scenarios, saved side-by-side cases; personal-report financing controls.
 - **Checklists:** notes, owners, deadlines, attachments (ticks are kept per browser since #75,
   D-095; account-side storage would need a table).
 - **SunScout:** facade is now labelled assumed vs set-by-you and persists with the figures
   (#78, D-098); floor confirmation still to do (needs a floor input in the pipeline).
-- **Equity build:** scenarios shipped (D-110). Still to do: capital-gains tax (needs a marginal-rate input and principal-residence flag); IRR.
+- **Equity build:** scenarios (D-110) and IRR (D-123) shipped. Still to do: capital-gains tax (needs a marginal-rate input and principal-residence flag).
 - **STR:** dated rules snapshot with municipal citations until an official source exists.
 - **Landlord:** rent-control guidance shipped (D-113); remaining-amortization input and OSFI copy
   for the renewal/refinance case (D-108 known limits); a pricing-health score once the comps
