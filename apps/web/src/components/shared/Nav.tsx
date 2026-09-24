@@ -13,6 +13,8 @@ import { Wordmark } from './Wordmark'
 import { LockedButton } from '../paywall/LockedButton'
 import { usePaywall } from '../paywall/PaywallContext'
 import { useAuth } from '../../hooks/useAuth'
+import { useAppDesign } from '../../hooks/useAppDesign'
+import { HybridNav } from '../hybrid/HybridNav'
 
 // ── Shared header shell ──────────────────────────────────────────
 
@@ -295,6 +297,12 @@ type NavProps =
   | ({ variant: 'account' } & AccountNavProps)
 
 export function Nav(props: NavProps): JSX.Element {
+  const design = useAppDesign()
+  if (design === 'hybrid' && props.variant === 'landing') {
+    return (
+      <HybridNav dark={props.dark} onToggleDark={props.onToggleDark} onSignIn={props.onSignIn} />
+    )
+  }
   if (props.variant === 'report') {
     return (
       <ReportNav

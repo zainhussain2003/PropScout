@@ -30,6 +30,9 @@ import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { TierUnavailableNotice } from './components/paywall/TierUnavailableNotice'
 import { useAuth } from './hooks/useAuth'
 import { startCheckout } from './lib/services/billingService'
+import { DesignProvider } from './components/hybrid/DesignProvider'
+import { resolveAppDesign } from './lib/appDesign'
+import './styles/hybrid.css'
 
 function AppInner(): JSX.Element {
   const { tier, status: tierStatus, refresh: refreshTier } = useTier()
@@ -171,11 +174,13 @@ function AppInner(): JSX.Element {
 
 function App(): JSX.Element {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AppInner />
-      </AuthProvider>
-    </ErrorBoundary>
+    <DesignProvider design={resolveAppDesign(import.meta.env.VITE_APP_DESIGN)}>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AppInner />
+        </AuthProvider>
+      </ErrorBoundary>
+    </DesignProvider>
   )
 }
 

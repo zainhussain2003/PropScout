@@ -4,6 +4,38 @@ Last updated: September 2026
 Reference spec: `propscout_platform_spec.md`
 Build tasks: `MVP_TODO.md`
 
+## Hybrid UI migration validation (2026-09-24)
+
+Route/component inventory, rollback instructions and execution evidence are in
+[`HYBRID_UI_MIGRATION.md`](HYBRID_UI_MIGRATION.md). Run the complete configured web suite,
+including PR4–PR8; new focused coverage is `components/hybrid/hybrid.test.tsx`,
+`lib/appDesign.test.ts` and `styles/hybridContrast.test.ts` under `apps/web/src`.
+
+Browser checks required before accepting the migration:
+
+- Start/rebuild with the default hybrid design and with `VITE_APP_DESIGN=legacy`.
+  Check the original headline, navigation and original styles in rollback, in both themes.
+- At desktop, 760px and 375px widths, check all mapped routes for overflow, legibility,
+  focus indicators and missing/error/pending states. Run the existing PR4–PR7 browser
+  checklists and PR8 mobile scenarios; do not substitute unit results for these checks.
+- On the hybrid homepage, use keyboard navigation to open Menu, follow every section
+  anchor, close Menu with Escape and open/close sign-in. Check initial modal focus and
+  tab containment. Confirm each anchor lands below the sticky header.
+- Submit mocked rental and sale links and an address. Confirm detected type, compatible
+  options, missing-input handling and the same returned token through analysis.
+- Open all four sample links and a saved report in each mode. Samples must be labelled;
+  saved reports must retain their actual address, mode, values, unknowns and source ledger.
+- Exercise report sliders, flags, checklists, SunScout, share and PDF gating in both
+  designs. Keep stored analysis IDs, account queries and billing/auth return URLs intact.
+- Verify only Free and Investor Pro CAD $10/month are offered. Test actual billing or auth
+  provider behavior only in an owner-configured test environment.
+
+Builder execution: TypeScript and JS lint passed; API tests passed serially (503 passed,
+2 existing skips), calc tests passed (469 passed, 2 existing skips), scraper tests passed
+(212). Python lint passed serially. Vitest and the web build could not start (`spawn EPERM`);
+Playwright startup was denied (`WinError 5`). Browser scenarios above remain **unexecuted**.
+Black did not complete in this sandbox. No test or snapshot expectations were weakened.
+
 This file tells you exactly what to test after each week of development, how to test it manually yourself, and which tests require other pieces to be built first before they can be verified end-to-end.
 
 **Legend:**
