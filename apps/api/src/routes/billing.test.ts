@@ -64,6 +64,7 @@ let app: FastifyInstance
 
 beforeEach(async () => {
   jest.clearAllMocks()
+  mockGetUserById.mockResolvedValue({ id: 'user-abc', tier: 'free', stripe_customer_id: null })
   app = Fastify({ logger: false })
   await app.register(billingRoutes)
   await app.ready()
@@ -76,6 +77,55 @@ afterEach(async () => {
 // ── POST /checkout ─────────────────────────────────────────────────────────────
 
 describe('POST /checkout', () => {
+  it('does not open checkout when the account profile cannot be persisted or read', async () => {
+    mockGetSupabase.mockReturnValue(makeAuthMock(true))
+    mockGetUserById.mockResolvedValue(null)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/checkout',
+      headers: { authorization: 'Bearer valid-token' },
+      payload: { tier: 'pro' },
+    })
+    expect(res.statusCode).toBe(503)
+    expect(res.json().code).toBe('PROFILE_UNAVAILABLE')
+    expect(mockCreateCheckout).not.toHaveBeenCalled()
+  })
+  it.each(['professional', 'team'])('does not sell the deferred %s plan', async (tier) => {
+    mockGetSupabase.mockReturnValue(makeAuthMock(true))
+    const res = await app.inject({
+      method: 'POST',
+      url: '/checkout',
+      headers: { authorization: 'Bearer valid-token' },
+      payload: { tier },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('PLAN_UNAVAILABLE')
+    expect(mockCreateCheckout).not.toHaveBeenCalled()
+  })
+
+  it.each(['pro', 'professional', 'team'])(
+    'routes an existing %s subscriber to the portal',
+    async (tier) => {
+      mockGetSupabase.mockReturnValue(makeAuthMock(true))
+      mockGetUserById.mockResolvedValue({
+        id: 'user-abc',
+        tier,
+        stripe_customer_id: 'cus_existing',
+      })
+      mockCreatePortal.mockResolvedValue('https://billing.stripe.com/test')
+      const res = await app.inject({
+        method: 'POST',
+        url: '/checkout',
+        headers: { authorization: 'Bearer valid-token' },
+        payload: { tier: 'pro' },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().url).toBe('https://billing.stripe.com/test')
+      expect(mockCreatePortal).toHaveBeenCalledWith('cus_existing')
+      expect(mockCreateCheckout).not.toHaveBeenCalled()
+    }
+  )
+
   it('returns 401 when no Authorization header is present', async () => {
     const res = await app.inject({
       method: 'POST',

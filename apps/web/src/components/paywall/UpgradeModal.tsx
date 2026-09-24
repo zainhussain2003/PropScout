@@ -22,8 +22,8 @@ const FEATURE_COPY: Record<FeatureKey, FeatureCopy> = {
     sub: 'Share with your agent, partner, or lender — formatted and branded.',
   },
   portfolio: {
-    headline: 'Save this to your portfolio.',
-    sub: "Track every deal you've analysed. Compare side by side. Export the lot.",
+    headline: 'Portfolio tracking is planned.',
+    sub: 'Portfolio tracking is not included in the current Pro offering. You can share report links today.',
   },
   sunscout: {
     headline: 'See how shadows fall across this property.',
@@ -35,17 +35,15 @@ const FEATURE_COPY: Record<FeatureKey, FeatureCopy> = {
   },
   generic: {
     headline: 'Unlock Investor Pro.',
-    sub: 'Full evidence-based verdicts, PDF export, portfolio tracker, SunScout 3D — everything.',
+    sub: 'More reports, full evidence-based verdicts and branded PDF export.',
   },
 }
 
 const PRO_FEATURES = [
   'Unlimited analyses — all four report types',
   'Full evidence-based verdicts with supporting metrics',
-  'Financing sliders · OSFI · 35% down · conservative',
-  'SunScout with building obstruction (Mapbox 3D)',
+  'All Free features, including financing scenarios and available sunlight data',
   'Branded PDF export · shareable links',
-  'Portfolio tracker · up to 10 properties',
 ]
 
 interface UpgradeModalProps {
@@ -273,7 +271,7 @@ export function UpgradeModal({
                 <span style={{ fontSize: 14, color: 'var(--muted)' }}>/mo</span>
               </span>
               <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-                or $100/yr · 2 months free
+                CAD · billed monthly
               </span>
             </div>
             <span
@@ -290,7 +288,7 @@ export function UpgradeModal({
 
           {/* Action buttons */}
           <div className="col gap-10">
-            {onUpgrade && (
+            {onUpgrade && feature !== 'portfolio' && (
               <button
                 className="btn btn-accent"
                 onClick={onUpgrade}

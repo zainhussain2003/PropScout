@@ -17,7 +17,11 @@
 
 import { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify'
 import type Stripe from 'stripe'
-import { constructWebhookEvent } from '../services/stripeService'
+import {
+  constructWebhookEvent,
+  retrieveSubscription,
+  tierForPrice,
+} from '../services/stripeService'
 import {
   updateUserTier,
   upsertSubscription,
@@ -58,7 +62,7 @@ async function webhookRoutes(fastify: FastifyInstance): Promise<void> {
       await handleEvent(event, fastify)
     } catch (err) {
       fastify.log.error({ err, eventType: event.type }, 'Stripe webhook handler threw')
-      // Return 200 anyway so Stripe doesn't retry — we've logged the failure
+      return reply.status(500).send({ received: false })
     }
 
     return reply.status(200).send({ received: true })
@@ -86,28 +90,41 @@ async function handleEvent(event: Stripe.Event, fastify: FastifyInstance): Promi
         break
       }
 
-      await updateUserTier(userId, TIER_MAP[tier], stripeCustomerId)
-      await upsertSubscription(userId, TIER_MAP[tier], stripeSubscriptionId, 'active', null)
+      const current = await retrieveSubscription(stripeSubscriptionId)
+      const currentTier = tierForPrice(current.items.data[0]?.price.id ?? '')
+      if (!currentTier) throw new Error('Unrecognized subscription price')
+      const periodEnd = current.current_period_end
+        ? new Date(current.current_period_end * 1000)
+        : null
+      await upsertSubscription(userId, currentTier, stripeSubscriptionId, current.status, periodEnd)
+      await updateUserTier(
+        userId,
+        current.status === 'active' || current.status === 'trialing' ? currentTier : 'free',
+        stripeCustomerId
+      )
       fastify.log.info({ userId, tier }, 'Subscription activated')
       break
     }
 
     case 'customer.subscription.updated': {
-      const sub = event.data.object as Stripe.Subscription
+      const sub = await retrieveSubscription((event.data.object as Stripe.Subscription).id)
       const status = sub.status
       const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null
 
-      await updateSubscriptionStatus(sub.id, status, periodEnd)
+      const tier = tierForPrice(sub.items.data[0]?.price.id ?? '')
+      if (!tier) throw new Error('Unrecognized subscription price')
+      await updateSubscriptionStatus(sub.id, status, periodEnd, tier)
       fastify.log.info({ subId: sub.id, status }, 'Subscription updated')
       break
     }
 
     case 'customer.subscription.deleted': {
-      const sub = event.data.object as Stripe.Subscription
+      const sub = await retrieveSubscription((event.data.object as Stripe.Subscription).id)
       await updateSubscriptionStatus(
         sub.id,
-        'canceled',
-        sub.current_period_end ? new Date(sub.current_period_end * 1000) : null
+        sub.status,
+        sub.current_period_end ? new Date(sub.current_period_end * 1000) : null,
+        tierForPrice(sub.items.data[0]?.price.id ?? '') ?? undefined
       )
       fastify.log.info({ subId: sub.id }, 'Subscription cancelled — user downgraded to free')
       break

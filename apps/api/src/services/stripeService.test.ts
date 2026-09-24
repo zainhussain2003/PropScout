@@ -10,6 +10,26 @@
  */
 
 const ORIGINAL_ENV = { ...process.env }
+const mockRetrievePrice = jest.fn()
+const mockCreateSession = jest.fn()
+jest.mock('stripe', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    prices: { retrieve: mockRetrievePrice },
+    checkout: { sessions: { create: mockCreateSession } },
+  })),
+}))
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  mockRetrievePrice.mockResolvedValue({
+    active: true,
+    currency: 'cad',
+    unit_amount: 1000,
+    recurring: { interval: 'month', interval_count: 1 },
+  })
+  mockCreateSession.mockResolvedValue({ url: 'https://checkout.stripe.com/test' })
+})
 
 afterEach(() => {
   process.env = { ...ORIGINAL_ENV }
@@ -28,6 +48,46 @@ async function loadService(
 }
 
 describe('createCheckoutSession — missing configuration', () => {
+  it.each([
+    { currency: 'usd' },
+    { unit_amount: 5900 },
+    { active: false },
+    { recurring: { interval: 'year', interval_count: 1 } },
+    { recurring: { interval: 'month', interval_count: 3 } },
+    { recurring: null },
+  ])('refuses a price that differs from the advertised plan: %j', async (override) => {
+    const svc = await loadService({
+      STRIPE_SECRET_KEY: 'sk_test_placeholder',
+      STRIPE_PRICE_PRO: 'price_pro',
+    })
+    mockRetrievePrice.mockResolvedValue({
+      active: true,
+      currency: 'cad',
+      unit_amount: 1000,
+      recurring: { interval: 'month', interval_count: 1 },
+      ...override,
+    })
+    await expect(svc.createCheckoutSession('u', 'u@example.test', 'pro')).rejects.toBeInstanceOf(
+      svc.StripeNotConfiguredError
+    )
+    expect(mockCreateSession).not.toHaveBeenCalled()
+  })
+
+  it('creates the advertised monthly checkout with subscription ownership metadata', async () => {
+    const svc = await loadService({
+      STRIPE_SECRET_KEY: 'sk_test_placeholder',
+      STRIPE_PRICE_PRO: 'price_pro',
+    })
+    await expect(svc.createCheckoutSession('u', 'u@example.test', 'pro')).resolves.toBe(
+      'https://checkout.stripe.com/test'
+    )
+    expect(mockCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: 'price_pro', quantity: 1 }],
+        subscription_data: { metadata: { userId: 'u', tier: 'pro' } },
+      })
+    )
+  })
   it('throws StripeNotConfiguredError naming the price ID when only the secret key is set', async () => {
     const svc = await loadService({
       STRIPE_SECRET_KEY: 'sk_test_placeholder',

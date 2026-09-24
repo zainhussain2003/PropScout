@@ -298,7 +298,7 @@ exports[`LandlordRentPositioningSection > matches snapshot 1`] = `
           class="mono"
           style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);"
         >
-          Your building · live
+          Your building · sample data
         </span>
         <span
           class="mono"

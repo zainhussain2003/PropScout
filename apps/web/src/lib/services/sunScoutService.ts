@@ -7,6 +7,7 @@
  */
 
 import type { SunScoutResult } from '../../types/analysis'
+import { getSession } from './authService'
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001'
 
@@ -20,15 +21,24 @@ export async function recalculateSunScout(
 ): Promise<SunScoutResult | null> {
   let res: Response
   try {
+    const session = await getSession()
+    if (!session) return null
     res = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}/sunscout`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ facadeBearing }),
     })
   } catch {
     return null
   }
   if (!res.ok) return null
-  const body = (await res.json()) as { sunScout: SunScoutResult | null }
-  return body.sunScout ?? null
+  try {
+    const body = (await res.json()) as { sunScout: SunScoutResult | null }
+    return body.sunScout ?? null
+  } catch {
+    return null
+  }
 }

@@ -124,9 +124,15 @@ const ONTARIO_LTT_BRACKETS = [
 
 const TORONTO_MLTT_BRACKETS = [
   { upTo: 55000, rate: 0.005 },
-  { upTo: 400000, rate: 0.01 },
+  { upTo: 250000, rate: 0.01 },
+  { upTo: 400000, rate: 0.015 },
   { upTo: 2000000, rate: 0.02 },
-  { upTo: Infinity, rate: 0.025 },
+  { upTo: 3000000, rate: 0.025 },
+  { upTo: 4000000, rate: 0.044 },
+  { upTo: 5000000, rate: 0.0545 },
+  { upTo: 10000000, rate: 0.065 },
+  { upTo: 20000000, rate: 0.0755 },
+  { upTo: Infinity, rate: 0.086 },
 ] as const
 
 function taxForBrackets(
@@ -185,7 +191,7 @@ export function computeLTT(price: number, isToronto: boolean): LTTResult {
 /**
  * Computes the OSFI B-20 mortgage stress test result.
  * Qualifying rate = max(contractRate + 2%, 5.25%).
- * GDS = (qualifying payment + monthly taxes + 50% condo fee) / monthly income.
+ * GDS includes heat and 50% condo fees; this is a screening estimate, not approval.
  */
 export function computeOSFI(
   price: number,
@@ -194,20 +200,22 @@ export function computeOSFI(
   amortizationYears: number,
   annualTaxes: number,
   condoFeeMonthly: number,
-  assumedIncome: number
+  assumedIncome: number,
+  monthlyHeating: number = OSFI_STRESS.DEFAULT_MONTHLY_HEATING
 ): OSFIResult {
   const principal = price * (1 - downPaymentPct)
   const qualifyingRate = Math.max(mortgageRate + OSFI_STRESS.BUFFER, OSFI_STRESS.FLOOR)
   const qualifyingPmt = computeMonthlyPayment(principal, qualifyingRate, amortizationYears)
   const monthlyTaxes = annualTaxes / 12
-  const gds = (qualifyingPmt + monthlyTaxes + 0.5 * condoFeeMonthly) / (assumedIncome / 12)
+  const gds =
+    (qualifyingPmt + monthlyTaxes + monthlyHeating + 0.5 * condoFeeMonthly) / (assumedIncome / 12)
 
   return {
     qualifyingRate,
     qualifyingPmt,
     gds,
-    pass: gds <= 0.44,
-    threshold: 0.44,
+    pass: gds <= OSFI_STRESS.GDS_LIMIT,
+    threshold: OSFI_STRESS.GDS_LIMIT,
   }
 }
 

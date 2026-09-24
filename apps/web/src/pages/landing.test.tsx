@@ -239,25 +239,22 @@ describe('LandingPage', () => {
 
   it('pricing: a paid CTA opens sign-in when signed out instead of doing nothing', () => {
     renderLanding()
-    fireEvent.click(pricingButton(/^Start Professional$/i))
+    fireEvent.click(pricingButton(/^Go Pro$/i))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(startCheckout).not.toHaveBeenCalled()
   })
 
-  it('pricing: features that are not built are labelled planned; built ones are not', () => {
+  it('pricing offers only delivered Free and Pro features', () => {
     renderLanding()
-    const planned = screen.getAllByText(/^planned$/i).map((n) => n.parentElement?.textContent ?? '')
-    expect(planned.join(' | ')).toMatch(/Portfolio tracker/)
-    expect(planned.join(' | ')).toMatch(/White-label PDF/)
-    expect(planned.join(' | ')).toMatch(/Bulk URL analysis/)
-    expect(planned.join(' | ')).toMatch(/multi-user seats/)
-    expect(planned.join(' | ')).not.toMatch(/Branded PDF export/)
+    const pricing = document.querySelector('#pricing') as HTMLElement
+    expect(pricing).not.toHaveTextContent(/PLANNED|Professional|Team|Portfolio tracker/)
+    expect(pricing).toHaveTextContent('Branded PDF export')
   })
 
   it('pricing: "Talk to us" is not a dead button — without a contact channel it says so', () => {
     renderLanding()
     expect(screen.queryByRole('button', { name: /Talk to us/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/contact channel/i)).toBeInTheDocument()
+    expect(screen.queryByText(/contact channel/i)).not.toBeInTheDocument()
   })
 
   it('does not advertise saving to a portfolio on the feature cards', () => {
@@ -317,12 +314,10 @@ describe('LandingPage', () => {
     expect(screen.getByText(/province-specific/i)).toBeInTheDocument()
   })
 
-  it('toggles pricing to yearly', () => {
+  it('does not offer annual billing before annual checkout is supported', () => {
     renderLanding()
-    const yearlyBtn = screen.getByRole('button', { name: /yearly/i })
-    fireEvent.click(yearlyBtn)
-    // Yearly total for Investor Pro is $100 — verify it appears
-    expect(screen.getByText(/100 billed yearly/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /yearly/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/Monthly billing/)).toBeInTheDocument()
   })
 
   it('renders the Footer', () => {

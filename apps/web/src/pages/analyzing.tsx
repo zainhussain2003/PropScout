@@ -223,7 +223,13 @@ export function AnalyzingPage(): JSX.Element {
 
     // Demo token — skip the real pipeline and navigate directly to the fixture report.
     if (token === 'demo') {
-      navigate(`/r/demo?mode=${mode}`)
+      const demoRoutes = {
+        investor: '/investor-report',
+        personal: '/personal-report',
+        tenant: '/tenant-report',
+        landlord: '/landlord-report',
+      }
+      navigate(demoRoutes[mode])
       return
     }
 

@@ -924,3 +924,10 @@ Every time Realtor.ca or Zillow.ca changes their page structure:
 ---
 
 _PropScout · Testing Guide · September 2026 · Update this file as new features are added_
+
+## Launch remediation acceptance (2026-09-23)
+
+See [LAUNCH_REGRESSION.md](LAUNCH_REGRESSION.md) for the local regression evidence,
+reproduction commands and outstanding staging account, billing, report ownership,
+quota, PDF and ingestion acceptance checks. Local passing suites do not substitute
+for that staging run.

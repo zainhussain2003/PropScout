@@ -518,7 +518,7 @@ function TenantReportContent({
       <SunScoutPanel
         sunScout={analysis.sunScout}
         sectionNumber={analysis.schools ? '04' : '03'}
-        token={analysis.token}
+        token={flagOverrides.canOverride ? analysis.token : null}
       />
     </main>
   )
@@ -655,7 +655,9 @@ function InvestorReportContent({
         mapCenter={analysis.coordinates ?? null}
         viewLabel={mode === 'landlord' ? 'Landlord view' : 'Investor view'}
         onSetValue={
-          mode === 'landlord' && onAnalysisUpdated != null ? ownerValue.submit : undefined
+          mode === 'landlord' && flagOverrides.canOverride && onAnalysisUpdated != null
+            ? ownerValue.submit
+            : undefined
         }
         valueBusy={ownerValue.busy}
         valueError={ownerValue.error}
@@ -683,6 +685,10 @@ function InvestorReportContent({
             sub={buildSub(analysis.narrative, metrics.capRate, metrics.cashFlowMonthly)}
           />
         )}
+        <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 12 }}>
+          Written verdict: original analysis. Financing sliders update the figures and score below,
+          but do not rewrite this verdict.
+        </p>
       </div>
 
       {/* The engine's own plausibility checks, above the figures they are
@@ -742,7 +748,11 @@ function InvestorReportContent({
         neighbourhood={shimToNeighbourhood(analysis)}
         compsAreSample={analysis.comparableSalesAreSample ?? false}
       />
-      <SunScoutPanel sunScout={analysis.sunScout} sectionNumber="09" token={analysis.token} />
+      <SunScoutPanel
+        sunScout={analysis.sunScout}
+        sectionNumber="09"
+        token={flagOverrides.canOverride ? analysis.token : null}
+      />
       {/* §10 STR analysis — a Phase-2 informational placeholder (municipal STR-rule
           guidance by postal code), not fabricated property data. Present in the
           demo investor/landlord reports; now mounted live too. */}
@@ -758,15 +768,21 @@ function InvestorReportContent({
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
+export function ReportPage({
+  tier = 'free',
+  printReport,
+}: {
+  tier?: string
+  printReport?: { analysis: Analysis; listing: Listing }
+}): JSX.Element {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!printReport)
   const [notFound, setNotFound] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
-  const [analysis, setAnalysis] = useState<Analysis | null>(null)
-  const [listing, setListing] = useState<Listing | null>(null)
+  const [analysis, setAnalysis] = useState<Analysis | null>(printReport?.analysis ?? null)
+  const [listing, setListing] = useState<Listing | null>(printReport?.listing ?? null)
   const { dark, toggle: handleToggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
   // Server-decided: false until the API says this viewer owns the analysis.
@@ -776,6 +792,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   const { session } = useAuth()
 
   useEffect(() => {
+    if (printReport) return
     if (!token) {
       setNotFound(true)
       setLoading(false)
@@ -794,7 +811,7 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
       })
       .catch(() => setLoadFailed(true))
       .finally(() => setLoading(false))
-  }, [token, session])
+  }, [token, session, printReport])
 
   const { overrides, dismiss, undismiss } = useFlagOverrides(token ?? null)
   const onToggleFlag = useCallback(
@@ -840,7 +857,9 @@ export function ReportPage({ tier = 'free' }: { tier?: string }): JSX.Element {
   // gauge while showing the cost/location/risk readouts the investment report
   // would never give an owner-occupier (cap-rate/DSCR are the wrong question).
   if (!loading && !notFound && analysis && listing && mode === 'personal') {
-    return <PersonalBuyerPage analysis={analysis} listing={listing} />
+    return (
+      <PersonalBuyerPage tier={tier} analysis={analysis} listing={listing} canEdit={canOverride} />
+    )
   }
 
   // Tenant gets the full 12-section report (Listed-vs-Reality, Negotiation,

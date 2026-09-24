@@ -17,7 +17,7 @@ import {
 import { AddressDetailsCard, type AddressDetailsValue } from '../shared/AddressDetailsCard'
 import { countLabel, NOT_PROVIDED } from '../../lib/listingFacts'
 import type { Listing } from '../../types/property'
-import { clampStr, detectKindFromUrl } from './landingHelpers'
+import { clampStr } from './landingHelpers'
 import { ShowcaseDealScore } from './ShowcaseDealScore'
 import { SAMPLE_LISTINGS } from './sampleListings'
 import { ReportShowcase } from './ReportShowcase'
@@ -56,7 +56,7 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
     setUrl(SAMPLE_LISTINGS[i].url)
     setStage('idle')
     setErrorMsg('')
-    setTimeout(() => runDemo(SAMPLE_LISTINGS[i].url), 60)
+    runDemo(SAMPLE_LISTINGS[i].url)
   }
 
   const runDemo = (overrideUrl?: string): void => {
@@ -67,25 +67,16 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
       setErrorMsg(err)
       return
     }
-    setStage('scraping')
+    setStage('done')
     setErrorMsg('')
-    setProgress(0)
-    let p = 0
-    const tick = setInterval(() => {
-      p += 14
-      setProgress(Math.min(p, 100))
-      if (p >= 100) {
-        clearInterval(tick)
-        setTimeout(() => setStage('done'), 250)
-      }
-    }, 180)
+    setProgress(100)
   }
 
   const handleAnalyze = (): void => {
     if (stage === 'done') {
       // Demo path — open modal with the sample listing preview.
       const sample = SAMPLE_LISTINGS[sampleIdx]
-      onOpenModal({ ...sample.preview, kind: detectKindFromUrl(url), sourceUrl: url })
+      onOpenModal({ ...sample.preview, sourceUrl: url })
       return
     }
 
@@ -397,7 +388,7 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               >
                 {loading
                   ? 'Working…'
-                  : stage === 'idle'
+                  : stage === 'idle' || stage === 'error'
                     ? 'Analyze'
                     : stage === 'scraping'
                       ? 'Working…'

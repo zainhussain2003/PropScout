@@ -41,6 +41,18 @@ const PRICE_IDS: Record<'pro' | 'professional' | 'team', string> = {
   team: process.env.STRIPE_PRICE_TEAM ?? '',
 }
 
+export function tierForPrice(priceId: string): 'pro' | 'professional' | 'team' | null {
+  for (const tier of ['pro', 'professional', 'team'] as const) {
+    if (PRICE_IDS[tier] && PRICE_IDS[tier] === priceId) return tier
+  }
+  return null
+}
+
+/** Read current state so delayed webhook deliveries cannot restore an old plan. */
+export async function retrieveSubscription(id: string): Promise<Stripe.Subscription> {
+  return getStripe().subscriptions.retrieve(id)
+}
+
 /** Env vars that must be non-empty before any Stripe call can succeed. */
 function missingConfig(tier?: 'pro' | 'professional' | 'team'): string[] {
   const missing: string[] = []
@@ -103,7 +115,20 @@ export async function createCheckoutSession(
     throw new StripeNotConfiguredError([`STRIPE_PRICE_${tier.toUpperCase()}`])
   }
 
-  const session = await getStripe().checkout.sessions.create({
+  const stripe = getStripe()
+  if (tier === 'pro') {
+    const price = await stripe.prices.retrieve(priceId)
+    if (
+      !price.active ||
+      price.currency !== 'cad' ||
+      price.unit_amount !== 1000 ||
+      price.recurring?.interval !== 'month' ||
+      price.recurring.interval_count !== 1
+    ) {
+      throw new StripeNotConfiguredError(['STRIPE_PRICE_PRO must be active CAD 10/month'])
+    }
+  }
+  const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
@@ -113,6 +138,7 @@ export async function createCheckoutSession(
     success_url: `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/welcome-to-pro`,
     cancel_url: `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/checkout/cancelled`,
     metadata: { userId, tier },
+    subscription_data: { metadata: { userId, tier } },
   })
 
   if (!session.url) {

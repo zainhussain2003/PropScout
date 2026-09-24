@@ -107,7 +107,7 @@ export const CHARLES_AMENITIES: TenantAmenity[] = [
   { label: 'Heat', status: 'incl' },
   { label: 'Water', status: 'incl' },
   { label: 'Central air', status: 'incl' },
-  { label: 'Internet · 1 Gbps', status: 'incl' },
+  { label: 'Internet', status: 'extra', note: '~$70/mo' },
   { label: 'Gym & fitness centre', status: 'incl' },
   { label: 'Rooftop pool & deck', status: 'incl' },
   { label: 'Sauna + yoga studio', status: 'incl' },
@@ -116,7 +116,7 @@ export const CHARLES_AMENITIES: TenantAmenity[] = [
   { label: 'YMCA membership', status: 'incl' },
   { label: 'Indoor running track', status: 'incl' },
   { label: 'Rooftop BBQ terrace', status: 'incl' },
-  { label: 'Hydro / electricity', status: 'extra', note: '~$80–110/mo' },
+  { label: 'Hydro / electricity', status: 'extra', note: '~$65/mo' },
   { label: 'Parking', status: 'unclear', note: 'confirm with landlord' },
 ]
 
@@ -269,7 +269,7 @@ export const CHARLES_COST_LINES: TenantCostLine[] = [
   { k: 'Hydro (est.)', asking: 65, target: 65, included: false, note: 'tenant-paid' },
   { k: 'Internet (est.)', asking: 70, target: 70, included: false, note: 'tenant-paid' },
   { k: 'Heat + water + A/C', asking: 0, target: 0, included: true, note: 'included in rent' },
-  { k: 'Parking', asking: 150, target: 0, included: 'maybe', note: 'unclear — confirm' },
+  { k: 'Parking', asking: 150, target: 150, included: 'maybe', note: 'budgeted extra — confirm' },
 ]
 
 // ── SunScout (§09) ───────────────────────────────────────────────────────────

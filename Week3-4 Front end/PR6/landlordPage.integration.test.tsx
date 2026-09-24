@@ -115,7 +115,7 @@ describe('LandlordPage — FinancingSliders (shared investor component)', () => 
   it('financing slider input[type="range"] is present (from FinancingSliders)', () => {
     renderPage()
     // FinancingSliders renders down-payment, rate, and amortization sliders
-    const slider = screen.getByLabelText('Down payment') as HTMLInputElement
+    const slider = screen.getByLabelText('Equity share') as HTMLInputElement
     expect(slider).toBeInTheDocument()
   })
 })

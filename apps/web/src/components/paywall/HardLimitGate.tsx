@@ -193,7 +193,7 @@ export function HardLimitGate({
                 className="mono"
                 style={{ fontSize: 11, color: 'color-mix(in oklab, var(--bg) 50%, transparent)' }}
               >
-                or $100/yr · 2 months free
+                CAD · billed monthly
               </span>
             </div>
             <div className="row gap-10">

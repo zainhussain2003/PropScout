@@ -132,9 +132,11 @@ export function SunScoutPanel({
   // pipeline's south assumption (D-098).
   const [bearing, setBearing] = useState(sunScout?.facadeBearing ?? 180)
   const [recalculating, setRecalculating] = useState(false)
+  const [recalcError, setRecalcError] = useState<string | null>(null)
 
   useEffect(() => {
     setCurrent(sunScout)
+    setBearing(sunScout?.facadeBearing ?? 180)
   }, [sunScout])
 
   if (!current) {
@@ -146,10 +148,17 @@ export function SunScoutPanel({
     setBearing(next)
     if (!token) return
     setRecalculating(true)
+    setRecalcError(null)
     void recalculateSunScout(token, next)
       .then((result) => {
         // On failure keep the current data — never blank the section.
         if (result != null) setCurrent(result)
+        else {
+          setBearing(current.facadeBearing ?? 180)
+          setRecalcError(
+            'Could not update the facade. Your previous figures are unchanged. Sign in as the report owner and try again.'
+          )
+        }
       })
       .finally(() => setRecalculating(false))
   }
@@ -206,6 +215,7 @@ export function SunScoutPanel({
             {sunScoutData.winterDailyHours.toFixed(1)}h/day winter
           </div>
 
+          {recalcError && <p role="alert">{recalcError}</p>}
           {token ? (
             // The sun model needs a facade direction; default is the pipeline's
             // south assumption. Letting the user set it turns assumption → input.

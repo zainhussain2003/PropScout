@@ -855,9 +855,15 @@ export async function updateUserTier(
   const patch: Partial<UserRow> = { tier }
   if (stripeCustomerId) patch.stripe_customer_id = stripeCustomerId
 
-  const { error } = await db().from('users').update(patch).eq('id', userId)
-  if (error) {
+  const { data, error } = await db()
+    .from('users')
+    .update(patch)
+    .eq('id', userId)
+    .select('id')
+    .single()
+  if (error || !data) {
     console.error('updateUserTier error:', error)
+    throw new Error('Could not persist subscription entitlement')
   }
 }
 
@@ -885,6 +891,7 @@ export async function upsertSubscription(
     )
   if (error) {
     console.error('upsertSubscription error:', error)
+    throw new Error('Could not persist subscription')
   }
 }
 
@@ -895,12 +902,14 @@ export async function upsertSubscription(
 export async function updateSubscriptionStatus(
   stripeSubscriptionId: string,
   status: string,
-  currentPeriodEnd: Date | null
+  currentPeriodEnd: Date | null,
+  tier?: 'pro' | 'professional' | 'team'
 ): Promise<void> {
   const { data, error } = await db()
     .from('subscriptions')
     .update({
       status,
+      ...(tier ? { tier } : {}),
       current_period_end: currentPeriodEnd?.toISOString() ?? null,
     })
     .eq('stripe_subscription_id', stripeSubscriptionId)
@@ -909,12 +918,15 @@ export async function updateSubscriptionStatus(
 
   if (error) {
     console.error('updateSubscriptionStatus error:', error)
-    return
+    throw new Error('Could not persist subscription status')
   }
 
-  if (status === 'canceled' && data) {
+  if (!data) throw new Error('Subscription not yet persisted; retry this event')
+  if (data) {
     const row = data as { user_id: string }
-    await updateUserTier(row.user_id, 'free')
+    const entitled = status === 'active' || status === 'trialing'
+    if (!entitled) await updateUserTier(row.user_id, 'free')
+    else if (tier) await updateUserTier(row.user_id, tier)
   }
 }
 

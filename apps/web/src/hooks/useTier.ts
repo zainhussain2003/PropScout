@@ -34,7 +34,9 @@ export type TierStatus = 'signed-out' | 'loading' | 'resolved' | 'unavailable'
 const RETRY_DELAY_MS = 2_000
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001'
-const MOCK_TIER = import.meta.env.VITE_MOCK_TIER as Tier | undefined
+const MOCK_TIER = import.meta.env.DEV
+  ? (import.meta.env.VITE_MOCK_TIER as Tier | undefined)
+  : undefined
 
 interface MeResponse {
   id: string

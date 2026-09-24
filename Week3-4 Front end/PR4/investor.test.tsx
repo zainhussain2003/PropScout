@@ -261,13 +261,13 @@ describe('OSFICard', () => {
   it('shows "Fails" VerdictPill when osfi.pass = false', () => {
     const failOsfi = { ...VAUGHAN_OSFI, pass: false }
     render(<OSFICard osfi={failOsfi} financing={mockFinancingInputs} />)
-    expect(screen.getByText('Fails')).toBeInTheDocument()
+    expect(screen.getByText('Above GDS limit')).toBeInTheDocument()
   })
 
   it('shows "Qualifies" VerdictPill when osfi.pass = true', () => {
     const passOsfi = { ...VAUGHAN_OSFI, pass: true }
     render(<OSFICard osfi={passOsfi} financing={mockFinancingInputs} />)
-    expect(screen.getByText('Qualifies')).toBeInTheDocument()
+    expect(screen.getByText('Within GDS limit')).toBeInTheDocument()
   })
 
   it('shows the section heading', () => {
@@ -275,10 +275,10 @@ describe('OSFICard', () => {
     expect(screen.getByText(/OSFI stress test/i)).toBeInTheDocument()
   })
 
-  it('shows the threshold value (44%)', () => {
+  it('shows the threshold value (39%)', () => {
     render(<OSFICard osfi={VAUGHAN_OSFI} financing={mockFinancingInputs} />)
     // Threshold row shows "44%" (fmtPct(0.44, 0))
-    expect(screen.getByText('44%')).toBeInTheDocument()
+    expect(screen.getByText('39%')).toBeInTheDocument()
   })
 
   it('has no axe accessibility violations', async () => {
@@ -295,18 +295,18 @@ describe('OSFICard', () => {
   // Found on the first production run: a pass at GDS 43.7% against a 44%
   // limit read "sits comfortably under the 44% federal threshold".
   it('does not call a 0.3-point pass comfortable', () => {
-    const tight = { ...VAUGHAN_OSFI, pass: true, gds: 0.437 }
+    const tight = { ...VAUGHAN_OSFI, pass: true, gds: 0.387 }
     render(<OSFICard osfi={tight} financing={mockFinancingInputs} />)
     const text = document.body.textContent ?? ''
     expect(text).not.toMatch(/comfortably/)
-    expect(text).toMatch(/43\.7%/)
+    expect(text).toMatch(/38\.7%/)
     expect(text).toMatch(/thin margin/)
   })
 
   it('states the headroom when there is some', () => {
     const roomy = { ...VAUGHAN_OSFI, pass: true, gds: 0.31 }
     render(<OSFICard osfi={roomy} financing={mockFinancingInputs} />)
-    expect(document.body.textContent ?? '').toMatch(/13\.0 points of room/)
+    expect(document.body.textContent ?? '').toMatch(/8\.0 points of room/)
   })
 })
 
@@ -348,8 +348,8 @@ describe('LTTTable', () => {
   it('Toronto total LTT uses the separate municipal bracket schedule', () => {
     const torontoLTT = computeLTT(729900, true)
     expect(torontoLTT.provincial).toBe(11073)
-    expect(torontoLTT.municipal).toBe(10323)
-    expect(torontoLTT.total).toBe(21396)
+    expect(torontoLTT.municipal).toBe(11073)
+    expect(torontoLTT.total).toBe(22146)
   })
 
   it('Hamilton $449,000 total LTT is computed correctly', () => {

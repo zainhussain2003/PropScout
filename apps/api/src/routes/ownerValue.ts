@@ -23,6 +23,8 @@ import {
 } from '../services/supabaseService'
 import { applyValidationErrorHandler, tokenParams, ownerValueBody } from '../lib/requestSchemas'
 import { runAnalysisPipeline } from './analysis'
+import { denyUnlessReportOwner } from '../lib/reportOwner'
+import { reportForViewer } from '../lib/reportAccess'
 
 /** Tokens with a re-run in progress — one at a time per report. */
 const inFlight = new Set<string>()
@@ -38,6 +40,8 @@ async function ownerValueRoutes(fastify: FastifyInstance): Promise<void> {
     { schema: { params: tokenParams, body: ownerValueBody } },
     async (req, reply) => {
       const { token } = req.params
+      const denied = await denyUnlessReportOwner(req, token)
+      if (denied) return reply.code(denied.status).send(makeError(denied.code, denied.message))
       const value = Math.round(req.body.value)
 
       if (!Number.isFinite(value) || value < OWNER_VALUE.MIN || value > OWNER_VALUE.MAX) {
@@ -134,7 +138,7 @@ async function ownerValueRoutes(fastify: FastifyInstance): Promise<void> {
           if (!result.ok) {
             return reply.code(result.status).send(makeError(result.code, result.message))
           }
-          return reply.send({ token, analysis: result.analysis })
+          return reply.send({ token, analysis: await reportForViewer(req, result.analysis) })
         } finally {
           inFlight.delete(token)
         }

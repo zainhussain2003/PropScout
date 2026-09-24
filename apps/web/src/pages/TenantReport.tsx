@@ -515,7 +515,7 @@ function RentPositioningSection(): JSX.Element {
             Is the rent <em>fair</em>?
           </>
         }
-        verdict="$150 above market"
+        verdict="$200 above market median"
         tone="caution"
       />
 
@@ -1351,7 +1351,7 @@ export function TenantReport({
           <TruncatedVerdict
             firstParagraph={
               realAnalysis?.narrative
-                ? realAnalysis.narrative.split('. ')[0] + '.'
+                ? realAnalysis.narrative.trim().split(/(?<=[.!?])\s+/)[0]
                 : TENANT_FIRST_PARA
             }
             eyebrow="PropScout · tenant verdict"
@@ -1362,7 +1362,7 @@ export function TenantReport({
             eyebrow="PropScout · tenant verdict"
             headline={
               realAnalysis?.narrative ? (
-                realAnalysis.narrative.split('. ')[0] + '.'
+                realAnalysis.narrative.trim().split(/(?<=[.!?])\s+/)[0]
               ) : (
                 <>
                   Do not sign at <span style={{ color: 'var(--accent)' }}>$2,150</span>. The room
@@ -1373,7 +1373,13 @@ export function TenantReport({
               )
             }
             sub={
-              realAnalysis?.narrative ?? (
+              realAnalysis?.narrative ? (
+                realAnalysis.narrative
+                  .trim()
+                  .split(/(?<=[.!?])\s+/)
+                  .slice(1)
+                  .join(' ')
+              ) : (
                 <>
                   Your negotiation target is{' '}
                   <span className="tabular" style={{ color: 'var(--accent)' }}>
@@ -1702,7 +1708,7 @@ export function TenantReport({
       {/* §09 SunScout — live data when present, demo fixture on the demo route */}
       <SunScoutPanel
         sunScout={realAnalysis ? (realAnalysis.sunScout ?? null) : CHARLES_SUNSCOUT}
-        token={realAnalysis?.token ?? null}
+        token={flagOverrides.canOverride ? (realAnalysis?.token ?? null) : null}
         sectionNumber="09"
         question={
           <>

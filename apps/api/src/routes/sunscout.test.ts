@@ -10,6 +10,9 @@ import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
 
 jest.mock('../services/supabaseService')
+jest.mock('../lib/requireUser')
+import { resolveUser } from '../lib/requireUser'
+import { getAnalysisOwnerByToken } from '../services/supabaseService'
 
 import { getAnalysisByToken, updateAnalysisByToken } from '../services/supabaseService'
 
@@ -58,6 +61,12 @@ let app: FastifyInstance
 
 beforeEach(async () => {
   jest.clearAllMocks()
+  jest
+    .mocked(resolveUser)
+    .mockResolvedValue({ ok: true, userId: 'owner', email: 'owner@example.test' })
+  jest
+    .mocked(getAnalysisOwnerByToken)
+    .mockResolvedValue({ analysisId: 'analysis-1', userId: 'owner' })
   mockGetAnalysisByToken.mockResolvedValue({ analysis: ANALYSIS, listing: LISTING })
   mockUpdateAnalysisByToken.mockResolvedValue(undefined)
   global.fetch = jest.fn().mockResolvedValue(makeCalcResponse({ sun_scout: PY_SUN_SCOUT }))
@@ -71,6 +80,29 @@ afterEach(async () => {
 })
 
 describe('POST /:token/sunscout', () => {
+  it('refuses an anonymous mutation without calculating or writing', async () => {
+    jest.mocked(resolveUser).mockResolvedValue({ ok: false, reason: 'missing' })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/sunscout',
+      payload: { facadeBearing: 0 },
+    })
+    expect(res.statusCode).toBe(401)
+    expect(global.fetch).not.toHaveBeenCalled()
+    expect(mockUpdateAnalysisByToken).not.toHaveBeenCalled()
+  })
+  it('refuses another account without writing', async () => {
+    jest
+      .mocked(getAnalysisOwnerByToken)
+      .mockResolvedValue({ analysisId: 'analysis-1', userId: 'someone-else' })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/sunscout',
+      payload: { facadeBearing: 0 },
+    })
+    expect(res.statusCode).toBe(403)
+    expect(mockUpdateAnalysisByToken).not.toHaveBeenCalled()
+  })
   it('recalculates for the requested facade bearing and returns camelCase sunScout', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -120,6 +152,22 @@ describe('POST /:token/sunscout', () => {
     })
 
     expect(res.statusCode).toBe(404)
+  })
+
+  it('returns an error when the new facade cannot be saved', async () => {
+    mockUpdateAnalysisByToken.mockRejectedValueOnce(new Error('Database unavailable'))
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/sunscout',
+      payload: { facadeBearing: 90 },
+    })
+    expect(res.statusCode).toBe(500)
+    expect(res.json()).not.toHaveProperty('sunScout')
+    expect(mockUpdateAnalysisByToken).toHaveBeenCalledWith(
+      'test-token',
+      expect.objectContaining({ sunScout: expect.objectContaining({ facadeBearing: 90 }) }),
+      LISTING
+    )
   })
 
   it('422s when the analysis has no coordinates (geocoding failed)', async () => {

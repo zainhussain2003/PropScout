@@ -11,6 +11,9 @@ import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
 
 jest.mock('../services/supabaseService')
+jest.mock('../lib/requireUser')
+import { resolveUser } from '../lib/requireUser'
+import { getAnalysisOwnerByToken } from '../services/supabaseService'
 jest.mock('../services/anthropicService')
 jest.mock('../services/mapboxService')
 jest.mock('../services/walkScoreService')
@@ -145,6 +148,12 @@ let app: FastifyInstance
 
 beforeEach(async () => {
   jest.clearAllMocks()
+  jest
+    .mocked(resolveUser)
+    .mockResolvedValue({ ok: true, userId: 'owner', email: 'owner@example.test' })
+  jest
+    .mocked(getAnalysisOwnerByToken)
+    .mockResolvedValue({ analysisId: 'analysis-1', userId: 'owner' })
   mockGetAnalysisByToken.mockResolvedValue({
     analysis: analysisFor('landlord'),
     listing: RENTAL_LISTING,
@@ -203,6 +212,31 @@ afterEach(async () => {
 })
 
 describe('POST /:token/value', () => {
+  it('refuses an anonymous viewer without changing report data or status', async () => {
+    jest.mocked(resolveUser).mockResolvedValue({ ok: false, reason: 'missing' })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/value',
+      payload: { value: 800000 },
+    })
+    expect(res.statusCode).toBe(401)
+    expect(mockUpdateAnalysisByToken).not.toHaveBeenCalled()
+    expect(mockUpdateAnalysisStatus).not.toHaveBeenCalled()
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+  it('refuses a signed-in viewer who does not own the report', async () => {
+    jest
+      .mocked(getAnalysisOwnerByToken)
+      .mockResolvedValue({ analysisId: 'analysis-1', userId: 'other' })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/test-token/value',
+      payload: { value: 800000 },
+    })
+    expect(res.statusCode).toBe(403)
+    expect(mockUpdateAnalysisByToken).not.toHaveBeenCalled()
+    expect(mockUpdateAnalysisStatus).not.toHaveBeenCalled()
+  })
   it('re-runs the engine on the stated value, persists it, and returns the new analysis', async () => {
     const res = await app.inject({
       method: 'POST',

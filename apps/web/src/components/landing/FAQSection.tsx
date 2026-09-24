@@ -24,7 +24,7 @@ export function FAQSection(): JSX.Element {
     },
     {
       q: 'Can I export to PDF?',
-      a: 'Yes — Investor Pro and above. The PDF is rendered from the live report HTML by headless Chrome, so what you see is exactly what your client sees. Professional tier white-labels with your branding.',
+      a: 'Yes — Pro includes branded PDF export of the report, including the full verdict. Custom white-label branding is not available. Shared links follow the viewer’s plan; use the exported PDF to share the complete paid report.',
     },
     {
       q: 'Do you support short-term rentals?',

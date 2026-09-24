@@ -94,6 +94,15 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 
 ### Pricing tiers
 
+**Launch implementation (2026-09-23, D-125) supersedes the roadmap below:** offer Free and
+Investor Pro at CAD $10/month only. Annual, Professional and Team purchases are deferred.
+Free includes the existing monthly quota, unlimited tenant reports, financial scenarios,
+available SunScout data, risk details, comps and share links. Pro adds unlimited reports,
+the full written verdict and branded PDF export. Saved portfolios, white-label exports,
+bulk workflows and team seats are not sold as available features. Shared links use the
+viewer's entitlement; the paid PDF is the complete portable report. The tables below remain
+historical roadmap context, not the current checkout contract.
+
 |        | Free                     | Investor Pro                 | Professional       | Team / REIT             |
 | ------ | ------------------------ | ---------------------------- | ------------------ | ----------------------- |
 | Price  | $0/mo                    | $10/mo                       | $59/mo             | $299+/mo                |
@@ -312,13 +321,13 @@ The 20% floor is a rule, not a preference: a non-owner-occupied rental purchase 
 
 Closing costs by province:
 
-| Province            | Land Transfer Tax                                                   |
-| ------------------- | ------------------------------------------------------------------- |
-| Ontario non-Toronto | 0.5% on first $55K; 1% on $55K–$250K; 1.5% on $250K–$400K; 2% above |
-| Ontario Toronto     | Same brackets doubled — provincial + municipal LTT stack            |
-| BC                  | 1% on first $200K; 2% on $200K–$2M; 3% above $2M                    |
-| Alberta             | No provincial LTT — land title transfer fee only (~$400–600 flat)   |
-| Other provinces     | Manual entry prompt                                                 |
+| Province            | Land Transfer Tax                                                                                                                                                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ontario non-Toronto | 0.5% on first $55K; 1% on $55K–$250K; 1.5% on $250K–$400K; 2% above                                                                                                                                                                               |
+| Ontario Toronto     | Provincial LTT plus separate municipal schedule: 0.5% to $55K; 1% to $250K; 1.5% to $400K; 2% to $2M; 2.5% to $3M; 4.4% to $4M; 5.45% to $5M; 6.5% to $10M; 7.55% to $20M; 8.6% above (one/two single-family residences, effective April 1, 2026) |
+| BC                  | 1% on first $200K; 2% on $200K–$2M; 3% above $2M                                                                                                                                                                                                  |
+| Alberta             | No provincial LTT — land title transfer fee only (~$400–600 flat)                                                                                                                                                                                 |
+| Other provinces     | Manual entry prompt                                                                                                                                                                                                                               |
 
 First-time buyer rebates do not apply to investment properties.
 
@@ -954,7 +963,7 @@ Input payload structure:
 
 Output payload includes: all calculated metrics, deal score with component breakdown, all four financing scenarios, and OSFI result.
 
-OSFI stress test: qualifying_rate = max(contract_rate + 0.02, 0.0525). Flag as failing if the qualifying monthly payment exceeds 44% GDS threshold on estimated household income.
+OSFI stress test: qualifying_rate = max(contract_rate + 0.02, 0.0525). GDS screening uses 39%, including qualifying payment, property tax, heating (default $150/month) and half of condo fees. The engine additionally checks TDS at 44% including other debts. The frontend GDS screen is not a lending approval and must disclose that other debts and lender-specific rental-income treatment are not assessed.
 
 ### 11.4 Province scope enforcement
 

@@ -240,3 +240,19 @@ reports.
 | `STRIPE_*` (6 vars)                                | 🟡 empty / missing | §1 above                              |
 | Comparable-sales provider                          | 🔴 undecided       | §2 above                              |
 | `RESEND_API_KEY`                                   | ⚪ 401             | Local agent tooling only              |
+
+### Launch remediation update (2026-09-23)
+
+The current checkout offering is **Investor Pro, CAD $10/month**, plus Free.
+The Professional/Team and annual setup instructions above are historical; do not
+activate those new purchases for this launch. The configured Pro test price was
+read and verified as active CAD 1,000 cents monthly; its tax behavior is unspecified.
+Check tax treatment before live sales. Existing paid users are directed to the
+billing portal, and checkout refuses mismatched Pro prices or unavailable profiles.
+
+Google is currently disabled in the configured Supabase project. Leave
+`VITE_GOOGLE_AUTH_ENABLED` unset to hide the button. Set it to `true` in the web
+build environment only after enabling Google and verifying its callbacks.
+Email signup is enabled and requires confirmation, but email delivery still needs
+custom SMTP and a test inbox. See [LAUNCH_REGRESSION.md](LAUNCH_REGRESSION.md) for
+required staging evidence and the remaining provider setup.

@@ -12,7 +12,7 @@ import { UpgradeModal } from '../../apps/web/src/components/paywall/UpgradeModal
 // Exact headline strings from FEATURE_COPY in UpgradeModal.tsx
 const FEATURE_HEADLINES: Record<string, string> = {
   pdf: 'Export this report as a polished PDF.',
-  portfolio: 'Save this to your portfolio.',
+  portfolio: 'Portfolio tracking is planned.',
   sunscout: 'See how shadows fall across this property.',
   verdict: 'Read the full verdict.',
   generic: 'Unlock Investor Pro.',

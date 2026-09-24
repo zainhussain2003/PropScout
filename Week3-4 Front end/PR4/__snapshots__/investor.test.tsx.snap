@@ -1504,7 +1504,7 @@ exports[`OSFICard > matches snapshot 1`] = `
     <span
       class="verdict-pill fail"
     >
-      Fails
+      Above GDS limit
     </span>
   </div>
   <div
@@ -1583,7 +1583,7 @@ exports[`OSFICard > matches snapshot 1`] = `
         class="mono tabular"
         style="font-weight: 600; color: var(--fail);"
       >
-        44.9%
+        46.3%
       </span>
     </div>
     <div
@@ -1592,13 +1592,13 @@ exports[`OSFICard > matches snapshot 1`] = `
       <span
         style="color: var(--ink-2);"
       >
-        Most the bank allows
+        GDS screening limit
       </span>
       <span
         class="mono tabular"
         style="font-weight: 500; color: var(--ink);"
       >
-        44%
+        39%
       </span>
     </div>
   </div>
@@ -1615,8 +1615,12 @@ exports[`OSFICard > matches snapshot 1`] = `
     $125,000
     . Qualifying payment pushes GDS to
      
-    44.9%
-     — above the 44% federal threshold. Standard A-lender financing likely unavailable; alt-lender or higher income required.
+    46.3%
+     — above the 
+    39%
+     GDS screening limit. Review the assumptions with your lender.
+     
+    Includes $150/month estimated heating and half the condo fee. Other debts and lender-specific rental-income treatment are not assessed here. This is not mortgage approval.
   </div>
 </div>
 `;

@@ -144,9 +144,9 @@ const INVESTOR_ANALYSIS: Analysis = {
     amortizationYears: 25,
     mortgageRate: 0.0479,
     breakEvenRent: 3200,
-    closingCostsTotal: 23796,
+    closingCostsTotal: 24546,
     lttProvincial: 11073,
-    lttMunicipal: 10323,
+    lttMunicipal: 11073,
     hasSanityWarnings: false,
   },
   // One 5-pt red flag is applied: subtotal 70 → stored total 65 → display round(65×100/95)=68.
@@ -646,8 +646,9 @@ describe('ReportPage — live tenant schools', () => {
     expect(screen.getByText(/rather than a pedestrian route/i)).toBeInTheDocument()
   })
 
-  it('lets a saved tenant report replace the assumed SunScout facade direction', async () => {
+  it('lets the verified owner replace the assumed SunScout facade direction', async () => {
     getAnalysisByToken.mockResolvedValue({
+      canOverride: true,
       analysis: {
         ...ANALYSIS,
         sunScout: {
@@ -706,12 +707,12 @@ describe('ReportPage — for-rent landlord hero honesty', () => {
     expect(screen.getByText(/— parking · not provided/)).toBeInTheDocument()
     expect(screen.queryByText(/Built \d{4}/)).not.toBeInTheDocument()
     expect(screen.queryByText(/^0 parking$/)).not.toBeInTheDocument()
-    // The API's $23,796 closing total already includes $11,073 provincial and
-    // $10,323 municipal LTT (Toronto), so cash to close is
-    // $145,980 + $23,796 = $169,776. The guard this test exists for is that
+    // The API's $24,546 closing total already includes $11,073 provincial and
+    // $11,073 municipal LTT (Toronto), so cash to close is
+    // $145,980 + $24,546 = $170,526. The guard this test exists for is that
     // neither LTT is added a second time on top of that total (D-039).
-    expect(screen.getAllByText('$169,776').length).toBeGreaterThan(0)
-    expect(screen.queryByText('$170,526')).not.toBeInTheDocument()
+    expect(screen.getAllByText('$170,526').length).toBeGreaterThan(0)
+    expect(screen.queryByText('$169,776')).not.toBeInTheDocument()
     expect(screen.queryByText('$191,172')).not.toBeInTheDocument()
     expect(screen.getByText('Other closing costs (est.)')).toBeInTheDocument()
     expect(screen.getByText('$2,400')).toBeInTheDocument()
@@ -760,7 +761,7 @@ describe('ReportPage — a landlord states the value and the report is re-run on
   })
 
   it('asks for the value on a price-less landlord report, then swaps in the scored analysis', async () => {
-    getAnalysisByToken.mockResolvedValue({ analysis: UNSCORED, listing: RENTAL })
+    getAnalysisByToken.mockResolvedValue({ analysis: UNSCORED, listing: RENTAL, canOverride: true })
     setOwnerValue.mockResolvedValue({
       ...UNSCORED,
       ownerInputs: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z' },
@@ -810,6 +811,7 @@ describe('ReportPage — a landlord states the value and the report is re-run on
         },
       },
       listing: RENTAL,
+      canOverride: true,
     })
     renderReport()
     expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
@@ -827,6 +829,7 @@ describe('ReportPage — a landlord states the value and the report is re-run on
         ownerInputs: { value: 800000, enteredAt: '2026-09-15T14:00:00.000Z' },
       },
       listing: RENTAL,
+      canOverride: true,
     })
     renderReport()
     expect(await screen.findByText('Value · you entered')).toBeInTheDocument()
@@ -837,7 +840,7 @@ describe('ReportPage — a landlord states the value and the report is re-run on
   })
 
   it('shows the API’s message when the re-run fails and keeps the operating view', async () => {
-    getAnalysisByToken.mockResolvedValue({ analysis: UNSCORED, listing: RENTAL })
+    getAnalysisByToken.mockResolvedValue({ analysis: UNSCORED, listing: RENTAL, canOverride: true })
     const { ApiRequestError } = await import('../lib/services/analysisService')
     setOwnerValue.mockRejectedValue(
       new ApiRequestError(

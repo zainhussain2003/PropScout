@@ -12,6 +12,7 @@ import type { PropertyInput, FinancingInput, RentalInput } from '../../types/api
 import type { Analysis, ReportMode } from '../../types/analysis'
 import type { Listing, PropertyType } from '../../types/property'
 import { withCleanNarrative } from '../narrative'
+import { getSession } from './authService'
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001'
 
@@ -384,11 +385,16 @@ export async function setOwnerValue(
   token: string,
   submission: { value: number; mortgageBalance?: number | null; mortgageRate?: number | null }
 ): Promise<Analysis> {
+  const session = await getSession()
+  if (!session) throw new ApiRequestError('UNAUTHORIZED', 'Sign in to edit your report.', 401)
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(token)}/value`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({
         value: submission.value,
         mortgageBalance: submission.mortgageBalance ?? null,
@@ -416,6 +422,13 @@ export async function setOwnerValue(
     throw new ApiRequestError(code, message, response.status)
   }
 
+  if (response.status === 202) {
+    throw new ApiRequestError(
+      'ANALYSIS_IN_PROGRESS',
+      'This report is already being updated. Wait a moment and refresh it.',
+      202
+    )
+  }
   const result = (await response.json()) as { analysis: Analysis }
   return withCleanNarrative(result.analysis)
 }

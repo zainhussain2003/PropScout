@@ -122,7 +122,8 @@ export const LL_RENT_COMPS: LandlordRentComps = {
 // ── Default financing (landlord's locked-in 2019 mortgage) ───────────────────
 
 export const LL_DEFAULT_FINANCING: FinancingInputs = {
-  downPaymentPct: 0.3,
+  downPaymentPct: 1 - 478000 / 949000,
+  owned: true,
   mortgageRate: 0.0349,
   amortizationYears: 20,
   includeManagementFee: false,

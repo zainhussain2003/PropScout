@@ -9,32 +9,25 @@ const FOOTER_COLS = [
   {
     heading: 'Product',
     items: [
-      { label: 'Investment report', href: '#' },
-      { label: 'Personal buyer report', href: '#' },
-      { label: 'Tenant analysis', href: '#' },
-      { label: 'Landlord report', href: '#' },
-      { label: 'SunScout', href: '#' },
-      { label: 'Portfolio tracker', href: '#' },
+      { label: 'Investment sample', href: '/investor-report' },
+      { label: 'Personal buyer sample', href: '/personal-report' },
+      { label: 'Tenant sample', href: '/tenant-report' },
+      { label: 'Landlord sample', href: '/landlord-report' },
+      { label: 'SunScout', href: '/#sunscout' },
     ],
   },
   {
     heading: 'Company',
     items: [
-      { label: 'About', href: '#' },
-      { label: 'Methodology', href: '#' },
-      { label: 'Data sources', href: '#' },
-      { label: 'Press', href: '#' },
-      { label: 'Careers', href: '#' },
+      { label: 'Methodology', href: '/methodology' },
+      { label: 'Data sources', href: '/methodology#sources' },
     ],
   },
   {
     heading: 'Resources',
     items: [
-      { label: 'Help centre', href: '#' },
-      { label: 'Underwriting glossary', href: '#' },
-      { label: 'Ontario LTT calculator', href: '#' },
-      { label: 'OSFI stress test', href: '#' },
-      { label: 'API (Team)', href: '#' },
+      { label: 'Help', href: '/methodology#help' },
+      { label: 'Calculation guide', href: '/methodology#calculations' },
     ],
   },
   {
@@ -42,8 +35,7 @@ const FOOTER_COLS = [
     items: [
       { label: 'Privacy', href: '/privacy' },
       { label: 'Terms', href: '/terms' },
-      { label: 'Disclaimer', href: '#' },
-      { label: 'Brokerage info', href: '#' },
+      { label: 'Disclaimer', href: '/terms#not-advice' },
     ],
   },
 ] as const
@@ -87,7 +79,7 @@ export function Footer(): JSX.Element {
             </p>
             <div className="row gap-8">
               <Chip>Ontario · Live</Chip>
-              <Chip>BC · Q3 2026</Chip>
+              <Chip>Ontario only</Chip>
             </div>
           </div>
 

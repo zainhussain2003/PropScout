@@ -285,6 +285,7 @@ function LandlordChecklistSection({
         <div
           className="row gap-12"
           style={{
+            flexWrap: 'wrap',
             marginTop: 22,
             paddingTop: 22,
             borderTop: '1px solid var(--line)',
@@ -504,7 +505,7 @@ export function LandlordPage({
             firstParagraph={
               realAnalysis?.narrative
                 ? realAnalysis.narrative.split('. ')[0] + '.'
-                : `You're above the building median, and ${property.ownership.daysOnMarket} days on market is telling you exactly what the tenants think of it.`
+                : `At ${fmtMoney(askingRent)}/month, ${positioning ? `your asking rent is ${positioning.label.toLowerCase()}` : 'there are no comparable rents to establish a market position'}. Compare the current cash flow and expenses before choosing your rent.`
             }
             eyebrow="PropScout · landlord verdict"
             onUnlock={() => openUpgradeModal('verdict')}

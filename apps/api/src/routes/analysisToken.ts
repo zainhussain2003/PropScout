@@ -24,6 +24,7 @@ import { resolveUser } from '../lib/requireUser'
 import { applyValidationErrorHandler, tokenParams } from '../lib/requestSchemas'
 import { readGuestId, guestLimitEnabled } from '../lib/guestSession'
 import { GUEST } from '../constants/tiers'
+import { reportForViewer } from '../lib/reportAccess'
 
 async function getAnalysisTokenRoutes(fastify: FastifyInstance): Promise<void> {
   applyValidationErrorHandler(fastify)
@@ -80,7 +81,7 @@ async function getAnalysisTokenRoutes(fastify: FastifyInstance): Promise<void> {
 
         return reply.send({
           status: 'complete',
-          analysis: result.analysis,
+          analysis: await reportForViewer(req, result.analysis),
           listing: result.listing,
           canOverride,
           guest,

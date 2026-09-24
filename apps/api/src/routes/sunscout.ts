@@ -19,6 +19,7 @@ import { getAnalysisByToken, updateAnalysisByToken } from '../services/supabaseS
 import { toSunScout, type PySunScout } from './analysis'
 import { applyValidationErrorHandler, tokenParams, sunscoutBody } from '../lib/requestSchemas'
 import { withFacadeRow } from '../lib/assumptionLedger'
+import { denyUnlessReportOwner } from '../lib/reportOwner'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -39,6 +40,8 @@ async function sunscoutRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       try {
+        const denied = await denyUnlessReportOwner(req, token)
+        if (denied) return reply.code(denied.status).send(makeError(denied.code, denied.message))
         const found = await getAnalysisByToken(token)
         if (!found) {
           return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
@@ -86,17 +89,16 @@ async function sunscoutRoutes(fastify: FastifyInstance): Promise<void> {
         // or a reload shows them under the south default (D-098).
         const sunScout = base ? { ...base, facadeBearing: bearing, facadeConfirmed: true } : null
 
-        // Persist so a reload keeps the chosen orientation. Non-fatal: the
-        // recalculated data is still returned even if the save fails.
-        try {
-          await updateAnalysisByToken(token, {
+        // Do not report success until a reload will keep the chosen orientation.
+        await updateAnalysisByToken(
+          token,
+          {
             ...found.analysis,
             sunScout,
             assumptions: withFacadeRow(found.analysis.assumptions, bearing),
-          })
-        } catch (err) {
-          fastify.log.error({ err }, 'Failed to persist recalculated sunScout')
-        }
+          },
+          found.listing
+        )
 
         return reply.send({ sunScout })
       } catch (err) {
