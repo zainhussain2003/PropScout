@@ -121,3 +121,18 @@ multi-segment human gate are satisfied. Existing manual checklists: `UITESTING.m
 `chrome_ui_tests.md`, PR5 `PR5_chrome_ui_tests_FINAL.md`, PR6 `CHROME_UI_TESTS.md`, PR7
 `PR7_chrome_ui_tests.md`, PR8 responsive tests and `docs/TESTING.md`. Manual checklists are
 not automated browser tests and unit success does not mark them executed.
+
+### Coordinator feedback follow-up, 2026-09-24
+
+Baseline `e3da7e6056785fc801ff6f6dabd7210eb1236dee` already contains the foundation above.
+The implementation brief's round-2 feedback identifies an ambiguous rollback assertion:
+both the legacy header and pricing section contain a `Start free` button. The test now
+queries the banner's exact-name button, checks visibility, and clicks it to verify the
+existing sign-in dialog opens. No application behavior or test requirement is changed.
+
+Web typecheck, web lint and `git diff --check` passed for this follow-up. The focused
+`hybrid.test.tsx`, `appDesign.test.ts` and `hybridContrast.test.ts` Vitest command was
+attempted but failed before collection with esbuild `spawn EPERM`; no assertions ran.
+Per the brief's follow-up instruction, the coordinator must rerun every configured gate.
+No new browser scenarios were executed, and all remaining migration and human-review
+requirements above remain open.

@@ -47,7 +47,11 @@ describe('hybrid application presentation', () => {
       'Know what a Canadian listing is'
     )
     expect(screen.queryByRole('group', { name: 'Rental listings' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Start free/ })).toBeInTheDocument()
+    const header = within(screen.getByRole('banner'))
+    const startFree = header.getByRole('button', { name: /^Start free$/ })
+    expect(startFree).toBeVisible()
+    fireEvent.click(startFree)
+    expect(screen.getByRole('dialog', { name: 'Sign in' })).toBeInTheDocument()
   })
 
   it('keeps light/dark independent from design selection', () => {
