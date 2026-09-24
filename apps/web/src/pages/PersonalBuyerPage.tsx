@@ -1520,6 +1520,7 @@ function ConversionSection({ city }: { city: string }): JSX.Element {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 interface PersonalBuyerPageProps {
+  canEdit?: boolean
   /** User tier — controls PDF button gating in ChecklistSection. */
   tier?: string
   /** Real analysis from the API — when provided, live data replaces fixtures. */
@@ -1532,6 +1533,7 @@ export function PersonalBuyerPage({
   tier: _tier = 'pro',
   analysis: realAnalysis,
   listing: realListing,
+  canEdit = false,
 }: PersonalBuyerPageProps): JSX.Element {
   const pdf = usePdfExport(realAnalysis?.token ?? null)
   const { dark, toggle: toggleDark } = useTheme()
@@ -1670,7 +1672,7 @@ export function PersonalBuyerPage({
         <SunScoutPanel
           sunScout={realAnalysis?.sunScout ?? null}
           sectionNumber="06"
-          token={realAnalysis?.token}
+          token={canEdit ? realAnalysis?.token : null}
           question={
             <>
               Which rooms will the <em>light</em> reach?

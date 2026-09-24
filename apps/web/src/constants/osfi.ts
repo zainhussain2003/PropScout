@@ -25,4 +25,6 @@ export const INCOME_SLIDER = {
 export const OSFI_STRESS = {
   BUFFER: 0.02,
   FLOOR: 0.0525,
+  GDS_LIMIT: 0.39,
+  DEFAULT_MONTHLY_HEATING: 150,
 } as const

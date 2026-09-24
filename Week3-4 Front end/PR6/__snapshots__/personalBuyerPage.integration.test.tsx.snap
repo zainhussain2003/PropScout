@@ -4560,7 +4560,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             <span
               class="chip"
             >
-              BC · Q3 2026
+              Ontario only
             </span>
           </div>
         </div>
@@ -4576,40 +4576,34 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="col gap-8"
           >
             <a
-              href="#"
+              href="/investor-report"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
-              Investment report
+              Investment sample
             </a>
             <a
-              href="#"
+              href="/personal-report"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
-              Personal buyer report
+              Personal buyer sample
             </a>
             <a
-              href="#"
+              href="/tenant-report"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
-              Tenant analysis
+              Tenant sample
             </a>
             <a
-              href="#"
+              href="/landlord-report"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
-              Landlord report
+              Landlord sample
             </a>
             <a
-              href="#"
+              href="/#sunscout"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
               SunScout
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              Portfolio tracker
             </a>
           </div>
         </div>
@@ -4625,34 +4619,16 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="col gap-8"
           >
             <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              About
-            </a>
-            <a
-              href="#"
+              href="/methodology"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
               Methodology
             </a>
             <a
-              href="#"
+              href="/methodology#sources"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
               Data sources
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              Press
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              Careers
             </a>
           </div>
         </div>
@@ -4668,34 +4644,16 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="col gap-8"
           >
             <a
-              href="#"
+              href="/methodology#help"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
-              Help centre
+              Help
             </a>
             <a
-              href="#"
+              href="/methodology#calculations"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
-              Underwriting glossary
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              Ontario LTT calculator
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              OSFI stress test
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              API (Team)
+              Calculation guide
             </a>
           </div>
         </div>
@@ -4723,16 +4681,10 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               Terms
             </a>
             <a
-              href="#"
+              href="/terms#not-advice"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >
               Disclaimer
-            </a>
-            <a
-              href="#"
-              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-            >
-              Brokerage info
             </a>
           </div>
         </div>

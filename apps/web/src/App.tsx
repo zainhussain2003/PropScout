@@ -19,6 +19,9 @@ import { EmailVerifiedPage } from './pages/EmailVerifiedPage'
 import { StripeWelcomePage } from './pages/StripeWelcomePage'
 import { StripeCancelledPage } from './pages/StripeCancelledPage'
 import { ReportPage } from './pages/ReportPage'
+import { PrintReportPage } from './pages/PrintReportPage'
+import { MethodologyPage } from './pages/MethodologyPage'
+import { DemoNotice } from './components/shared/DemoNotice'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { TermsPage } from './pages/TermsPage'
@@ -68,11 +71,41 @@ function AppInner(): JSX.Element {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/analyzing" element={<AnalyzingPage />} />
-          <Route path="/investor-report" element={<InvestorReport tier={tier} />} />
-          <Route path="/tenant-report" element={<TenantReport tier={tier} />} />
-          <Route path="/personal-report" element={<PersonalBuyerPage tier={tier} />} />
-          <Route path="/landlord-report" element={<LandlordPage tier={tier} />} />
+          <Route
+            path="/investor-report"
+            element={
+              <DemoNotice>
+                <InvestorReport tier={tier} />
+              </DemoNotice>
+            }
+          />
+          <Route
+            path="/tenant-report"
+            element={
+              <DemoNotice>
+                <TenantReport tier={tier} />
+              </DemoNotice>
+            }
+          />
+          <Route
+            path="/personal-report"
+            element={
+              <DemoNotice>
+                <PersonalBuyerPage tier={tier} />
+              </DemoNotice>
+            }
+          />
+          <Route
+            path="/landlord-report"
+            element={
+              <DemoNotice>
+                <LandlordPage tier={tier} />
+              </DemoNotice>
+            }
+          />
+          <Route path="/methodology" element={<MethodologyPage />} />
           <Route path="/r/:token" element={<ReportPage tier={tier} />} />
+          <Route path="/print-report" element={<PrintReportPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
           <Route path="/auth/reset" element={<PasswordResetRequestPage />} />

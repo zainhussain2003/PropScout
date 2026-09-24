@@ -18,6 +18,8 @@ jest.mock('../services/supabaseService', () => ({
 
 jest.mock('../services/stripeService', () => ({
   constructWebhookEvent: jest.fn(),
+  retrieveSubscription: jest.fn(),
+  tierForPrice: jest.fn().mockReturnValue('pro'),
 }))
 
 import Fastify, { type FastifyInstance } from 'fastify'
@@ -27,7 +29,7 @@ import {
   upsertSubscription,
   updateSubscriptionStatus,
 } from '../services/supabaseService'
-import { constructWebhookEvent } from '../services/stripeService'
+import { constructWebhookEvent, retrieveSubscription } from '../services/stripeService'
 import type Stripe from 'stripe'
 
 const mockConstructEvent = constructWebhookEvent as jest.Mock
@@ -58,6 +60,16 @@ let app: FastifyInstance
 
 beforeEach(async () => {
   jest.clearAllMocks()
+  jest.mocked(retrieveSubscription).mockImplementation(async () => {
+    const event = mockConstructEvent() as Stripe.Event
+    const sub = event.data.object as Stripe.Subscription
+    return {
+      id: 'sub_456',
+      status: sub.status ?? 'active',
+      current_period_end: sub.current_period_end ?? null,
+      items: { data: [{ price: { id: 'price_pro' } }] },
+    } as unknown as Stripe.Subscription
+  })
   app = Fastify({ logger: false })
   // Mirror the raw-body parser from app.ts so rawBody is populated
   app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (_req, body, done) => {
@@ -80,6 +92,32 @@ afterEach(async () => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('POST /stripe webhook', () => {
+  it('returns a retryable failure when paid access cannot be persisted', async () => {
+    mockConstructEvent.mockReturnValue(
+      makeEvent('checkout.session.completed', {
+        mode: 'subscription',
+        client_reference_id: 'user-abc',
+        customer: 'cus_123',
+        subscription: 'sub_456',
+        metadata: { tier: 'pro' },
+      })
+    )
+    mockUpdateUserTier.mockRejectedValueOnce(new Error('database unavailable'))
+    expect((await injectWebhook(app, 'valid-sig')).statusCode).toBe(500)
+    expect((await injectWebhook(app, 'valid-sig')).statusCode).toBe(200)
+  })
+  it('uses current Stripe state instead of restoring a stale active event', async () => {
+    mockConstructEvent.mockReturnValue(
+      makeEvent('customer.subscription.updated', { id: 'sub_456', status: 'active' })
+    )
+    jest.mocked(retrieveSubscription).mockResolvedValueOnce({
+      id: 'sub_456',
+      status: 'canceled',
+      items: { data: [{ price: { id: 'price_pro' } }] },
+    } as unknown as Stripe.Subscription)
+    expect((await injectWebhook(app, 'valid-sig')).statusCode).toBe(200)
+    expect(mockUpdateStatus).toHaveBeenCalledWith('sub_456', 'canceled', null, 'pro')
+  })
   it('returns 400 when Stripe-Signature header is missing', async () => {
     const res = await injectWebhook(app, null)
     expect(res.statusCode).toBe(400)
@@ -130,7 +168,8 @@ describe('POST /stripe webhook', () => {
     expect(mockUpdateStatus).toHaveBeenCalledWith(
       'sub_456',
       'past_due',
-      new Date(1893456000 * 1000)
+      new Date(1893456000 * 1000),
+      'pro'
     )
   })
 
@@ -148,7 +187,8 @@ describe('POST /stripe webhook', () => {
     expect(mockUpdateStatus).toHaveBeenCalledWith(
       'sub_456',
       'canceled',
-      new Date(1893456000 * 1000)
+      new Date(1893456000 * 1000),
+      'pro'
     )
   })
 

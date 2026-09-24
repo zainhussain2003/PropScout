@@ -1,15 +1,13 @@
 /**
  * pdfService — Puppeteer PDF generation for report exports (spec Section 14).
  *
- * Headless Chrome renders the live web report at FRONTEND_URL/r/:token and
- * captures it as a PDF, so the PDF always matches the web report exactly —
- * there is no separate PDF template to maintain.
+ * After the route verifies paid access, Headless Chrome renders the report
+ * payload through the web app's /print-report route. It needs no user session.
  *
  * Branding (Free/Pro): PropScout footer with propscout.ca, the "not financial
  * or legal advice" disclaimer, a date stamp, the share token, and a QR code
  * linking back to the live report (spec §14 "share token as QR code").
- * Professional white-label branding is not built yet (tracked in
- * AUDIT_TRACKER) — the tier is sold with manual delivery until then.
+ * White-label branding is not offered for new subscriptions.
  */
 
 import puppeteer from 'puppeteer'
@@ -69,7 +67,13 @@ export async function buildShareQr(token: string): Promise<string | null> {
  * Returns null on any failure (Chrome missing, page error, timeout) — the
  * route turns that into a friendly 502 rather than a crash.
  */
-export async function generateReportPdf(token: string): Promise<Buffer | null> {
+export async function generateReportPdf(
+  token: string,
+  report: {
+    analysis: import('../types/analysis').Analysis
+    listing: import('../types/property').Listing
+  }
+): Promise<Buffer | null> {
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null
   try {
     browser = await puppeteer.launch({
@@ -78,11 +82,18 @@ export async function generateReportPdf(token: string): Promise<Buffer | null> {
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     })
     const page = await browser.newPage()
+    // Inject only this report after the route has verified paid access. Never
+    // expose the customer's session or a service credential to the browser.
+    await page.evaluateOnNewDocument((payload) => {
+      Object.defineProperty(globalThis, '__PROPSCOUT_PRINT__', { value: payload })
+    }, report)
     await page.setViewport({ width: 1280, height: 900 })
-    await page.goto(`${FRONTEND_URL}/r/${encodeURIComponent(token)}`, {
+    await page.goto(`${FRONTEND_URL}/print-report`, {
       waitUntil: 'networkidle2',
       timeout: PAGE_LOAD_TIMEOUT_MS,
     })
+    await page.waitForSelector('[data-print-ready="true"]', { timeout: PAGE_LOAD_TIMEOUT_MS })
+    await page.evaluate('document.fonts.ready')
 
     const qrDataUrl = await buildShareQr(token)
     const pdf = await page.pdf({

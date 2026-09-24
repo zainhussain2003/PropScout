@@ -157,7 +157,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     id: 'subscriptions',
     title: 'Subscriptions, billing & cancellation',
-    body: `<p>PropScout offers a Free tier and paid tiers (Investor Pro, Professional, Team) billed monthly or annually via Stripe. Subscriptions renew automatically until you cancel.</p>
+    body: `<p>PropScout offers Free and Investor Pro. New Pro subscriptions are billed monthly via Stripe. Legacy subscriptions retain their existing billing terms. Subscriptions renew automatically until you cancel.</p>
 <p>You can cancel at any time from your account settings, which links to your Stripe customer portal. Cancellation takes effect at the end of your current billing cycle; you retain access until then.</p>
 <p>We offer a <strong>14-day satisfaction refund</strong> on your first paid month. After 14 days, charges are non-refundable except where required by law.</p>
 <p>Annual subscribers receive a pro-rata refund of any unused months if they cancel due to a documented PropScout product defect.</p>`,

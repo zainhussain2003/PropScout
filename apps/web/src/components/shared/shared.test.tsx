@@ -282,7 +282,7 @@ describe('Footer', () => {
     render(<Footer />)
     expect(screen.getByText('Privacy')).toBeInTheDocument()
     expect(screen.getByText('Terms')).toBeInTheDocument()
-    expect(screen.getByText('Investment report')).toBeInTheDocument()
+    expect(screen.getByText('Investment sample')).toBeInTheDocument()
   })
 
   it('renders the Wordmark inside footer', () => {
@@ -294,6 +294,19 @@ describe('Footer', () => {
 // ── SignInModal ───────────────────────────────────────────────────
 
 describe('SignInModal', () => {
+  it('hides Google sign-in unless explicitly enabled', () => {
+    vi.stubEnv('VITE_GOOGLE_AUTH_ENABLED', 'false')
+    render(<SignInModal open onClose={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument()
+    vi.unstubAllEnvs()
+  })
+
+  it('shows Google sign-in when the provider is configured', () => {
+    vi.stubEnv('VITE_GOOGLE_AUTH_ENABLED', 'true')
+    render(<SignInModal open onClose={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument()
+    vi.unstubAllEnvs()
+  })
   it('renders nothing when open is false', () => {
     const { container } = render(<SignInModal open={false} onClose={vi.fn()} />)
     expect(container).toBeEmptyDOMElement()

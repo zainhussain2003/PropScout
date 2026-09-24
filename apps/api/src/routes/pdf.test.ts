@@ -87,7 +87,7 @@ describe('GET /:token/pdf', () => {
     expect(res.headers['content-type']).toBe('application/pdf')
     expect(String(res.headers['content-disposition'])).toContain('propscout-report-t-1.pdf')
     expect(res.rawPayload.subarray(0, 4).toString()).toBe('%PDF')
-    expect(mockGeneratePdf).toHaveBeenCalledWith('t-1')
+    expect(mockGeneratePdf).toHaveBeenCalledWith('t-1', { analysis: { token: 't-1' }, listing: {} })
   })
 
   it('404s for an unknown analysis token before rendering anything', async () => {

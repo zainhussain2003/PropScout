@@ -55,7 +55,7 @@ async function pdfRoutes(fastify: FastifyInstance): Promise<void> {
           return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
         }
 
-        const pdf = await generateReportPdf(token)
+        const pdf = await generateReportPdf(token, found)
         if (pdf == null) {
           return reply
             .code(502)

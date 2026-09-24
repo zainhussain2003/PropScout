@@ -21,7 +21,7 @@ import {
   createCheckoutSession,
   createBillingPortalSession,
 } from '../services/stripeService'
-import { getUserById } from '../services/supabaseService'
+import { getUserById, upsertUser } from '../services/supabaseService'
 import { getSupabase } from '../services/supabaseService'
 import { applyValidationErrorHandler, billingCheckoutBody } from '../lib/requestSchemas'
 
@@ -58,11 +58,46 @@ async function billingRoutes(fastify: FastifyInstance): Promise<void> {
       if (!['pro', 'professional', 'team'].includes(tier)) {
         return reply.status(400).send(makeError('INVALID_TIER', 'Invalid tier') as never)
       }
+      if (tier !== 'pro') {
+        return reply
+          .status(400)
+          .send(
+            makeError('PLAN_UNAVAILABLE', 'Only Pro is available for new subscriptions.') as never
+          )
+      }
 
-      const user = await getUserById(authData.user.id)
+      let user = await getUserById(authData.user.id)
+      if (!user) {
+        await upsertUser(authData.user.id, authData.user.email ?? '')
+        user = await getUserById(authData.user.id)
+        if (!user) {
+          return reply
+            .status(503)
+            .send(
+              makeError(
+                'PROFILE_UNAVAILABLE',
+                'Your account could not be loaded. Try again before starting checkout.'
+              ) as never
+            )
+        }
+      }
 
       let url: string
       try {
+        if (user && ['pro', 'professional', 'team'].includes(user.tier)) {
+          if (!user.stripe_customer_id) {
+            return reply
+              .status(409)
+              .send(
+                makeError(
+                  'SUBSCRIPTION_EXISTS',
+                  'You already have a paid plan. Contact support to manage it.'
+                ) as never
+              )
+          }
+          url = await createBillingPortalSession(user.stripe_customer_id)
+          return reply.send({ url })
+        }
         url = await createCheckoutSession(
           authData.user.id,
           authData.user.email ?? '',

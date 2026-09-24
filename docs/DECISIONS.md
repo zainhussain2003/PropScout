@@ -4180,3 +4180,29 @@ simple figure stays on the scenario object for anyone who wants it; the card no 
 | Newton's method                           | Converges faster but can diverge on a stream with small early flows; bisection on a monotone NPV cannot. |
 | Show both the multiple and the IRR        | Two annual rates for one row invites the wrong one to be quoted.                                         |
 | Fetch the rate on the client for the note | The number that ran is the one to name; the ledger already has it with its fetch time.                   |
+
+### D-125 · Launch fixes: two purchasable tiers, protected report edits and verified billing state
+
+**Implemented for owner-requested launch remediation, 2026-09-23; deployment pending.**
+The owner requested implementation of the regression findings. New purchases offer Free and
+Investor Pro at CAD $10/month. Annual, Professional and Team offers are deferred until their
+checkout and differentiating features are verified. Existing paid tier identifiers remain
+recognized so this does not revoke legacy access. Planned portfolios and white-label exports
+are no longer used to sell the current plan. The §4 roadmap matrix is superseded for launch.
+
+Anonymous and free viewers receive the first decision sentence from the API; authenticated
+paid viewers receive the complete narrative. Public share links follow the viewer's tier.
+The export route checks paid access, then supplies only the report payload to a dedicated
+print entry point, avoiding an unauthenticated renderer's paywall. Owner value and facade
+changes require a verified report owner. Failed facade persistence reports an error.
+
+Stripe webhook failures return a retryable error. Subscription updates read current Stripe
+state and map the actual price to the tier; database write failures cannot be acknowledged
+as successful fulfillment. Activation, cancellation and status changes must still be
+verified in Stripe test mode before launch. No production configuration is changed here.
+
+Toronto municipal transfer-tax brackets now include the missing $250K–$400K band and the
+April 2026 high-value bands for one/two single-family residences. The frontend GDS screen
+uses 39% and includes $150 monthly heating, matching the calculation engine's assumptions.
+It is labelled a screen, not a mortgage approval. Sample reports disclose demonstration data;
+known demo arithmetic, navigation and mobile layout inconsistencies are corrected.

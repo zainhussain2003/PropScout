@@ -9,6 +9,7 @@
  */
 
 import { type FastifyInstance } from 'fastify'
+import { reportForViewer } from '../lib/reportAccess'
 import { makeError } from '../types/api'
 import type {
   InvestmentMetrics,
@@ -853,7 +854,11 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         if ((await getAnalysisStatus(token)) === 'complete') {
           const stored = await getAnalysisByToken(token)
           if (stored != null) {
-            return reply.send({ token, analysis: stored.analysis, cached: true })
+            return reply.send({
+              token,
+              analysis: await reportForViewer(req, stored.analysis),
+              cached: true,
+            })
           }
         }
         inFlight.add(token)
@@ -925,7 +930,7 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
         if (!result.ok) {
           return reply.code(result.status).send(makeError(result.code, result.message))
         }
-        return reply.send({ token, analysis: result.analysis })
+        return reply.send({ token, analysis: await reportForViewer(req, result.analysis) })
       } catch (err) {
         fastify.log.error({ err }, 'Unexpected error in POST /analysis')
         await updateAnalysisStatus(token, 'failed', 'INTERNAL_ERROR').catch(() => {})

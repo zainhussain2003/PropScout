@@ -172,9 +172,9 @@ describe('LandlordRentPositioningSection', () => {
     expect(screen.getByText(/Confidence:/)).toBeInTheDocument()
   })
 
-  it('renders the "Your building · live" panel header', () => {
+  it('labels the fixture building panel as sample data', () => {
     renderSection()
-    expect(screen.getByText(/your building · live/i)).toBeInTheDocument()
+    expect(screen.getByText(/your building · sample data/i)).toBeInTheDocument()
   })
 
   it('renders the "Drag to model alternatives" label on the slider display', () => {

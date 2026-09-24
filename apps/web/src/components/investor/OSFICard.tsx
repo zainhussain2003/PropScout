@@ -59,7 +59,7 @@ export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Elemen
       bold: true,
       colorVar: osfi.pass ? 'var(--pass)' : 'var(--fail)',
     },
-    { label: 'Most the bank allows', value: fmtPct(osfi.threshold, 0) },
+    { label: 'GDS screening limit', value: fmtPct(osfi.threshold, 0) },
   ]
 
   return (
@@ -90,7 +90,7 @@ export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Elemen
             B-20 mortgage qualification
           </h4>
         </div>
-        <VerdictPill tone={tone} label={osfi.pass ? 'Qualifies' : 'Fails'} />
+        <VerdictPill tone={tone} label={osfi.pass ? 'Within GDS limit' : 'Above GDS limit'} />
       </div>
 
       {/* Rows */}
@@ -142,7 +142,7 @@ export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Elemen
           <>
             Gross household income {fmtMoney(displayIncome)}. At {fmtPct(osfi.qualifyingRate, 2)}{' '}
             qualifying rate, GDS is {fmtPct(osfi.gds, 1)} against the {fmtPct(osfi.threshold, 0)}{' '}
-            federal threshold —{' '}
+            GDS screening limit —{' '}
             {osfi.threshold - osfi.gds < OSFI_TIGHT_MARGIN
               ? 'a thin margin; a small rate move or a lower appraisal would fail it.'
               : `${((osfi.threshold - osfi.gds) * 100).toFixed(1)} points of room.`}
@@ -150,10 +150,13 @@ export function OSFICard({ osfi, financing, income }: OSFICardProps): JSX.Elemen
         ) : (
           <>
             Gross household income {fmtMoney(displayIncome)}. Qualifying payment pushes GDS to{' '}
-            {fmtPct(osfi.gds, 1)} — above the 44% federal threshold. Standard A-lender financing
-            likely unavailable; alt-lender or higher income required.
+            {fmtPct(osfi.gds, 1)} — above the {fmtPct(osfi.threshold, 0)} GDS screening limit.
+            Review the assumptions with your lender.
           </>
-        )}
+        )}{' '}
+        Includes $150/month estimated heating and half the condo fee. Other debts and
+        lender-specific rental-income treatment are not assessed here. This is not mortgage
+        approval.
       </div>
     </div>
   )

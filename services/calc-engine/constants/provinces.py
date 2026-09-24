@@ -35,7 +35,13 @@ ONTARIO_LTT_BRACKETS: list[tuple[float, float]] = [
 # Toronto Municipal Land Transfer Tax brackets (applies on top of provincial)
 TORONTO_MLTT_BRACKETS: list[tuple[float, float]] = [
     (55_000, 0.005),
-    (400_000, 0.010),
+    (250_000, 0.010),
+    (400_000, 0.015),
     (2_000_000, 0.020),
-    (float("inf"), 0.025),
+    (3_000_000, 0.025),
+    (4_000_000, 0.044),
+    (5_000_000, 0.0545),
+    (10_000_000, 0.065),
+    (20_000_000, 0.0755),
+    (float("inf"), 0.086),
 ]

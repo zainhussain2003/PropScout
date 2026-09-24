@@ -239,7 +239,7 @@ export function LandlordRentPositioningSection({
                   color: 'var(--muted)',
                 }}
               >
-                Your building · live
+                Your building · sample data
               </span>
               <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
                 {comps.liveListings.length} units

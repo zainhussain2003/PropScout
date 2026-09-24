@@ -522,8 +522,8 @@ export interface OSFIResult {
   qualifyingRate: number // max(contractRate + 0.02, 0.0525)
   qualifyingPmt: number // monthly payment at qualifying rate
   gds: number // gross debt service ratio
-  pass: boolean // gds <= 0.44
-  threshold: number // always 0.44
+  pass: boolean // within GDS screening limit; not mortgage approval
+  threshold: number // 0.39 (TDS is a separate 0.44 limit)
 }
 
 /** One data point in the 20-year equity build curve. */

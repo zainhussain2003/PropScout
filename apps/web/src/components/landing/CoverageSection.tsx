@@ -32,7 +32,7 @@ export function CoverageSection(): JSX.Element {
     {
       icon: 'sun' as const,
       t: 'SunScout · light score',
-      d: 'NREL sun-path math, window by window, month by month. Building obstruction in dense cores on Investor Pro.',
+      d: 'NREL sun-path modelling with available building obstruction data. Coverage and assumptions are shown in the report, on every plan.',
     },
     {
       icon: 'doc' as const,

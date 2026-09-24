@@ -285,44 +285,48 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
           }}
         >
           {mode === 'signin'
-            ? 'The free verdict you just saw is a snippet — sign in to see all 3 paragraphs, comps map, financing scenarios, and PDF export.'
+            ? 'Sign in to keep your reports in your account. Full verdicts and PDF export require Pro.'
             : 'Ten free reports every month. No credit card. Cancel anytime.'}
         </p>
 
         <div className="col gap-12" style={{ marginBottom: 16 }}>
-          {/* Google OAuth */}
-          <button
-            className="btn"
-            onClick={() => void handleGoogleSignIn()}
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              padding: 14,
-              background: 'var(--surface)',
-              border: '1px solid var(--line-strong)',
-              color: 'var(--ink)',
-            }}
-          >
-            <GoogleLogo />
-            Continue with Google
-          </button>
+          {/* Expose Google only after its provider and callback are configured. */}
+          {import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true' && (
+            <>
+              <button
+                className="btn"
+                onClick={() => void handleGoogleSignIn()}
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: 14,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--line-strong)',
+                  color: 'var(--ink)',
+                }}
+              >
+                <GoogleLogo />
+                Continue with Google
+              </button>
 
-          {/* Divider */}
-          <div className="row gap-8" style={{ alignItems: 'center', margin: '4px 0' }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-            <span
-              className="mono"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--muted)',
-              }}
-            >
-              or with email
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-          </div>
+              {/* Divider */}
+              <div className="row gap-8" style={{ alignItems: 'center', margin: '4px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'var(--muted)',
+                  }}
+                >
+                  or with email
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+              </div>
+            </>
+          )}
 
           {/* Email input */}
           <input

@@ -64,12 +64,19 @@ function getClient(): AnonClient | null {
 export async function signInWithEmail(email: string): Promise<{ error: string | null }> {
   const client = getClient()
   if (client == null) return { error: AUTH_UNAVAILABLE }
-  const { error } = await client.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: window.location.origin + '/auth/confirm',
-    },
-  })
+  const { error } = await client.auth
+    .signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: window.location.origin + '/auth/confirm',
+      },
+    })
+    .catch(() => ({
+      error: {
+        message: 'Could not reach the sign-in service. Check your connection and try again.',
+      },
+    }))
   if (error != null) {
     return { error: error.message }
   }
@@ -85,12 +92,18 @@ export async function signInWithEmail(email: string): Promise<{ error: string | 
 export async function signInWithGoogle(): Promise<{ error: string | null }> {
   const client = getClient()
   if (client == null) return { error: AUTH_UNAVAILABLE }
-  const { error } = await client.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin + '/auth/confirm',
-    },
-  })
+  const { error } = await client.auth
+    .signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/auth/confirm',
+      },
+    })
+    .catch(() => ({
+      error: {
+        message: 'Could not reach the sign-in service. Check your connection and try again.',
+      },
+    }))
   if (error != null) {
     return { error: error.message }
   }

@@ -305,7 +305,7 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               <span
                 class="chip"
               >
-                BC · Q3 2026
+                Ontario only
               </span>
             </div>
           </div>
@@ -321,40 +321,34 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               class="col gap-8"
             >
               <a
-                href="#"
+                href="/investor-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Investment report
+                Investment sample
               </a>
               <a
-                href="#"
+                href="/personal-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Personal buyer report
+                Personal buyer sample
               </a>
               <a
-                href="#"
+                href="/tenant-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Tenant analysis
+                Tenant sample
               </a>
               <a
-                href="#"
+                href="/landlord-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Landlord report
+                Landlord sample
               </a>
               <a
-                href="#"
+                href="/#sunscout"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 SunScout
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Portfolio tracker
               </a>
             </div>
           </div>
@@ -370,34 +364,16 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               class="col gap-8"
             >
               <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                About
-              </a>
-              <a
-                href="#"
+                href="/methodology"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Methodology
               </a>
               <a
-                href="#"
+                href="/methodology#sources"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Data sources
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Press
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Careers
               </a>
             </div>
           </div>
@@ -413,34 +389,16 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
               class="col gap-8"
             >
               <a
-                href="#"
+                href="/methodology#help"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Help centre
+                Help
               </a>
               <a
-                href="#"
+                href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Underwriting glossary
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Ontario LTT calculator
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                OSFI stress test
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                API (Team)
+                Calculation guide
               </a>
             </div>
           </div>
@@ -468,16 +426,10 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
                 Terms
               </a>
               <a
-                href="#"
+                href="/terms#not-advice"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Disclaimer
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Brokerage info
               </a>
             </div>
           </div>
@@ -3763,7 +3715,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             <span
               class="verdict-pill fail"
             >
-              Fails
+              Above GDS limit
             </span>
           </div>
           <div
@@ -3842,7 +3794,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 class="mono tabular"
                 style="font-weight: 600; color: var(--fail);"
               >
-                44.9%
+                46.3%
               </span>
             </div>
             <div
@@ -3851,13 +3803,13 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               <span
                 style="color: var(--ink-2);"
               >
-                Most the bank allows
+                GDS screening limit
               </span>
               <span
                 class="mono tabular"
                 style="font-weight: 500; color: var(--ink);"
               >
-                44%
+                39%
               </span>
             </div>
           </div>
@@ -3874,8 +3826,12 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             $125,000
             . Qualifying payment pushes GDS to
              
-            44.9%
-             — above the 44% federal threshold. Standard A-lender financing likely unavailable; alt-lender or higher income required.
+            46.3%
+             — above the 
+            39%
+             GDS screening limit. Review the assumptions with your lender.
+             
+            Includes $150/month estimated heating and half the condo fee. Other debts and lender-specific rental-income treatment are not assessed here. This is not mortgage approval.
           </div>
         </div>
       </section>
@@ -6511,7 +6467,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               <span
                 class="chip"
               >
-                BC · Q3 2026
+                Ontario only
               </span>
             </div>
           </div>
@@ -6527,40 +6483,34 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="col gap-8"
             >
               <a
-                href="#"
+                href="/investor-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Investment report
+                Investment sample
               </a>
               <a
-                href="#"
+                href="/personal-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Personal buyer report
+                Personal buyer sample
               </a>
               <a
-                href="#"
+                href="/tenant-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Tenant analysis
+                Tenant sample
               </a>
               <a
-                href="#"
+                href="/landlord-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Landlord report
+                Landlord sample
               </a>
               <a
-                href="#"
+                href="/#sunscout"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 SunScout
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Portfolio tracker
               </a>
             </div>
           </div>
@@ -6576,34 +6526,16 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="col gap-8"
             >
               <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                About
-              </a>
-              <a
-                href="#"
+                href="/methodology"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Methodology
               </a>
               <a
-                href="#"
+                href="/methodology#sources"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Data sources
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Press
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Careers
               </a>
             </div>
           </div>
@@ -6619,34 +6551,16 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="col gap-8"
             >
               <a
-                href="#"
+                href="/methodology#help"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Help centre
+                Help
               </a>
               <a
-                href="#"
+                href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Underwriting glossary
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Ontario LTT calculator
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                OSFI stress test
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                API (Team)
+                Calculation guide
               </a>
             </div>
           </div>
@@ -6674,16 +6588,10 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 Terms
               </a>
               <a
-                href="#"
+                href="/terms#not-advice"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Disclaimer
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Brokerage info
               </a>
             </div>
           </div>
@@ -6982,7 +6890,7 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               <span
                 class="chip"
               >
-                BC · Q3 2026
+                Ontario only
               </span>
             </div>
           </div>
@@ -6998,40 +6906,34 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               class="col gap-8"
             >
               <a
-                href="#"
+                href="/investor-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Investment report
+                Investment sample
               </a>
               <a
-                href="#"
+                href="/personal-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Personal buyer report
+                Personal buyer sample
               </a>
               <a
-                href="#"
+                href="/tenant-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Tenant analysis
+                Tenant sample
               </a>
               <a
-                href="#"
+                href="/landlord-report"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Landlord report
+                Landlord sample
               </a>
               <a
-                href="#"
+                href="/#sunscout"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 SunScout
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Portfolio tracker
               </a>
             </div>
           </div>
@@ -7047,34 +6949,16 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               class="col gap-8"
             >
               <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                About
-              </a>
-              <a
-                href="#"
+                href="/methodology"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Methodology
               </a>
               <a
-                href="#"
+                href="/methodology#sources"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Data sources
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Press
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Careers
               </a>
             </div>
           </div>
@@ -7090,34 +6974,16 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
               class="col gap-8"
             >
               <a
-                href="#"
+                href="/methodology#help"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Help centre
+                Help
               </a>
               <a
-                href="#"
+                href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
-                Underwriting glossary
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Ontario LTT calculator
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                OSFI stress test
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                API (Team)
+                Calculation guide
               </a>
             </div>
           </div>
@@ -7145,16 +7011,10 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
                 Terms
               </a>
               <a
-                href="#"
+                href="/terms#not-advice"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Disclaimer
-              </a>
-              <a
-                href="#"
-                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
-              >
-                Brokerage info
               </a>
             </div>
           </div>
