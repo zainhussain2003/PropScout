@@ -1,6 +1,6 @@
 # Hybrid application migration
 
-Current builder baseline: `8979c235ba623978dcf37fc7b0555ed5a2de2109`, task `hybrid-ui-browser-fixes`.
+Current builder baseline: `b564af346c6bb982872b83742014bb4897515e9f`, task `hybrid-ui-browser-fixes`.
 Accepted homepage foundation: `cd4260a330b5ab4cbdd0038a3df37a4c8e618712`.
 Inventory originated before the foundation increment at `2c31ad8deda0d423738d1aed8223c78b296361ca`.
 Owner reference: `propscout-hybrid.html`, supplied with the 2026-09-15 implementation brief.
@@ -361,3 +361,45 @@ Independent review of the coordinator-created exact candidate, successful gates
 and browser matrix, and the mandatory owner approval for the broad migration
 remain outstanding under `docs/agent-loop/POLICY.md`. No commit or promotion was
 performed by this builder.
+
+## Browser-fix clock regression retry — 2026-09-25
+
+This increment starts at `b564af346c6bb982872b83742014bb4897515e9f` and retains
+its production RouteScroll and legal sizing repairs. The supplied brief reports
+that candidate passed the original browser checks at 375px in both designs and
+themes; that is prior evidence, not browser execution by this builder.
+
+The failed expiry test advanced Vitest's default timers while production reads
+`performance.now()`. Inspection of the installed Vitest defaults confirmed that
+`performance` is excluded. The test now explicitly fakes performance and animation
+frames together, retains the two-jump expiry assertion, and additionally requires
+the clock to reach the deadline and no timers to remain. Production behavior and
+the original browser script are unchanged. The corrected test could not execute
+in this sandbox, so coordinator verification is still required.
+
+All ten configured gates were attempted again; logs are in the ignored local
+`.cache/browser-fix-retry/` directory:
+
+| Validation | Retry result |
+| --- | --- |
+| Web/API typecheck and web/API lint (four gates) | Passed |
+| Python format | Passed |
+| Python lint | Blocked by multiprocessing pipe `WinError 5` |
+| Full web tests and focused RouteScroll test | Blocked before collection by esbuild `spawn EPERM` |
+| API tests | Blocked by Jest worker `spawn EPERM` |
+| Calc-engine tests | 469 passed, 2 existing skips |
+| Scraper tests | 212 passed |
+| Supplemental serial Python lint | Passed |
+| Supplemental API `--runInBand` | 39 suites passed; 503 passed, 2 existing skips |
+| Production web build | TypeScript passed; Vite blocked by esbuild `spawn EPERM` |
+| Local hybrid/legacy servers | Blocked by esbuild `spawn EPERM` |
+| Original browser script, both designs | Blocked before browser launch by Playwright transport `WinError 5` |
+
+Both browser attempts retain the original 375/390/1280px, light/dark matrix and
+local-only filtering, targeting loopback ports 5173 and 5174. No browser assertion
+or screenshot executed in this retry. Manual visual and authenticated-flow checks
+remain unverified. No protected files, scoring, data, auth, billing, credentials or
+owner checkout were changed. The welcome-page copy decision remains a separate
+follow-on. The coordinator must create and obtain independent review of the exact
+candidate, rerun blocked checks and the full browser matrix, and retain the
+mandatory owner human gate for the broad migration. No commit or promotion occurred.

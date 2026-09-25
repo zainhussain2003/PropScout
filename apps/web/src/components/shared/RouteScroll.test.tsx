@@ -84,7 +84,9 @@ it('waits for an asynchronously rendered report anchor without repeating a stabl
 })
 
 it('corrects a fresh hash destination after late layout shifts, then expires', () => {
-  vi.useFakeTimers()
+  // Vitest's default fake clock excludes performance; advance the deadline
+  // clock together with animation frames to exercise real elapsed-time expiry.
+  vi.useFakeTimers({ toFake: ['performance', 'requestAnimationFrame', 'cancelAnimationFrame'] })
   const { unmount } = render(
     <MemoryRouter initialEntries={['/#pricing']}>
       <Navigation />
@@ -100,6 +102,8 @@ it('corrects a fresh hash destination after late layout shifts, then expires', (
   vi.advanceTimersByTime(100)
   expect(target.scrollIntoView).toHaveBeenCalledTimes(2)
   vi.advanceTimersByTime(HASH_SCROLL_SETTLE_MS)
+  expect(performance.now()).toBeGreaterThanOrEqual(HASH_SCROLL_SETTLE_MS)
+  expect(vi.getTimerCount()).toBe(0)
   rect.mockReturnValue({ top: 1800 } as DOMRect)
   vi.advanceTimersByTime(100)
   expect(target.scrollIntoView).toHaveBeenCalledTimes(2)

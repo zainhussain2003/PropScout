@@ -1006,6 +1006,8 @@ Reviewer scope is the full candidate delta since `cd4260a`, not just this repair
   movement, stable document coordinates, delayed sections, malformed hashes,
   cancellation on wheel/touch/pointer/keyboard input, route cleanup and the bounded
   five-second correction window. Query-only navigation still preserves scroll.
+  The expiry regression explicitly fakes `performance` and animation frames on
+  the same clock, and requires zero pending timers after the deadline.
 - Combined: run the original, unmodified `scripts/check_hybrid_ui.py` against local
   hybrid and legacy servers. Its pricing viewport assertion and document overflow
   checks must pass at 375/390/1280px in light/dark. Both legal routes are included.
