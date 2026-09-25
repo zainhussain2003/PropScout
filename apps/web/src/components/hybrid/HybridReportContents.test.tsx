@@ -43,6 +43,39 @@ it('keeps the legacy document free of hybrid navigation', () => {
   expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
 })
 
+it('discovers unmarked personal and landlord sections, including repeated section numbers', () => {
+  const { container } = render(
+    <DesignProvider design="hybrid">
+      <main data-report-document>
+        <HybridReportContents />
+        <section>
+          <SectionHead n="01" topic="Rent positioning" question="Is the rent fair?" />
+        </section>
+        <section>
+          <SectionHead n="01" topic="Investment metrics" question="Does it work?" />
+        </section>
+        <section>
+          <SectionHead n="03" topic="Comparable sales" question="What sold?" />
+        </section>
+      </main>
+    </DesignProvider>
+  )
+  const nav = screen.getByRole('navigation')
+  nav.querySelector('details')!.open = true
+  expect(within(nav).getAllByRole('button')).toHaveLength(3)
+  for (const [index, label] of [
+    '01 Rent positioning',
+    '01 Investment metrics',
+    '03 Comparable sales',
+  ].entries()) {
+    const section = container.querySelectorAll('section')[index]!
+    section.scrollIntoView = vi.fn()
+    fireEvent.click(within(nav).getByRole('button', { name: label, exact: true }))
+    expect(section.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'instant' })
+    expect(section.querySelector('h2')).toHaveFocus()
+  }
+})
+
 it('does not include unrelated sections outside the current report', () => {
   render(
     <DesignProvider design="hybrid">

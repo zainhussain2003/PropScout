@@ -985,3 +985,17 @@ for that staging run.
   Black comparison matched all 99 Python files. Normal Black did not complete;
   worker-based lint/API tests, web tests/build and Playwright remain blocked locally.
   See the migration document's retry table for exact failures; no browser pass is claimed.
+
+### Closure regression checks (hybrid-ui-closure)
+
+The navigator now uses shared SectionHead metadata. Require exact ordered demo topics
+(investor 12, tenant 12, personal 8, landlord 12), readable number/topic button names,
+and focus on each selected heading. Include unmarked sections and repeated numbers in
+unit coverage. Check privacy/terms at 375px and 390px for overflow without hidden content;
+repeat at desktop in light/dark and legacy. The local browser runner covers these demo
+inventories in screen/print and every navigation button.
+
+Fresh closure results and process-permission blockers are recorded in
+[HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md#closure-evidence--2026-09-25).
+The new unit test and browser assertions could not execute in the builder sandbox.
+Reviewer scope is the full candidate delta since `cd4260a`, not just this repair.

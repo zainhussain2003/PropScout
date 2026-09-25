@@ -13,8 +13,49 @@ from urllib.parse import urlparse
 
 from playwright.sync_api import Page, Route, expect, sync_playwright
 
-
 REPORTS = ["investor", "tenant", "personal", "landlord"]
+INVESTOR_SECTIONS = [
+    "Investment metrics",
+    "Financing scenarios",
+    "Rental comps",
+    "Cash to close",
+    "OSFI stress test",
+    "Risk flags",
+    "Equity build",
+    "Neighbourhood",
+    "SunScout",
+    "STR vs LTR",
+    "Due diligence",
+]
+REPORT_SECTIONS = {
+    "investor": [*INVESTOR_SECTIONS, "Sources"],
+    "tenant": [
+        "Rent positioning",
+        "Listing accuracy",
+        "Listed vs Reality",
+        "Negotiation",
+        "Monthly cost",
+        "What's included",
+        "Location & commute",
+        "Schools nearby",
+        "SunScout",
+        "Map of comps",
+        "Unit & building details",
+        "Before you sign",
+    ],
+    "personal": [
+        "Estimated monthly cash outflow",
+        "Fair market value",
+        "Comparable sales",
+        "Schools",
+        "Neighbourhood",
+        "SunScout",
+        "Risks & conditions",
+        "Before you bid",
+    ],
+    "landlord": ["Rent positioning", *INVESTOR_SECTIONS[:-1], "Landlord checklist"],
+}
+SECTION_SELECTOR = "[data-section-topic][data-section-n]:has(h2)"
 PAGES = [
     "/account",
     "/auth/reset",
@@ -66,19 +107,30 @@ def check_layout(page: Page, design: str) -> None:
         assert not italic, italic
 
 
-def check_report(page: Page, design: str) -> None:
+def check_sections(page: Page, mode: str) -> None:
+    """Require the demo's full ordered topic inventory, not rail-specific markers."""
+    topics = page.locator(SECTION_SELECTOR).evaluate_all(
+        "elements => elements.map(el => el.dataset.sectionTopic)"
+    )
+    assert topics == REPORT_SECTIONS[mode], f"{mode} sections: {topics}"
+
+
+def check_report(page: Page, design: str, mode: str) -> None:
     """Use the section navigator and exercise a financing/rent slider by keyboard."""
     expect(page.locator("h1")).to_be_visible()
-    sections = page.locator("[data-section]")
-    assert sections.count() >= 10, "Report sections missing"
+    check_sections(page, mode)
     if design == "hybrid":
         nav = page.get_by_role("navigation", name="Explore report sections")
         nav.locator("summary").click()
         buttons = nav.get_by_role("button")
-        expected = page.locator("[data-section]:has([data-section-topic])").count()
-        expect(buttons).to_have_count(expected)
-        buttons.last.click()
-        assert page.evaluate("document.activeElement.tagName === 'H2'")
+        headings = page.locator(SECTION_SELECTOR)
+        expect(buttons).to_have_count(len(REPORT_SECTIONS[mode]))
+        for index, topic in enumerate(REPORT_SECTIONS[mode]):
+            heading = headings.nth(index)
+            number = heading.get_attribute("data-section-n")
+            button = nav.get_by_role("button", name=f"{number} {topic}", exact=True)
+            button.click()
+            expect(heading.locator("h2")).to_be_focused()
     else:
         expect(
             page.get_by_role("navigation", name="Explore report sections")
@@ -110,7 +162,7 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
-        for width in (375, 1280):
+        for width in (375, 390, 1280):
             for theme in ("light", "dark"):
                 context = browser.new_context(viewport={"width": width, "height": 900})
                 context.route("**/*", local_only)
@@ -135,14 +187,14 @@ def main() -> None:
                         ), "Route retained home scroll"
                 for mode in REPORTS:
                     page.goto(f"{args.url}/{mode}-report")
-                    check_report(page, args.design)
+                    check_report(page, args.design, mode)
                     check_layout(page, args.design)
                     page.evaluate("window.scrollTo(0, 0)")
                     page.screenshot(path=str(output / f"{mode}-{width}-{theme}.png"))
                     page.emulate_media(media="print")
                     if args.design == "hybrid":
                         expect(page.locator(".hy-report-contents")).to_be_hidden()
-                    assert page.locator("[data-section]").count() >= 10
+                    check_sections(page, mode)
                     page.emulate_media(media="screen")
                     print(f"PASS {args.design} {mode} {width} {theme}", flush=True)
                 for route in PAGES:

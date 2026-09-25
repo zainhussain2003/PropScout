@@ -10,9 +10,11 @@ export function HybridReportContents(): JSX.Element | null {
     if (design !== 'hybrid') return
     const root = ref.current?.closest('[data-report-document]') ?? document.body
     const scan = (): void => {
-      const next = [...root.querySelectorAll<HTMLElement>('[data-section]')].filter((el) =>
-        el.querySelector('[data-section-topic]')
-      )
+      // SectionHead metadata is shared by all four modes. Older personal and
+      // landlord sections do not carry the investor rail's data-section marker.
+      const next = [
+        ...root.querySelectorAll<HTMLElement>('[data-section-topic][data-section-n]'),
+      ].filter((el) => el.querySelector('h2'))
       setSections((current) =>
         current.length === next.length && current.every((el, i) => el === next[i]) ? current : next
       )
@@ -31,11 +33,13 @@ export function HybridReportContents(): JSX.Element | null {
         </summary>
         <ol>
           {sections.map((section) => (
-            <li key={section.dataset.section}>
+            <li key={`${section.dataset.sectionN}-${section.dataset.sectionTopic}`}>
               <button
                 type="button"
+                aria-label={`${section.dataset.sectionN} ${section.dataset.sectionTopic}`}
                 onClick={() => {
-                  section.scrollIntoView({ block: 'start', behavior: 'instant' })
+                  const target = section.closest('section') ?? section
+                  target.scrollIntoView({ block: 'start', behavior: 'instant' })
                   const heading = section.querySelector('h2')
                   if (heading) {
                     heading.tabIndex = -1
@@ -43,8 +47,8 @@ export function HybridReportContents(): JSX.Element | null {
                   }
                 }}
               >
-                <span className="mono">{section.dataset.section}</span>
-                {section.querySelector<HTMLElement>('[data-section-topic]')?.dataset.sectionTopic}
+                <span className="mono">{section.dataset.sectionN}</span>{' '}
+                {section.dataset.sectionTopic}
               </button>
             </li>
           ))}

@@ -1,6 +1,6 @@
 # Hybrid application migration
 
-Current builder baseline: `602dd812f19be260a0c0b54be70933173d868e16`, task `hybrid-ui-sitewide-final`.
+Current builder baseline: `4c557e9a9fe1d0fee383ac98a1f9bca6a72039bf`, task `hybrid-ui-closure`.
 Accepted homepage foundation: `cd4260a330b5ab4cbdd0038a3df37a4c8e618712`.
 Inventory originated before the foundation increment at `2c31ad8deda0d423738d1aed8223c78b296361ca`.
 Owner reference: `propscout-hybrid.html`, supplied with the 2026-09-15 implementation brief.
@@ -8,6 +8,13 @@ The prototype supplies presentation only. D-125, stored report modes, existing c
 missing-data rules and entitlements remain authoritative.
 
 ## Route and flow inventory
+
+**Review scope:** the coordinator-created candidate must be reviewed against
+`cd4260a330b5ab4cbdd0038a3df37a4c8e618712`, including the entire sitewide delta
+already in this baseline (37 files), plus the closure changes. Reviewing only the
+four repaired source/test files does not satisfy the owner request. The following
+inventory remains the sitewide review checklist. Historical execution tables below
+are retained; the closure evidence at the end is the current builder result.
 
 Paths below are relative to `apps/web/src`. “Shared” means the same React component and
 logic render in either design; only the hybrid presentation is scoped to the design flag.
@@ -241,3 +248,53 @@ remain unverified. The billing-copy owner question was raised again; absent an
 owner answer, the existing page remains unchanged. The coordinator must rerun the
 exact gates and obtain exact-candidate review and the policy's multi-segment human
 approval before accepting this migration.
+
+## Closure evidence — 2026-09-25
+
+Assigned lane: `C:/dev/.propscout-agent-worktrees/hybrid-ui-closure/codex`.
+The four requested files were inspected and copied from `hybrid-ui-final-review/codex`
+read-only. The browser script was then formatted locally. No other checkout was edited.
+
+- `HybridReportContents.tsx` discovers shared `SectionHead` number/topic metadata,
+  including personal/landlord sections without investor rail markers. Buttons have
+  explicit readable accessible names and scroll to the containing section, then focus
+  its heading. Rendering and calculations remain shared with the legacy design.
+- `HybridReportContents.test.tsx` adds unmarked-section and repeated-number coverage,
+  checking every exact label, scroll target and focused heading. Existing empty-state,
+  mutation, report-scoping and rollback assertions are retained.
+- `hybrid-surfaces.css` allows legal grid children to shrink, wraps long legal text and
+  card rows, and collapses the legal grid/TOC on mobile. All rules are hybrid-scoped;
+  no legal content is hidden or removed.
+- `check_hybrid_ui.py` requires the ordered demo topic inventories: investor 12,
+  tenant 12, personal 8, landlord 12. It checks every navigator label and focus target,
+  preserves the inventory in print, and adds 390px alongside 375/1280px in both themes.
+  These are demo inventories; live sections can differ with available evidence.
+
+| Fresh check | Observed result |
+| --- | --- |
+| Configured web/API typecheck and lint | All four passed |
+| Configured full web tests and focused navigator test | Blocked before collection by esbuild `spawn EPERM`; no assertions executed |
+| Configured API tests | Blocked by Jest worker `spawn EPERM` |
+| API tests with `--runInBand` | 39 suites passed; 503 passed, 2 existing skips |
+| Configured calc-engine tests | 469 passed, 2 existing skips, 41 warnings |
+| Configured scraper tests | 212 passed, 12 warnings |
+| Configured Black 24.8.0 CLI | No output/completion; interrupted, not a pass |
+| Supplemental system Black 26.5.1 in-process comparison | All 99 Python files under the configured roots match after formatting the script; not a substitute for the configured gate |
+| Configured Flake8 | Worker pipe creation blocked by `WinError 5` |
+| Flake8 with `--jobs=1` | Passed |
+| Production web build | TypeScript completed; Vite blocked by esbuild `spawn EPERM` |
+| Local Vite server | Blocked by esbuild `spawn EPERM` |
+| Local-only Playwright runner | Transport startup blocked by `WinError 5`, before browser launch |
+| `git diff --check` | Passed |
+
+All ten configured gates, production build and local-only browser runner were attempted.
+No browser assertions, screenshots, authenticated scenarios or full PDF checks executed
+in this lane. Both themes, rollback, mobile overflow and the new unit test still require
+successful execution by the coordinator in an environment that permits test processes.
+No tests were weakened, snapshots updated, or protected files edited. The supplied
+vetted changes are treated as the approved closure scope; runtime success is not assumed.
+
+The existing billing-copy conflict described above remains unresolved and unchanged.
+Exact-candidate full-site reviewer acceptance and the owner's multi-segment human gate
+remain required. The builder created no commit and performed no promotion, push, merge,
+deployment, migration, production access or credential change.

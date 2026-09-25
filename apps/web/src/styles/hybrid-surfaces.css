@@ -278,6 +278,18 @@ html[data-design='hybrid'] .legal-toc {
   padding: var(--space-4);
 }
 
+html[data-design='hybrid'] .legal-grid > * {
+  min-width: 0;
+}
+
+html[data-design='hybrid'] .legal-body {
+  overflow-wrap: anywhere;
+}
+
+html[data-design='hybrid'] .legal-body .card > .row {
+  flex-wrap: wrap;
+}
+
 html[data-design='hybrid'] .hy-dialog-backdrop > div {
   border-radius: var(--radius-lg) !important;
   border-top: var(--space-1) solid var(--accent) !important;
@@ -290,6 +302,12 @@ html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
 }
 
 @media (max-width: 900px) {
+  html[data-design='hybrid'] .legal-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html[data-design='hybrid'] .legal-toc {
+    position: static !important;
+  }
   html[data-design='hybrid'] .hy-account-grid {
     grid-template-columns: minmax(0, 1fr) !important;
   }
