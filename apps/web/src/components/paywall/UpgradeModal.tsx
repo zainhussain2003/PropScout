@@ -134,6 +134,7 @@ export function UpgradeModal({
 
   return (
     <div
+      className="hy-dialog-backdrop"
       data-testid="upgrade-modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()

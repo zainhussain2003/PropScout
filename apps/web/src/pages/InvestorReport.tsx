@@ -1,3 +1,4 @@
+import { useAppDesign } from '../hooks/useAppDesign'
 /**
  * InvestorReport — Report A (investor purchase) page.
  *
@@ -87,8 +88,10 @@ function getDemoDataset(): {
 // ── Loading state ──────────────────────────────────────────────────────────────
 
 function LoadingState(): JSX.Element {
+  const design = useAppDesign()
   return (
     <div
+      className={design === 'hybrid' ? 'hy-report-state' : undefined}
       style={{
         minHeight: '60vh',
         display: 'flex',
@@ -136,8 +139,10 @@ interface ErrorStateProps {
 }
 
 function ErrorState({ message, onRetry }: ErrorStateProps): JSX.Element {
+  const design = useAppDesign()
   return (
     <div
+      className={design === 'hybrid' ? 'hy-report-state' : undefined}
       style={{
         minHeight: '60vh',
         display: 'flex',
@@ -252,6 +257,7 @@ export function InvestorReport({
   analysis: realAnalysis,
   listing: realListing,
 }: InvestorReportProps): JSX.Element {
+  const design = useAppDesign()
   const { openUpgradeModal } = usePaywall()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
   const { dark, toggle: handleToggleDark } = useTheme()
@@ -286,6 +292,7 @@ export function InvestorReport({
 
   return (
     <div
+      data-report-document={design === 'hybrid' ? '' : undefined}
       className="report-page-mobile-padding"
       style={{ minHeight: '100vh', background: 'var(--bg)' }}
     >

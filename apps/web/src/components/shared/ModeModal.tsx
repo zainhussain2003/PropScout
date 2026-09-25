@@ -505,6 +505,7 @@ export function ModeModal({
 
   return (
     <div
+      className="hy-dialog-backdrop"
       role="dialog"
       aria-modal="true"
       aria-label={kind === 'sale' ? 'Choose your report type' : 'Choose your report type'}

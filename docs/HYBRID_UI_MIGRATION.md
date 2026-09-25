@@ -1,6 +1,7 @@
 # Hybrid application migration
 
-Baseline: `2c31ad8deda0d423738d1aed8223c78b296361ca`. Inventory taken before implementation.
+Current baseline: `cd4260a330b5ab4cbdd0038a3df37a4c8e618712`, task `hybrid-ui-sitewide-final`.
+Inventory originated before the foundation increment at `2c31ad8deda0d423738d1aed8223c78b296361ca`.
 Owner reference: `propscout-hybrid.html`, supplied with the 2026-09-15 implementation brief.
 The prototype supplies presentation only. D-125, stored report modes, existing calculations,
 missing-data rules and entitlements remain authoritative.
@@ -17,11 +18,11 @@ logic render in either design; only the hybrid presentation is scoped to the des
 | `ReportsSection`, `ReportShowcase`, `ModePreview`                       | Hybrid grouped rental/sale samples and existing detailed showcase  | Samples clearly separate from live reports; links go to the four existing demo URLs                                                                                       |
 | Coverage, FounderNote, LandingSunScout, How, Pricing, FAQ, CTA sections | Retained in scrollable homepage                                    | Sources, seasonal controls, founder note, Free / CAD $10 monthly Pro, FAQ and actions retained                                                                            |
 | `/analyzing?token=&mode=` → `pages/analyzing`                           | Shared flow with scoped surfaces                                   | Real token/mode, progress, timeout, retry, missing input, anonymous/auth/quota gates; analyzing tests                                                                     |
-| `/investor-report` → `InvestorReport` + `DemoNotice`                    | Shared complete sample report                                      | Financing, metrics, comps, cash-to-close, OSFI, flags, equity/exit, neighbourhood, SunScout, STR, diligence, sources; PR4 + parity tests                                  |
-| `/tenant-report` → `TenantReport` + `DemoNotice`                        | Shared complete sample report                                      | Rent positioning, accuracy, listed/reality, negotiation, monthly costs, inclusions, commute, schools, sun, comps map, unit detail, checklist, verdict; PR5 + parity tests |
-| `/personal-report` → `PersonalBuyerPage` + `DemoNotice`                 | Shared complete sample report                                      | Monthly outflow, value, sales, schools, neighbourhood, sun, risks, checklist, conversion; PR6 tests                                                                       |
-| `/landlord-report` → `LandlordPage` + `DemoNotice`                      | Shared complete sample report                                      | Rent positioning, investment metrics, financing, costs, risks, market, sun, STR, checklist; PR6 tests                                                                     |
-| `/r/:token` → `ReportPage`, investor mode                               | Shared saved-report renderer                                       | Fetches by token; authenticates owner edits; full analysis, provenance, sliders, management toggle, overrides, facade, ledger; ReportPage tests                           |
+| `/investor-report` → `InvestorReport` + `DemoNotice`                    | Shared report + hybrid hero, chapters and section navigator        | Financing, metrics, comps, cash-to-close, OSFI, flags, equity/exit, neighbourhood, SunScout, STR, diligence, sources; PR4 + parity tests                                  |
+| `/tenant-report` → `TenantReport` + `DemoNotice`                        | Shared report + hybrid hero, chapters and section navigator        | Rent positioning, accuracy, listed/reality, negotiation, monthly costs, inclusions, commute, schools, sun, comps map, unit detail, checklist, verdict; PR5 + parity tests |
+| `/personal-report` → `PersonalBuyerPage` + `DemoNotice`                 | Shared report + hybrid hero, chapters and section navigator        | Monthly outflow, value, sales, schools, neighbourhood, sun, risks, checklist, conversion; PR6 tests                                                                       |
+| `/landlord-report` → `LandlordPage` + `DemoNotice`                      | Shared report + hybrid hero, chapters and section navigator        | Rent positioning, investment metrics, financing, costs, risks, market, sun, STR, checklist; PR6 tests                                                                     |
+| `/r/:token` → `ReportPage`, investor mode                               | Shared saved renderer + hybrid hero and chapters                   | Fetches by token; authenticates owner edits; full analysis, provenance, sliders, management toggle, overrides, facade, ledger; ReportPage tests                           |
 | `/r/:token`, landlord mode                                              | Shared `ReportPage` investment renderer                            | Owner value / mortgage inputs, re-analysis and rent control; no invented purchase price or score                                                                          |
 | `/r/:token`, tenant mode                                                | Shared `TenantReport` with real listing/analysis                   | No fixture fallback for missing live facts; provisional score and comp availability retained                                                                              |
 | `/r/:token`, personal mode                                              | Shared `PersonalBuyerPage` with real listing/analysis              | Live HomeScore suppression, comp provenance and missing sections retained                                                                                                 |
@@ -30,12 +31,12 @@ logic render in either design; only the hybrid presentation is scoped to the des
 | `/auth/reset` → `PasswordResetRequestPage`                              | Shared page                                                        | Email validation, submit, pending, success/error; PR7 tests                                                                                                               |
 | `/auth/reset/confirm` → `PasswordResetConfirmPage`                      | Shared page                                                        | Recovery session, password validation, pending/error; PR7 tests                                                                                                           |
 | `/auth/verified` → `EmailVerifiedPage`                                  | Shared page                                                        | Verification status; PR7 tests                                                                                                                                            |
-| `/welcome-to-pro` → `StripeWelcomePage`                                 | Shared page                                                        | Actual billing refresh, polling/error; no assumed activation; PR7 tests                                                                                                   |
+| `/welcome-to-pro` → `StripeWelcomePage`                                 | Shared page                                                        | Existing return actions retained; activation copy conflicts with D-125 (see open decision below)                                                                          |
 | `/checkout/cancelled` → `StripeCancelledPage`                           | Shared page                                                        | Cancelled checkout and return actions; PR7 tests                                                                                                                          |
 | `/methodology` → `MethodologyPage`                                      | Shared page                                                        | Actual model weights, availability and limitations                                                                                                                        |
 | `/privacy`, `/terms` → pages + `legal/LegalShell`                       | Shared pages                                                       | Legal content, table of contents and anchors                                                                                                                              |
 | `*` → `NotFoundPage`                                                    | Shared page                                                        | Unknown routes and recovery action; PR7 tests                                                                                                                             |
-| `/print-report` → `PrintReportPage`                                     | Shared dedicated print renderer                                    | Supplied payload, ready/error status and paid export contract; PrintReportPage tests                                                                                      |
+| `/print-report` → `PrintReportPage`                                     | Shared print renderer + scoped print styling                       | Supplied payload, ready/error status and paid export contract; PrintReportPage tests                                                                                      |
 | `MagicLinkSentPage`                                                     | Retained component (no standalone route at baseline)               | Do not invent a route for an internal auth state                                                                                                                          |
 
 ## Shared components and states
@@ -69,70 +70,134 @@ Original `styles/tokens.css` and `styles/global.css` remain intact. Every added 
 is scoped under `html[data-design='hybrid']`; legacy selects the original render branches.
 The same shared report components render both designs to avoid copying business logic.
 
-## Verification and remaining work
+## Completion increment: implemented presentation
 
-This increment adds the developer design boundary, scoped hybrid tokens, a composed hybrid
-homepage hero, rental/sale sample navigation, detailed tenant preview and accessible mobile
-section navigation. Existing report, account, auth, billing, legal and print renderers remain
-shared and receive scoped palette/typography treatment. The verdict block stays dark in both
-themes. This is a foundation/homepage increment, **not a claim of a completed visual migration**:
-detailed reference-fidelity review and any resulting per-page layout work remain outstanding.
+`styles/hybrid-surfaces.css` supplies component composition rather than only token
+changes. Every selector is scoped to hybrid; original token/global styles are unchanged.
 
-New source locations: `components/hybrid/` (provider, nav, hero intro, report chooser, tests),
-`hooks/useAppDesign.ts`, `lib/appDesign.ts` and its tests, `types/design.ts`, and
-`styles/hybrid.css`, `styles/hybrid-tokens.css`, `styles/hybridContrast.test.ts`. Structure is
-documented here because the canonical `CLAUDE.md` structure is protected in this task.
+- All four hero implementations place property identity before imagery and use a dark
+  verdict panel. Tenant, personal and demo-landlord verdict text sits beside a medium
+  gauge; legacy retains its large gauge. Source disclosures and missing facts remain.
+- `HybridReportContents` derives its disclosure navigator from actual rendered sections,
+  including empty sections and asynchronous updates. Choosing a section scrolls and moves
+  keyboard focus to its heading. No invented perspective switch or second section list.
+- Shared chapter headings, rules and evidence spacing form a continuous report document.
+  Only hybrid hides the old margin rail, replacing it with the in-document navigator.
+- Account gets a contained sidebar, heading and mobile stacking. Auth, billing return and
+  404 routes get `HybridUtilityShell`/`HybridUtilityLayout`, with original state components
+  and handlers inside. Legacy renders the original unframed routes.
+- StubState/BlockState gain left-aligned recovery cards; analyzing and saved report
+  loading/error wrappers gain contained surfaces. Legal and methodology get reading
+  layouts. Dialogs, bottom sheets, teasers and quota gates share hybrid shapes and upright
+  typography. These changes preserve logic, entitlements and actions.
+- Print overrides use paper colours in either theme, remove the navigator, make heroes
+  static and keep section headings with content. The print payload contract is unchanged;
+  missing payloads keep their original message in a styled status container.
+- `RouteScroll` starts new pathnames at the top. Hash destinations take precedence,
+  including delayed anchors; query-only navigation retains scroll. This correction also
+  applies to legacy without changing its visual layout.
 
-### Builder execution, 2026-09-24
+Supporting page inventory rows above refer to shared **logic**, with these scoped layouts.
+`VITE_APP_DESIGN=legacy` continues to select the original visual treatment.
 
-| Check                                                     | Result                                                                                                                                        |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web / API typecheck                                       | Passed                                                                                                                                        |
-| Web / API lint                                            | Passed                                                                                                                                        |
-| Web focused tests (design + landing)                      | Blocked before collection: esbuild `spawn EPERM`                                                                                              |
-| Complete web suite, including PR4–PR8 configured includes | Attempted; same startup block; no assertions executed                                                                                         |
-| API configured test command                               | Worker startup blocked (`spawn EPERM`)                                                                                                        |
-| API tests with `--runInBand`                              | 39 suites passed; 503 passed, 2 existing skips                                                                                                |
-| Calc engine                                               | 469 passed, 2 existing skips (network checks), 41 warnings                                                                                    |
-| Scrapers                                                  | 212 passed, 12 warnings                                                                                                                       |
-| Python lint                                               | Configured parallel run denied Windows pipe creation; `--jobs=1` passed                                                                       |
-| Python format                                             | Configured run and `--workers 1` produced no result and were interrupted; unverified                                                          |
-| Web production build                                      | TypeScript stage passed; Vite/esbuild startup blocked (`spawn EPERM`)                                                                         |
-| Playwright / browser E2E                                  | Startup failed on Windows pipe creation (`WinError 5`); zero browser scenarios executed                                                       |
-| Hybrid contrast calculation                               | Direct offline check: minimum text/status ratio 4.76 light / 6.22 dark on page/card/elevated surfaces; focused Vitest tests added but blocked |
-| Diff whitespace                                           | Passed                                                                                                                                        |
+## Fresh builder evidence - 2026-09-25
 
-Existing API error-path tests emit expected mocked service errors despite the passing result.
-Neither the blocked commands nor existing skips are counted as passes. No tests were changed,
-skipped or removed to obtain these results; no snapshots were regenerated.
+These commands ran in the assigned short-path worktree at
+`C:/dev/.propscout-agent-worktrees/hybrid-ui-sitewide-final/codex`. The previous draft was
+read and copied only for the listed source/docs paths; its checkout was not modified.
+Results below are fresh runs, replacing the previous builder execution table. There is no candidate SHA yet:
+the coordinator owns committing and exact-candidate review.
 
-`scripts/smoke-test.mjs` was inspected but not executed: it writes database records using a
-service-role credential and requires a configured API, engine and isolated database. No such
-test environment was supplied; this turn does not authorize production access. The coordinator
-loop's own E2E suite is for coordinator changes, not this UI increment, and was not run.
+| Check                                                                                                             | Observed result                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web / API typecheck                                                                                               | Passed                                                                                                                                      |
+| Web / API lint                                                                                                    | Passed                                                                                                                                      |
+| Configured full web tests (including PR4-PR8)                                                                     | Failed before collection: Vite config bundling -> esbuild `spawn EPERM`; zero assertions                                                    |
+| Focused RouteScroll, HybridReportContents, HybridReportPresentation, HybridUtilityShell and existing hybrid tests | Same startup failure; assertions unverified                                                                                                 |
+| Configured API tests                                                                                              | Jest worker `spawn EPERM` before collection                                                                                                 |
+| API tests with `--runInBand`                                                                                      | 39 suites; 503 passed, 2 existing skips; expected mocked error-path logging                                                                 |
+| Calc engine                                                                                                       | 469 passed, 2 existing skips, 41 warnings                                                                                                   |
+| Scrapers                                                                                                          | 212 passed, 12 warnings                                                                                                                     |
+| Configured Python lint                                                                                            | Multiprocessing pipe creation failed: `PermissionError: [WinError 5]`                                                                       |
+| Python lint with `--jobs=1`                                                                                       | Passed                                                                                                                                      |
+| Configured Python format                                                                                          | No result; interrupted. Unverified, not passed                                                                                              |
+| In-process Black formatting check on the configured source roots                                                  | No result; interrupted. Unverified                                                                                                          |
+| Production build                                                                                                  | TypeScript stage passed; esbuild `spawn EPERM` before bundling                                                                              |
+| Local Vite dev server                                                                                             | esbuild `spawn EPERM` before server startup                                                                                                 |
+| `scripts/check_hybrid_ui.py`                                                                                      | Playwright driver failed before Chromium launch: Windows pipe creation `PermissionError: [WinError 5]`; **zero browser scenarios executed** |
 
-Still required: successful full Vitest/build/format gates, both-design browser runs at desktop
-and mobile widths, keyboard/modal/anchor checks, full manual checklist execution, saved-report
-and print visual review, and multi-segment owner review. Unit tests cannot establish CSS layout
-or browser behavior. No deployment, migration, credentials change, commit or promotion occurred.
+Commands used: `npm.cmd run typecheck/lint --workspace=apps/web` and `apps/api`;
+`npm.cmd test --workspace=apps/web`; `npm.cmd test --workspace=apps/api` (then with
+`-- --runInBand`); `.venv/Scripts/python.exe -m pytest services/calc-engine/ -q` and
+`services/scrapers/ -q`; configured Black/Flake8 roots `services/calc-engine services/scrapers
+scripts`; `npm.cmd run build --workspace=apps/web`; `npm.cmd run dev --workspace=apps/web
+-- --host 127.0.0.1`; `.venv/Scripts/python.exe scripts/check_hybrid_ui.py`.
 
-The migration is not complete until exact-candidate review, configured gates, browser coverage and the final
-multi-segment human gate are satisfied. Existing manual checklists: `UITESTING.md`, PR4
-`chrome_ui_tests.md`, PR5 `PR5_chrome_ui_tests_FINAL.md`, PR6 `CHROME_UI_TESTS.md`, PR7
-`PR7_chrome_ui_tests.md`, PR8 responsive tests and `docs/TESTING.md`. Manual checklists are
-not automated browser tests and unit success does not mark them executed.
+Web typecheck and lint were rerun successfully after the final source edits.
+Prettier formatted the changed web sources. `git diff --check` passed.
+The permission profile disallows escalation. No tests/configuration were weakened,
+no snapshots were regenerated, and startup failures are not counted as passes.
 
-### Coordinator feedback follow-up, 2026-09-24
+## Coverage and browser handoff
 
-Baseline `e3da7e6056785fc801ff6f6dabd7210eb1236dee` already contains the foundation above.
-The implementation brief's round-2 feedback identifies an ambiguous rollback assertion:
-both the legacy header and pricing section contain a `Start free` button. The test now
-queries the banner's exact-name button, checks visibility, and clicks it to verify the
-existing sign-in dialog opens. No application behavior or test requirement is changed.
+New focused tests cover route reset, hash/query preservation, deferred and malformed
+anchors, actual section discovery, empty sections, focus, report scoping, recovery
+navigation, theme controls and rollback. `HybridReportPresentation.test.tsx` also checks
+that switching designs preserves the property heading and complete verdict content.
+Snapshot-covered report components add hybrid classes only in hybrid mode, keeping the
+legacy DOM stable. Existing snapshots were neither regenerated nor changed. Existing PR4-PR8, parity, ownership, print and
+calculation tests are unchanged. No numeric model changed, so existing numeric sanity
+bounds remain applicable.
 
-Web typecheck, web lint and `git diff --check` passed for this follow-up. The focused
-`hybrid.test.tsx`, `appDesign.test.ts` and `hybridContrast.test.ts` Vitest command was
-attempted but failed before collection with esbuild `spawn EPERM`; no assertions ran.
-Per the brief's follow-up instruction, the coordinator must rerun every configured gate.
-No new browser scenarios were executed, and all remaining migration and human-review
-requirements above remain open.
+The additional local-only browser check uses the existing Python Playwright dependency.
+Start the web dev server, then run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_hybrid_ui.py
+# Restart Vite with VITE_APP_DESIGN=legacy, then:
+.\.venv\Scripts\python.exe scripts/check_hybrid_ui.py --design legacy
+```
+
+It blocks external requests and simulates unavailable APIs. It covers 375/1280 widths,
+both themes, four demos, upright type, section focus, slider keyboard input, scrolled-home
+navigation to each of the four samples, anchors, print navigator hiding and supporting-route layout. Screenshots go
+to a temporary directory. The script has **not reached browser execution** in this turn.
+It does not replace authenticated account, saved-report fixtures, checkout or PDF-service
+tests. Direct `/print-report` without a payload checks only the empty state.
+
+Manual sources inspected: `UITESTING.md`, PR4 `chrome_ui_tests.md`, PR5
+`PR5_chrome_ui_tests_FINAL.md`, PR6 `CHROME_UI_TESTS.md`, PR7 `PR7_chrome_ui_tests.md`,
+PR8 responsive Vitest coverage and `docs/TESTING.md`. No browser checkboxes are marked
+executed. Database-writing `scripts/smoke-test.mjs` was not run: no isolated service
+fixture or credential environment was supplied, and production access is not authorized.
+
+## Open owner decision and remaining acceptance
+
+Baseline `StripeWelcomePage` asserts Pro activation and advertises portfolio tracking and
+SunScout 3D. D-125 defers planned features and requires verified billing state. Billing
+copy/logic remains unchanged pending the requested owner decision under AGENTS.md; only
+its presentation shell changed. The owner question is pending; no billing assertion or
+behavior has been changed. Proposed resolution: neutral checkout-return copy pointing
+to the verified account plan, without changing billing logic.
+
+This is a broader presentation implementation, **not a verified completed migration**.
+Still required: successful configured web/build/format gates; execution and visual review
+of mobile, desktop, both-theme and rollback screenshots; all four saved-report fixtures;
+authenticated account states; dialog Tab/Escape/focus checks; and actual PDF review.
+Browser verification may identify additional layout work. Source inspection is not visual proof.
+
+Final human review is mandatory under `docs/agent-loop/POLICY.md`: "Changes spanning
+multiple product segments where failure has broad blast radius." Exact-candidate reviewer
+acceptance and all configured gates are also required. No commit, push, merge, deploy,
+migration, credential change or owner-checkout edit was made by this builder.
+
+## Added source inventory
+
+- `apps/web/src/components/hybrid/HybridReportContents.tsx` and its test: rendered section navigation.
+- `apps/web/src/components/hybrid/HybridReportPresentation.test.tsx`: design-switch parity.
+- `apps/web/src/components/hybrid/HybridUtilityShell.tsx`, `HybridUtilityLayout.tsx` and shell test: recovery-page frame.
+- `apps/web/src/components/shared/RouteScroll.tsx` and its test: path and anchor scroll handling.
+- `apps/web/src/styles/hybrid-surfaces.css`: scoped report, utility, dialog and print composition.
+- `scripts/check_hybrid_ui.py`: offline browser acceptance runner.
+
+The canonical structure file `CLAUDE.md` is protected, so new locations are recorded here.

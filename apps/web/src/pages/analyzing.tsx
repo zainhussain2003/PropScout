@@ -380,7 +380,10 @@ export function AnalyzingPage(): JSX.Element {
     return (
       <div>
         <MiniNav onCancel={handleCancel} />
-        <main className="container" style={{ paddingTop: 80, paddingBottom: 120 }}>
+        <main
+          className="container hy-analysis-stage"
+          style={{ paddingTop: 80, paddingBottom: 120 }}
+        >
           <div
             style={{
               maxWidth: 520,
@@ -433,7 +436,10 @@ export function AnalyzingPage(): JSX.Element {
     return (
       <div>
         <MiniNav onCancel={handleCancel} />
-        <main className="container" style={{ paddingTop: 80, paddingBottom: 120 }}>
+        <main
+          className="container hy-analysis-stage"
+          style={{ paddingTop: 80, paddingBottom: 120 }}
+        >
           <div
             style={{
               maxWidth: 520,
@@ -531,7 +537,7 @@ export function AnalyzingPage(): JSX.Element {
     <div>
       <MiniNav onCancel={handleCancel} />
 
-      <main className="container" style={{ paddingTop: 80, paddingBottom: 120 }}>
+      <main className="container hy-analysis-stage" style={{ paddingTop: 80, paddingBottom: 120 }}>
         <div
           style={{
             maxWidth: 920,

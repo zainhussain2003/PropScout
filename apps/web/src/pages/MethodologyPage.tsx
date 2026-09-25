@@ -3,7 +3,7 @@ import { Footer } from '../components/shared/Footer'
 export function MethodologyPage(): JSX.Element {
   return (
     <>
-      <main className="container col gap-24">
+      <main className="container col gap-24 hy-methodology">
         <a href="/">Back to PropScout</a>
         <h1>How to read a PropScout report</h1>
         <p>

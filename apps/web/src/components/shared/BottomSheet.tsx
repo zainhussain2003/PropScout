@@ -41,6 +41,7 @@ export function BottomSheet({
 
   return (
     <div
+      className="hy-bottom-sheet"
       role="dialog"
       aria-modal="true"
       style={{

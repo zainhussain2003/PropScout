@@ -963,3 +963,19 @@ See [LAUNCH_REGRESSION.md](LAUNCH_REGRESSION.md) for the local regression eviden
 reproduction commands and outstanding staging account, billing, report ownership,
 quota, PDF and ingestion acceptance checks. Local passing suites do not substitute
 for that staging run.
+
+## Hybrid sitewide acceptance (2026-09-25)
+
+- Automated (added, execution blocked): RouteScroll, HybridReportContents and
+  HybridUtilityShell and HybridReportPresentation tests cover path/hash/query navigation, delayed anchors, actual
+  section focus, theme, property/verdict parity and rollback.
+- Combined: start a local web server and run `scripts/check_hybrid_ui.py` for both
+  design builds. Review captured screenshots; this uses offline API failures.
+- Manual: at 375/1280 pixels in both themes, open all four saved-report fixture modes,
+  confirm sections/provenance, edit allowed financing/owner inputs, exercise missing/error
+  states, modal Tab/Escape/focus restoration, account tabs, billing returns, legal anchors
+  and printed output. Verify no hybrid italic emphasis and intact legacy presentation.
+- Manual regression: scroll home to Reports and open each sample; verify top-of-route.
+  Follow `/#pricing` and `/terms#not-advice` and verify their section destinations.
+- See HYBRID_UI_MIGRATION.md for executed evidence. Browser scenarios remain unexecuted
+  in this builder environment; exact-candidate and multi-segment human review are pending.

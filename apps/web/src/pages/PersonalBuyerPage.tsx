@@ -1,3 +1,5 @@
+import { useAppDesign } from '../hooks/useAppDesign'
+import { HybridReportContents } from '../components/hybrid/HybridReportContents'
 /**
  * PersonalBuyerPage — Report B (personal-use purchase).
  *
@@ -100,6 +102,7 @@ function PersonalPropertyHero({
   mapCenter,
   scoreSuppressed = false,
 }: PersonalHeroProps): JSX.Element {
+  const design = useAppDesign()
   const verdictColor =
     score.verdict.tone === 'pass'
       ? 'var(--pass)'
@@ -108,7 +111,11 @@ function PersonalPropertyHero({
         : 'var(--fail)'
 
   return (
-    <section className="container" style={{ paddingTop: 56, paddingBottom: 48 }}>
+    <section
+      className={design === 'hybrid' ? 'container hy-property-hero' : 'container'}
+      style={{ paddingTop: 56, paddingBottom: 48 }}
+    >
+      <HybridReportContents />
       {/* Breadcrumb strip */}
       <div className="row gap-12" style={{ marginBottom: 28, color: 'var(--muted)', fontSize: 13 }}>
         <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -139,7 +146,11 @@ function PersonalPropertyHero({
       </div>
 
       <div
-        className="grid-1col-mobile hero-score-first"
+        className={
+          design === 'hybrid'
+            ? 'grid-1col-mobile hero-score-first hy-property-grid'
+            : 'grid-1col-mobile hero-score-first'
+        }
         style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr',
@@ -148,7 +159,7 @@ function PersonalPropertyHero({
         }}
       >
         {/* LEFT — photos + chips + address + meta */}
-        <div className="col" style={{ gap: 28 }}>
+        <div className={design === 'hybrid' ? 'col hy-property-facts' : 'col'} style={{ gap: 28 }}>
           <ListingVisual
             photoUrls={photoUrls}
             address={`${property.addressLine1}, ${property.addressLine2}`}
@@ -156,7 +167,10 @@ function PersonalPropertyHero({
             center={mapCenter}
           />
 
-          <div className="col" style={{ gap: 18 }}>
+          <div
+            className={design === 'hybrid' ? 'col hy-property-identity' : 'col'}
+            style={{ gap: 18 }}
+          >
             <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
               {property.chips.map((c, i) => (
                 <Chip key={i}>{c}</Chip>
@@ -248,18 +262,24 @@ function PersonalPropertyHero({
             </div>
           ) : (
             <>
-              <div className="col" style={{ alignItems: 'center', gap: 8 }}>
+              <div
+                className={design === 'hybrid' ? 'col hy-score-gauge' : 'col'}
+                style={{ alignItems: 'center', gap: 8 }}
+              >
                 <DealScore
                   score={score.total}
                   max={100}
-                  size="lg"
+                  size={design === 'hybrid' ? 'md' : 'lg'}
                   label="Home score / 100"
                   showVerdict
                   animate
                 />
               </div>
 
-              <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+              <div
+                className={design === 'hybrid' ? 'col hy-score-summary' : 'col'}
+                style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}
+              >
                 <div
                   className="mono"
                   style={{
@@ -1535,6 +1555,7 @@ export function PersonalBuyerPage({
   listing: realListing,
   canEdit = false,
 }: PersonalBuyerPageProps): JSX.Element {
+  const design = useAppDesign()
   const pdf = usePdfExport(realAnalysis?.token ?? null)
   const { dark, toggle: toggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
@@ -1605,7 +1626,10 @@ export function PersonalBuyerPage({
     : '248-mountcrest-burlington'
 
   return (
-    <div className="report-page-mobile-padding">
+    <div
+      data-report-document={design === 'hybrid' ? '' : undefined}
+      className="report-page-mobile-padding"
+    >
       <Nav
         variant="report"
         reportLabel="Personal buyer report"

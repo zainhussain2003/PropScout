@@ -188,6 +188,7 @@ function toFinancingInputs(metrics: Analysis['metrics'], listing: ListingData): 
 function LoadingState(): JSX.Element {
   return (
     <div
+      className="hy-report-state"
       style={{
         minHeight: '60vh',
         display: 'flex',
@@ -218,6 +219,7 @@ function LoadingState(): JSX.Element {
 function NotFoundState(): JSX.Element {
   return (
     <div
+      className="hy-report-state"
       style={{
         minHeight: '60vh',
         display: 'flex',
@@ -260,6 +262,7 @@ function NotFoundState(): JSX.Element {
 function LoadFailedState(): JSX.Element {
   return (
     <div
+      className="hy-report-state"
       style={{
         minHeight: '60vh',
         display: 'flex',
@@ -377,7 +380,7 @@ function TenantReportContent({
   const amberFlags = analysis.riskFlags.filter((f) => f.severity === 'amber')
 
   return (
-    <main>
+    <main data-report-document>
       <div style={{ background: 'var(--ink)', padding: '40px 0 32px', marginBottom: 24 }}>
         <div className="container">
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -644,7 +647,7 @@ function InvestorReportContent({
   }
 
   return (
-    <main>
+    <main data-report-document>
       <PropertyHero
         listing={listingData}
         score={dealScore}

@@ -1,3 +1,4 @@
+import { useAppDesign } from '../../hooks/useAppDesign'
 /**
  * UpgradeCard — the consistent upgrade pitch card used inside every paywall.
  * Contains ProBadge, serif headline, optional sub-copy, two action buttons,
@@ -33,9 +34,10 @@ export function UpgradeCard({
   dense,
   dark,
 }: UpgradeCardProps): JSX.Element {
+  const design = useAppDesign()
   return (
     <div
-      className="card col"
+      className={`card col${dark && design === 'hybrid' ? ' hy-inverse-surface' : ''}`}
       style={{
         padding: size === 'sm' ? '20px 22px' : '28px 30px',
         gap: dense ? 12 : 16,

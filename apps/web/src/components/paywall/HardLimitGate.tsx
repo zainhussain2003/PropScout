@@ -55,6 +55,7 @@ export function HardLimitGate({
       }}
     >
       <div
+        className="hy-inverse-surface"
         style={{
           width: '100%',
           maxWidth: 620,
