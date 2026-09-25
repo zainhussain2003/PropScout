@@ -779,6 +779,18 @@ body::-webkit-scrollbar-thumb {
 
 /* ── Legal pages — body typography ──────────────────────────── */
 
+.legal-grid > * {
+  min-width: 0;
+}
+
+.legal-body {
+  overflow-wrap: anywhere;
+}
+
+.legal-body .card > .row {
+  flex-wrap: wrap;
+}
+
 .legal-body-content p {
   margin: 0 0 16px;
   color: var(--ink-2);
@@ -831,7 +843,7 @@ body::-webkit-scrollbar-thumb {
 @media (max-width: 480px) {
   /* Collapse two-column grid to single column */
   .legal-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   /* Hide TOC sidebar on small screens */

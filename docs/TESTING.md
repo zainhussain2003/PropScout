@@ -999,3 +999,21 @@ Fresh closure results and process-permission blockers are recorded in
 [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md#closure-evidence--2026-09-25).
 The new unit test and browser assertions could not execute in the builder sandbox.
 Reviewer scope is the full candidate delta since `cd4260a`, not just this repair.
+
+### Browser-fix regressions (hybrid-ui-browser-fixes)
+
+- Automated: `RouteScroll.test.tsx` covers fresh hash navigation, late destination
+  movement, stable document coordinates, delayed sections, malformed hashes,
+  cancellation on wheel/touch/pointer/keyboard input, route cleanup and the bounded
+  five-second correction window. Query-only navigation still preserves scroll.
+- Combined: run the original, unmodified `scripts/check_hybrid_ui.py` against local
+  hybrid and legacy servers. Its pricing viewport assertion and document overflow
+  checks must pass at 375/390/1280px in light/dark. Both legal routes are included.
+- Manual: reload `/#pricing` at 375px, wait at least 1.2 seconds and confirm Pricing
+  remains visible. Repeat with delayed assets; scroll away during loading using
+  wheel, touch, keyboard and scrollbar drag and confirm no forced return. Verify
+  desktop Pricing navigation still works. On legacy privacy/terms, verify wrapped
+  contact text and footer actions remain readable and usable without clipping.
+- Execution results and sandbox blockers are recorded in the browser-fix evidence
+  section of [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). These additions are
+  repair coverage, not new scoring, data, authentication or billing functionality.

@@ -1,6 +1,6 @@
 # Hybrid application migration
 
-Current builder baseline: `4c557e9a9fe1d0fee383ac98a1f9bca6a72039bf`, task `hybrid-ui-closure`.
+Current builder baseline: `8979c235ba623978dcf37fc7b0555ed5a2de2109`, task `hybrid-ui-browser-fixes`.
 Accepted homepage foundation: `cd4260a330b5ab4cbdd0038a3df37a4c8e618712`.
 Inventory originated before the foundation increment at `2c31ad8deda0d423738d1aed8223c78b296361ca`.
 Owner reference: `propscout-hybrid.html`, supplied with the 2026-09-15 implementation brief.
@@ -298,3 +298,66 @@ The existing billing-copy conflict described above remains unresolved and unchan
 Exact-candidate full-site reviewer acceptance and the owner's multi-segment human gate
 remain required. The builder created no commit and performed no promotion, push, merge,
 deployment, migration, production access or credential change.
+
+## Browser-fix evidence — 2026-09-25
+
+Task `hybrid-ui-browser-fixes` repairs baseline
+`8979c235ba623978dcf37fc7b0555ed5a2de2109`. The changes are uncommitted builder
+work; the coordinator must create the exact candidate SHA for independent review.
+The previous reviewer static-audited the sitewide delta since `cd4260a`; that does
+not establish runtime acceptance of these repairs or waive the owner human gate.
+
+- `RouteScroll.tsx` now tracks the anchor's document position through initial layout
+  shifts. It only repeats the jump when that position changes, for five seconds
+  after the target first appears (`constants/navigation.ts`). Wheel, touch,
+  pointer and keyboard input cancel the correction immediately, without preventing
+  the input. Cleanup also runs on route changes/unmount. Missing saved-report anchors
+  retain the existing mutation-based wait, with the same user-input cancellation.
+- `RouteScroll.test.tsx` retains the existing route/hash assertions and adds late
+  layout, expiry, user-input cancellation, stable document-coordinate and cleanup
+  regressions. Five seconds is a bounded implementation choice, not a guarantee for
+  arbitrarily slow assets; delayed assets and user scrolling require browser review.
+- Shared `global.css` lets legal grid children shrink, uses a zero-minimum mobile
+  track, and wraps contact text/footer actions. This applies to privacy and terms
+  in legacy as well as hybrid without hiding content or changing visual tokens.
+- `TESTING.md` records repair coverage. The original `scripts/check_hybrid_ui.py`
+  is byte-for-byte unchanged in the Git diff, including pricing and overflow checks.
+
+All ten configured gates were attempted using `.agent-loop/config.json` commands,
+with Python resolved to this worktree's `.venv/Scripts/python.exe`.
+
+| Validation | This builder's result |
+| --- | --- |
+| Web typecheck | Passed, including after final source edits |
+| API typecheck | Passed |
+| Web lint | Passed, including after final source edits |
+| API lint | Passed |
+| Python format | No output/completion for over three minutes; stopped, not passed |
+| Python lint | Blocked by multiprocessing pipe `WinError 5` |
+| Full web tests and focused RouteScroll tests | Blocked before collection by esbuild `spawn EPERM` |
+| API tests | Blocked by Jest worker `spawn EPERM` |
+| Calc-engine tests | 469 passed, 2 existing skips, 41 warnings |
+| Scraper tests | 212 passed, 12 warnings |
+| Supplemental API `--runInBand` | 39 suites passed; 503 passed, 2 existing skips |
+| Supplemental Flake8 `--jobs 1` | Passed |
+| Supplemental Black `--workers 1` | Also produced no result; stopped, not passed |
+| Production web build | TypeScript passed; Vite blocked by esbuild `spawn EPERM` |
+| Hybrid/legacy local Vite servers | Both blocked by esbuild `spawn EPERM` |
+| Original browser runner, hybrid and legacy | Both blocked before browser launch by Playwright transport `WinError 5` |
+| `git diff --check` | Passed |
+
+Browser attempts used loopback URLs `http://127.0.0.1:5173` (hybrid) and
+`http://127.0.0.1:5174` (legacy), with the runner's unchanged 375/390/1280px,
+light/dark matrix and local-only request filtering. No browser assertions or
+screenshots executed. PR4–PR7 manual Chrome checklists, authenticated flows and
+visual fidelity remain unverified in this turn. Gate logs are in the ignored local
+`.cache/browser-fix-validation/` directory. Permission blockers must be resolved
+in the coordinator's execution environment before acceptance can be claimed.
+
+Scoring, data, authentication, billing and the owner checkout were not changed.
+The brief's later welcome-page copy approval is explicitly a separate follow-on;
+this increment preserves the browser-fix task's billing exclusion.
+Independent review of the coordinator-created exact candidate, successful gates
+and browser matrix, and the mandatory owner approval for the broad migration
+remain outstanding under `docs/agent-loop/POLICY.md`. No commit or promotion was
+performed by this builder.
