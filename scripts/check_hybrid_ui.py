@@ -42,7 +42,9 @@ def local_only(route: Route) -> None:
         route.fulfill(
             status=503,
             content_type="application/json",
-            body=json.dumps({"error": True, "code": "UNAVAILABLE", "message": "Offline check"}),
+            body=json.dumps(
+                {"error": True, "code": "UNAVAILABLE", "message": "Offline check"}
+            ),
         )
     else:
         route.continue_()
@@ -78,13 +80,17 @@ def check_report(page: Page, design: str) -> None:
         buttons.last.click()
         assert page.evaluate("document.activeElement.tagName === 'H2'")
     else:
-        expect(page.get_by_role("navigation", name="Explore report sections")).to_have_count(0)
+        expect(
+            page.get_by_role("navigation", name="Explore report sections")
+        ).to_have_count(0)
     sliders = page.locator('input[type="range"]')
     if sliders.count():
         slider = sliders.first
         before = slider.input_value()
         slider.focus()
-        direction = "ArrowLeft" if before == slider.get_attribute("max") else "ArrowRight"
+        direction = (
+            "ArrowLeft" if before == slider.get_attribute("max") else "ArrowRight"
+        )
         slider.press(direction)
         assert slider.input_value() != before
 
@@ -96,7 +102,10 @@ def main() -> None:
     parser.add_argument("--design", choices=["hybrid", "legacy"], default="hybrid")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    assert urlparse(args.url).hostname in ("localhost", "127.0.0.1"), "Local server only"
+    assert urlparse(args.url).hostname in (
+        "localhost",
+        "127.0.0.1",
+    ), "Local server only"
     output = args.output or Path(tempfile.mkdtemp(prefix="propscout-ui-"))
     output.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
@@ -105,7 +114,9 @@ def main() -> None:
             for theme in ("light", "dark"):
                 context = browser.new_context(viewport={"width": width, "height": 900})
                 context.route("**/*", local_only)
-                context.add_init_script(f"localStorage.setItem('propscout-theme', '{theme}')")
+                context.add_init_script(
+                    f"localStorage.setItem('propscout-theme', '{theme}')"
+                )
                 page = context.new_page()
                 page.goto(args.url)
                 check_layout(page, args.design)
@@ -114,10 +125,14 @@ def main() -> None:
                         page.goto(args.url)
                         page.locator("#reports").scroll_into_view_if_needed()
                         assert page.evaluate("window.scrollY > 0")
-                        page.locator(f'.hy-report-choice[href="/{mode}-report"]').click()
+                        page.locator(
+                            f'.hy-report-choice[href="/{mode}-report"]'
+                        ).click()
                         page.wait_for_url(f"**/{mode}-report")
                         expect(page.locator("h1")).to_be_visible()
-                        assert page.evaluate("window.scrollY === 0"), "Route retained home scroll"
+                        assert page.evaluate(
+                            "window.scrollY === 0"
+                        ), "Route retained home scroll"
                 for mode in REPORTS:
                     page.goto(f"{args.url}/{mode}-report")
                     check_report(page, args.design)
@@ -133,7 +148,9 @@ def main() -> None:
                 for route in PAGES:
                     page.goto(args.url + route)
                     check_layout(page, args.design)
-                    print(f"PASS layout {args.design} {route} {width} {theme}", flush=True)
+                    print(
+                        f"PASS layout {args.design} {route} {width} {theme}", flush=True
+                    )
                 page.goto(args.url + "/#pricing")
                 expect(page.locator("#pricing")).to_be_in_viewport()
                 context.close()

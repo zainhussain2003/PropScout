@@ -979,3 +979,9 @@ for that staging run.
   Follow `/#pricing` and `/terms#not-advice` and verify their section destinations.
 - See HYBRID_UI_MIGRATION.md for executed evidence. Browser scenarios remain unexecuted
   in this builder environment; exact-candidate and multi-segment human review are pending.
+- Formatting retry from `602dd812`: the browser runner now matches Black formatting.
+  Fresh web/API typecheck and lint, serial API tests (503 passed, 2 skipped), calc-engine
+  (469 passed, 2 skipped), scrapers (212 passed), and serial Flake8 passed. An in-process
+  Black comparison matched all 99 Python files. Normal Black did not complete;
+  worker-based lint/API tests, web tests/build and Playwright remain blocked locally.
+  See the migration document's retry table for exact failures; no browser pass is claimed.

@@ -1,6 +1,7 @@
 # Hybrid application migration
 
-Current baseline: `cd4260a330b5ab4cbdd0038a3df37a4c8e618712`, task `hybrid-ui-sitewide-final`.
+Current builder baseline: `602dd812f19be260a0c0b54be70933173d868e16`, task `hybrid-ui-sitewide-final`.
+Accepted homepage foundation: `cd4260a330b5ab4cbdd0038a3df37a4c8e618712`.
 Inventory originated before the foundation increment at `2c31ad8deda0d423738d1aed8223c78b296361ca`.
 Owner reference: `propscout-hybrid.html`, supplied with the 2026-09-15 implementation brief.
 The prototype supplies presentation only. D-125, stored report modes, existing calculations,
@@ -201,3 +202,42 @@ migration, credential change or owner-checkout edit was made by this builder.
 - `scripts/check_hybrid_ui.py`: offline browser acceptance runner.
 
 The canonical structure file `CLAUDE.md` is protected, so new locations are recorded here.
+
+## Formatting retry evidence — 2026-09-25
+
+This follow-up starts at `602dd812f19be260a0c0b54be70933173d868e16`; the sitewide
+source port is already in that baseline. The old draft was inspected read-only. Its
+unconditional hero classes are superseded by the baseline's design-conditional
+classes, which preserve legacy markup. No old checkout files were written.
+
+Changed `scripts/check_hybrid_ui.py` using Black's formatting only. Assertions,
+routes and browser coverage are unchanged. This is a gate-repair increment, not
+evidence that the broader migration is complete.
+
+Fresh checks in this builder environment:
+
+| Check | Result |
+| --- | --- |
+| Configured web/API typechecks and lint | All four passed |
+| Configured Python format | Did not finish; interrupted after no output. The `--workers 1` retry also did not finish. Neither is recorded as a pass. |
+| In-process Black `format_str` comparison, default `Mode()` | All 99 Python files under the three configured roots match; includes the repaired browser script. Supplemental evidence, not a completed CLI gate. |
+| Configured Flake8 | Blocked creating worker pipes: `PermissionError: [WinError 5]` |
+| Flake8 with `--jobs 1`, same three roots | Passed |
+| Configured full web tests, including PR4–PR8 | Failed before collection: esbuild `spawn EPERM`; no assertions executed |
+| Configured API tests | Failed before collection: Jest worker `spawn EPERM` |
+| API tests with `--runInBand` | 39 suites passed; 503 tests passed, 2 existing skips |
+| Configured calc-engine tests | 469 passed, 2 existing skips |
+| Configured scraper tests | 212 passed |
+| Web production build | TypeScript completed; Vite config bundling blocked by esbuild `spawn EPERM` |
+| Local Vite server, explicit workspace/host/port | Blocked by the same esbuild startup error |
+| Local browser runner | Playwright transport failed before launching a browser: `PermissionError: [WinError 5]`; no screenshots or browser assertions |
+| `git diff --check` | Passed |
+
+All ten configured gates were attempted; only the outcomes explicitly marked passed
+above passed. No protected test configuration, snapshots or expectations changed.
+The permission profile does not permit escalation. Both-theme/mobile/rollback,
+saved-report fixtures, authenticated states, dialogs and PDF visual acceptance
+remain unverified. The billing-copy owner question was raised again; absent an
+owner answer, the existing page remains unchanged. The coordinator must rerun the
+exact gates and obtain exact-candidate review and the policy's multi-segment human
+approval before accepting this migration.
