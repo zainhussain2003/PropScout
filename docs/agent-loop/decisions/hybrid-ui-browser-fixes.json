@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "task": "hybrid-ui-browser-fixes",
+  "request": "Fix two independently reproduced browser E2E failures on reviewed candidate 8979c235ba623978dcf37fc7b0555ed5a2de2109. Read the full brief and latest browser evidence at C:/Users/zain0/.codex/visualizations/2026/09/15/01a0a6e0-36b4-7b30-8d9f-5f12bdcc5e73/propscout-implementation-brief.md. First, a fresh 375px load of /#pricing leaves Pricing ~1383px below viewport after late layout shift; direct desktop nav click works. Fix shared RouteScroll or related behavior robustly without trapping user scroll; keep a browser assertion and add focused unit regression where feasible. Second, legacy /privacy at 375px has 435px document width from legal-grid min-content despite its mobile 1fr rule; correct /privacy and /terms responsive sizing while retaining legacy visual appearance, and do not weaken overflow checks. Do not change scoring, data, auth, billing, protected paths, or owner checkout. Run all ten configured gates, production web build, and original unmodified scripts/check_hybrid_ui.py across hybrid and legacy at widths 375/390/1280 and light/dark using local-only servers. The previous reviewer static-audited sitewide delta since cd4260a; review this exact candidate and maintain mandatory owner human gate for broad change. No push, merge, deploy, or credentials.",
+  "builder": "codex",
+  "builder_sandboxed": true,
+  "reviewer": "claude",
+  "baseline_sha": "8979c235ba623978dcf37fc7b0555ed5a2de2109",
+  "accepted_sha": "809a658a5932a4c7270a0d2a981900ecf474ccb4",
+  "rounds": 2,
+  "gates": [
+    {
+      "name": "web typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:09.564Z",
+      "durationMs": 5285
+    },
+    {
+      "name": "api typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:14.849Z",
+      "durationMs": 2845
+    },
+    {
+      "name": "web lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:17.694Z",
+      "durationMs": 3324
+    },
+    {
+      "name": "api lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:21.018Z",
+      "durationMs": 2351
+    },
+    {
+      "name": "python format",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-browser-fixes\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:23.369Z",
+      "durationMs": 863
+    },
+    {
+      "name": "python lint",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-browser-fixes\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:24.232Z",
+      "durationMs": 1786
+    },
+    {
+      "name": "web tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:26.018Z",
+      "durationMs": 28924
+    },
+    {
+      "name": "api tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:58:54.942Z",
+      "durationMs": 11577
+    },
+    {
+      "name": "calc engine",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-browser-fixes\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:59:06.519Z",
+      "durationMs": 6456
+    },
+    {
+      "name": "scrapers",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-browser-fixes\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-25T20:59:12.975Z",
+      "durationMs": 2559
+    }
+  ],
+  "verdict": "accepted",
+  "summary": "Candidate 809a658 is a narrowly-scoped follow-up that only touches apps/web/src/components/shared/RouteScroll.test.tsx and two docs files (HYBRID_UI_MIGRATION.md, TESTING.md); it does not touch RouteScroll.tsx, navigation.ts, global.css, or check_hybrid_ui.py, which carry the actual production fixes from parent b564af3 for the two owner-reported bugs. The change corrects a real bug in the round-1 unit test: vi.useFakeTimers() with no options does NOT fake performance/requestAnimationFrame/cancelAnimationFrame by default in this repo's installed Vitest 2.1.9 (confirmed by reading node_modules/vitest/dist/chunks/resolveConfig.rBxzbVsl.js:6483-6495, whose default fakeTimersDefaults.toFake list is only setTimeout/clearTimeout/setInterval/clearInterval/setImmediate/clearImmediate/Date), while RouteScroll.tsx's poll loop reads performance.now() and drives itself via requestAnimationFrame/cancelAnimationFrame. Under the old default the 'then expires' assertions were exercising the real wall clock, not the advanced fake one. The round-2 fix explicitly fakes {performance, requestAnimationFrame, cancelAnimationFrame} and adds two stronger assertions (performance.now() past the deadline, vi.getTimerCount() === 0) that verify stop() actually cancelled the pending frame. I traced the fake-timer clock's internal addTimer/countTimers implementation (vi.DgezovHB.js:2802-2817, 2795-2799) and manually walked the test's timeline against RouteScroll.tsx's algorithm (deadline = now+HASH_SCROLL_SETTLE_MS=5000ms, stop() on deadline or user input, listeners registered passive so they never trap scroll) — the new assertions are logically consistent with production behavior and meaningfully discriminate a working fix from a broken one (e.g., a missing stop() call would leave vi.getTimerCount() > 0). No scoring, data, auth, billing, protected paths, or checkout code was touched. The builder's docs candidly disclose that the corrected test itself, the production build, and the browser matrix could not execute in this sandbox (esbuild/Jest/Playwright spawn EPERM, Python lint multiprocessing WinError 5), so coordinator re-run of blocked gates plus the mandatory owner human gate for the broader migration remain outstanding — consistent with what the docs already state and not a defect introduced by this candidate.",
+  "accepted_at": "2026-09-25T21:04:00.904Z"
+}
