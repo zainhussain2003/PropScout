@@ -13,6 +13,8 @@ import { Wordmark } from './Wordmark'
 import { LockedButton } from '../paywall/LockedButton'
 import { usePaywall } from '../paywall/PaywallContext'
 import { useAuth } from '../../hooks/useAuth'
+import { useAppDesign } from '../../hooks/useAppDesign'
+import { HybridNav } from '../hybrid/HybridNav'
 
 // ── Shared header shell ──────────────────────────────────────────
 
@@ -108,6 +110,7 @@ function ReportNav({
   reportLabel,
   addressSlug,
 }: ReportNavProps): JSX.Element {
+  const design = useAppDesign()
   const { tier, openUpgradeModal } = usePaywall()
   // The nav used to show "Sign in" to everyone — including the signed-in
   // owner looking at their own report (seen on the first signed-in production
@@ -127,7 +130,10 @@ function ReportNav({
   }
 
   return (
-    <header style={headerStyleReport}>
+    <header
+      className={design === 'hybrid' ? 'hy-product-nav' : undefined}
+      style={headerStyleReport}
+    >
       <div className="container row" style={{ padding: '14px 0', justifyContent: 'space-between' }}>
         {/* min-width: 0 lets this shrink. Without it the breadcrumb keeps its
             full intrinsic width and shoves the action group off a 375px
@@ -224,8 +230,12 @@ function AccountNav({
   userName,
   avatarInitials,
 }: AccountNavProps): JSX.Element {
+  const design = useAppDesign()
   return (
-    <header style={headerStyleReport}>
+    <header
+      className={design === 'hybrid' ? 'hy-product-nav' : undefined}
+      style={headerStyleReport}
+    >
       <div className="container row" style={{ padding: '14px 0', justifyContent: 'space-between' }}>
         <div className="row gap-16">
           <Wordmark height={22} />
@@ -295,6 +305,12 @@ type NavProps =
   | ({ variant: 'account' } & AccountNavProps)
 
 export function Nav(props: NavProps): JSX.Element {
+  const design = useAppDesign()
+  if (design === 'hybrid' && props.variant === 'landing') {
+    return (
+      <HybridNav dark={props.dark} onToggleDark={props.onToggleDark} onSignIn={props.onSignIn} />
+    )
+  }
   if (props.variant === 'report') {
     return (
       <ReportNav

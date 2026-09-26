@@ -101,7 +101,7 @@ export function LegalShell({ sections, meta, activePage, onSwitch }: LegalShellP
     <div>
       <LegalNav />
 
-      <main className="container" style={{ paddingTop: 56, paddingBottom: 120 }}>
+      <main className="container hy-legal" style={{ paddingTop: 56, paddingBottom: 120 }}>
         {/* Page header */}
         <div className="col" style={{ gap: 16, marginBottom: 56, maxWidth: 820 }}>
           {/* Eyebrow chip */}

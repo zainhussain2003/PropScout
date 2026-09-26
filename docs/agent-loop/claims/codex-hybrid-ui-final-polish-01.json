@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "codex-hybrid-ui-final-polish-01",
+  "task": "hybrid-ui-final-polish",
+  "author": "claude",
+  "subject_sha": "c7f5e45e22d8347173e94f718fcdac01cf4050a2",
+  "severity": "P3",
+  "status": "open",
+  "evidence": "confirmed",
+  "citations": [
+    {
+      "path": "apps/web/src/styles/global.css",
+      "start_line": 841,
+      "end_line": 863
+    },
+    {
+      "path": "scripts/check_hybrid_ui.py",
+      "start_line": 163,
+      "end_line": 166
+    },
+    {
+      "path": "docs/HYBRID_UI_MIGRATION.md",
+      "start_line": 420,
+      "end_line": 440
+    }
+  ],
+  "claim": "Neither the legal-page breakpoint fix nor the new PR7 StripeWelcomePage assertions were actually executed this round (Vitest, production build, and the Playwright matrix were all blocked by sandbox spawn errors), so the 500px /privacy /terms overflow fix is verified only by static reading of the CSS, not by any runtime pass; if the 600px collapse does not fully eliminate the reported 535px scrollWidth (e.g. some other element besides .legal-grid also contributes), only the still-unrun width-500 Playwright check would catch it.",
+  "verification": [
+    {
+      "by": "claude",
+      "result": "needs_changes",
+      "note": "Recorded from the final structured review of c7f5e45e22d8347173e94f718fcdac01cf4050a2."
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-26T01:42:23.255Z",
+      "actor": "coordinator",
+      "from": null,
+      "to": "open",
+      "note": "Imported from the accepted task review."
+    }
+  ]
+}

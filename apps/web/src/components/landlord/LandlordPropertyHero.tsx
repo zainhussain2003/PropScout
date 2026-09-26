@@ -1,3 +1,5 @@
+import { useAppDesign } from '../../hooks/useAppDesign'
+import { HybridReportContents } from '../hybrid/HybridReportContents'
 /**
  * LandlordPropertyHero — property hero for the Landlord report.
  *
@@ -39,6 +41,7 @@ export function LandlordPropertyHero({
   photoUrls,
   mapCenter = null,
 }: LandlordPropertyHeroProps): JSX.Element {
+  const design = useAppDesign()
   const verdictColor =
     score.tone === 'pass'
       ? 'var(--pass)'
@@ -63,7 +66,11 @@ export function LandlordPropertyHero({
         : 'var(--pass)'
 
   return (
-    <section className="container" style={{ paddingTop: 56, paddingBottom: 48 }}>
+    <section
+      className={design === 'hybrid' ? 'container hy-property-hero' : 'container'}
+      style={{ paddingTop: 56, paddingBottom: 48 }}
+    >
+      <HybridReportContents />
       {/* Breadcrumb strip */}
       <div className="row gap-12" style={{ marginBottom: 28, color: 'var(--muted)', fontSize: 13 }}>
         <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -99,7 +106,7 @@ export function LandlordPropertyHero({
       </div>
 
       <div
-        className="grid-1col-mobile"
+        className={design === 'hybrid' ? 'grid-1col-mobile hy-property-grid' : 'grid-1col-mobile'}
         style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr',
@@ -108,7 +115,7 @@ export function LandlordPropertyHero({
         }}
       >
         {/* LEFT — photos + property meta */}
-        <div className="col" style={{ gap: 28 }}>
+        <div className={design === 'hybrid' ? 'col hy-property-facts' : 'col'} style={{ gap: 28 }}>
           {/* Photos when the listing has them, the property on a map when it
               does not — never grey frames with a hardcoded "+ 18 more". */}
           <ListingVisual
@@ -119,7 +126,10 @@ export function LandlordPropertyHero({
           />
 
           {/* Address + chips + meta */}
-          <div className="col" style={{ gap: 18 }}>
+          <div
+            className={design === 'hybrid' ? 'col hy-property-identity' : 'col'}
+            style={{ gap: 18 }}
+          >
             <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
               {property.chips.map((c, i) => (
                 <Chip key={i}>{c}</Chip>
@@ -250,12 +260,15 @@ export function LandlordPropertyHero({
           style={{ padding: 32, gap: 24, position: 'sticky', top: 84 }}
         >
           {/* DealScore gauge */}
-          <div className="col" style={{ alignItems: 'center', gap: 8 }}>
+          <div
+            className={design === 'hybrid' ? 'col hy-score-gauge' : 'col'}
+            style={{ alignItems: 'center', gap: 8 }}
+          >
             <DealScore
               score={score.displayTotal}
               max={100}
               tone={score.tone}
-              size="lg"
+              size={design === 'hybrid' ? 'md' : 'lg'}
               label="Landlord score / 100"
               verdictLabel={score.label}
               animate
@@ -263,7 +276,10 @@ export function LandlordPropertyHero({
           </div>
 
           {/* Verdict label + tagline */}
-          <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+          <div
+            className={design === 'hybrid' ? 'col hy-score-summary' : 'col'}
+            style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}
+          >
             <div
               className="mono"
               style={{

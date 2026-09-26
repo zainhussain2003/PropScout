@@ -28,7 +28,7 @@ export function StubState({
 
   return (
     <div
-      className="card col"
+      className="card col hy-state-card"
       style={{
         padding: 'clamp(36px, 4.5vw, 56px)',
         alignItems: 'center',

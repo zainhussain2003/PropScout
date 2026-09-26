@@ -68,7 +68,7 @@ export function BlockState({
       }}
     >
       <div
-        className="card col"
+        className="card col hy-state-card"
         style={{
           padding: 'clamp(40px, 5vw, 64px)',
           alignItems: 'center',

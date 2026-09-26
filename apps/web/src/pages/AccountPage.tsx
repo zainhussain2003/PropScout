@@ -122,7 +122,7 @@ interface SettingsRowProps {
 function SettingsRow({ label, hint, children }: SettingsRowProps): JSX.Element {
   return (
     <div
-      className="row"
+      className="row hy-settings-row"
       style={{
         padding: '16px 24px',
         borderBottom: '1px solid var(--line)',
@@ -611,6 +611,7 @@ function AccountTopNav({ dark, onToggleDark, tier }: AccountTopNavProps): JSX.El
 
   return (
     <header
+      className="hy-product-nav"
       style={{
         position: 'sticky',
         top: 0,
@@ -706,7 +707,10 @@ function AccountSidebar({ activeTab, onTab, tier }: AccountSidebarProps): JSX.El
   const tierDetail = TIER_DETAILS[tierKey]
 
   return (
-    <aside className="col" style={{ gap: 4, position: 'sticky', top: 84, alignSelf: 'flex-start' }}>
+    <aside
+      className="col hy-account-sidebar"
+      style={{ gap: 4, position: 'sticky', top: 84, alignSelf: 'flex-start' }}
+    >
       <span
         className="mono"
         style={{
@@ -884,6 +888,7 @@ export function AccountPage(): JSX.Element {
 
       <div className="container" style={{ padding: '40px var(--gutter)' }}>
         <div
+          className="hy-account-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: '240px 1fr',
@@ -894,7 +899,7 @@ export function AccountPage(): JSX.Element {
           {/* The sidebar's plan card read "free" for every user regardless of
               tier (audit A-05); it now shows the resolved tier like the nav. */}
           <AccountSidebar activeTab={activeTab} onTab={handleTabChange} tier={tier} />
-          <main>{view}</main>
+          <main className="hy-account-content">{view}</main>
         </div>
       </div>
 

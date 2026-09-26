@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "task": "hybrid-ui-legal-header",
+  "request": "Correct the independently reproduced 500px legal-header overflow on accepted baseline cb915a0. Read PropScout instructions and latest evidence at C:/Users/zain0/.codex/visualizations/2026/09/15/01a0a6e0-36b4-7b30-8d9f-5f12bdcc5e73/propscout-implementation-brief.md. The exact candidate c7f5e45 passed all ten configured gates and production build, but the expanded unmodified Playwright script fails hybrid AND legacy /privacy at width 500. Document scrollWidth=535 while viewport=500; .legal-grid computes 460px and fits; .row.gap-12.legal-nav-actions and .legal-nav-back end at x=534.53. CSS currently collapses legal grid and hides TOC through 600px, but hides header PDF/Back buttons only through 480px. Make the smallest responsive header fix through 600px (footer actions remain available), verify privacy AND terms at 500 light/dark and preserve layouts at 601/1280. Keep checkout copy, billing, scoring, all routes and existing tests unchanged. Do not weaken the 500px browser assertion. Run all configured gates, production build, and original local-only browser matrix for hybrid/legacy widths 375/390/500/1280 in both themes. Exact-candidate reviewer and owner human gate still required. No push, merge, deploy, credentials or owner checkout edits.",
+  "builder": "codex",
+  "builder_sandboxed": true,
+  "reviewer": "claude",
+  "baseline_sha": "cb915a04ba1ec07a130ab8caa41fc85ee2d8aa4d",
+  "accepted_sha": "b9121016f9bdc61b9f14af83ddde0f2e8ecd5a18",
+  "rounds": 1,
+  "gates": [
+    {
+      "name": "web typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:30.474Z",
+      "durationMs": 5289
+    },
+    {
+      "name": "api typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:35.763Z",
+      "durationMs": 2810
+    },
+    {
+      "name": "web lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:38.573Z",
+      "durationMs": 3386
+    },
+    {
+      "name": "api lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:41.959Z",
+      "durationMs": 2376
+    },
+    {
+      "name": "python format",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-legal-header\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:44.335Z",
+      "durationMs": 2025
+    },
+    {
+      "name": "python lint",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-legal-header\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:46.360Z",
+      "durationMs": 1758
+    },
+    {
+      "name": "web tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:47:48.118Z",
+      "durationMs": 45979
+    },
+    {
+      "name": "api tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:48:34.097Z",
+      "durationMs": 10667
+    },
+    {
+      "name": "calc engine",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-legal-header\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:48:44.764Z",
+      "durationMs": 5643
+    },
+    {
+      "name": "scrapers",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-legal-header\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:48:50.407Z",
+      "durationMs": 2573
+    }
+  ],
+  "verdict": "accepted",
+  "summary": "Candidate b912101 makes a single, minimal, correctly-scoped CSS change: apps/web/src/styles/global.css:855-863 extends the existing `.legal-nav-pdf`/`.legal-nav-back` hide rule from `max-width: 480px` to `max-width: 600px`, matching the `.legal-grid` collapse breakpoint already at 600px (lines 843-853). This directly targets the reported defect — at 500px viewport, `.legal-grid` now fits (460px, confirmed by prior round) but `.row.gap-12.legal-nav-actions`/`.legal-nav-back` in the sticky header (LegalShell.tsx:36-60) were still visible and overflowing to x=534.53. Hiding them through 600px removes that overflow contributor for both /privacy and /terms, in both the hybrid and legacy designs, because LegalShell is the single shared implementation for both routes/designs (PrivacyPage.tsx, TermsPage.tsx both wrap it unconditionally; hybrid-surfaces.css has no override for these two classes, confirmed by grep). The footer card inside LegalShell (lines 293-325) duplicates PDF/Back with no media-query gating, so those actions remain reachable and keyboard-usable at every width, satisfying \"footer actions remain available.\" The change does not touch the 500px browser assertion, routes, tests, billing, checkout copy, or scoring — diff stat is exactly 3 files (global.css + TESTING.md + HYBRID_UI_MIGRATION.md), confirmed via `git show --stat`. The docs updates accurately describe the change as source-level reasoning, explicitly do not claim a browser pass, and list the same pending verification items (500/601/1280, both themes, both designs) the owner asked for — no overclaiming found. Existing Week3-4 PR8 legal.test.tsx assertions are jsdom-only (no CSS media evaluation) and are unaffected. I attempted to independently run a dev server/Playwright to visually confirm, but Bash/PowerShell were denied by the permission mode in this session, so verification here is static/source-level only, same limitation the builder reported.",
+  "accepted_at": "2026-09-26T01:54:31.881Z"
+}

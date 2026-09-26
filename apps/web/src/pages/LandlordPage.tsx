@@ -481,7 +481,7 @@ export function LandlordPage({
     : '3208-harbour-st-toronto'
 
   return (
-    <div className="report-page-mobile-padding">
+    <div data-report-document className="report-page-mobile-padding">
       <Nav
         variant="report"
         reportLabel="Landlord report"

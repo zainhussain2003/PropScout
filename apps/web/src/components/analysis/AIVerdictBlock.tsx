@@ -11,6 +11,7 @@
 
 import { useState, useEffect, type ReactNode } from 'react'
 import { ScoutMark } from '../shared/ScoutMark'
+import { useAppDesign } from '../../hooks/useAppDesign'
 
 interface AIVerdictBlockProps {
   eyebrow: string
@@ -25,6 +26,7 @@ export function AIVerdictBlock({
   sub,
   compact = false,
 }: AIVerdictBlockProps): JSX.Element {
+  const design = useAppDesign()
   const [expanded, setExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480)
 
@@ -41,6 +43,7 @@ export function AIVerdictBlock({
 
   return (
     <div
+      className={design === 'hybrid' ? 'hy-verdict-block' : undefined}
       style={{
         background: 'var(--ink)',
         color: 'var(--bg)',

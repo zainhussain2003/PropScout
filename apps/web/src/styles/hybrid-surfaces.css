@@ -1,0 +1,385 @@
+/* Component composition for the approved hybrid. Nothing in this file applies
+   to rollback. Inline legacy layouts remain available without duplication. */
+html[data-design='hybrid'] {
+  --hy-report-title: clamp(34px, 4vw, 56px);
+  --hy-section-title: clamp(28px, 3vw, 38px);
+  --hy-reading-width: 820px;
+  --hy-dialog-width: 560px;
+}
+
+html[data-design='hybrid'] :is(em, i, [style*='font-style: italic']) {
+  font-style: normal !important;
+}
+
+html[data-design='hybrid'] .hy-demo-notice {
+  padding: var(--space-3) var(--space-4);
+  margin-block: var(--space-3);
+  font-size: var(--hy-type-small);
+  background: var(--bg-elev);
+  border-radius: var(--radius-sm);
+}
+
+html[data-design='hybrid'] .hy-property-hero {
+  padding-top: var(--space-6) !important;
+  padding-bottom: var(--space-8) !important;
+}
+
+html[data-design='hybrid'] .hy-property-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) !important;
+  gap: var(--space-8) !important;
+  align-items: start;
+}
+
+html[data-design='hybrid'] .hy-property-facts {
+  gap: var(--space-6) !important;
+}
+
+/* Listing identity precedes imagery in the hybrid brief. Unknown facts and
+   photo/map fallbacks stay exactly where the existing renderer puts them. */
+html[data-design='hybrid'] .hy-property-facts > .hy-property-identity {
+  order: -1;
+}
+
+html[data-design='hybrid'] .hy-property-hero h1 {
+  font-size: var(--hy-report-title);
+  line-height: 1.08;
+}
+
+html[data-design='hybrid'] .hy-property-grid :is(.scorecard, .report-side-score) {
+  --ink: var(--hy-dark-text);
+  --ink-2: var(--hy-dark-muted);
+  --muted: var(--hy-dark-muted);
+  --surface: var(--hy-dark);
+  --bg-elev: var(--hy-dark-line);
+  --line: var(--hy-dark-line);
+  --line-strong: var(--hy-dark-line);
+  --chip-bg: var(--hy-dark-line);
+  --accent: var(--hy-dark-text);
+  --accent-ink: var(--hy-dark);
+  --pass: var(--hy-dark-pass);
+  --caution: var(--hy-dark-caution);
+  --fail: var(--hy-dark-risk);
+  position: static !important;
+  background: var(--hy-dark);
+  color: var(--hy-dark-text);
+  padding: var(--space-6) !important;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+
+html[data-design='hybrid'] .hy-report-contents {
+  margin-bottom: var(--space-6);
+  border-block: var(--hy-border) solid var(--line);
+}
+
+html[data-design='hybrid'] .hy-property-grid .report-side-score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4) !important;
+}
+
+html[data-design='hybrid'] .report-side-score > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+html[data-design='hybrid'] .report-side-score > .hy-score-summary {
+  grid-column: 1;
+  grid-row: 1;
+  align-items: flex-start !important;
+  text-align: left !important;
+  align-self: center;
+}
+
+html[data-design='hybrid'] .report-side-score > .hy-score-summary > .serif {
+  font-size: var(--hy-type-title) !important;
+}
+
+html[data-design='hybrid'] .report-side-score > .hy-score-gauge {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+html[data-design='hybrid'] .hy-report-contents summary {
+  cursor: pointer;
+  padding: var(--space-4) var(--space-2);
+  font-size: var(--hy-type-body);
+  color: var(--accent);
+}
+
+html[data-design='hybrid'] .hy-report-contents summary span {
+  margin-left: var(--space-4);
+  font-size: var(--hy-type-small);
+  color: var(--muted);
+}
+
+html[data-design='hybrid'] .hy-report-contents ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  padding: 0 0 var(--space-4);
+  margin: 0;
+  gap: var(--space-2);
+}
+
+html[data-design='hybrid'] .hy-report-contents button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--hy-target);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border: var(--hy-border) solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--hy-type-small);
+  cursor: pointer;
+}
+
+html[data-design='hybrid'] .hy-report-contents button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Reports read as a continuous document: compact chapter headings, a visible
+   rule, and contained evidence panels rather than marketing-size gaps. */
+html[data-design='hybrid'] .tr-section {
+  padding-top: var(--space-8);
+  margin-top: var(--space-8);
+  border-top: var(--hy-border) solid var(--line-strong);
+}
+
+html[data-design='hybrid'] .tr-section-head {
+  padding-left: var(--space-4);
+  border-left: var(--space-1) solid var(--accent);
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+html[data-design='hybrid'] .tr-section-head h2 {
+  font-size: var(--hy-section-title);
+  line-height: 1.16;
+}
+
+html[data-design='hybrid'] .tr-section > .card {
+  border-radius: var(--radius);
+}
+
+html[data-design='hybrid'] .report-rail {
+  display: none;
+}
+
+html[data-design='hybrid'] .hy-state-card {
+  align-items: flex-start !important;
+  text-align: left !important;
+  gap: var(--space-4) !important;
+  padding: var(--space-8) !important;
+  border-top: var(--space-1) solid var(--accent);
+  max-width: var(--hy-dialog-width) !important;
+}
+
+html[data-design='hybrid'] .icon-halo::before,
+html[data-design='hybrid'] .icon-halo::after {
+  display: none;
+}
+
+html[data-design='hybrid'] .icon-halo {
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+}
+
+html[data-design='hybrid'] .hy-utility-content > div {
+  min-height: 65vh !important;
+  padding-block: var(--hy-hero-gap) !important;
+}
+
+html[data-design='hybrid'] .hy-utility-content .hy-state-card {
+  margin: 0;
+  max-width: 100% !important;
+}
+
+html[data-design='hybrid'] .hy-account-sidebar {
+  background: var(--bg-elev);
+  border: var(--hy-border) solid var(--line);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+}
+
+html[data-design='hybrid'] .hy-account-content {
+  min-width: 0;
+  border-top: var(--space-1) solid var(--accent);
+  padding-top: var(--space-6);
+}
+
+html[data-design='hybrid'] .hy-account-content h1 {
+  font-size: var(--hy-report-title);
+}
+
+html[data-design='hybrid'] .hy-product-nav {
+  background: var(--bg) !important;
+  backdrop-filter: none !important;
+}
+
+html[data-design='hybrid'] :is(.hy-inverse-surface, .hy-verdict-block) {
+  --ink: var(--hy-dark);
+  --bg: var(--hy-dark-text);
+  --accent: var(--hy-dark-muted);
+  --accent-ink: var(--hy-dark);
+  border-radius: var(--radius-lg) !important;
+  padding: var(--space-8) !important;
+}
+
+html[data-design='hybrid'] .hy-print-empty {
+  max-width: var(--hy-reading-width);
+  padding: var(--space-8);
+  margin: var(--space-8) auto;
+  border: var(--hy-border) solid var(--line);
+  background: var(--surface);
+}
+
+html[data-design='hybrid'] :is(.hy-analysis-stage, .hy-report-state) {
+  margin-block: var(--space-8);
+  padding: var(--space-8) var(--gutter) !important;
+  background: var(--surface);
+  border-block: var(--hy-border) solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+html[data-design='hybrid'] .hy-bottom-sheet > div {
+  border-top: var(--space-1) solid var(--accent);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+html[data-design='hybrid'] :is(.hy-methodology, .hy-legal) {
+  padding-block: var(--hy-hero-gap) !important;
+}
+
+html[data-design='hybrid'] .hy-methodology {
+  max-width: var(--hy-reading-width);
+}
+
+html[data-design='hybrid'] .hy-methodology h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: var(--hy-report-title);
+}
+
+html[data-design='hybrid'] :is(.hy-methodology h2, .legal-body h2) {
+  font-size: var(--hy-section-title);
+  padding-top: var(--space-6);
+  border-top: var(--hy-border) solid var(--line);
+}
+
+html[data-design='hybrid'] .legal-toc {
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+
+html[data-design='hybrid'] .legal-grid > * {
+  min-width: 0;
+}
+
+html[data-design='hybrid'] .legal-body {
+  overflow-wrap: anywhere;
+}
+
+html[data-design='hybrid'] .legal-body .card > .row {
+  flex-wrap: wrap;
+}
+
+html[data-design='hybrid'] .hy-dialog-backdrop > div {
+  border-radius: var(--radius-lg) !important;
+  border-top: var(--space-1) solid var(--accent) !important;
+  box-shadow: none !important;
+}
+
+html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
+  min-width: var(--hy-target);
+  min-height: var(--hy-target);
+}
+
+@media (max-width: 900px) {
+  html[data-design='hybrid'] .legal-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html[data-design='hybrid'] .legal-toc {
+    position: static !important;
+  }
+  html[data-design='hybrid'] .hy-account-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html[data-design='hybrid'] .hy-account-sidebar {
+    position: static !important;
+  }
+  html[data-design='hybrid'] .hy-settings-row {
+    flex-wrap: wrap;
+  }
+  html[data-design='hybrid'] .hy-property-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html[data-design='hybrid'] .hy-property-grid > :is(.report-hero-score, .report-side-score) {
+    order: -1;
+  }
+  html[data-design='hybrid'] .hy-report-contents ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 500px) {
+  html[data-design='hybrid'] .hy-report-contents ol {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html[data-design='hybrid'] .hy-state-card {
+    padding: var(--space-6) !important;
+  }
+  html[data-design='hybrid'] .hy-property-hero > .row {
+    flex-wrap: wrap;
+  }
+}
+
+@media print {
+  html[data-design='hybrid'][data-theme] {
+    --bg: #fff;
+    --surface: #fff;
+    --ink: #172b35;
+    --ink-2: #354b56;
+    --muted: #52636c;
+    --line: #d9e0df;
+    --line-strong: #b5c4c8;
+    --bg-elev: #eaf0f1;
+    --accent: #24566c;
+    --pass: #047857;
+    --caution: #92400e;
+    --fail: #b91c1c;
+  }
+  html[data-design='hybrid'] :is(.hy-report-contents, .hy-nav, .report-rail) {
+    display: none !important;
+  }
+  html[data-design='hybrid'] .hy-property-grid {
+    display: block !important;
+  }
+  html[data-design='hybrid'] .hy-property-grid :is(.scorecard, .report-side-score) {
+    --surface: #fff;
+    --ink: #172b35;
+    --ink-2: #354b56;
+    --muted: #52636c;
+    --accent: #24566c;
+    --pass: #047857;
+    --caution: #92400e;
+    --fail: #b91c1c;
+    background: var(--surface);
+    color: var(--ink);
+    border: var(--hy-border) solid var(--line-strong);
+    margin-top: var(--space-6);
+  }
+  html[data-design='hybrid'] .tr-section {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+  }
+  html[data-design='hybrid'] .tr-section-head {
+    break-after: avoid;
+  }
+}

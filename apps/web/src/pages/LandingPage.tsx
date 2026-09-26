@@ -30,10 +30,13 @@ import { HowSection } from '../components/landing/HowSection'
 import { PricingSection } from '../components/landing/PricingSection'
 import { FAQSection } from '../components/landing/FAQSection'
 import { CTASection } from '../components/landing/CTASection'
+import { useAppDesign } from '../hooks/useAppDesign'
+import { HybridReportsSection } from '../components/hybrid/HybridReportsSection'
 
 // ── LandingPage ───────────────────────────────────────────────────────
 
 export function LandingPage(): JSX.Element {
+  const design = useAppDesign()
   const navigate = useNavigate()
   const { dark, toggle: toggleDark } = useTheme()
   const [showSignIn, setShowSignIn] = useState(false)
@@ -61,7 +64,7 @@ export function LandingPage(): JSX.Element {
 
       <main>
         <Hero onOpenModal={handleOpenModal} onSignIn={() => setShowSignIn(true)} />
-        <ReportsSection />
+        {design === 'hybrid' ? <HybridReportsSection /> : <ReportsSection />}
         <CoverageSection />
         <FounderNoteSection />
         <LandingSunScoutSection />

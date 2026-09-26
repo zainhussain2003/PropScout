@@ -1,3 +1,5 @@
+import { useAppDesign } from '../../hooks/useAppDesign'
+import { HybridReportContents } from '../hybrid/HybridReportContents'
 /**
  * PropertyHero — shared photo grid + chips + address + sticky score card.
  *
@@ -63,6 +65,7 @@ export function PropertyHero({
   valueError = null,
   shadowScore = null,
 }: PropertyHeroProps): JSX.Element {
+  const design = useAppDesign()
   // "Change" on a card scored on the landlord's own value re-opens the form.
   const [editingValue, setEditingValue] = useState(false)
   // A successful re-run arrives as a new ownerValue; the form has done its job.
@@ -90,7 +93,11 @@ export function PropertyHero({
         : 'var(--fail)'
 
   return (
-    <section className="container" style={{ paddingTop: 56, paddingBottom: 48 }}>
+    <section
+      className={design === 'hybrid' ? 'container hy-property-hero' : 'container'}
+      style={{ paddingTop: 56, paddingBottom: 48 }}
+    >
+      <HybridReportContents />
       {/* Breadcrumb */}
       <div
         className="row gap-12"
@@ -157,9 +164,9 @@ export function PropertyHero({
 
       {/* Two-column hero — collapses to one column via CSS (.report-hero), not
           a JS width check. See the rule in global.css for why. */}
-      <div className="report-hero">
+      <div className={design === 'hybrid' ? 'report-hero hy-property-grid' : 'report-hero'}>
         {/* LEFT — photos + chips + address */}
-        <div className="col" style={{ gap: 28 }}>
+        <div className={design === 'hybrid' ? 'col hy-property-facts' : 'col'} style={{ gap: 28 }}>
           {/* Photos when the listing has them, the property on a map when it
               does not. Never fixed room-labelled frames: an address-entered
               listing has no photos, and the old grid rendered four grey tiles
@@ -172,7 +179,10 @@ export function PropertyHero({
           />
 
           {/* Chips, address, quick facts */}
-          <div className="col" style={{ gap: 18 }}>
+          <div
+            className={design === 'hybrid' ? 'col hy-property-identity' : 'col'}
+            style={{ gap: 18 }}
+          >
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {listing.chips.map((chip, i) => (
                 <Chip key={i}>{chip}</Chip>

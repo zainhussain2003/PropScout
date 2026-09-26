@@ -21,6 +21,8 @@ import { clampStr } from './landingHelpers'
 import { ShowcaseDealScore } from './ShowcaseDealScore'
 import { SAMPLE_LISTINGS } from './sampleListings'
 import { ReportShowcase } from './ReportShowcase'
+import { useAppDesign } from '../../hooks/useAppDesign'
+import { HybridHeroIntro } from '../hybrid/HybridHeroIntro'
 
 // ── Hero ──────────────────────────────────────────────────────────────
 
@@ -32,6 +34,7 @@ interface HeroProps {
 }
 
 export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
+  const hybrid = useAppDesign() === 'hybrid'
   const [sampleIdx, setSampleIdx] = useState(0)
   // Starts EMPTY. This used to be seeded with SAMPLE_LISTINGS[0].url, which put a
   // real (submittable) value in the primary input on first paint: the field looked
@@ -199,56 +202,60 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               both the differentiator and the proof. Collapses to one column on a
               phone, where the verdict follows the claim. */}
           <div className="hero-split">
-            <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
-              <div className="row gap-12" style={{ marginBottom: 24 }}>
-                <span className="chip" style={{ background: 'transparent' }}>
-                  <span
-                    style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
-                    className="live-dot"
-                  />
-                  Live in Ontario
-                </span>
-                <span className="chip">v0.9 · MVP preview</span>
-              </div>
+            {hybrid ? (
+              <HybridHeroIntro />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 1100 }}>
+                <div className="row gap-12" style={{ marginBottom: 24 }}>
+                  <span className="chip" style={{ background: 'transparent' }}>
+                    <span
+                      style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--pass)' }}
+                      className="live-dot"
+                    />
+                    Live in Ontario
+                  </span>
+                  <span className="chip">v0.9 · MVP preview</span>
+                </div>
 
-              <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
-                Know what a Canadian listing is
-                <br />
-                worth before you sign anything.
-              </h1>
+                <h1 className="serif" style={{ textWrap: 'balance' } as React.CSSProperties}>
+                  Know what a Canadian listing is
+                  <br />
+                  worth before you sign anything.
+                </h1>
 
-              {/* One contrastive line, borrowed in form from the reference's "We
+                {/* One contrastive line, borrowed in form from the reference's "We
                 don't just install AI. We run the workflow." Says what we are not,
                 then what we are — which is also the thing that keeps us from
                 drifting into being another listings portal. */}
-              <p
-                className="serif"
-                style={{
-                  fontSize: clampStr(19, 25),
-                  lineHeight: 1.3,
-                  color: 'var(--accent)',
-                  marginTop: 18,
-                  maxWidth: 640,
-                }}
-              >
-                We don&apos;t list properties. We tell you whether to buy one.
-              </p>
+                <p
+                  className="serif"
+                  style={{
+                    fontSize: clampStr(19, 25),
+                    lineHeight: 1.3,
+                    color: 'var(--accent)',
+                    marginTop: 18,
+                    maxWidth: 640,
+                  }}
+                >
+                  We don&apos;t list properties. We tell you whether to buy one.
+                </p>
 
-              <p
-                style={{
-                  fontSize: clampStr(17, 21),
-                  maxWidth: 720,
-                  color: 'var(--ink-2)',
-                  marginTop: 22,
-                }}
-              >
-                Paste a listing link, or just type the address. In under a minute you get rental
-                comps from live Ontario data, estimated monthly cash outflow with the OSFI stress
-                test applied, risk flags, and a written verdict. Built for Canadian rules —
-                semi-annual compounding, land transfer tax, CMHC — not US math with a maple leaf on
-                it.
-              </p>
-            </div>
+                <p
+                  style={{
+                    fontSize: clampStr(17, 21),
+                    maxWidth: 720,
+                    color: 'var(--ink-2)',
+                    marginTop: 22,
+                  }}
+                >
+                  Paste a listing link, or just type the address. In under a minute you get rental
+                  comps from live Ontario data, estimated monthly cash outflow with the OSFI stress
+                  test applied, risk flags, and a written verdict. Built for Canadian rules —
+                  semi-annual compounding, land transfer tax, CMHC — not US math with a maple leaf
+                  on it.
+                </p>
+              </div>
+            )}
 
             {/* A real verdict from a real analysis — the $3.499M Byngmount listing
                 that scores 15/100 as a rental. Deliberately a bad score: a tool
@@ -267,7 +274,7 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     color: 'var(--muted)',
                   }}
                 >
-                  A verdict, not a listing
+                  {hybrid ? 'Sample investment verdict' : 'A verdict, not a listing'}
                 </span>
                 <ShowcaseDealScore score={15} size={148} label="Deal score" />
                 <span
@@ -299,7 +306,7 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
 
           {/* Main URL input card */}
           <div
-            className="col gap-24"
+            className={hybrid ? 'col gap-24 hy-listing-input' : 'col gap-24'}
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--line)',
@@ -643,7 +650,7 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
           </div>
 
           {/* Sample report showcase */}
-          <ReportShowcase />
+          {!hybrid && <ReportShowcase />}
 
           {/* Trust strip */}
           <div className="col gap-16" style={{ marginTop: 24 }}>

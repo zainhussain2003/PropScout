@@ -4,6 +4,38 @@ Last updated: September 2026
 Reference spec: `propscout_platform_spec.md`
 Build tasks: `MVP_TODO.md`
 
+## Hybrid UI migration validation (2026-09-24)
+
+Route/component inventory, rollback instructions and execution evidence are in
+[`HYBRID_UI_MIGRATION.md`](HYBRID_UI_MIGRATION.md). Run the complete configured web suite,
+including PR4–PR8; new focused coverage is `components/hybrid/hybrid.test.tsx`,
+`lib/appDesign.test.ts` and `styles/hybridContrast.test.ts` under `apps/web/src`.
+
+Browser checks required before accepting the migration:
+
+- Start/rebuild with the default hybrid design and with `VITE_APP_DESIGN=legacy`.
+  Check the original headline, navigation and original styles in rollback, in both themes.
+- At desktop, 760px and 375px widths, check all mapped routes for overflow, legibility,
+  focus indicators and missing/error/pending states. Run the existing PR4–PR7 browser
+  checklists and PR8 mobile scenarios; do not substitute unit results for these checks.
+- On the hybrid homepage, use keyboard navigation to open Menu, follow every section
+  anchor, close Menu with Escape and open/close sign-in. Check initial modal focus and
+  tab containment. Confirm each anchor lands below the sticky header.
+- Submit mocked rental and sale links and an address. Confirm detected type, compatible
+  options, missing-input handling and the same returned token through analysis.
+- Open all four sample links and a saved report in each mode. Samples must be labelled;
+  saved reports must retain their actual address, mode, values, unknowns and source ledger.
+- Exercise report sliders, flags, checklists, SunScout, share and PDF gating in both
+  designs. Keep stored analysis IDs, account queries and billing/auth return URLs intact.
+- Verify only Free and Investor Pro CAD $10/month are offered. Test actual billing or auth
+  provider behavior only in an owner-configured test environment.
+
+Builder execution: TypeScript and JS lint passed; API tests passed serially (503 passed,
+2 existing skips), calc tests passed (469 passed, 2 existing skips), scraper tests passed
+(212). Python lint passed serially. Vitest and the web build could not start (`spawn EPERM`);
+Playwright startup was denied (`WinError 5`). Browser scenarios above remain **unexecuted**.
+Black did not complete in this sandbox. No test or snapshot expectations were weakened.
+
 This file tells you exactly what to test after each week of development, how to test it manually yourself, and which tests require other pieces to be built first before they can be verified end-to-end.
 
 **Legend:**
@@ -931,3 +963,88 @@ See [LAUNCH_REGRESSION.md](LAUNCH_REGRESSION.md) for the local regression eviden
 reproduction commands and outstanding staging account, billing, report ownership,
 quota, PDF and ingestion acceptance checks. Local passing suites do not substitute
 for that staging run.
+
+## Hybrid sitewide acceptance (2026-09-25)
+
+- Automated (added, execution blocked): RouteScroll, HybridReportContents and
+  HybridUtilityShell and HybridReportPresentation tests cover path/hash/query navigation, delayed anchors, actual
+  section focus, theme, property/verdict parity and rollback.
+- Combined: start a local web server and run `scripts/check_hybrid_ui.py` for both
+  design builds. Review captured screenshots; this uses offline API failures.
+- Manual: at 375/1280 pixels in both themes, open all four saved-report fixture modes,
+  confirm sections/provenance, edit allowed financing/owner inputs, exercise missing/error
+  states, modal Tab/Escape/focus restoration, account tabs, billing returns, legal anchors
+  and printed output. Verify no hybrid italic emphasis and intact legacy presentation.
+- Manual regression: scroll home to Reports and open each sample; verify top-of-route.
+  Follow `/#pricing` and `/terms#not-advice` and verify their section destinations.
+- See HYBRID_UI_MIGRATION.md for executed evidence. Browser scenarios remain unexecuted
+  in this builder environment; exact-candidate and multi-segment human review are pending.
+- Formatting retry from `602dd812`: the browser runner now matches Black formatting.
+  Fresh web/API typecheck and lint, serial API tests (503 passed, 2 skipped), calc-engine
+  (469 passed, 2 skipped), scrapers (212 passed), and serial Flake8 passed. An in-process
+  Black comparison matched all 99 Python files. Normal Black did not complete;
+  worker-based lint/API tests, web tests/build and Playwright remain blocked locally.
+  See the migration document's retry table for exact failures; no browser pass is claimed.
+
+### Closure regression checks (hybrid-ui-closure)
+
+The navigator now uses shared SectionHead metadata. Require exact ordered demo topics
+(investor 12, tenant 12, personal 8, landlord 12), readable number/topic button names,
+and focus on each selected heading. Include unmarked sections and repeated numbers in
+unit coverage. Check privacy/terms at 375px and 390px for overflow without hidden content;
+repeat at desktop in light/dark and legacy. The local browser runner covers these demo
+inventories in screen/print and every navigation button.
+
+Fresh closure results and process-permission blockers are recorded in
+[HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md#closure-evidence--2026-09-25).
+The new unit test and browser assertions could not execute in the builder sandbox.
+Reviewer scope is the full candidate delta since `cd4260a`, not just this repair.
+
+### Browser-fix regressions (hybrid-ui-browser-fixes)
+
+- Automated: `RouteScroll.test.tsx` covers fresh hash navigation, late destination
+  movement, stable document coordinates, delayed sections, malformed hashes,
+  cancellation on wheel/touch/pointer/keyboard input, route cleanup and the bounded
+  five-second correction window. Query-only navigation still preserves scroll.
+  The expiry regression explicitly fakes `performance` and animation frames on
+  the same clock, and requires zero pending timers after the deadline.
+- Combined: run the original, unmodified `scripts/check_hybrid_ui.py` against local
+  hybrid and legacy servers. Its pricing viewport assertion and document overflow
+  checks must pass at 375/390/1280px in light/dark. Both legal routes are included.
+- Manual: reload `/#pricing` at 375px, wait at least 1.2 seconds and confirm Pricing
+  remains visible. Repeat with delayed assets; scroll away during loading using
+  wheel, touch, keyboard and scrollbar drag and confirm no forced return. Verify
+  desktop Pricing navigation still works. On legacy privacy/terms, verify wrapped
+  contact text and footer actions remain readable and usable without clipping.
+- Execution results and sandbox blockers are recorded in the browser-fix evidence
+  section of [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). These additions are
+  repair coverage, not new scoring, data, authentication or billing functionality.
+
+### Final polish regressions (hybrid-ui-final-polish)
+
+- Automated: PR7 `authStubs.integration.test.tsx` requires neutral Account guidance
+  on `/welcome-to-pro`, no activation assertion or deferred portfolio/SunScout 3D
+  claims, and unchanged actions to `/` and `/account?view=plan`. The old headline
+  assertion changed with explicit owner approval recorded in the implementation brief.
+- Combined: `scripts/check_hybrid_ui.py` now includes 500px alongside 375/390/1280px
+  for both themes and designs. The existing overflow assertion remains unchanged,
+  including `/privacy` and `/terms`; external requests remain blocked.
+- Manual: inspect both legal pages at 480/500/600/601/768/1280px in both themes.
+  Confirm readable content, intact page switching and header controls, and the
+  legacy sidebar returning above 600px. Confirm the welcome page's two actions.
+- Execution and outstanding validation are recorded in the final polish section of
+  [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). No browser pass is claimed.
+
+### Legal header regression (hybrid-ui-legal-header)
+
+- Run the unchanged `scripts/check_hybrid_ui.py` for hybrid and legacy at
+  375/390/500/1280px, light/dark. Keep its document overflow assertion intact.
+- For both `/privacy` and `/terms`, additionally inspect 500/600/601/1280px in
+  both designs and themes. Through 600px, header PDF/Back controls must be hidden;
+  at 601/1280px both must be visible. Require document width no greater than
+  viewport width + 1px, readable legal content and intact page switching.
+- At each width, scroll to the article footer: PDF and Back must remain visible,
+  keyboard reachable and usable. PDF invokes print; Back returns to `/`.
+- These browser checks are pending: this builder's Vite and Playwright processes
+  are blocked by sandbox permissions. See the legal-header evidence in
+  [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). Existing tests are unchanged.

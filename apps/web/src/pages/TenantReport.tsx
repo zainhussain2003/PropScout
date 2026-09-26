@@ -1,3 +1,5 @@
+import { useAppDesign } from '../hooks/useAppDesign'
+import { HybridReportContents } from '../components/hybrid/HybridReportContents'
 /**
  * TenantReport — Report C (tenant evaluation) page.
  *
@@ -140,6 +142,7 @@ function TenantPropertyHero({
   const { tier, openUpgradeModal } = usePaywall()
   const share = useCopyLink()
   const listing = listingProp ?? CHARLES_LISTING
+  const design = useAppDesign()
   const verdictColor =
     listing.scoreTone === 'pass'
       ? 'var(--pass)'
@@ -148,7 +151,8 @@ function TenantPropertyHero({
         : 'var(--fail)'
 
   return (
-    <section className="container" style={{ paddingTop: 56, paddingBottom: 48 }}>
+    <section className="container hy-property-hero" style={{ paddingTop: 56, paddingBottom: 48 }}>
+      <HybridReportContents />
       {/* Breadcrumb */}
       <div
         className="row gap-12"
@@ -210,7 +214,7 @@ function TenantPropertyHero({
 
       {/* Two-column hero */}
       <div
-        className="grid-1col-mobile hero-score-first"
+        className="grid-1col-mobile hero-score-first hy-property-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.5fr 1fr',
@@ -219,7 +223,7 @@ function TenantPropertyHero({
         }}
       >
         {/* LEFT — photos + chips + address */}
-        <div className="col" style={{ gap: 28 }}>
+        <div className="col hy-property-facts" style={{ gap: 28 }}>
           {/* Photos when the listing has them, the property on a map when it
               does not. The old grid rendered four grey frames and a hardcoded
               "+ 18 more" badge even for a listing with zero photos. */}
@@ -231,7 +235,7 @@ function TenantPropertyHero({
           />
 
           {/* Chips + address + quick facts */}
-          <div className="col" style={{ gap: 18 }}>
+          <div className="col hy-property-identity" style={{ gap: 18 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {listing.chips.map((chip, i) => (
                 <Chip key={i}>{chip}</Chip>
@@ -332,11 +336,11 @@ function TenantPropertyHero({
                   tenant score (rent fairness + honesty + livability), never the
                   investment deal-score brackets. Pass them so the ring colour and
                   in-ring pill can't disagree with the verdict shown below. */}
-              <div className="col" style={{ gap: 8, alignItems: 'center' }}>
+              <div className="col hy-score-gauge" style={{ gap: 8, alignItems: 'center' }}>
                 <DealScore
                   score={listing.scoreNumber}
                   max={100}
-                  size="lg"
+                  size={design === 'hybrid' ? 'md' : 'lg'}
                   label="Tenant score / 100"
                   tone={listing.scoreTone}
                   verdictLabel={listing.verdictLabel}
@@ -345,7 +349,10 @@ function TenantPropertyHero({
               </div>
 
               {/* Verdict */}
-              <div className="col" style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}>
+              <div
+                className="col hy-score-summary"
+                style={{ textAlign: 'center', alignItems: 'center', gap: 8 }}
+              >
                 <div
                   className="mono"
                   style={{
@@ -1326,7 +1333,7 @@ export function TenantReport({
     : '3705-charles-st-e'
 
   return (
-    <div className="report-page-mobile-padding">
+    <div data-report-document className="report-page-mobile-padding">
       <Nav
         variant="report"
         reportLabel="Tenant report"

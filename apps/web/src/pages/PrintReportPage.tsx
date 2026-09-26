@@ -12,7 +12,12 @@ declare global {
 /** Data is injected by the authenticated PDF service, never fetched by this page. */
 export function PrintReportPage(): JSX.Element {
   const report = window.__PROPSCOUT_PRINT__
-  if (!report) return <p>No report was supplied for printing.</p>
+  if (!report)
+    return (
+      <p className="hy-print-empty" role="status">
+        No report was supplied for printing.
+      </p>
+    )
   return (
     <PaywallContext.Provider
       value={{

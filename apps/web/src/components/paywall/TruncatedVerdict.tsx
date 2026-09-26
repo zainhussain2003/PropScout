@@ -1,3 +1,4 @@
+import { useAppDesign } from '../../hooks/useAppDesign'
 /**
  * TruncatedVerdict — deterministic verdict with its first section visible,
  * second paragraph blurred and faded out, and an inline upgrade strip.
@@ -34,8 +35,10 @@ export function TruncatedVerdict({
   onUnlock,
   eyebrow = 'PropScout · investor verdict',
 }: TruncatedVerdictProps): JSX.Element {
+  const design = useAppDesign()
   return (
     <div
+      className={design === 'hybrid' ? 'hy-inverse-surface' : undefined}
       style={{
         background: 'var(--ink)',
         color: 'var(--bg)',

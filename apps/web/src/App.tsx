@@ -30,6 +30,12 @@ import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { TierUnavailableNotice } from './components/paywall/TierUnavailableNotice'
 import { useAuth } from './hooks/useAuth'
 import { startCheckout } from './lib/services/billingService'
+import { DesignProvider } from './components/hybrid/DesignProvider'
+import { resolveAppDesign } from './lib/appDesign'
+import './styles/hybrid.css'
+import './styles/hybrid-surfaces.css'
+import { RouteScroll } from './components/shared/RouteScroll'
+import { HybridUtilityShell } from './components/hybrid/HybridUtilityShell'
 
 function AppInner(): JSX.Element {
   const { tier, status: tierStatus, refresh: refreshTier } = useTier()
@@ -67,6 +73,7 @@ function AppInner(): JSX.Element {
       value={{ tier, tierStatus, refreshTier, openUpgradeModal, openHardGate }}
     >
       <BrowserRouter>
+        <RouteScroll />
         <TierUnavailableNotice />
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -107,16 +114,20 @@ function AppInner(): JSX.Element {
           <Route path="/r/:token" element={<ReportPage tier={tier} />} />
           <Route path="/print-report" element={<PrintReportPage />} />
           <Route path="/account" element={<AccountPage />} />
-          <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
-          <Route path="/auth/reset" element={<PasswordResetRequestPage />} />
-          <Route path="/auth/reset/confirm" element={<PasswordResetConfirmPage />} />
-          <Route path="/auth/verified" element={<EmailVerifiedPage />} />
-          <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
-          <Route path="/checkout/cancelled" element={<StripeCancelledPage />} />
+          <Route element={<HybridUtilityShell />}>
+            <Route path="/auth/confirm" element={<MagicLinkConfirmedPage />} />
+            <Route path="/auth/reset" element={<PasswordResetRequestPage />} />
+            <Route path="/auth/reset/confirm" element={<PasswordResetConfirmPage />} />
+            <Route path="/auth/verified" element={<EmailVerifiedPage />} />
+            <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
+            <Route path="/checkout/cancelled" element={<StripeCancelledPage />} />
+          </Route>
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           {/* Catch-all — must be last */}
-          <Route path="*" element={<NotFoundPage />} />
+          <Route element={<HybridUtilityShell />}>
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Routes>
       </BrowserRouter>
 
@@ -171,11 +182,13 @@ function AppInner(): JSX.Element {
 
 function App(): JSX.Element {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AppInner />
-      </AuthProvider>
-    </ErrorBoundary>
+    <DesignProvider design={resolveAppDesign(import.meta.env.VITE_APP_DESIGN)}>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AppInner />
+        </AuthProvider>
+      </ErrorBoundary>
+    </DesignProvider>
   )
 }
 

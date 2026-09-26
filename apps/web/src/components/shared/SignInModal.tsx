@@ -145,6 +145,7 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
           justifyContent: 'center',
           padding: 24,
         }}
+        className="hy-dialog-backdrop"
         role="dialog"
         aria-modal="true"
         aria-label="Magic link sent"
@@ -199,6 +200,7 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
         justifyContent: 'center',
         padding: 24,
       }}
+      className="hy-dialog-backdrop"
       role="dialog"
       aria-modal="true"
       aria-label={mode === 'signin' ? 'Sign in' : 'Create account'}
