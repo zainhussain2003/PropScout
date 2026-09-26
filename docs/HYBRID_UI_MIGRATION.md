@@ -445,3 +445,45 @@ screenshots, manual Chrome checklist or authenticated billing verification ran.
 The coordinator must rerun blocked checks, create the candidate and obtain review
 of that exact SHA. The broad migration remains at the owner human gate. No builder
 commit, deployment, promotion or owner-checkout edit occurred.
+
+## Legal header repair — 2026-09-25
+
+Builder baseline: `cb915a04ba1ec07a130ab8caa41fc85ee2d8aa4d`.
+The owner-supplied evidence identifies header controls extending to x=534.53
+at a 500px viewport in both designs, while the legal grid fits.
+
+`global.css` extends only the existing header PDF/Back hiding rule from 480px
+through 600px, matching the legal grid breakpoint. The selectors target header
+controls only; footer controls and their handlers are unchanged. Above 600px
+the changed rule does not apply. This is source-level reasoning, not a browser
+confirmation of the 500/601/1280px layouts. No checkout copy, billing, scoring,
+routes, existing tests or browser assertions changed.
+
+All ten configured gates were attempted in this builder sandbox:
+
+| Validation | Result |
+| --- | --- |
+| Web/API typecheck; web/API lint | All four passed |
+| Python format | Hung without output; interrupted, no result |
+| Python lint | Blocked by multiprocessing pipe `WinError 5` |
+| Web tests; focused PR8 legal tests | Blocked before collection by esbuild `spawn EPERM` |
+| API tests | Blocked by Jest worker `spawn EPERM` |
+| Calc engine | 469 passed, 2 existing skips |
+| Scrapers | 212 passed |
+| Supplemental serial Python lint | Passed |
+| Supplemental API `--runInBand` | 39 suites passed; 503 passed, 2 existing skips |
+| Production web build | TypeScript passed; Vite blocked by esbuild `spawn EPERM` |
+| Hybrid/legacy local dev servers | Both blocked by esbuild `spawn EPERM` |
+| Original local-only browser matrix, both designs | Both blocked before browser launch by Playwright pipe `WinError 5` |
+| `git diff --check` | Passed |
+
+Gate logs (except the interrupted format command) are in the OS temporary
+directory as `propscout-legal-header-<gate-name>.log`. The unchanged browser
+runner was invoked for hybrid on loopback port 5173 and legacy on 5174, with
+375/390/500/1280px and both themes configured. No browser assertion or screenshot
+ran. Additional 600/601px boundary checks, 500px privacy/terms verification and
+footer keyboard/print/back checks remain pending as detailed in TESTING.md.
+
+The coordinator must rerun blocked validation, create the candidate and obtain
+review of its exact SHA; the owner human gate remains required. No builder
+commit, push, merge, deployment or owner-checkout edit occurred.

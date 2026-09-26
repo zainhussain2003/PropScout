@@ -1034,3 +1034,17 @@ Reviewer scope is the full candidate delta since `cd4260a`, not just this repair
   legacy sidebar returning above 600px. Confirm the welcome page's two actions.
 - Execution and outstanding validation are recorded in the final polish section of
   [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). No browser pass is claimed.
+
+### Legal header regression (hybrid-ui-legal-header)
+
+- Run the unchanged `scripts/check_hybrid_ui.py` for hybrid and legacy at
+  375/390/500/1280px, light/dark. Keep its document overflow assertion intact.
+- For both `/privacy` and `/terms`, additionally inspect 500/600/601/1280px in
+  both designs and themes. Through 600px, header PDF/Back controls must be hidden;
+  at 601/1280px both must be visible. Require document width no greater than
+  viewport width + 1px, readable legal content and intact page switching.
+- At each width, scroll to the article footer: PDF and Back must remain visible,
+  keyboard reachable and usable. PDF invokes print; Back returns to `/`.
+- These browser checks are pending: this builder's Vite and Playwright processes
+  are blocked by sandbox permissions. See the legal-header evidence in
+  [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). Existing tests are unchanged.

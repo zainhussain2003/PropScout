@@ -852,8 +852,8 @@ body::-webkit-scrollbar-thumb {
   }
 }
 
-@media (max-width: 480px) {
-  /* Hide nav action buttons (Download as PDF + Back to PropScout) */
+@media (max-width: 600px) {
+  /* Keep the legal header compact; PDF and Back remain available in the footer. */
   .legal-nav-pdf {
     display: none !important;
   }
