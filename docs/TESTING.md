@@ -1019,3 +1019,18 @@ Reviewer scope is the full candidate delta since `cd4260a`, not just this repair
 - Execution results and sandbox blockers are recorded in the browser-fix evidence
   section of [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). These additions are
   repair coverage, not new scoring, data, authentication or billing functionality.
+
+### Final polish regressions (hybrid-ui-final-polish)
+
+- Automated: PR7 `authStubs.integration.test.tsx` requires neutral Account guidance
+  on `/welcome-to-pro`, no activation assertion or deferred portfolio/SunScout 3D
+  claims, and unchanged actions to `/` and `/account?view=plan`. The old headline
+  assertion changed with explicit owner approval recorded in the implementation brief.
+- Combined: `scripts/check_hybrid_ui.py` now includes 500px alongside 375/390/1280px
+  for both themes and designs. The existing overflow assertion remains unchanged,
+  including `/privacy` and `/terms`; external requests remain blocked.
+- Manual: inspect both legal pages at 480/500/600/601/768/1280px in both themes.
+  Confirm readable content, intact page switching and header controls, and the
+  legacy sidebar returning above 600px. Confirm the welcome page's two actions.
+- Execution and outstanding validation are recorded in the final polish section of
+  [HYBRID_UI_MIGRATION.md](HYBRID_UI_MIGRATION.md). No browser pass is claimed.

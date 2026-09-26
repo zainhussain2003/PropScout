@@ -162,7 +162,7 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
-        for width in (375, 390, 1280):
+        for width in (375, 390, 500, 1280):
             for theme in ("light", "dark"):
                 context = browser.new_context(viewport={"width": width, "height": 900})
                 context.route("**/*", local_only)

@@ -403,3 +403,45 @@ owner checkout were changed. The welcome-page copy decision remains a separate
 follow-on. The coordinator must create and obtain independent review of the exact
 candidate, rerun blocked checks and the full browser matrix, and retain the
 mandatory owner human gate for the broad migration. No commit or promotion occurred.
+
+## Final polish — 2026-09-25
+
+Builder baseline: `7ccc3eda6d35056aea4332cd04483580cc34888a`.
+The owner approved these two follow-on repairs and the PR7 headline assertion update.
+
+- `global.css`: extend the existing single-column legal grid and hidden TOC through
+  600px, covering the reported 500px overflow. Keep header-action hiding at 480px
+  and the existing wide-screen layout and visual styling. The breakpoint is an
+  implementation choice pending browser verification, not a measured pass.
+- `StripeWelcomePage.tsx`: replace the activation and deferred-feature promises
+  with neutral guidance to Account for the verified plan. Preserve both button
+  labels, destinations, query parameters and billing behavior.
+- PR7 auth tests cover the approved copy, absence of deferred claims and both
+  action destinations. The local browser script adds 500px to the full matrix
+  without changing overflow assertions or local-only request filtering.
+
+All ten configured gates were attempted in the builder sandbox:
+
+| Validation | Result |
+| --- | --- |
+| Web/API typecheck; web/API lint | All four passed |
+| Python format | No result; interrupted after hanging; serial retry also hung |
+| Python lint | Blocked by multiprocessing pipe `WinError 5` |
+| Web tests; focused PR7 auth tests | Blocked before collection by esbuild `spawn EPERM` |
+| API tests | Blocked by Jest worker `spawn EPERM` |
+| Calc engine | 469 passed, 2 existing skips |
+| Scrapers | 212 passed |
+| Supplemental serial Python lint | Passed |
+| Supplemental API `--runInBand` | 39 suites passed; 503 passed, 2 existing skips |
+| Production web build | TypeScript passed; Vite blocked by esbuild `spawn EPERM` |
+| Hybrid/legacy local dev servers | Both blocked by esbuild `spawn EPERM` |
+| Local browser runner, both designs | Both blocked before browser launch by Playwright pipe `WinError 5` |
+| `git diff --check` | Passed |
+
+Configured gate logs are in the OS temporary directory as
+`propscout-final-polish-<gate-name>.log`. Browser attempts targeted loopback ports
+5173/5174, with 375/390/500/1280px and light/dark configured. No browser assertions,
+screenshots, manual Chrome checklist or authenticated billing verification ran.
+The coordinator must rerun blocked checks, create the candidate and obtain review
+of that exact SHA. The broad migration remains at the owner human gate. No builder
+commit, deployment, promotion or owner-checkout edit occurred.

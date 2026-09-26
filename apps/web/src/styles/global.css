@@ -838,9 +838,9 @@ body::-webkit-scrollbar-thumb {
   color: var(--ink);
 }
 
-/* ── Legal page — mobile responsive (≤ 480px) ───────────────── */
+/* Collapse before the fixed sidebar crowds the legal body at narrow widths. */
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   /* Collapse two-column grid to single column */
   .legal-grid {
     grid-template-columns: minmax(0, 1fr) !important;
@@ -850,7 +850,9 @@ body::-webkit-scrollbar-thumb {
   .legal-toc {
     display: none !important;
   }
+}
 
+@media (max-width: 480px) {
   /* Hide nav action buttons (Download as PDF + Back to PropScout) */
   .legal-nav-pdf {
     display: none !important;

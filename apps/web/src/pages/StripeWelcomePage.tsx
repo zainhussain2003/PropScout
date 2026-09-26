@@ -1,5 +1,5 @@
 /**
- * StripeWelcomePage — shown after a successful Stripe checkout.
+ * StripeWelcomePage — checkout return; Account shows the verified plan.
  * Route: /welcome-to-pro
  * Design source: auth-stubs.jsx::StripeWelcomePro
  */
@@ -23,9 +23,9 @@ export function StripeWelcomePage(): JSX.Element {
       <StubState
         icon="sparkle"
         tone="pass"
-        eyebrow="Welcome to Investor Pro"
-        headline="You're a Pro now."
-        body="Full evidence-based verdicts, PDF export, portfolio tracker, and SunScout 3D are all unlocked. Go find your next deal."
+        eyebrow="Your plan"
+        headline="Check your plan in Account."
+        body="Visit Account to see your verified plan and available features."
         primary={{ label: 'Start analyzing', onClick: () => navigate('/') }}
         secondary={{ label: 'View my plan', onClick: () => navigate('/account?view=plan') }}
       />

@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 // The reset-request page had no test that it called anything, which is how it
 // shipped showing "Reset link sent." from a bare setState. Mocked here so the
@@ -34,6 +34,11 @@ import { NotFoundPage } from '../../apps/web/src/pages/NotFoundPage'
 
 function wrap(ui: React.ReactElement) {
   return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
+function ActionDestination() {
+  const { pathname, search } = useLocation()
+  return <div data-testid="action-destination">{pathname + search}</div>
 }
 
 // ── MagicLinkSentPage ──────────────────────────────────────────────────────────
@@ -198,9 +203,32 @@ describe('EmailVerifiedPage', () => {
 // ── StripeWelcomePage ──────────────────────────────────────────────────────────
 
 describe('StripeWelcomePage', () => {
-  it('renders "You\'re a Pro now." headline', () => {
+  it('directs users to Account for their verified plan without claiming activation', () => {
     wrap(<StripeWelcomePage />)
-    expect(screen.getByText("You're a Pro now.")).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Check your plan in Account.' })).toBeInTheDocument()
+    expect(screen.getByText('Visit Account to see your verified plan and available features.')).toBeInTheDocument()
+    expect(screen.queryByText(/You're a Pro now|Welcome to Investor Pro|all unlocked/i)).not.toBeInTheDocument()
+  })
+
+  it('does not promise deferred portfolio tracking or SunScout 3D', () => {
+    const { container } = wrap(<StripeWelcomePage />)
+    expect(container).not.toHaveTextContent(/portfolio|SunScout\s*3D/i)
+  })
+
+  it.each([
+    ['Start analyzing', '/'],
+    ['View my plan', '/account?view=plan'],
+  ])('preserves the %s action', (label, destination) => {
+    render(
+      <MemoryRouter initialEntries={['/welcome-to-pro']}>
+        <Routes>
+          <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
+          <Route path="*" element={<ActionDestination />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: label }))
+    expect(screen.getByTestId('action-destination').textContent).toBe(destination)
   })
 
   it('renders a primary CTA button', () => {
