@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "task": "hybrid-ui-final-polish",
+  "request": "Two owner-approved final polish items on accepted browser-fix baseline 7ccc3eda6d35056aea4332cd04483580cc34888a. Read AGENTS/CLAUDE/DECISIONS/spec/protocol and the full implementation brief at C:/Users/zain0/.codex/visualizations/2026/09/15/01a0a6e0-36b4-7b30-8d9f-5f12bdcc5e73/propscout-implementation-brief.md. (1) Legacy /privacy has 535px scrollWidth at a 500px viewport because the legal-grid single-column breakpoint ends at 480px. Fix privacy and terms at intermediate mobile/tablet widths without changing the old visual character or weakening overflow checks; add focused regression or extend local-only browser script to include 500px. (2) Owner explicitly approved neutral verified-plan copy on /welcome-to-pro: remove unverified 'You're a Pro now' activation claim and deferred portfolio tracker / SunScout 3D promises; direct users to Account for the verified plan. Keep billing behavior, routes and primary/secondary actions unchanged. Update the existing PR7 assertion only to reflect this owner-approved requirement, and add a test that deferred feature claims are absent. No other marketing or billing changes. Run all ten configured gates, production web build and local-only browser checks for hybrid/legacy, light/dark, 375/390/500/1280. Reviewer must examine exact candidate and broad migration remains at owner human gate; no deploy, push, merge, secrets or owner checkout edits.",
+  "builder": "codex",
+  "builder_sandboxed": true,
+  "reviewer": "claude",
+  "baseline_sha": "7ccc3eda6d35056aea4332cd04483580cc34888a",
+  "accepted_sha": "c7f5e45e22d8347173e94f718fcdac01cf4050a2",
+  "rounds": 1,
+  "gates": [
+    {
+      "name": "web typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:18.353Z",
+      "durationMs": 5164
+    },
+    {
+      "name": "api typecheck",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:23.517Z",
+      "durationMs": 2803
+    },
+    {
+      "name": "web lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:26.320Z",
+      "durationMs": 3370
+    },
+    {
+      "name": "api lint",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:29.690Z",
+      "durationMs": 2374
+    },
+    {
+      "name": "python format",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-final-polish\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:32.064Z",
+      "durationMs": 2050
+    },
+    {
+      "name": "python lint",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-final-polish\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:34.114Z",
+      "durationMs": 1759
+    },
+    {
+      "name": "web tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:35:35.873Z",
+      "durationMs": 50106
+    },
+    {
+      "name": "api tests",
+      "command": "npm",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:36:25.979Z",
+      "durationMs": 11514
+    },
+    {
+      "name": "calc engine",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-final-polish\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:36:37.493Z",
+      "durationMs": 7921
+    },
+    {
+      "name": "scrapers",
+      "command": "C:\\dev\\.propscout-agent-worktrees\\hybrid-ui-final-polish\\codex\\.venv\\Scripts\\python.exe",
+      "status": "passed",
+      "startedAt": "2026-09-26T01:36:45.414Z",
+      "durationMs": 2575
+    }
+  ],
+  "verdict": "accepted",
+  "summary": "Candidate c7f5e45 makes exactly the two owner-approved changes and nothing else: it widens the legal-page single-column/TOC-hidden breakpoint from 480px to 600px (keeping the 480px-only nav-button hiding unchanged) to close the reported 500px overflow on /privacy and /terms, adds 500px to scripts/check_hybrid_ui.py's tested widths, and replaces the StripeWelcomePage 'You're a Pro now' activation/deferred-feature copy with neutral 'Check your plan in Account' wording while leaving both button labels, destinations, and billing logic untouched. The updated PR7 test correctly replaces only the old headline assertion and adds solid coverage for the copy, absence of deferred-feature claims (portfolio/SunScout 3D, matching D-125), and preserved primary/secondary navigation destinations - traced against StubState's actual rendering (h2 heading, aria-hidden icons) and confirms it should pass. No protected files, scoring, data, auth, or billing code were touched, and the diff is confined to the 6 files needed. The one gap is that none of this was verified by an actual gate run in this session (Vitest, production build, and the Playwright matrix all hit the same sandbox spawn-permission errors seen in prior accepted rounds of this same task chain); the builder disclosed this transparently rather than claiming a false pass, consistent with the precedent that got the parent candidate (809a658) accepted despite identical sandbox blockers.",
+  "accepted_at": "2026-09-26T01:42:23.669Z"
+}
