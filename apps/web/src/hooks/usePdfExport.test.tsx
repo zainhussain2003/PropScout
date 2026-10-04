@@ -35,16 +35,18 @@ describe('usePdfExport', () => {
     vi.clearAllMocks()
   })
 
-  it('free tier: opens the pdf UpgradeModal and never calls the API', () => {
+  it('free tier: PDF is unlocked during beta', async () => {
+    mockGetSession.mockResolvedValue(null)
+    mockDownload.mockResolvedValue(undefined)
     const openModal = vi.fn()
     const { result } = renderHook(() => usePdfExport('tok-1'), {
       wrapper: wrapperFor('free', openModal),
     })
 
-    expect(result.current.isLocked).toBe(true)
+    expect(result.current.isLocked).toBe(false)
     act(() => result.current.exportPdf())
-    expect(openModal).toHaveBeenCalledWith('pdf')
-    expect(mockDownload).not.toHaveBeenCalled()
+    await waitFor(() => expect(mockDownload).toHaveBeenCalledWith('tok-1', undefined))
+    expect(openModal).not.toHaveBeenCalled()
   })
 
   it('pro tier without a token (demo route): no-op', () => {
@@ -58,7 +60,7 @@ describe('usePdfExport', () => {
     expect(mockDownload).not.toHaveBeenCalled()
   })
 
-  it('pro tier with a session: downloads with the access token', async () => {
+  it('pro tier with a session: beta downloads with the report token alone', async () => {
     mockGetSession.mockResolvedValue({ access_token: 'jwt-1' } as never)
     mockDownload.mockResolvedValue(undefined)
     const { result } = renderHook(() => usePdfExport('tok-1'), {
@@ -67,9 +69,10 @@ describe('usePdfExport', () => {
 
     act(() => result.current.exportPdf())
     await waitFor(() => {
-      expect(mockDownload).toHaveBeenCalledWith('tok-1', 'jwt-1')
+      expect(mockDownload).toHaveBeenCalledWith('tok-1', undefined)
     })
     expect(result.current.exporting).toBe(false)
+    expect(mockGetSession).not.toHaveBeenCalled()
   })
 
   it('server UPGRADE_REQUIRED (stale local tier) opens the modal', async () => {
@@ -86,17 +89,16 @@ describe('usePdfExport', () => {
     })
   })
 
-  it('signed out (no session): routes to the upgrade/sign-in flow, no request', async () => {
+  it('signed out (no session): downloads a live report PDF in beta', async () => {
     mockGetSession.mockResolvedValue(null)
+    mockDownload.mockResolvedValue(undefined)
     const openModal = vi.fn()
     const { result } = renderHook(() => usePdfExport('tok-1'), {
       wrapper: wrapperFor('pro', openModal),
     })
 
     act(() => result.current.exportPdf())
-    await waitFor(() => {
-      expect(openModal).toHaveBeenCalledWith('pdf')
-    })
-    expect(mockDownload).not.toHaveBeenCalled()
+    await waitFor(() => expect(mockDownload).toHaveBeenCalledWith('tok-1', undefined))
+    expect(openModal).not.toHaveBeenCalled()
   })
 })

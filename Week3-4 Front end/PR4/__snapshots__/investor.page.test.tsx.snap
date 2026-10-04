@@ -395,6 +395,12 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
                 Help
               </a>
               <a
+                href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+              >
+                Send beta feedback
+              </a>
+              <a
                 href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
@@ -6557,6 +6563,12 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 Help
               </a>
               <a
+                href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+              >
+                Send beta feedback
+              </a>
+              <a
                 href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
@@ -6978,6 +6990,12 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Help
+              </a>
+              <a
+                href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+              >
+                Send beta feedback
               </a>
               <a
                 href="/methodology#calculations"

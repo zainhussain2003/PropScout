@@ -1468,7 +1468,7 @@ export function TenantReport({
                   }}
                 >
                   {comps.compCount} recent asking-rent record
-                  {comps.compCount !== 1 ? 's' : ''} · Rentals.ca, Kijiji &amp; PadMapper ·{' '}
+                  {comps.compCount !== 1 ? 's' : ''} from available sources ·{' '}
                   {comps.radiusKm != null
                     ? `within ${comps.radiusKm} km; postal-area comps unavailable`
                     : 'same first-three postal area'}{' '}
@@ -1769,8 +1769,8 @@ export function TenantReport({
           <div className="card" style={{ padding: 32 }}>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 640 }}>
               None of the comparable rentals behind §01 carries a position this report can map. The
-              market rent range uses recent asking-rent records scraped nightly from Rentals.ca,
-              Kijiji, and PadMapper
+              market rent range uses available asking-rent records; source and date are shown with
+              each record
               {realAnalysis?.rentalComps?.radiusKm != null
                 ? ` within ${realAnalysis.rentalComps.radiusKm} km because this postal area had too few records.`
                 : ' in the same first-three-character postal area.'}

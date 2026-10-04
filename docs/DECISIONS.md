@@ -4206,3 +4206,31 @@ April 2026 high-value bands for one/two single-family residences. The frontend G
 uses 39% and includes $150 monthly heating, matching the calculation engine's assumptions.
 It is labelled a screen, not a mortgage approval. Sample reports disclose demonstration data;
 known demo arithmetic, navigation and mobile layout inconsistencies are corrected.
+
+### D-126 · Public beta gives everyone access to all shipped features
+
+**Owner decision, 2026-10-03.** During public beta, all implemented report modes and features
+are free. There is no signed-in monthly analysis quota, guest report allowance, narrative
+truncation, or PDF subscription gate. A report's token remains its viewing capability, so a
+visitor with a live report link may download its PDF. Existing authentication and report-owner
+checks for edits remain in place. Rate limits and other abuse controls remain in place.
+
+The landing page must advertise the current free beta rather than paid plans. New Stripe
+checkout sessions are paused server-side. The billing portal and webhook remain available
+for existing subscriptions; this change does not cancel any existing subscriber or change
+production billing configuration. Saved report libraries, portfolio tracking, white-label
+exports, and other unbuilt features remain unavailable. D-125 and the §4 paid matrix are
+historical plans, superseded for the beta offer. Reintroducing paid access requires a new
+owner decision and end-to-end verification before exposing checkout again.
+
+### D-127 · Partial listings require asking amount and bedrooms; missing costs stay explicit
+
+**Beta product decision, 2026-10-04.** A partially read listing is reviewed before a report mode
+is chosen. The visitor must provide the asking price or rent and bedroom count if absent. They
+may correct any extracted numeric fact. Missing tax uses the city-rate estimate established by
+D-053/D-054 and is labelled as estimated. An unstated condo fee remains unknown: the calculator
+uses $0 for that component and shows the `condo_fee_unknown` caution on affected cost reports.
+The report must not present that $0 as a stated fee. Visitors can still assess location, rent
+positioning, and other evidence while they verify the fee; cost-based conclusions require that
+follow-up. This resolves the older §5 sentence that required tax and condo-fee entry before any
+analysis while preserving the field-level provenance rule in §11.2.

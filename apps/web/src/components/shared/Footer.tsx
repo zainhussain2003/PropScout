@@ -27,6 +27,10 @@ const FOOTER_COLS = [
     heading: 'Resources',
     items: [
       { label: 'Help', href: '/methodology#help' },
+      {
+        label: 'Send beta feedback',
+        href: 'mailto:support@propscout.ca?subject=PropScout%20beta%20feedback',
+      },
       { label: 'Calculation guide', href: '/methodology#calculations' },
     ],
   },

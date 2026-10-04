@@ -4650,6 +4650,12 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
               Help
             </a>
             <a
+              href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+              style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+            >
+              Send beta feedback
+            </a>
+            <a
               href="/methodology#calculations"
               style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
             >

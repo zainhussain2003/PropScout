@@ -20,7 +20,7 @@ import { SignInModal } from '../components/shared/SignInModal'
 import { StubState } from '../components/states/StubState'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { startCheckout, openBillingPortal } from '../lib/services/billingService'
-import { FREE_TIER } from '../constants/tiers'
+import { BETA_FREE_ACCESS, FREE_TIER } from '../constants/tiers'
 import { useTheme } from '../hooks/useTheme'
 
 // ── Domain types ──────────────────────────────────────────────────────
@@ -215,7 +215,9 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
                   {analysesThisMonth}
                 </span>{' '}
                 {analysesThisMonth === 1 ? 'analysis' : 'analyses'} this month
-                {tier === 'free' && <> · the free plan allows {FREE_TIER.MONTHLY_ANALYSIS_LIMIT}</>}
+                {!BETA_FREE_ACCESS && tier === 'free' && (
+                  <> · the free plan allows {FREE_TIER.MONTHLY_ANALYSIS_LIMIT}</>
+                )}
               </>
             )}
           </p>
@@ -231,12 +233,12 @@ function SavedAnalysesView({ tier, onUpgrade }: SavedAnalysesViewProps): JSX.Ele
       >
         <h3 className="serif">Saving reports to your account isn&rsquo;t available yet.</h3>
         <p style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 460 }}>
-          Every report you run gets a share link that stays live for 30 days — keep that link and
-          you can reopen the report from anywhere. A permanent library here is still being built.
+          Keep each report&rsquo;s share link to reopen it later. Guest links expire after 30 days;
+          signed-in links do not. A permanent library here is still being built.
         </p>
       </div>
 
-      {tier === 'free' && (
+      {!BETA_FREE_ACCESS && tier === 'free' && (
         <div
           className="card row"
           style={{
@@ -355,6 +357,30 @@ function PlanView({ tier, onUpgrade, onManagePlan, billingError }: PlanViewProps
   const tierKey = safeTierKey(tier)
   const tierDetail = TIER_DETAILS[tierKey]
   const { analysesThisMonth, loading: usageLoading } = useAccount()
+
+  if (BETA_FREE_ACCESS) {
+    return (
+      <div className="col" style={{ gap: 20 }}>
+        <h1 className="serif">Plan &amp; billing</h1>
+        <div className="card col" style={{ padding: 28, gap: 12 }}>
+          <h2 className="serif">Free during beta</h2>
+          <p>Unlimited reports, full verdicts, and PDF export are available without payment.</p>
+          {tier !== 'free' && (
+            <>
+              <p>
+                Your existing {TIER_DETAILS[safeTierKey(tier)].label} subscription is still
+                recorded.
+              </p>
+              <button className="btn btn-ghost" onClick={onManagePlan}>
+                Manage existing subscription
+              </button>
+            </>
+          )}
+          {billingError != null && <p role="alert">{billingError}</p>}
+        </div>
+      </div>
+    )
+  }
 
   // Only what is actually measured. This card used to show "2 / 3" analyses,
   // "8" tenant reports and "8 / 10" saved analyses to every user — fixtures,
@@ -774,14 +800,22 @@ function AccountSidebar({ activeTab, onTab, tier }: AccountSidebarProps): JSX.El
                 color: tierKey === 'free' ? 'var(--ink)' : 'var(--accent)',
               }}
             >
-              {tierDetail.label}
+              {BETA_FREE_ACCESS && tierKey === 'free' ? 'Free beta' : tierDetail.label}
             </span>
             <span className="mono tabular" style={{ fontSize: 12, color: 'var(--muted)' }}>
-              {tierDetail.priceLine}
+              {BETA_FREE_ACCESS && tierKey === 'free' ? '$0' : tierDetail.priceLine}
             </span>
           </div>
-          <span style={{ fontSize: 11, color: 'var(--muted)' }}>{tierDetail.cycleNote}</span>
-          {tierKey === 'free' ? (
+          <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+            {BETA_FREE_ACCESS && tierKey === 'free'
+              ? 'All available features included'
+              : tierDetail.cycleNote}
+          </span>
+          {BETA_FREE_ACCESS && tierKey === 'free' ? (
+            <button onClick={() => onTab('plan')} className="btn btn-ghost">
+              View beta access
+            </button>
+          ) : tierKey === 'free' ? (
             <button
               className="btn btn-accent"
               style={{ padding: '8px 12px', fontSize: 12, marginTop: 4 }}
@@ -810,7 +844,7 @@ export function AccountPage(): JSX.Element {
   const { dark, toggle: handleToggleDark } = useTheme()
 
   const { session, loading: authLoading } = useAuth()
-  const { tier, openUpgradeModal } = usePaywall()
+  const { tier, billingTier = tier, openUpgradeModal } = usePaywall()
   const [billingError, setBillingError] = useState<string | null>(null)
   const [showSignIn, setShowSignIn] = useState(false)
 
@@ -848,7 +882,7 @@ export function AccountPage(): JSX.Element {
     case 'plan':
       view = (
         <PlanView
-          tier={tier as 'free' | 'pro' | 'professional' | 'team'}
+          tier={billingTier as 'free' | 'pro' | 'professional' | 'team'}
           onUpgrade={handleUpgrade}
           onManagePlan={handleManagePlan}
           billingError={billingError}
@@ -883,7 +917,7 @@ export function AccountPage(): JSX.Element {
       <AccountTopNav
         dark={dark}
         onToggleDark={handleToggleDark}
-        tier={tier as 'free' | 'pro' | 'professional' | 'team'}
+        tier={billingTier as 'free' | 'pro' | 'professional' | 'team'}
       />
 
       <div className="container" style={{ padding: '40px var(--gutter)' }}>
@@ -898,7 +932,7 @@ export function AccountPage(): JSX.Element {
         >
           {/* The sidebar's plan card read "free" for every user regardless of
               tier (audit A-05); it now shows the resolved tier like the nav. */}
-          <AccountSidebar activeTab={activeTab} onTab={handleTabChange} tier={tier} />
+          <AccountSidebar activeTab={activeTab} onTab={handleTabChange} tier={billingTier} />
           <main className="hy-account-content">{view}</main>
         </div>
       </div>

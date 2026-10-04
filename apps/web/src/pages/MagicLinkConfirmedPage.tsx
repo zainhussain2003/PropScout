@@ -22,7 +22,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { StubState } from '../components/states/StubState'
-import { getSession, onAuthStateChange } from '../lib/services/authService'
+import { getSession, onAuthStateChange, syncAccountAfterSignIn } from '../lib/services/authService'
+import { consumeAuthReturnPath } from '../lib/authReturn'
 
 /** How long to wait for the auth client before saying nothing came back. */
 export const CONFIRM_STALL_MS = 15_000
@@ -81,20 +82,27 @@ export function MagicLinkConfirmedPage(): JSX.Element {
     if (state.kind !== 'checking') return
 
     let done = false
-    const arrive = (): void => {
+    const arrive = (accessToken: string): void => {
       if (done) return
       done = true
-      setState({ kind: 'signedIn' })
-      navigate('/account', { replace: true })
+      void syncAccountAfterSignIn(accessToken)
+        .catch(() => {
+          // Sign-in is valid even when account sync is temporarily unavailable.
+          // The share link remains usable; /account can retry the claim.
+        })
+        .finally(() => {
+          setState({ kind: 'signedIn' })
+          navigate(consumeAuthReturnPath(), { replace: true })
+        })
     }
 
     // The client may have finished exchanging the token before this
     // subscription existed; ask once as well as listening.
     void getSession().then((s) => {
-      if (s != null) arrive()
+      if (s != null) arrive(s.access_token)
     })
     const unsub = onAuthStateChange((session) => {
-      if (session != null) arrive()
+      if (session != null) arrive(session.access_token)
     })
 
     const timeout = setTimeout(() => {
@@ -156,7 +164,7 @@ export function MagicLinkConfirmedPage(): JSX.Element {
         tone="pass"
         eyebrow="You're in"
         headline="Signed in."
-        body="Taking you to your account…"
+        body="Opening your saved place…"
         primary={{ label: 'Go to my account', onClick: () => navigate('/account') }}
       />
     )

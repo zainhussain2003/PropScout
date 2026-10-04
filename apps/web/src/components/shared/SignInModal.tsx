@@ -287,8 +287,8 @@ export function SignInModal({ open, onClose }: SignInModalProps): JSX.Element | 
           }}
         >
           {mode === 'signin'
-            ? 'Sign in to keep your reports in your account. Full verdicts and PDF export require Pro.'
-            : 'Ten free reports every month. No credit card. Cancel anytime.'}
+            ? 'Sign in to access your account. Full verdicts and PDF export are free during beta.'
+            : 'Every available report feature is free during beta. No credit card needed.'}
         </p>
 
         <div className="col gap-12" style={{ marginBottom: 16 }}>

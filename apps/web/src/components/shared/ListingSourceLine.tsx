@@ -7,6 +7,18 @@
 
 import type { ListingData } from '../../types/analysis'
 
+const enteredFieldLabels: Record<string, string> = {
+  price: 'asking price',
+  rentMonthly: 'asking rent',
+  beds: 'bedrooms',
+  baths: 'bathrooms',
+  sqft: 'size',
+  annualTaxes: 'property tax',
+  yearBuilt: 'year built',
+  condoFeeMonthly: 'condo fee',
+  parkingSpots: 'parking',
+}
+
 export function ListingSourceLine({
   provenance,
 }: {
@@ -28,6 +40,9 @@ export function ListingSourceLine({
         ? `Listing facts from ${provenance.source ?? 'the listing'}`
         : 'Listing facts as you entered them'}
       {when}
+      {provenance.enteredFields != null &&
+        provenance.enteredFields.length > 0 &&
+        ` · you entered: ${provenance.enteredFields.map((field) => enteredFieldLabels[field] ?? field).join(', ')}`}
     </div>
   )
 }

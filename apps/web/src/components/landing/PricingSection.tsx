@@ -1,333 +1,48 @@
-/**
- * Landing page — split out of pages/LandingPage.tsx (J-04, D-093).
- */
-
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Icon } from '../shared/Icon'
-import { FREE_TIER } from '../../constants/tiers'
-import { useAuth } from '../../hooks/useAuth'
-import { startCheckout } from '../../lib/services/billingService'
-import type { Tier } from '../../types/user'
 import { SectionHeader } from './SectionHeader'
 
-// ── PricingSection ────────────────────────────────────────────────────
-
-/**
- * A pricing feature. `planned` marks what is sold but not built (audit J-03):
- * the row renders with a "planned" tag rather than a bare check mark, so the
- * page sells what exists and promises the rest honestly.
- */
-interface PricingFeature {
-  text: string
-  planned?: boolean
-}
-
-/**
- * Where "Talk to us" goes. Unset until the owner chooses a channel; the card
- * then says so instead of rendering a button that does nothing.
- */
-const CONTACT_EMAIL: string = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) ?? ''
-
-export function PricingSection({ onSignIn }: { onSignIn: () => void }): JSX.Element {
-  const yearly = false // Annual checkout is deferred until separately verified.
-  const { session } = useAuth()
-  const navigate = useNavigate()
-  const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [checkoutTier, setCheckoutTier] = useState<Tier | null>(null)
-
-  // Free → the account (signed in) or sign-in. Paid → Stripe Checkout for
-  // that tier (signed in) or sign-in first; the API's answer — today a 503
-  // "paid plans are not open yet" until price IDs exist (D-076) — is shown,
-  // not swallowed. These buttons had no handler at all (audit, paywall).
-  const handleCta = (tier: Tier | 'free'): void => {
-    setCheckoutError(null)
-    if (!session) {
-      onSignIn()
-      return
-    }
-    if (tier === 'free') {
-      navigate('/account')
-      return
-    }
-    setCheckoutTier(tier)
-    void startCheckout(tier, session.access_token)
-      .catch((err: Error) => setCheckoutError(err.message))
-      .finally(() => setCheckoutTier(null))
-  }
-
-  const tiers: Array<{
-    name: string
-    tier: Tier | 'free' | 'team'
-    price: number
-    priceSuffix?: string
-    yearlyTotal?: number
-    sub: string
-    cta: string
-    featured: boolean
-    features: PricingFeature[]
-  }> = [
-    {
-      name: 'Free',
-      tier: 'free',
-      price: 0,
-      sub: 'For tenants and the merely curious.',
-      cta: 'Start free',
-      featured: false,
-      features: [
-        { text: `${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} sale-listing reports / month` },
-        { text: 'Unlimited tenant reports' },
-        { text: 'Full rental comps, confidence shown' },
-        { text: 'Verdict summary' },
-        { text: 'Financing scenarios and available SunScout data' },
-        { text: 'Shareable report links' },
-      ],
-    },
-    {
-      name: 'Investor Pro',
-      tier: 'pro',
-      price: 10,
-      sub: 'For the investor running the numbers themselves.',
-      cta: 'Go Pro',
-      featured: true,
-      features: [
-        { text: 'Unlimited reports, all four modes' },
-        { text: 'Full evidence-based verdicts' },
-        { text: 'Everything in Free' },
-        { text: 'Branded PDF export' },
-      ],
-    },
+/** Current public-beta offer. This lists only features that already exist. */
+export function PricingSection(): JSX.Element {
+  const features = [
+    'Unlimited reports across all four available modes',
+    'Full evidence-based verdicts and risk details',
+    'Rental comparables and financing scenarios',
+    'Available SunScout data and shareable report links',
+    'Branded PDF export for live reports',
   ]
 
   return (
     <section id="pricing" className="container" style={{ paddingTop: 'var(--pad-y)' }}>
       <div className="col gap-32">
-        <div
-          className="row"
-          style={{
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            flexWrap: 'wrap',
-            gap: 24,
-          }}
-        >
-          <SectionHeader
-            tag="Pricing · CAD"
-            title={<>Start free. Go Pro for more reports and exports.</>}
-          >
-            Monthly billing. Cancel anytime. All prices in Canadian dollars, all tax inclusive.
-          </SectionHeader>
-        </div>
-
-        <div
-          className="grid-1col-mobile"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: 0,
-            borderTop: '1px solid var(--line-strong)',
-          }}
-        >
-          {tiers
-            .filter((t) => t.tier === 'free' || t.tier === 'pro')
-            .map((t) => (
-              <div
-                key={t.name}
-                className="col"
-                style={{
-                  padding: '30px 26px 30px',
-                  background: t.featured ? 'var(--ink)' : 'transparent',
-                  color: t.featured ? 'var(--bg)' : 'var(--ink)',
-                  borderRight: '1px solid var(--line)',
-                  borderBottom: '1px solid var(--line)',
-                  position: 'relative',
-                  gap: 18,
-                }}
-              >
-                {t.featured && (
-                  <span
-                    className="mono"
-                    style={{
-                      position: 'absolute',
-                      top: -1,
-                      left: 0,
-                      right: 0,
-                      background: 'var(--accent)',
-                      color: 'var(--accent-ink)',
-                      fontSize: 10,
-                      letterSpacing: '0.14em',
-                      padding: '5px 10px',
-                      textAlign: 'center',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Most chosen
-                  </span>
-                )}
-                <div className="col gap-8" style={{ marginTop: t.featured ? 14 : 0 }}>
-                  <div
-                    className="mono"
-                    style={{
-                      fontSize: 11,
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      color: t.featured
-                        ? 'color-mix(in oklab, var(--bg) 55%, transparent)'
-                        : 'var(--muted)',
-                    }}
-                  >
-                    {t.name}
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: t.featured
-                        ? 'color-mix(in oklab, var(--bg) 75%, transparent)'
-                        : 'var(--ink-2)',
-                    }}
-                  >
-                    {t.sub}
-                  </p>
-                </div>
-                <div className="row" style={{ alignItems: 'baseline', gap: 6 }}>
-                  <span className="mono tabular" style={{ fontSize: 56, lineHeight: 1 }}>
-                    ${Math.round(t.price)}
-                    {'priceSuffix' in t ? (t.priceSuffix as string) : ''}
-                  </span>
-                  <span
-                    className="mono"
-                    style={{
-                      fontSize: 11,
-                      color: t.featured
-                        ? 'color-mix(in oklab, var(--bg) 50%, transparent)'
-                        : 'var(--muted)',
-                    }}
-                  >
-                    {'priceSuffix' in t && t.priceSuffix === '+' ? '/ mo base' : '/ mo'}
-                  </span>
-                </div>
-                {'yearlyTotal' in t && t.yearlyTotal !== undefined && yearly && (
-                  <div
-                    className="mono"
-                    style={{
-                      fontSize: 11,
-                      color: t.featured
-                        ? 'color-mix(in oklab, var(--bg) 55%, transparent)'
-                        : 'var(--muted)',
-                      marginTop: -8,
-                    }}
-                  >
-                    ${t.yearlyTotal} billed yearly
-                  </div>
-                )}
-                {t.tier === 'team' ? (
-                  CONTACT_EMAIL ? (
-                    <a
-                      className="btn"
-                      href={`mailto:${CONTACT_EMAIL}?subject=PropScout%20Team`}
-                      style={{
-                        background: 'var(--ink)',
-                        color: 'var(--bg)',
-                        width: '100%',
-                        justifyContent: 'center',
-                        padding: '14px',
-                      }}
-                    >
-                      {t.cta}
-                    </a>
-                  ) : (
-                    <div
-                      className="mono"
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: 'var(--muted)',
-                        padding: '14px 0',
-                        textAlign: 'center',
-                      }}
-                    >
-                      Contact channel not open yet
-                    </div>
-                  )
-                ) : (
-                  <button
-                    className="btn"
-                    onClick={() => handleCta(t.tier as Tier | 'free')}
-                    disabled={checkoutTier === t.tier}
-                    style={{
-                      background: t.featured ? 'var(--accent)' : 'var(--ink)',
-                      color: t.featured ? 'var(--accent-ink)' : 'var(--bg)',
-                      width: '100%',
-                      justifyContent: 'center',
-                      padding: '14px',
-                    }}
-                  >
-                    {checkoutTier === t.tier ? 'Opening checkout…' : t.cta}
-                  </button>
-                )}
-                <div className="col gap-10" style={{ marginTop: 6 }}>
-                  {t.features.map((f) => (
-                    <div
-                      key={f.text}
-                      className="row gap-8"
-                      style={{
-                        alignItems: 'flex-start',
-                        fontSize: 13,
-                        color: t.featured
-                          ? 'color-mix(in oklab, var(--bg) 85%, transparent)'
-                          : 'var(--ink-2)',
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: f.planned ? 'var(--muted)' : 'var(--accent)',
-                          marginTop: 2,
-                        }}
-                      >
-                        <Icon name={f.planned ? 'dot' : 'check'} size={14} stroke={2} />
-                      </span>
-                      <span>
-                        {f.text}
-                        {f.planned && (
-                          <span
-                            className="mono"
-                            style={{
-                              marginLeft: 8,
-                              fontSize: 10,
-                              letterSpacing: '0.12em',
-                              textTransform: 'uppercase',
-                              color: t.featured
-                                ? 'color-mix(in oklab, var(--bg) 60%, transparent)'
-                                : 'var(--muted)',
-                            }}
-                          >
-                            planned
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+        <SectionHeader tag="Public beta" title={<>Every available report feature is free.</>}>
+          Explore listings and tell us what helps. No subscription or credit card is needed during
+          beta.
+        </SectionHeader>
+        <div className="card col" style={{ padding: '30px 26px', gap: 18, maxWidth: 700 }}>
+          <div className="row" style={{ alignItems: 'baseline', gap: 12 }}>
+            <strong className="serif" style={{ fontSize: 28 }}>
+              Free during beta
+            </strong>
+            <span className="mono" style={{ color: 'var(--muted)' }}>
+              All available features
+            </span>
+          </div>
+          <div className="col gap-10">
+            {features.map((feature) => (
+              <div key={feature} className="row gap-8" style={{ alignItems: 'flex-start' }}>
+                <Icon name="check" size={14} stroke={2} />
+                <span>{feature}</span>
               </div>
             ))}
-        </div>
-        {checkoutError !== null && (
-          <div
-            role="alert"
-            style={{
-              padding: '12px 14px',
-              borderRadius: 12,
-              background: 'color-mix(in oklab, var(--caution) 8%, transparent)',
-              border: '1px solid color-mix(in oklab, var(--caution) 35%, transparent)',
-              color: 'var(--ink)',
-              fontSize: 13.5,
-              lineHeight: 1.5,
-            }}
-          >
-            {checkoutError}
           </div>
-        )}
+          <a className="btn btn-primary" href="#hero" style={{ alignSelf: 'flex-start' }}>
+            Analyze a listing <Icon name="arrow" size={14} />
+          </a>
+          <p style={{ color: 'var(--muted)', fontSize: 13 }}>
+            Saving reports to an account, portfolio tracking, and custom branding are still being
+            built.
+          </p>
+        </div>
       </div>
     </section>
   )

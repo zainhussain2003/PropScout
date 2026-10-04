@@ -21,6 +21,13 @@ import type { Analysis, SchoolsResult } from '../types/analysis'
 import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
 
+beforeEach(() => {
+  process.env.BETA_FREE_ACCESS = 'false'
+})
+afterAll(() => {
+  delete process.env.BETA_FREE_ACCESS
+})
+
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
 jest.mock('../services/supabaseService')
@@ -215,6 +222,40 @@ describe('POST / — analysis orchestrator', () => {
     expect(metrics.cashFlowMonthly).toBe(-1833)
     expect(metrics.capRate).toBe(0.025)
     expect(body.analysis.dealScore?.verdict).toBe('hard_pass')
+  })
+
+  it('uses visitor corrections only in this report snapshot, preserving the source listing', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        token: 'test-token',
+        mode: 'investor',
+        manualListingFields: { price: 715000, sqft: 1120 },
+      },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const savedListing = mockSaveAnalysis.mock.calls[0]?.[2] as Listing
+    expect(savedListing.price).toBe(715000)
+    expect(savedListing.sqft).toBe(1120)
+    expect(savedListing.enteredFields).toEqual(['price', 'sqft'])
+    expect(LISTING_FIXTURE.price).toBe(729900)
+    expect(LISTING_FIXTURE.enteredFields).toBeUndefined()
+  })
+
+  it('refuses a rent correction on a sale listing', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        token: 'test-token',
+        mode: 'investor',
+        manualListingFields: { rentMonthly: 2500 },
+      },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(mockSaveAnalysis).not.toHaveBeenCalled()
   })
 
   // ── Test 1b ────────────────────────────────────────────────────────────────
@@ -1123,6 +1164,22 @@ describe('POST / — free-tier quota and attribution', () => {
     expect(mockSaveAnalysis).not.toHaveBeenCalled()
   })
 
+  it('allows a signed-in free beta user past the former monthly quota', async () => {
+    process.env.BETA_FREE_ACCESS = 'true'
+    signedInAs(USER_ID)
+    userOnTier('free')
+    mockMonthlyCount.mockResolvedValue(10)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockMonthlyCount).not.toHaveBeenCalled()
+    expect(mockClaim).toHaveBeenCalledWith('test-token', USER_ID, 'investor')
+  })
+
   it('allows the 10th analysis (the limit is inclusive of the count, not the index)', async () => {
     signedInAs(USER_ID)
     userOnTier('free')
@@ -1329,6 +1386,21 @@ describe('POST / — guest allowance (D-116)', () => {
     expect(body.limit).toBe(1)
     expect(global.fetch).not.toHaveBeenCalled()
     expect(mockMarkGuest).not.toHaveBeenCalled()
+  })
+
+  it('allows beta guests to run reports even if the legacy guest wall is enabled', async () => {
+    process.env.BETA_FREE_ACCESS = 'true'
+    process.env.GUEST_ANALYSIS_LIMIT_ENABLED = 'true'
+    mockCountGuest.mockResolvedValue(1)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockCountGuest).not.toHaveBeenCalled()
+    expect(mockMarkGuest).toHaveBeenCalled()
   })
 
   it('with the wall on, the first analysis runs and tenant mode is always exempt', async () => {

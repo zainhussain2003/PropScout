@@ -63,6 +63,7 @@ function makeAuthMock(valid: boolean, userId = 'user-abc'): object {
 let app: FastifyInstance
 
 beforeEach(async () => {
+  process.env.BETA_FREE_ACCESS = 'false'
   jest.clearAllMocks()
   mockGetUserById.mockResolvedValue({ id: 'user-abc', tier: 'free', stripe_customer_id: null })
   app = Fastify({ logger: false })
@@ -72,6 +73,24 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await app.close()
+})
+
+afterAll(() => {
+  delete process.env.BETA_FREE_ACCESS
+})
+
+it('pauses new subscriptions during free beta, even when Stripe is configured', async () => {
+  process.env.BETA_FREE_ACCESS = 'true'
+  mockGetSupabase.mockReturnValue(makeAuthMock(true))
+  const res = await app.inject({
+    method: 'POST',
+    url: '/checkout',
+    headers: { authorization: 'Bearer valid-token' },
+    payload: { tier: 'pro' },
+  })
+  expect(res.statusCode).toBe(503)
+  expect(res.json().code).toBe('BETA_FREE')
+  expect(mockCreateCheckout).not.toHaveBeenCalled()
 })
 
 // ── POST /checkout ─────────────────────────────────────────────────────────────

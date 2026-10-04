@@ -230,8 +230,15 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           scraped.price <= RENT_BOUNDS.MAX_MONTHLY
             ? scraped.price
             : null
+        const salePrice =
+          listingType === 'for-sale' && scraped.price > 0 && scraped.price <= 100_000_000
+            ? scraped.price
+            : null
 
         const missingFields: string[] = []
+        if (listingType === 'for-sale' && salePrice === null) missingFields.push('price')
+        if (scraped.beds_known === false || scraped.beds == null) missingFields.push('beds')
+        if (scraped.baths_known === false || scraped.baths == null) missingFields.push('baths')
         if (scraped.sqft == null) missingFields.push('sqft')
         const hasUsableAnnualTaxes =
           scraped.taxes_known && scraped.annual_taxes != null && scraped.annual_taxes > 0
@@ -248,7 +255,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           city: extractCity(scraped.address),
           province: 'ON',
           postalCode,
-          price: listingType === 'for-sale' ? scraped.price : null,
+          price: salePrice,
           rentMonthly,
           // A count the page did not carry is null (D-072); a count it did
           // carry is a fact even when it is 0 — a studio (D-092). An older
@@ -259,7 +266,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           bathsKnown: scraped.baths_known,
           sqft: scraped.sqft,
           propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
-          yearBuilt: scraped.year_built,
+          yearBuilt: scraped.year_built_known ? scraped.year_built : null,
           // The scraper yields null when the "Total parking spaces" label is
           // absent; keep that distinction rather than storing 0 (D-072).
           parkingSpots: scraped.parking_spaces ?? null,

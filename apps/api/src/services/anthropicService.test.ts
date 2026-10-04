@@ -200,4 +200,21 @@ describe('generateNarrative', () => {
     expect(result).toContain('$3,100/month against a $3,050 median')
     expect(await generateNarrative({ ...input })).toBe(result)
   })
+
+  it('does not call a rental operating view a purchase verdict', async () => {
+    const result = await generateNarrative({
+      ...BASE_INVESTOR,
+      mode: 'landlord',
+      price: 0,
+      askingRent: 2150,
+      rentMid: 2100,
+      compCount: 58,
+      dealVerdict: 'do_not_buy',
+    })
+    expect(result).toContain('no purchase verdict is available')
+    expect(result).toContain('$2,150/month against a $2,100 median')
+    expect(result).not.toContain('do not buy')
+    expect(result).not.toContain('cap rate')
+    expect(result).not.toContain('cash flow')
+  })
 })

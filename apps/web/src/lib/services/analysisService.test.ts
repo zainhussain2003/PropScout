@@ -16,6 +16,7 @@ import {
   runAnalysis,
   scrapeUrl,
   triggerAnalysis,
+  rememberManualListingFields,
   fetchReport,
   getAnalysisByToken,
   ApiRequestError,
@@ -367,10 +368,12 @@ describe('scrapeUrl', () => {
 describe('triggerAnalysis', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    window.sessionStorage.clear()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    window.sessionStorage.clear()
   })
 
   it('200 response → resolves void', async () => {
@@ -394,6 +397,22 @@ describe('triggerAnalysis', () => {
     >
     expect(body.token).toBe('test-token')
     expect(body.mode).toBe('investor')
+  })
+
+  it('sends corrections for the matching report token and keeps other reports untouched', async () => {
+    rememberManualListingFields('corrected-token', { rentMonthly: 2400, sqft: 620 })
+    mockFetchOK({})
+    await triggerAnalysis('corrected-token', 'tenant')
+    const first = JSON.parse(
+      (vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit).body as string
+    )
+    expect(first.manualListingFields).toEqual({ rentMonthly: 2400, sqft: 620 })
+
+    await triggerAnalysis('other-token', 'tenant')
+    const second = JSON.parse(
+      (vi.mocked(globalThis.fetch).mock.calls[1][1] as RequestInit).body as string
+    )
+    expect(second.manualListingFields).toBeUndefined()
   })
 
   it('non-200 response → throws ApiRequestError', async () => {

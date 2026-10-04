@@ -8,10 +8,12 @@ import { render, screen, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 const getSession = vi.fn()
+const syncAccountAfterSignIn = vi.fn()
 let authListener: ((session: unknown) => void) | null = null
 vi.mock('../lib/services/authService', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../lib/services/authService')>()),
   getSession: () => getSession(),
+  syncAccountAfterSignIn: (token: string) => syncAccountAfterSignIn(token),
   onAuthStateChange: (cb: (session: unknown) => void) => {
     authListener = cb
     return () => {
@@ -32,6 +34,7 @@ import {
   parseAuthErrorFromHash,
   describeAuthError,
 } from './MagicLinkConfirmedPage'
+import { rememberAuthReturnPath } from '../lib/authReturn'
 
 function renderPage(): void {
   render(
@@ -47,13 +50,19 @@ describe('MagicLinkConfirmedPage', () => {
     navigate.mockReset()
     getSession.mockReset()
     getSession.mockResolvedValue(null)
+    syncAccountAfterSignIn.mockReset()
+    syncAccountAfterSignIn.mockResolvedValue(undefined)
     window.location.hash = ''
+    window.localStorage.clear()
+    window.history.replaceState(null, '', '/')
     authListener = null
   })
 
   afterEach(() => {
     vi.useRealTimers()
     window.location.hash = ''
+    window.localStorage.clear()
+    window.history.replaceState(null, '', '/')
   })
 
   it('shows "confirming", not "signed in", while nothing has arrived', () => {
@@ -77,7 +86,9 @@ describe('MagicLinkConfirmedPage', () => {
     renderPage()
     await act(async () => {
       authListener?.({ access_token: 'jwt' })
+      await Promise.resolve()
     })
+    expect(syncAccountAfterSignIn).toHaveBeenCalledWith('jwt')
     expect(navigate).toHaveBeenCalledWith('/account', { replace: true })
   })
 
@@ -87,7 +98,49 @@ describe('MagicLinkConfirmedPage', () => {
     await act(async () => {
       await Promise.resolve()
     })
+    expect(syncAccountAfterSignIn).toHaveBeenCalledWith('jwt')
     expect(navigate).toHaveBeenCalledWith('/account', { replace: true })
+  })
+
+  it('returns a guest to the same report after a successful sign-in', async () => {
+    const report = '/r/6b14814b-698f-4383-83ef-f837b5ef265b'
+    window.history.replaceState(null, '', report)
+    rememberAuthReturnPath()
+    window.history.replaceState(null, '', '/auth/confirm')
+    renderPage()
+    await act(async () => {
+      authListener?.({ access_token: 'jwt' })
+      await Promise.resolve()
+    })
+    expect(syncAccountAfterSignIn).toHaveBeenCalledWith('jwt')
+    expect(navigate).toHaveBeenCalledWith(report, { replace: true })
+  })
+
+  it('waits for the guest claim request before opening the saved report', async () => {
+    let finishSync: (() => void) | undefined
+    syncAccountAfterSignIn.mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishSync = resolve
+      })
+    )
+    const report = '/r/6b14814b-698f-4383-83ef-f837b5ef265b'
+    window.history.replaceState(null, '', report)
+    rememberAuthReturnPath()
+    window.history.replaceState(null, '', '/auth/confirm')
+    renderPage()
+
+    await act(async () => {
+      authListener?.({ access_token: 'jwt' })
+      await Promise.resolve()
+    })
+    expect(syncAccountAfterSignIn).toHaveBeenCalledWith('jwt')
+    expect(navigate).not.toHaveBeenCalled()
+
+    await act(async () => {
+      finishSync?.()
+      await Promise.resolve()
+    })
+    expect(navigate).toHaveBeenCalledWith(report, { replace: true })
   })
 
   it('after a long wait says it has not heard back — not that the link expired', async () => {

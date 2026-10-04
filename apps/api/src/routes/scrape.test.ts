@@ -274,6 +274,45 @@ describe('POST /scrape - for-rent rent bounds', () => {
   })
 })
 
+describe('POST /scrape - sale facts requiring review', () => {
+  it('routes a missing asking price to review instead of scoring zero', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ ...ONTARIO_FIXTURE, price: 0 }, 200))
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+    const body = JSON.parse(res.body) as {
+      listing: { price: number | null }
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+    expect(body.listing.price).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('price')
+  })
+
+  it('routes unstated bedroom and bathroom counts to review', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, beds_known: false, baths_known: false }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+    const body = JSON.parse(res.body) as {
+      listing: { beds: number | null; baths: number | null }
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+    expect(body.listing.beds).toBeNull()
+    expect(body.listing.baths).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toEqual(expect.arrayContaining(['beds', 'baths']))
+  })
+})
+
 // ── Building-type discriminator + real parking (live bugs, 2026-07-02) ─────────
 
 describe('POST / — buildingType + parking mapping', () => {

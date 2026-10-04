@@ -11,7 +11,18 @@ const report = {
   riskFlags: [],
 } as unknown as Analysis
 const req = {} as FastifyRequest
-beforeEach(() => jest.resetAllMocks())
+beforeEach(() => {
+  jest.resetAllMocks()
+  process.env.BETA_FREE_ACCESS = 'false'
+})
+afterAll(() => {
+  delete process.env.BETA_FREE_ACCESS
+})
+it('gives an anonymous beta viewer the complete report without a tier lookup', async () => {
+  process.env.BETA_FREE_ACCESS = 'true'
+  expect((await reportForViewer(req, report)).narrative).toBe(report.narrative)
+  expect(resolveUser).not.toHaveBeenCalled()
+})
 it('never sends paid paragraphs to an anonymous viewer', async () => {
   jest.mocked(resolveUser).mockResolvedValue({ ok: false, reason: 'missing' })
   expect((await reportForViewer(req, report)).narrative).toBe('First sentence.')

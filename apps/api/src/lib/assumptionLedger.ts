@@ -63,6 +63,7 @@ export interface LedgerInput {
     condoFeeMonthly: number | null
     condoFeeKnown: boolean
     yearBuilt: number | null
+    enteredFields?: string[]
     /** For the demand rows' FSA note (D-105). */
     postalCode?: string | null
   }
@@ -210,6 +211,7 @@ const MAINTENANCE_BAND: Record<string, string> = {
 export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
   const { mode, listing, engine, rate, comps } = input
   const rows: AssumptionEntry[] = []
+  const entered = new Set(listing.enteredFields ?? [])
   // A landlord report scored on the landlord's own value is a purchase model
   // too (D-107); before a value is entered it is an operating view.
   const purchase =
@@ -237,9 +239,11 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       label: 'Rent',
       value: `${cad(input.rentMid)}/mo`,
       basis: 'observed',
-      source: 'The listing',
+      source: entered.has('rentMonthly') ? 'You entered it' : 'The listing',
       asOf: input.createdAt,
-      method: 'The asking rent as listed; no comparable rentals were found to test it against.',
+      method: entered.has('rentMonthly')
+        ? 'The asking rent you entered after reviewing the listing; no comparable rentals were found to test it against.'
+        : 'The asking rent as listed; no comparable rentals were found to test it against.',
     })
   } else {
     rows.push({
@@ -389,9 +393,11 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       label: 'Property tax',
       value: `${cad(input.annualTaxesUsed)}/yr`,
       basis: 'observed',
-      source: 'The listing',
+      source: entered.has('annualTaxes') ? 'You entered it' : 'The listing',
       asOf: input.createdAt,
-      method: 'As published on the listing.',
+      method: entered.has('annualTaxes')
+        ? 'As entered after reviewing the listing.'
+        : 'As published on the listing.',
     })
   }
 
@@ -401,9 +407,11 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       label: 'Condo fee',
       value: `${cad(listing.condoFeeMonthly)}/mo`,
       basis: 'observed',
-      source: 'The listing',
+      source: entered.has('condoFeeMonthly') ? 'You entered it' : 'The listing',
       asOf: input.createdAt,
-      method: 'As published on the listing.',
+      method: entered.has('condoFeeMonthly')
+        ? 'As entered after reviewing the listing.'
+        : 'As published on the listing.',
     })
   }
 

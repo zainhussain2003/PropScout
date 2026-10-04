@@ -69,7 +69,7 @@ export function LandingPage(): JSX.Element {
         <FounderNoteSection />
         <LandingSunScoutSection />
         <HowSection />
-        <PricingSection onSignIn={() => setShowSignIn(true)} />
+        <PricingSection />
         <FAQSection />
         <CTASection />
       </main>

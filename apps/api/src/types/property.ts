@@ -62,4 +62,6 @@ export interface Listing {
   description: string | null
   photos: string[]
   scrapedAt: string
+  /** Fields corrected or supplied by the visitor for this report snapshot. */
+  enteredFields?: string[]
 }

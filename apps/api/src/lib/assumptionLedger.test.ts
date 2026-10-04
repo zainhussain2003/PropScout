@@ -61,6 +61,13 @@ function entry(input: LedgerInput, key: string): AssumptionEntry {
 }
 
 describe('buildAssumptionLedger', () => {
+  it('credits visitor corrections rather than attributing them to the source listing', () => {
+    const input = base({
+      listing: { ...base().listing, enteredFields: ['annualTaxes', 'condoFeeMonthly'] },
+    })
+    expect(entry(input, 'property_tax').source).toBe('You entered it')
+    expect(entry(input, 'condo_fee').source).toBe('You entered it')
+  })
   it('a live Bank of Canada rate is published, with its fetch date', () => {
     const e = entry(base(), 'mortgage_rate')
     expect(e.basis).toBe('published')

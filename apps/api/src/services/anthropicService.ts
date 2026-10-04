@@ -173,21 +173,27 @@ function buildTenantNarrative(input: NarrativeInput): string {
 
 function buildLandlordNarrative(input: NarrativeInput): string {
   const label = verdictLabel(input.dealVerdict)
-  const opening = label
-    ? `The current landlord economics produce a ${label}.`
-    : 'The landlord verdict is unavailable because the calculation engine did not return a deal verdict.'
+  const rentalOperatingView = !finite(input.price) || input.price <= 0
+  const opening = rentalOperatingView
+    ? 'This rental listing has no purchase price, so no purchase verdict is available; the operating view compares rent with local asking rents and running costs.'
+    : label
+      ? `The current landlord economics produce a ${label}.`
+      : 'The landlord verdict is unavailable because the calculation engine did not return a deal verdict.'
   const position =
     finite(input.askingRent) && finite(input.rentMid) && (input.compCount ?? 0) > 0
       ? `The asking rent is ${fmtCurrency(input.askingRent)}/month against a ${fmtCurrency(input.rentMid)} median from ${input.compCount} comparable rentals.`
       : 'A supported asking-rent comparison is unavailable because the listing or comparable-rent inputs are incomplete.'
   const metrics: string[] = []
-  if (finite(input.capRate)) metrics.push(`cap rate ${fmtPct(input.capRate)}`)
-  if (finite(input.cashFlowMonthly))
+  if (!rentalOperatingView && finite(input.capRate))
+    metrics.push(`cap rate ${fmtPct(input.capRate)}`)
+  if (!rentalOperatingView && finite(input.cashFlowMonthly))
     metrics.push(`monthly cash flow ${fmtCurrency(input.cashFlowMonthly)}`)
   const metricSentence =
     metrics.length > 0
       ? `The calculated economics show ${metrics.join(' and ')}.`
-      : 'Calculated landlord economics are unavailable.'
+      : rentalOperatingView
+        ? 'Purchase returns require a property value and are not shown.'
+        : 'Calculated landlord economics are unavailable.'
 
   return [
     opening,

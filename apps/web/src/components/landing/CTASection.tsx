@@ -4,7 +4,6 @@
 
 import { Icon } from '../shared/Icon'
 import { ScoutMark } from '../shared/ScoutMark'
-import { FREE_TIER } from '../../constants/tiers'
 
 // ── CTASection ────────────────────────────────────────────────────────
 
@@ -55,8 +54,8 @@ export function CTASection(): JSX.Element {
               marginBottom: 28,
             }}
           >
-            {FREE_TIER_LIMIT_WORD} free analyses every month. No credit card, no demo call, no team
-            to talk to. You&apos;ll usually know if the deal is dead inside a minute.
+            Unlimited reports and every available feature are free during beta. No credit card, demo
+            call, or team to talk to. You&apos;ll usually know if the deal is dead inside a minute.
           </p>
           <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
             <a
@@ -77,7 +76,7 @@ export function CTASection(): JSX.Element {
                 border: '1px solid color-mix(in oklab, var(--bg) 25%, transparent)',
               }}
             >
-              See pricing
+              Explore free beta
             </a>
           </div>
         </div>
@@ -98,22 +97,3 @@ export function CTASection(): JSX.Element {
     </section>
   )
 }
-
-// The hero says the allowance in words. Spelled from the constant so a change
-// to the entitlement cannot leave the landing page advertising the old one —
-// which is exactly how it came to say "three" while the API enforced ten.
-const NUMBER_WORDS = [
-  'Zero',
-  'One',
-  'Two',
-  'Three',
-  'Four',
-  'Five',
-  'Six',
-  'Seven',
-  'Eight',
-  'Nine',
-  'Ten',
-] as const
-const FREE_TIER_LIMIT_WORD: string =
-  NUMBER_WORDS[FREE_TIER.MONTHLY_ANALYSIS_LIMIT] ?? String(FREE_TIER.MONTHLY_ANALYSIS_LIMIT)

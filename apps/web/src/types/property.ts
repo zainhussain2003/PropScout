@@ -52,4 +52,6 @@ export interface Listing {
   description: string | null
   photos: string[]
   scrapedAt: string // ISO 8601
+  /** Fields corrected or supplied by the visitor for this report snapshot. */
+  enteredFields?: string[]
 }

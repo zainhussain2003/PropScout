@@ -36,9 +36,11 @@ import './styles/hybrid.css'
 import './styles/hybrid-surfaces.css'
 import { RouteScroll } from './components/shared/RouteScroll'
 import { HybridUtilityShell } from './components/hybrid/HybridUtilityShell'
+import { BETA_FREE_ACCESS } from './constants/tiers'
 
 function AppInner(): JSX.Element {
   const { tier, status: tierStatus, refresh: refreshTier } = useTier()
+  const accessTier = BETA_FREE_ACCESS ? 'pro' : tier
   const [upgradeModal, setUpgradeModal] = useState<string | null>(null)
   const [showHardGate, setShowHardGate] = useState(false)
 
@@ -70,7 +72,14 @@ function AppInner(): JSX.Element {
 
   return (
     <PaywallContext.Provider
-      value={{ tier, tierStatus, refreshTier, openUpgradeModal, openHardGate }}
+      value={{
+        tier: accessTier,
+        billingTier: tier,
+        tierStatus,
+        refreshTier,
+        openUpgradeModal,
+        openHardGate,
+      }}
     >
       <BrowserRouter>
         <RouteScroll />
@@ -82,7 +91,7 @@ function AppInner(): JSX.Element {
             path="/investor-report"
             element={
               <DemoNotice>
-                <InvestorReport tier={tier} />
+                <InvestorReport tier={accessTier} />
               </DemoNotice>
             }
           />
@@ -90,7 +99,7 @@ function AppInner(): JSX.Element {
             path="/tenant-report"
             element={
               <DemoNotice>
-                <TenantReport tier={tier} />
+                <TenantReport tier={accessTier} />
               </DemoNotice>
             }
           />
@@ -98,7 +107,7 @@ function AppInner(): JSX.Element {
             path="/personal-report"
             element={
               <DemoNotice>
-                <PersonalBuyerPage tier={tier} />
+                <PersonalBuyerPage tier={accessTier} />
               </DemoNotice>
             }
           />
@@ -106,12 +115,12 @@ function AppInner(): JSX.Element {
             path="/landlord-report"
             element={
               <DemoNotice>
-                <LandlordPage tier={tier} />
+                <LandlordPage tier={accessTier} />
               </DemoNotice>
             }
           />
           <Route path="/methodology" element={<MethodologyPage />} />
-          <Route path="/r/:token" element={<ReportPage tier={tier} />} />
+          <Route path="/r/:token" element={<ReportPage tier={accessTier} />} />
           <Route path="/print-report" element={<PrintReportPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route element={<HybridUtilityShell />}>
@@ -132,17 +141,19 @@ function AppInner(): JSX.Element {
       </BrowserRouter>
 
       {/* Global paywall modals — mounted outside the router so they overlay everything */}
-      <UpgradeModal
-        open={upgradeModal !== null}
-        onClose={() => {
-          setUpgradeError(null)
-          closeUpgradeModal()
-        }}
-        feature={upgradeModal ?? 'generic'}
-        onUpgrade={handleUpgrade}
-        error={upgradeError}
-        busy={upgradeBusy}
-      />
+      {!BETA_FREE_ACCESS && (
+        <UpgradeModal
+          open={upgradeModal !== null}
+          onClose={() => {
+            setUpgradeError(null)
+            closeUpgradeModal()
+          }}
+          feature={upgradeModal ?? 'generic'}
+          onUpgrade={handleUpgrade}
+          error={upgradeError}
+          busy={upgradeBusy}
+        />
+      )}
       {/* Design-review mount only (DevToolbar opens it with placeholder
           figures). The live gate is rendered by the analyzing page with the
           API's real numbers (D-071) and must never come from here. */}

@@ -210,7 +210,7 @@ describe('AccountPage — ?view=plan', () => {
     expect(text).not.toMatch(/Tenant reports\s*8/)
   })
 
-  it('shows the real monthly count against the real limit', async () => {
+  it('shows the free beta offer without the former monthly limit', async () => {
     // A fresh Response per call: the nav and the plan view each read /me,
     // and a body can only be consumed once.
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
@@ -222,25 +222,25 @@ describe('AccountPage — ?view=plan', () => {
       )
     )
     renderFreePlan()
-    await screen.findByText(
-      (_, el) => el?.tagName === 'SPAN' && /^3\s*\/\s*10$/.test(el.textContent ?? '')
-    )
-    expect(document.body.textContent ?? '').toMatch(/10 sale-listing analyses per month/)
+    expect(screen.getByText('Free during beta')).toBeInTheDocument()
+    expect(screen.getByText(/Unlimited reports, full verdicts, and PDF export/)).toBeInTheDocument()
+    expect(document.body.textContent ?? '').not.toMatch(/10 sale-listing analyses per month/)
     fetchSpy.mockRestore()
   })
 
-  it('leaves the count blank, not zero, when usage cannot be loaded', async () => {
+  it('does not show a misleading usage counter when usage cannot be loaded', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'))
     renderFreePlan()
-    expect(await screen.findByText(/Usage unavailable right now/)).toBeInTheDocument()
-    expect(document.body.textContent ?? '').not.toMatch(/0 \/ 10/)
+    expect(screen.getByText('Free during beta')).toBeInTheDocument()
+    expect(document.body.textContent ?? '').not.toMatch(/0 \/ 10|Usage unavailable right now/)
     fetchSpy.mockRestore()
   })
 
-  it('does not put a number on things that are not counted', () => {
+  it('does not lock PDFs or offer upgrades during beta', () => {
     renderFreePlan()
-    expect(screen.getByText(/Always unlimited · not counted/)).toBeInTheDocument()
-    expect(screen.getByText(/Locked on free tier/)).toBeInTheDocument()
+    expect(screen.getByText(/PDF export are available without payment/)).toBeInTheDocument()
+    expect(screen.queryByText(/Locked on free tier/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Upgrade$/ })).not.toBeInTheDocument()
   })
 })
 

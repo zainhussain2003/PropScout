@@ -89,7 +89,9 @@ export function tileProvenance(
 }
 
 /** Where the listing's own facts came from: a scraped page or the person. */
-export function listingProvenance(listing: Pick<Listing, 'url' | 'scrapedAt'>): ListingSource {
+export function listingProvenance(
+  listing: Pick<Listing, 'url' | 'scrapedAt' | 'enteredFields'>
+): ListingSource {
   const scraped = listing.url != null && listing.url !== ''
   let host: string | null = null
   if (scraped) {
@@ -103,6 +105,7 @@ export function listingProvenance(listing: Pick<Listing, 'url' | 'scrapedAt'>): 
     kind: scraped ? 'listing' : 'entered',
     source: scraped ? (host ?? 'the listing') : 'details you entered',
     asOf: listing.scrapedAt || null,
+    ...(listing.enteredFields?.length ? { enteredFields: listing.enteredFields } : {}),
   }
 }
 
@@ -113,6 +116,13 @@ export function priceProvenance(listing: ListingData): Provenance {
   }
   if (listing.provenance?.kind === 'entered') {
     return { kind: 'entered', detail: 'The price you entered with the address.', assumed: [] }
+  }
+  if (listing.provenance?.enteredFields?.includes('price')) {
+    return {
+      kind: 'entered',
+      detail: 'The asking price you entered after reviewing the listing.',
+      assumed: [],
+    }
   }
   return {
     kind: 'listing',
@@ -130,6 +140,13 @@ export function askingProvenance(
     return {
       kind: 'entered',
       detail: `The asking ${what} you entered with the address.`,
+      assumed: [],
+    }
+  }
+  if (source?.enteredFields?.includes(what === 'rent' ? 'rentMonthly' : 'price')) {
+    return {
+      kind: 'entered',
+      detail: `The asking ${what} you entered after reviewing the listing.`,
       assumed: [],
     }
   }

@@ -40,6 +40,7 @@ function makeAuthMock(valid: boolean, userId = 'user-abc'): object {
 let app: FastifyInstance
 
 beforeEach(async () => {
+  process.env.BETA_FREE_ACCESS = 'false'
   jest.clearAllMocks()
   mockGetAnalysisByToken.mockResolvedValue({ analysis: { token: 't-1' }, listing: {} })
   mockGeneratePdf.mockResolvedValue(Buffer.from('%PDF-1.7 fake'))
@@ -50,6 +51,18 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await app.close()
+})
+
+afterAll(() => {
+  delete process.env.BETA_FREE_ACCESS
+})
+
+it('lets a guest with a report token export the PDF during free beta', async () => {
+  process.env.BETA_FREE_ACCESS = 'true'
+  const res = await app.inject({ method: 'GET', url: '/t-1/pdf' })
+  expect(res.statusCode).toBe(200)
+  expect(mockGeneratePdf).toHaveBeenCalledTimes(1)
+  expect(mockGetSupabase).not.toHaveBeenCalled()
 })
 
 describe('GET /:token/pdf', () => {

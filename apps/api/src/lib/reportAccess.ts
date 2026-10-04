@@ -2,9 +2,11 @@ import type { FastifyRequest } from 'fastify'
 import type { Analysis } from '../types/analysis'
 import { resolveUser } from './requireUser'
 import { getUserById } from '../services/supabaseService'
+import { betaFreeAccess } from '../constants/tiers'
 
 /** Remove paid prose at the API boundary, not with a CSS blur. */
 export async function reportForViewer(req: FastifyRequest, analysis: Analysis): Promise<Analysis> {
+  if (betaFreeAccess()) return analysis
   const auth = await resolveUser(req)
   const user = auth.ok ? await getUserById(auth.userId) : null
   if (user && ['pro', 'professional', 'team'].includes(user.tier)) return analysis

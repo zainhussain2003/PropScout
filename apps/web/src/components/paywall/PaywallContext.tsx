@@ -11,6 +11,8 @@ import { createContext, useContext } from 'react'
 export interface PaywallContextValue {
   /** Current user tier — "free" | "pro" | "professional" | "team". */
   tier: string
+  /** Actual subscription tier, separate from beta feature access. */
+  billingTier?: string
   /**
    * Whether `tier` is an answer or a placeholder. 'unavailable' means the API
    * could not confirm the plan; gates still act as free (the server enforces

@@ -473,7 +473,11 @@ function PersonalVerdictHero({
     return (
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         <TruncatedVerdict
-          firstParagraph={narrative ? narrative.split('. ')[0] + '.' : PB_FIRST_PARA}
+          firstParagraph={
+            narrative
+              ? narrative.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '') + '.'
+              : PB_FIRST_PARA
+          }
           eyebrow="PropScout · home buyer verdict"
           onUnlock={() => openUpgradeModal('verdict')}
         />
@@ -557,7 +561,7 @@ function PersonalVerdictHero({
           }
         >
           {narrative ? (
-            narrative.split('. ')[0] + '.'
+            narrative.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '') + '.'
           ) : isReal ? (
             // Live report whose narrative failed — never show fixture prose
             // about a different property (copy-honesty rule).

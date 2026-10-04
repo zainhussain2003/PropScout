@@ -235,6 +235,37 @@ export async function scrapeUrl(
   throw new ApiRequestError(code, message, response.status)
 }
 
+export type ManualListingFields = Partial<
+  Pick<
+    Listing,
+    | 'price'
+    | 'rentMonthly'
+    | 'beds'
+    | 'baths'
+    | 'sqft'
+    | 'annualTaxes'
+    | 'yearBuilt'
+    | 'condoFeeMonthly'
+    | 'parkingSpots'
+  >
+>
+
+const manualFieldsKey = (token: string): string => `propscout.manual-listing.${token}`
+
+/** Preserve visitor corrections across the redirect to /analyzing and a retry. */
+export function rememberManualListingFields(token: string, fields: ManualListingFields): void {
+  window.sessionStorage.setItem(manualFieldsKey(token), JSON.stringify(fields))
+}
+
+function readManualListingFields(token: string): ManualListingFields | null {
+  try {
+    const saved = window.sessionStorage.getItem(manualFieldsKey(token))
+    return saved == null ? null : (JSON.parse(saved) as ManualListingFields)
+  } catch {
+    return null
+  }
+}
+
 /** The body of a 402 FREE_LIMIT_REACHED response (D-071). */
 export interface FreeLimitDetails {
   used: number
@@ -292,10 +323,11 @@ export async function triggerAnalysis(
 
   let response: Response
   try {
+    const manualListingFields = readManualListingFields(token)
     response = await fetch(`${BASE_URL}/analysis`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ token, mode }),
+      body: JSON.stringify({ token, mode, ...(manualListingFields && { manualListingFields }) }),
       // The guest visitor cookie rides with this call (D-116).
       credentials: 'include',
     })

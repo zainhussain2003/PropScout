@@ -94,6 +94,12 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 
 ### Pricing tiers
 
+**Current public beta (2026-10-03, D-126):** all implemented report features are free,
+including unlimited analyses in all four modes, full verdicts, and PDF exports. New
+subscriptions are paused. Existing subscribers retain billing-portal access. This does not
+make planned features available. The paid launch description and matrix below are historical
+roadmap context until the owner makes a new monetization decision.
+
 **Launch implementation (2026-09-23, D-125) supersedes the roadmap below:** offer Free and
 Investor Pro at CAD $10/month only. Annual, Professional and Team purchases are deferred.
 Free includes the existing monthly quota, unlimited tenant reports, financial scenarios,
@@ -191,7 +197,7 @@ Running investment analysis...
 Building evidence-based verdict...
 ```
 
-Each confirmed field appears as it's extracted. Fields not found appear as amber "enter manually" prompts. The analysis waits for any required missing fields (condo fee for condos, taxes if absent) before running.
+Each confirmed field appears as it's extracted. Fields not found appear as amber "enter manually" prompts. The analysis waits for the asking amount and bedroom count. Under D-127, missing tax uses the clearly labelled city-rate estimate from D-053/D-054. An unstated condo fee remains unknown; affected cost calculations use $0 for that component and show a caution rather than claiming the listing stated a zero fee.
 
 Time targets: Urban Ontario under 10 seconds. Smaller cities up to 25 seconds.
 
@@ -902,6 +908,12 @@ If either scraper fails or required fields are missing:
 - Missing required fields highlighted in amber ("Not found — enter manually")
 - Scraper-sourced fields labelled "auto-filled" in UI; manual fields labelled "user-entered"
 - This distinction carries through to the PDF footer
+
+When a scrape is partial, review every extracted numeric fact before choosing a report mode.
+The visitor can correct a fact or supply a missing value; missing optional facts remain unknown.
+Corrections travel with the report trigger and are saved in that report's listing snapshot,
+including the names of visitor-entered fields. The shared scraped listing row remains unchanged.
+The report and its PDF identify both the listing source and the visitor-entered corrections.
 
 **Rental comps scraper — nightly scheduled job**
 
