@@ -871,6 +871,20 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
           })
         }
       }
+      // The review form is a client convenience, not an entitlement to run the
+      // calculator with missing facts. A copied analyzing URL or cleared browser
+      // storage can reach this route without its visitor corrections (D-127).
+      const askingAmount = listing.listingType === 'for-rent' ? listing.rentMonthly : listing.price
+      if (askingAmount == null || askingAmount <= 0 || listing.beds == null) {
+        return reply
+          .code(400)
+          .send(
+            makeError(
+              'MISSING_LISTING_FIELDS',
+              'Review the listing and enter its asking amount and bedroom count before running a report.'
+            )
+          )
+      }
       inFlight.add(token)
       holdsInFlight = true
 

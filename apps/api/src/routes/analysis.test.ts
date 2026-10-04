@@ -258,6 +258,40 @@ describe('POST / — analysis orchestrator', () => {
     expect(mockSaveAnalysis).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ['sale asking price', { price: null }],
+    ['rental asking rent', { listingType: 'for-rent' as const, price: null, rentMonthly: null }],
+    ['bedroom count', { beds: null }],
+  ])('requires the missing %s before starting a report', async (_label, missing) => {
+    mockGetListingByToken.mockResolvedValue({ ...LISTING_FIXTURE, ...missing })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('MISSING_LISTING_FIELDS')
+    expect(mockSaveAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('accepts visitor corrections for required facts without changing the source listing', async () => {
+    const partial = { ...LISTING_FIXTURE, price: null, beds: null }
+    mockGetListingByToken.mockResolvedValue(partial)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        token: 'test-token',
+        mode: 'investor',
+        manualListingFields: { price: 715000, beds: 0 },
+      },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockSaveAnalysis.mock.calls[0]?.[2]).toMatchObject({ price: 715000, beds: 0 })
+    expect(partial.price).toBeNull()
+    expect(partial.beds).toBeNull()
+  })
+
   // ── Test 1b ────────────────────────────────────────────────────────────────
 
   it('stores an assumption ledger built from what the engine says it applied (D-088)', async () => {
@@ -635,8 +669,8 @@ describe('POST / - rent plausibility bounds', () => {
     await app.close()
   })
 
-  it('for-rent listing with no rent and no price -> 422 RENT_OUT_OF_BOUNDS, never reaches the calc engine', async () => {
-    // Fallback rent computes to $0 - previously this proceeded to score garbage.
+  it('for-rent listing with no rent stops for visitor review before the calc engine', async () => {
+    // D-127 requires the visitor to supply the asking rent before analysis.
     mockGetListingByToken.mockResolvedValue({
       ...LISTING_FIXTURE,
       listingType: 'for-rent',
@@ -650,14 +684,10 @@ describe('POST / - rent plausibility bounds', () => {
       payload: { token: 'test-token', mode: 'tenant' },
     })
 
-    expect(res.statusCode).toBe(422)
+    expect(res.statusCode).toBe(400)
     const body = res.json() as ApiError
-    expect(body.code).toBe('RENT_OUT_OF_BOUNDS')
-    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith(
-      'test-token',
-      'failed',
-      'RENT_OUT_OF_BOUNDS'
-    )
+    expect(body.code).toBe('MISSING_LISTING_FIELDS')
+    expect(mockUpdateAnalysisStatus).not.toHaveBeenCalled()
     const fetchMock = global.fetch as jest.Mock
     expect(fetchMock).not.toHaveBeenCalled()
   })
