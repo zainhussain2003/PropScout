@@ -294,7 +294,11 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
     const { token } = scrapeBody
 
     // Pending analysis row was created
-    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(expect.any(String), token)
+    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(
+      expect.any(String),
+      token,
+      expect.objectContaining({ address: expect.stringContaining('Buttermill') })
+    )
     expect(db.get(token)).toBeDefined()
     expect(db.get(token)?.analysis).toBeNull()
 
