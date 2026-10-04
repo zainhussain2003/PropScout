@@ -285,7 +285,9 @@ async function addressRoutes(fastify: FastifyInstance): Promise<void> {
         // used to be stored as 0 and rendered "0 bath" on the report — a claim
         // the user never made (D-072).
         beds: b.beds ?? null,
+        bedsKnown: b.beds != null,
         baths: b.baths ?? null,
+        bathsKnown: b.baths != null,
         sqft: b.sqft ?? null,
         // The form asks; "not sure" arrives as null and stays unknown (D-082).
         // This used to default to 'condo', which flagged every house entered by
@@ -304,7 +306,7 @@ async function addressRoutes(fastify: FastifyInstance): Promise<void> {
       try {
         const listingId = await saveListing(listing, 'manual')
         const token = randomUUID()
-        await createPendingAnalysis(listingId, token)
+        await createPendingAnalysis(listingId, token, listing)
         return reply.send({ token, listing })
       } catch (err) {
         fastify.log.error({ err }, 'Failed to start analysis from address')

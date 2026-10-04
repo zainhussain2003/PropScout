@@ -1247,14 +1247,24 @@ export async function claimAnalysisForUser(
   }
 }
 
-export async function createPendingAnalysis(listingId: string, token: string): Promise<void> {
+export async function createPendingAnalysis(
+  listingId: string,
+  token: string,
+  listing: Omit<Listing, 'id'>
+): Promise<void> {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  const { error } = await db().from('analyses').insert({
-    listing_id: listingId,
-    report_mode: 'investment', // default; updated when POST /analysis runs
-    share_token: token,
-    share_expires_at: expiresAt,
-  })
+  const { error } = await db()
+    .from('analyses')
+    .insert({
+      listing_id: listingId,
+      report_mode: 'investment', // default; updated when POST /analysis runs
+      share_token: token,
+      share_expires_at: expiresAt,
+      // Preserve source certainty and manual-address studio input before the
+      // listing row is read back. The shared listings table has no beds_known
+      // column and may be updated by a later scrape of the same URL.
+      market_data: { listingSnapshot: { ...listing, id: listingId } },
+    })
   if (error != null) {
     throw new Error(`createPendingAnalysis failed: ${error.message}`)
   }
@@ -1267,7 +1277,7 @@ export async function createPendingAnalysis(listingId: string, token: string): P
 export async function getListingByToken(token: string): Promise<Listing | null> {
   const { data, error } = await db()
     .from('analyses')
-    .select('listings(*)')
+    .select('market_data, listings(*)')
     .eq('share_token', token)
     .maybeSingle()
 
@@ -1275,7 +1285,14 @@ export async function getListingByToken(token: string): Promise<Listing | null> 
     return null
   }
 
-  const listings = (data as { listings: ListingRow | ListingRow[] | null }).listings
+  const analysisRow = data as {
+    market_data: { listingSnapshot?: Listing } | null
+    listings: ListingRow | ListingRow[] | null
+  }
+  if (analysisRow.market_data?.listingSnapshot != null) {
+    return analysisRow.market_data.listingSnapshot
+  }
+  const listings = analysisRow.listings
   const row = Array.isArray(listings) ? (listings[0] ?? null) : listings
   if (row == null) return null
   return rowToListing(row)

@@ -81,7 +81,11 @@ describe('POST /scrape', () => {
     expect(body.scraperFailed).toBeUndefined()
 
     expect(mockSaveListing).toHaveBeenCalledTimes(1)
-    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith('mock-listing-id', expect.any(String))
+    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(
+      'mock-listing-id',
+      expect.any(String),
+      expect.objectContaining({ beds: 2, url: expect.stringContaining('realtor.ca') })
+    )
   })
 
   it('normalizes a Realtor.ca neighbourhood suffix to the municipality', async () => {

@@ -35,6 +35,8 @@ import {
   claimAnalysisForUser,
   getAnalysisStatus,
   updateAnalysisStatus,
+  createPendingAnalysis,
+  getListingByToken,
   SCHOOL_CATCHMENT_NOTE,
 } from './supabaseService'
 import type { Analysis } from '../types/analysis'
@@ -60,6 +62,7 @@ interface QueryChain {
   lte: jest.Mock
   ilike: jest.Mock
   single: jest.Mock
+  maybeSingle: jest.Mock
   update: jest.Mock
   is: jest.Mock
   not: jest.Mock
@@ -77,6 +80,7 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
     lte: jest.fn(),
     ilike: jest.fn(),
     single: jest.fn(),
+    maybeSingle: jest.fn(),
     update: jest.fn(),
     is: jest.fn(),
     not: jest.fn(),
@@ -95,6 +99,7 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
       'lte',
       'ilike',
       'single',
+      'maybeSingle',
       'update',
       'is',
       'not',
@@ -104,6 +109,40 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
   })
   return chain
 }
+
+describe('pending listing snapshots', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('keeps a confirmed studio marker with the pending token', async () => {
+    const chain = makeQueryChain({ data: null, error: null })
+    mockFrom.mockReturnValue(chain)
+    const studio = makeListing({ beds: 0, bedsKnown: true })
+    await createPendingAnalysis('listing-uuid', 'token-uuid', studio)
+    expect(chain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        listing_id: 'listing-uuid',
+        market_data: {
+          listingSnapshot: expect.objectContaining({
+            id: 'listing-uuid',
+            beds: 0,
+            bedsKnown: true,
+          }),
+        },
+      })
+    )
+  })
+
+  it('returns the pending snapshot rather than a shared listing row', async () => {
+    const studio = makeListing({ id: 'listing-uuid', beds: 0, bedsKnown: true })
+    const chain = makeQueryChain({
+      data: { market_data: { listingSnapshot: studio }, listings: null },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+    expect(await getListingByToken('token-uuid')).toEqual(studio)
+    expect(chain.select).toHaveBeenCalledWith('market_data, listings(*)')
+  })
+})
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
 
