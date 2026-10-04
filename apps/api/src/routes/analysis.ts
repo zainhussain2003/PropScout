@@ -875,7 +875,14 @@ async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
       // calculator with missing facts. A copied analyzing URL or cleared browser
       // storage can reach this route without its visitor corrections (D-127).
       const askingAmount = listing.listingType === 'for-rent' ? listing.rentMonthly : listing.price
-      if (askingAmount == null || askingAmount <= 0 || listing.beds == null) {
+      // Older scraped rows use zero for an absent count. A visitor-entered zero
+      // is a valid studio, but an unconfirmed source zero still needs review.
+      const bedroomsMissing =
+        listing.beds == null ||
+        (listing.beds === 0 &&
+          listing.bedsKnown !== true &&
+          !listing.enteredFields?.includes('beds'))
+      if (askingAmount == null || askingAmount <= 0 || bedroomsMissing) {
         return reply
           .code(400)
           .send(

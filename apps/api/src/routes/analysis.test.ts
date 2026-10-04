@@ -262,6 +262,7 @@ describe('POST / — analysis orchestrator', () => {
     ['sale asking price', { price: null }],
     ['rental asking rent', { listingType: 'for-rent' as const, price: null, rentMonthly: null }],
     ['bedroom count', { beds: null }],
+    ['unconfirmed zero bedrooms', { beds: 0, bedsKnown: false }],
   ])('requires the missing %s before starting a report', async (_label, missing) => {
     mockGetListingByToken.mockResolvedValue({ ...LISTING_FIXTURE, ...missing })
     const res = await app.inject({
