@@ -1192,7 +1192,9 @@ export async function markAnalysisGuest(token: string, guestId: string): Promise
 export async function claimGuestAnalyses(guestId: string, userId: string): Promise<number> {
   const { data, error } = await db()
     .from('analyses')
-    .update({ user_id: userId })
+    // D-116: a guest link expires after 30 days; claiming it gives the
+    // signed-in owner the non-expiring link promised by the account page.
+    .update({ user_id: userId, share_expires_at: null })
     .eq('guest_id', guestId)
     .is('user_id', null)
     .select('id')
@@ -1239,7 +1241,7 @@ export async function claimAnalysisForUser(
   }
   const { error } = await db()
     .from('analyses')
-    .update({ user_id: userId, report_mode: modeMap[mode] })
+    .update({ user_id: userId, report_mode: modeMap[mode], share_expires_at: null })
     .eq('share_token', token)
     .is('user_id', null)
   if (error != null) {

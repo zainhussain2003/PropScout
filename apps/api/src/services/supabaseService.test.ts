@@ -33,6 +33,7 @@ import {
   saveListing,
   getMonthlyAnalysisCount,
   claimAnalysisForUser,
+  claimGuestAnalyses,
   getAnalysisStatus,
   updateAnalysisStatus,
   createPendingAnalysis,
@@ -1342,7 +1343,11 @@ describe('claimAnalysisForUser — attribution', () => {
     await claimAnalysisForUser('tok-1', 'user-1', 'investor')
 
     expect(mockFrom).toHaveBeenCalledWith('analyses')
-    expect(chain.update).toHaveBeenCalledWith({ user_id: 'user-1', report_mode: 'investment' })
+    expect(chain.update).toHaveBeenCalledWith({
+      user_id: 'user-1',
+      report_mode: 'investment',
+      share_expires_at: null,
+    })
     expect(chain.eq).toHaveBeenCalledWith('share_token', 'tok-1')
     // A share link is not a transfer of ownership: only an unowned row is
     // claimed. Without this, re-triggering someone else's token would steal
@@ -1357,6 +1362,17 @@ describe('claimAnalysisForUser — attribution', () => {
     await expect(claimAnalysisForUser('tok-1', 'user-1', 'tenant')).rejects.toThrow(
       'claimAnalysisForUser failed: nope'
     )
+  })
+})
+
+describe('claimGuestAnalyses — link expiry', () => {
+  it('clears the guest expiry when reports are claimed on sign-in', async () => {
+    const chain = makeQueryChain({ data: [{ id: 'analysis-1' }], error: null })
+    mockFrom.mockReturnValue(chain)
+    expect(await claimGuestAnalyses('guest-1', 'user-1')).toBe(1)
+    expect(chain.update).toHaveBeenCalledWith({ user_id: 'user-1', share_expires_at: null })
+    expect(chain.eq).toHaveBeenCalledWith('guest_id', 'guest-1')
+    expect(chain.is).toHaveBeenCalledWith('user_id', null)
   })
 })
 
