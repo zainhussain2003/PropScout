@@ -130,6 +130,40 @@ describe('POST /scrape', () => {
     expect(body.missingFields).toContain('annual_taxes')
   })
 
+  it('sends an unconfirmed legacy zero-bedroom scrape to listing review', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, beds: 0, beds_known: undefined }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: ONTARIO_FIXTURE.url },
+    })
+    const body = res.json() as {
+      listing: { beds: number | null }
+      scraperFailed: boolean
+      missingFields: string[]
+    }
+    expect(res.statusCode).toBe(200)
+    expect(body.listing.beds).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('beds')
+  })
+
+  it('keeps a confirmed zero-bedroom studio from a current scraper', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, beds: 0, beds_known: true }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: ONTARIO_FIXTURE.url },
+    })
+    const body = res.json() as { listing: { beds: number; bedsKnown: boolean } }
+    expect(res.statusCode).toBe(200)
+    expect(body.listing).toMatchObject({ beds: 0, bedsKnown: true })
+  })
+
   it('Non-Ontario address → returns PROVINCE_NOT_SUPPORTED with province BC, saveListing never called', async () => {
     mockFetch.mockResolvedValueOnce(makeFetchResponse(BC_FIXTURE, 200))
 

@@ -23,7 +23,7 @@ import {
 import { resolveUser } from '../lib/requireUser'
 import { applyValidationErrorHandler, tokenParams } from '../lib/requestSchemas'
 import { readGuestId, guestLimitEnabled } from '../lib/guestSession'
-import { GUEST } from '../constants/tiers'
+import { betaFreeAccess, GUEST } from '../constants/tiers'
 import { reportForViewer } from '../lib/reportAccess'
 
 async function getAnalysisTokenRoutes(fastify: FastifyInstance): Promise<void> {
@@ -74,7 +74,7 @@ async function getAnalysisTokenRoutes(fastify: FastifyInstance): Promise<void> {
             guest = {
               used: used ?? 1,
               limit: GUEST.FREE_ANALYSES,
-              limitEnabled: guestLimitEnabled(),
+              limitEnabled: !betaFreeAccess() && guestLimitEnabled(),
             }
           }
         }

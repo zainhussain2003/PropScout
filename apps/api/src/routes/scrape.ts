@@ -237,8 +237,16 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
 
         const missingFields: string[] = []
         if (listingType === 'for-sale' && salePrice === null) missingFields.push('price')
-        if (scraped.beds_known === false || scraped.beds == null) missingFields.push('beds')
-        if (scraped.baths_known === false || scraped.baths == null) missingFields.push('baths')
+        const bedsMissing =
+          scraped.beds == null ||
+          scraped.beds_known === false ||
+          (scraped.beds === 0 && scraped.beds_known !== true)
+        const bathsMissing =
+          scraped.baths == null ||
+          scraped.baths_known === false ||
+          (scraped.baths === 0 && scraped.baths_known !== true)
+        if (bedsMissing) missingFields.push('beds')
+        if (bathsMissing) missingFields.push('baths')
         if (scraped.sqft == null) missingFields.push('sqft')
         const hasUsableAnnualTaxes =
           scraped.taxes_known && scraped.annual_taxes != null && scraped.annual_taxes > 0
@@ -260,8 +268,8 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           // A count the page did not carry is null (D-072); a count it did
           // carry is a fact even when it is 0 — a studio (D-092). An older
           // scraper build sends no flag, and then the D-072 rule applies alone.
-          beds: scraped.beds_known === false ? null : scraped.beds,
-          baths: scraped.baths_known === false ? null : scraped.baths,
+          beds: bedsMissing ? null : scraped.beds,
+          baths: bathsMissing ? null : scraped.baths,
           bedsKnown: scraped.beds_known,
           bathsKnown: scraped.baths_known,
           sqft: scraped.sqft,
