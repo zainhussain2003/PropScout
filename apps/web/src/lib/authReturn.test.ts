@@ -15,6 +15,13 @@ describe('auth return path', () => {
     expect(consumeAuthReturnPath()).toBe('/account')
   })
 
+  it('returns to reports with older hex share tokens', () => {
+    const report = '/r/0123456789abcdef0123456789abcdef'
+    window.history.replaceState(null, '', report)
+    rememberAuthReturnPath()
+    expect(consumeAuthReturnPath()).toBe(report)
+  })
+
   it('rejects a stored external redirect', () => {
     window.localStorage.setItem(
       'propscout.auth.returnPath',

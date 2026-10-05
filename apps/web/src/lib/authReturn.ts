@@ -1,5 +1,5 @@
 const RETURN_PATH_KEY = 'propscout.auth.returnPath'
-const REPORT_PATH = /^\/r\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const REPORT_PATH = /^\/r\/[a-z0-9-]{1,64}$/i
 const RETURN_PATH_MAX_AGE_MS = 10 * 60 * 1000
 
 /** Remember the report a visitor was reading before an email or OAuth redirect. */

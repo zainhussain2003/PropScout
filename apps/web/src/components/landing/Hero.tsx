@@ -17,7 +17,7 @@ import {
 } from '../../lib/services/analysisService'
 import { AddressDetailsCard, type AddressDetailsValue } from '../shared/AddressDetailsCard'
 import { PartialListingReview } from '../shared/PartialListingReview'
-import { countLabel, NOT_PROVIDED } from '../../lib/listingFacts'
+import { bedBathLabel } from '../../lib/listingFacts'
 import type { Listing } from '../../types/property'
 import { clampStr } from './landingHelpers'
 import { ShowcaseDealScore } from './ShowcaseDealScore'
@@ -196,7 +196,7 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
             : listing.rentMonthly != null && listing.rentMonthly > 0
               ? `$${listing.rentMonthly.toLocaleString()}/mo`
               : 'Asking rent not provided',
-        beds: `${countLabel(listing.beds, 'bed', { fallback: `${NOT_PROVIDED} beds` })} · ${countLabel(listing.baths, 'bath', { fallback: `${NOT_PROVIDED} baths` })}`,
+        beds: bedBathLabel(listing),
         sqft: listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : '—',
       }
     : null
@@ -588,6 +588,10 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                     setListing({
                       ...listing,
                       ...fields,
+                      bedsKnown: fields.beds !== undefined ? true : listing.bedsKnown,
+                      bathsKnown: fields.baths !== undefined ? true : listing.bathsKnown,
+                      condoFeeKnown:
+                        fields.condoFeeMonthly !== undefined ? true : listing.condoFeeKnown,
                       enteredFields: [
                         ...new Set([...(listing.enteredFields ?? []), ...Object.keys(fields)]),
                       ],
