@@ -324,7 +324,7 @@ function ProfileView(): JSX.Element {
         </SettingsRow>
         <SettingsRow
           label="Export your data"
-          hint="Every report you run keeps a share link for 30 days; there is no bulk export yet."
+          hint="Guest share links last 30 days; reports claimed after sign-in have no expiry. There is no bulk export yet."
         >
           <span className="mono" style={{ fontSize: 13, color: 'var(--muted)' }}>
             Not available yet

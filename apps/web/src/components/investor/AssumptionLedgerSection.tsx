@@ -54,7 +54,7 @@ export function AssumptionLedgerSection({
   const total = entries.length
 
   return (
-    <section className="container tr-section" data-section={sectionNumber}>
+    <section className="container tr-section assumption-ledger" data-section={sectionNumber}>
       <SectionHead
         n={sectionNumber}
         topic="Sources"

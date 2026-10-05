@@ -301,7 +301,7 @@ html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
   min-height: var(--hy-target);
 }
 
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
   html[data-design='hybrid'] .legal-grid {
     grid-template-columns: minmax(0, 1fr) !important;
   }
@@ -359,7 +359,9 @@ html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
     display: none !important;
   }
   html[data-design='hybrid'] .hy-property-grid {
-    display: block !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) !important;
+    gap: 20px;
   }
   html[data-design='hybrid'] .hy-property-grid :is(.scorecard, .report-side-score) {
     --surface: #fff;

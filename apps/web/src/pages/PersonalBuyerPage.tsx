@@ -488,6 +488,7 @@ function PersonalVerdictHero({
   return (
     <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
       <div
+        className="report-verdict"
         style={{
           background: 'var(--ink)',
           color: 'var(--bg)',

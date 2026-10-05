@@ -249,7 +249,8 @@ function NotFoundState(): JSX.Element {
           Report not found
         </h3>
         <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-          This report has expired or does not exist. Shared reports are available for 30 days.
+          This report has expired or does not exist. Guest links last 30 days; reports claimed after
+          sign-in have no expiry.
         </p>
       </div>
       <a href="/" className="btn btn-primary">
@@ -938,7 +939,7 @@ export function ReportPage({
             />
           )}
 
-          <div className="container" style={{ paddingTop: 32, paddingBottom: 16 }}>
+          <div className="container print-hidden" style={{ paddingTop: 32, paddingBottom: 16 }}>
             <div
               className="card row"
               style={{
@@ -950,7 +951,7 @@ export function ReportPage({
               }}
             >
               <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                Share this report · expires in 30 days
+                Share this report · guest links last 30 days; signed-in reports have no expiry
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button
@@ -977,7 +978,7 @@ export function ReportPage({
             </div>
           </div>
 
-          <div className="container" style={{ paddingBottom: 48 }}>
+          <div className="container print-hidden" style={{ paddingBottom: 48 }}>
             <div
               className="card col"
               style={{ padding: 32, alignItems: 'center', textAlign: 'center', gap: 16 }}
