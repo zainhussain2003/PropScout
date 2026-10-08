@@ -765,9 +765,9 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                       'Statistics Canada',
                       'Bank of Canada',
                       'EQAO',
-                      'Fraser Institute',
-                      'Walk Score',
-                      'Mapbox',
+                      ...(import.meta.env.VITE_FREE_ONLY_BETA === 'true'
+                        ? ['OpenStreetMap']
+                        : ['Walk Score', 'Mapbox']),
                       'NREL · SPA',
                     ].map((n) => (
                       <span

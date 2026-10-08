@@ -49,9 +49,9 @@ export function CoverageSection(): JSX.Element {
           title={<>Every assumption in the report is listed with its source, date, and method.</>}
         >
           Available rental comps show their sources and dates. Rates from the Bank of Canada feed.
-          Schools from EQAO. Walkability from Walk Score. The last section of every report is a
-          ledger of what the numbers rest on — and when one is a PropScout default with no source
-          behind it, it says so.
+          Schools from EQAO. Unavailable mobility scores are labelled as unavailable. The last
+          section of every report is a ledger of what the numbers rest on — and when one is a
+          PropScout default with no source behind it, it says so.
         </SectionHeader>
 
         <div
