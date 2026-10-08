@@ -19,7 +19,8 @@ COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 RUN npm ci --include=dev
 COPY apps/api apps/api
-RUN npm run build --workspace=apps/api
+# TypeScript builds run on the separate build worker, not the 512 MB instance.
+RUN NODE_OPTIONS=--max-old-space-size=2048 npm run build --workspace=apps/api
 COPY services/calc-engine services/calc-engine
 RUN python3 -m venv /opt/propscout-python \
     && /opt/propscout-python/bin/pip install --no-cache-dir -r services/calc-engine/requirements.txt
