@@ -29,6 +29,7 @@ export interface MountMiniMapOptions {
  * Returns null when unconfigured so callers can fall back to the placeholder.
  */
 export function getMapboxToken(): string | null {
+  if (import.meta.env.VITE_FREE_ONLY_BETA === 'true') return null
   const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
   return token != null && token.length > 0 ? token : null
 }
@@ -52,6 +53,7 @@ export async function mountMiniMap(
   container: HTMLElement,
   opts: MountMiniMapOptions
 ): Promise<MiniMapHandle | null> {
+  if (import.meta.env.VITE_FREE_ONLY_BETA === 'true') return null
   try {
     const mapboxgl = (await import('mapbox-gl')).default
     await import('mapbox-gl/dist/mapbox-gl.css')

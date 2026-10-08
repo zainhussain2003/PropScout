@@ -7,8 +7,10 @@
 // GeoJSON polygons in the accent blue, styled like the in-report comp map.
 // Renders nothing without VITE_MAPBOX_TOKEN (graceful fallback).
 
+import { getMapboxToken } from '../../lib/services/mapboxGlService'
+
 export function HeroStaticMap(): JSX.Element | null {
-  const mapToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
+  const mapToken = getMapboxToken()
   if (!mapToken) return null
 
   // Yonge–Eglinton (M4R) — the same neighbourhood as the sample report.
