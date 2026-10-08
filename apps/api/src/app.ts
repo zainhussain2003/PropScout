@@ -11,9 +11,11 @@ import type { FastifyRequest } from 'fastify'
 import { corsOrigins } from './corsOrigins'
 import { registerHealthRoute } from './routes/health'
 import { devHpiEnabled } from './services/devHpiService'
+import { renderProxyTrust } from './proxyTrust'
 
 const fastify = Fastify({
   logger: true,
+  trustProxy: process.env.RENDER === 'true' ? renderProxyTrust : false,
   // The largest legitimate body is an address-start payload of a dozen
   // scalars. Fastify's default is 1 MiB; nothing here needs a hundredth of it
   // (audit API-04).
