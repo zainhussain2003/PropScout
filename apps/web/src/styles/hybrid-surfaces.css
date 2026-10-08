@@ -358,10 +358,21 @@ html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
   html[data-design='hybrid'] :is(.hy-report-contents, .hy-nav, .report-rail) {
     display: none !important;
   }
+  html[data-design='hybrid'] .chip {
+    background: #eaf0f1 !important;
+    color: #172b35 !important;
+    border-color: #b5c4c8 !important;
+  }
   html[data-design='hybrid'] .hy-property-grid {
-    display: grid !important;
+    display: block !important;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) !important;
     gap: 20px;
+  }
+  html[data-design='hybrid'] .hy-property-facts {
+    display: block;
+  }
+  html[data-design='hybrid'] .hy-property-facts > * {
+    margin-bottom: 16px;
   }
   html[data-design='hybrid'] .hy-property-grid :is(.scorecard, .report-side-score) {
     --surface: #fff;
@@ -372,6 +383,7 @@ html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
     --pass: #047857;
     --caution: #92400e;
     --fail: #b91c1c;
+    --chip-bg: #eaf0f1;
     background: var(--surface);
     color: var(--ink);
     border: var(--hy-border) solid var(--line-strong);

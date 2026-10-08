@@ -73,7 +73,7 @@ export function ListingVisual({
             color: 'var(--muted)',
           }}
         >
-          No listing photos · report built from the address
+          No listing photos available
         </div>
       </div>
     )

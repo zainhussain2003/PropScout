@@ -57,7 +57,8 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   <li><strong>Stripe</strong> — billing only. They see your name, email, and payment method. We see a subscription status.</li>
   <li><strong>Anthropic Claude API</strong> — listing marketing text may be sent only to extract structured risk flags. Report verdict prose is not generated there, and account identity is not sent.</li>
   <li><strong>Resend</strong> — transactional email delivery (verification, password reset, share-link emails).</li>
-  <li><strong>Mapbox, Google Places, Walk Score, CMHC</strong> — your property's coordinates are sent to retrieve map tiles, school listings, walkability scores, and vacancy data. No account identity is sent.</li>
+  <li><strong>OpenStreetMap / Nominatim</strong> — when enabled, the property address is sent to find its location. OpenStreetMap building data also supports the sunlight model. No account identity is sent.</li>
+  <li><strong>Mapbox, Google Places, Walk Score, CMHC</strong> — when configured, property location details are sent to retrieve maps, schools, mobility scores and vacancy data. Optional providers may be unavailable during the free beta. No account identity is sent.</li>
 </ul>
 <p>We do <em>not</em> sell, rent, or trade your personal information. Ever.</p>`,
   },

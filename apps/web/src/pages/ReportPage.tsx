@@ -82,13 +82,19 @@ function splitAddress(address: string, city: string, province: string): [string,
 
 function buildChips(listing: Listing): string[] {
   const chips: string[] = []
-  chips.push(`${bareCount(listing.beds)} bed`)
-  chips.push(`${bareCount(listing.baths)} bath`)
+  chips.push(`${bareCount(listing.beds, listing.bedsKnown)} bed`)
+  chips.push(`${bareCount(listing.baths, listing.bathsKnown)} bath`)
   if (listing.sqft) chips.push(`${listing.sqft.toLocaleString('en-CA')} sqft`)
   if (listing.yearBuilt) chips.push(`Built ${listing.yearBuilt}`)
   const pt = listing.propertyType
   if (pt && pt !== 'unknown') chips.push(pt.charAt(0).toUpperCase() + pt.slice(1))
-  if (knownCount(listing.parkingSpots) != null) chips.push(`${listing.parkingSpots} parking`)
+  if (
+    knownCount(
+      listing.parkingSpots,
+      listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+    ) != null
+  )
+    chips.push(`${listing.parkingSpots} parking`)
   if (listing.condoFeeKnown && listing.condoFeeMonthly != null && listing.condoFeeMonthly > 0) {
     chips.push(`$${listing.condoFeeMonthly}/mo condo fee`)
   }
@@ -129,10 +135,13 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     propertyType: listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1),
     // PropertyHero renders "{beds} bed · {baths} bath" / "{parking} parking" —
     // these carry the bare numbers (was "2 bed bed · 2 bath bath", live 2026-07-02)
-    beds: bareCount(listing.beds),
-    baths: bareCount(listing.baths),
+    beds: bareCount(listing.beds, listing.bedsKnown),
+    baths: bareCount(listing.baths, listing.bathsKnown),
     sqft: listing.sqft ?? 0,
-    parking: bareCount(listing.parkingSpots),
+    parking: bareCount(
+      listing.parkingSpots,
+      listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+    ),
     yearBuilt,
     // Conservative boolean for the checklist copy; the real answer is the
     // tri-state on the analysis, rendered by RentControlNote (D-113).
@@ -725,7 +734,8 @@ function InvestorReportContent({
       )}
       <RentalCompsSection
         comps={analysis.rentalComps}
-        askingRent={listingData.rentEstimate}
+        askingRent={listing.rentMonthly ?? listingData.rentEstimate}
+        rentLabel={listing.rentMonthly == null ? 'Estimated rent' : 'Asking rent'}
         rentIsProxy={listingData.rentIsProxy}
         mapCenter={analysis.coordinates ?? null}
       />

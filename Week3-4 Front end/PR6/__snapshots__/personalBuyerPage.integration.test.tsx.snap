@@ -243,7 +243,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
           >
-            No listing photos · report built from the address
+            No listing photos available
           </div>
         </div>
         <div
@@ -3087,7 +3087,7 @@ exports[`PersonalBuyerPage — snapshot > matches shallow snapshot (depth=1 to k
             class="mono"
             style="font-size: 11px; color: var(--muted);"
           >
-            via Walk Score · Mapbox
+            via Walk Score
           </span>
         </div>
         <div

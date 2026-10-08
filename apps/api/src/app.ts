@@ -10,6 +10,7 @@ import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
 import { corsOrigins } from './corsOrigins'
 import { buildInfo } from './lib/buildInfo'
+import { devHpiEnabled } from './services/devHpiService'
 
 const fastify = Fastify({
   logger: true,
@@ -85,6 +86,10 @@ async function main(): Promise<void> {
 
   await fastify.register(import('./routes/waitlist'), { prefix: '/waitlist' })
 
+  if (devHpiEnabled()) {
+    await fastify.register(import('./routes/devHpi'), { prefix: '/dev/hpi' })
+  }
+
   fastify.get('/health', async (_req, _reply) => {
     return { status: 'ok', ts: new Date().toISOString(), ...buildInfo() }
   })
@@ -94,7 +99,7 @@ async function main(): Promise<void> {
   const PORT = Number(process.env.PORT ?? 3001)
 
   try {
-    await fastify.listen({ port: PORT, host: '0.0.0.0' })
+    await fastify.listen({ port: PORT, host: devHpiEnabled() ? '127.0.0.1' : '0.0.0.0' })
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)

@@ -377,13 +377,14 @@ export function computeHomeScore(
   else lightPts = 4
 
   // 4. Walk + transit
-  const wt = (neigh.walkScore + neigh.transitScore) / 2
+  const mobility = [neigh.walkScore, neigh.transitScore].filter((n): n is number => n != null)
+  const wt = mobility.length > 0 ? mobility.reduce((sum, n) => sum + n, 0) / mobility.length : 0
   let walkPts = 0
   if (wt >= 80) walkPts = 15
   else if (wt >= 65) walkPts = 12
   else if (wt >= 50) walkPts = 9
   else if (wt >= 35) walkPts = 5
-  else walkPts = 2
+  else walkPts = mobility.length > 0 ? 2 : 0
 
   // 5. Lot / value-add (baseline)
   const lotPts = 8

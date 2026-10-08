@@ -162,7 +162,10 @@ export function shimToPersonalProperty(listing: Listing, analysis: Analysis): Pe
     listing.annualTaxes != null && listing.annualTaxes > 0 ? listing.annualTaxes : null
   const effectiveAnnualTaxes = listedAnnualTaxes ?? analysis.metrics?.annualTaxesUsed ?? 0
 
-  const parking = countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED })
+  const parking = countLabel(listing.parkingSpots, 'spot', {
+    fallback: PARKING_NOT_PROVIDED,
+    known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots'),
+  })
 
   // Sqft-scaled utility estimates — more accurate than flat rates for varied property sizes
   const sqftBasis = sqft > 0 ? sqft : PROPERTY_COST_ESTIMATES.SQFT_FALLBACK
@@ -261,9 +264,9 @@ function mapDistanceRows(analysis: Analysis): Array<{
 export function shimToPersonalNeighbourhood(analysis: Analysis): PersonalNeighbourhood {
   const stats = analysis.neighbourhoodStats
   return {
-    walkScore: analysis.walkScore?.walk ?? 0,
-    transitScore: analysis.walkScore?.transit ?? 0,
-    bikeScore: analysis.walkScore?.bike ?? 0,
+    walkScore: analysis.walkScore?.walk ?? null,
+    transitScore: analysis.walkScore?.transit ?? null,
+    bikeScore: analysis.walkScore?.bike ?? null,
     walkSub: analysis.walkScore?.description ?? '',
     transitSub: '',
     bikeSub: '',
@@ -301,7 +304,10 @@ export function shimToListingData(listing: Listing, analysis: Analysis): Listing
         : bareCount(listing.beds, listing.bedsKnown),
     baths: bareCount(listing.baths, listing.bathsKnown),
     sqft: listing.sqft ?? 0,
-    parking: countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED }),
+    parking: countLabel(listing.parkingSpots, 'spot', {
+      fallback: PARKING_NOT_PROVIDED,
+      known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots'),
+    }),
     yearBuilt: listing.yearBuilt ?? 0,
     rentControl: true, // conservative Ontario default
     price: listing.price ?? 0,
@@ -392,8 +398,7 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     verdictLabel = ts.verdictLabel
     sampleNote = rentSampleNote(ts, listing.rentMonthly, comps.mid)
   }
-  const targetHigh = comps?.mid ?? 0
-  const targetLow = comps?.low ?? 0
+  const { targetLow, targetHigh } = tenantRentTarget(listing.rentMonthly ?? 0, comps)
 
   return {
     id: listing.id,
@@ -412,7 +417,14 @@ export function shimToTenantListingData(listing: Listing, analysis: Analysis): T
     scoreTone,
     scoreSuppressed,
     provenance: listingProvenance(listing),
-    targetProvenance: rentTargetProvenance(comps),
+    targetProvenance: {
+      ...rentTargetProvenance(comps),
+      detail:
+        rentTargetProvenance(comps).detail +
+        (comps && targetHigh > 0 && targetHigh < comps.mid
+          ? ' Target upper bound is capped at asking rent.'
+          : ''),
+    },
     verdictLabel,
     verdictSub: analysis.narrative?.split('. ')[0] ?? '',
     sampleNote,
@@ -469,12 +481,27 @@ export function shimToTenantSpecRows(listing: Listing): {
       'Bedrooms',
       knownCount(listing.beds, listing.bedsKnown) === 0
         ? 'Studio'
-        : countLabel(listing.beds, 'bedroom', { fallback: 'Not listed' }),
+        : countLabel(listing.beds, 'bedroom', {
+            fallback: 'Not listed',
+            known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots'),
+          }),
     ],
-    ['Bathrooms', countLabel(listing.baths, 'bathroom', { fallback: 'Not listed' })],
+    [
+      'Bathrooms',
+      countLabel(listing.baths, 'bathroom', {
+        fallback: 'Not listed',
+        known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots'),
+      }),
+    ],
     ['Interior size', listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : 'Not listed'],
     ['Property type', formatPropertyType(listing.propertyType)],
-    ['Parking', countLabel(listing.parkingSpots, 'space', { fallback: 'Not listed' })],
+    [
+      'Parking',
+      countLabel(listing.parkingSpots, 'space', {
+        fallback: 'Not listed',
+        known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots'),
+      }),
+    ],
   ]
   const buildingRows: Array<[string, string]> = [
     ['Year built', listing.yearBuilt ? String(listing.yearBuilt) : 'Not listed'],
@@ -501,7 +528,7 @@ export function shimToTenantSpecRows(listing: Listing): {
 export function shimToTenantCostLines(listing: Listing, analysis: Analysis): TenantCostLine[] {
   const rent = listing.rentMonthly ?? 0
   const comps = analysis.rentalComps
-  const rentTarget = comps?.low ?? rent
+  const rentTarget = tenantRentTarget(rent, comps).targetLow || rent
   const u = tenantUtilityEstimates(listing)
   const included = tenantIncludedClaims(listing)
   return [
@@ -534,15 +561,18 @@ export function shimToTenantCostLines(listing: Listing, analysis: Analysis): Ten
       included: 'maybe',
       note: 'confirm if included in rent',
     },
-    knownCount(listing.parkingSpots) != null
+    knownCount(
+      listing.parkingSpots,
+      listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+    ) != null
       ? {
           k: 'Parking',
           asking: 0,
           target: 0,
           included: included.parking ? true : 'maybe',
           note: included.parking
-            ? `${countLabel(listing.parkingSpots, 'space')} — listing says included`
-            : `${countLabel(listing.parkingSpots, 'space')} — confirm if extra`,
+            ? `${countLabel(listing.parkingSpots, 'space', { known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots') })} — listing says included`
+            : `${countLabel(listing.parkingSpots, 'space', { known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots') })} — confirm if extra`,
         }
       : { k: 'Parking', asking: 0, target: 0, included: 'maybe', note: 'not listed — confirm' },
   ]
@@ -561,8 +591,11 @@ export function shimToTenantAmenities(listing: Listing): TenantAmenity[] {
       label: 'Parking',
       status: included.parking ? 'incl' : 'unclear',
       note:
-        knownCount(listing.parkingSpots) != null
-          ? `${countLabel(listing.parkingSpots, 'space')}${included.parking ? ' · listing says included' : ''}`
+        knownCount(
+          listing.parkingSpots,
+          listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+        ) != null
+          ? `${countLabel(listing.parkingSpots, 'space', { known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots') })}${included.parking ? ' · listing says included' : ''}`
           : 'not listed — confirm',
     },
     { label: 'Heat / gas', status: 'unclear', note: 'confirm with landlord' },
@@ -585,6 +618,23 @@ export function shimToTenantAmenities(listing: Listing): TenantAmenity[] {
  * message is generated only when there's genuine leverage to cite. `hasLeverage`
  * lets the section fall back to an honest empty when neither comps nor flags exist.
  */
+/** A supported concession must be below asking and inside the observed range. */
+export function tenantRentTarget(
+  asking: number,
+  comps: Analysis['rentalComps']
+): { targetLow: number; targetHigh: number } {
+  if (
+    !comps ||
+    comps.compCount <= 0 ||
+    comps.low <= 0 ||
+    comps.mid < comps.low ||
+    asking <= comps.low
+  ) {
+    return { targetLow: 0, targetHigh: 0 }
+  }
+  return { targetLow: comps.low, targetHigh: Math.min(asking, comps.mid) }
+}
+
 export function shimToTenantNegotiation(
   listing: Listing,
   analysis: Analysis
@@ -598,8 +648,7 @@ export function shimToTenantNegotiation(
 } {
   const asking = listing.rentMonthly ?? 0
   const comps = analysis.rentalComps
-  const targetHigh = comps?.mid ?? 0
-  const targetLow = comps?.low ?? 0
+  const { targetLow, targetHigh } = tenantRentTarget(asking, comps)
   const flags = analysis.riskFlags ?? []
 
   const leverageFactors: TenantLeverageRow[] = []
@@ -626,7 +675,7 @@ export function shimToTenantNegotiation(
     })
   }
 
-  const hasLeverage = leverageFactors.length > 0
+  const hasLeverage = targetLow > 0 || flags.length > 0
   const addr = parseAddress(listing.address).line1
 
   let suggestedMessage = ''
@@ -677,8 +726,11 @@ export function shimToTenantChecklist(listing: Listing, analysis: Analysis): Ten
     {
       label: included.parking
         ? `Are the parking stall${included.locker ? ' and locker' : ''} identifiers written into the lease?`
-        : knownCount(listing.parkingSpots) != null
-          ? `Is the listed parking space${knownCount(listing.parkingSpots) === 1 ? '' : 's'} included in the monthly rent?`
+        : knownCount(
+              listing.parkingSpots,
+              listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+            ) != null
+          ? `Is the listed parking space${knownCount(listing.parkingSpots, listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')) === 1 ? '' : 's'} included in the monthly rent?`
           : 'Is parking available, and what would it cost each month?',
       critical: true,
     },
@@ -708,7 +760,10 @@ export function shimToTenantChecklist(listing: Listing, analysis: Analysis): Ten
 export function shimToLandlordProperty(listing: Listing, analysis: Analysis): LandlordProperty {
   const { line1, line2 } = parseAddress(listing.address)
   const price = listing.price ?? 0
-  const parking = countLabel(listing.parkingSpots, 'spot', { fallback: PARKING_NOT_PROVIDED })
+  const parking = countLabel(listing.parkingSpots, 'spot', {
+    fallback: PARKING_NOT_PROVIDED,
+    known: listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots'),
+  })
 
   return {
     id: listing.id,

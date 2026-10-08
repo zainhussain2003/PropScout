@@ -1550,7 +1550,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 class="mono"
                 style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
               >
-                No listing photos · report built from the address
+                No listing photos available
               </div>
             </div>
             <div
@@ -5204,7 +5204,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           <span
             class="verdict-pill caution"
           >
-            Modeling · Phase 2
+            Sunlight data unavailable
           </span>
         </div>
         <div
@@ -5242,18 +5242,18 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             <span
               class="chip"
             >
-              Coming Phase 2
+              Data unavailable
             </span>
             <h4
               class="serif"
               style="font-size: 24px;"
             >
-              Solar path analysis — shipping Q3 2026.
+              Solar path analysis is unavailable for this report.
             </h4>
             <p
               style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
             >
-              SunScout uses NASA NREL sun-path data to show peak sun hours by season and window orientation. Available once address geocoding is confirmed for this property.
+              SunScout needs reliable property coordinates and a successful sun-path calculation. This report has no model result, so it cannot assess the property's sunlight.
             </p>
           </div>
         </div>

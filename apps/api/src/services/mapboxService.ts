@@ -7,12 +7,16 @@
  * a non-fatal enhancement (SunScout is skipped when lat/lng is unavailable).
  */
 
+import { geocodeNominatim } from './nominatimService'
+
 export interface GeocodingResult {
   lat: number
   lng: number
   formattedAddress: string
   /**
-   * Mapbox's 0–1 confidence in the match. Anything low is a fuzzy guess: the
+   * Mapbox's 0–1 confidence, or Nominatim's strict address-identity gate (1).
+   * The latter is our validation result, not a provider-measured confidence.
+   * Anything low from Mapbox is a fuzzy guess: the
    * string "asdfghjkl" scores 0.66 and resolves to a real street in Ingleside.
    */
   relevance: number
@@ -36,6 +40,8 @@ export interface GeocodingResult {
  *   - No results are returned for the address
  */
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
+  if (process.env.GEOCODING_PROVIDER === 'nominatim') return geocodeNominatim(address)
+  if (process.env.FREE_ONLY_BETA === 'true') return null
   try {
     const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN ?? ''
 
@@ -120,6 +126,7 @@ export async function routeMinutes(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number }
 ): Promise<number | null> {
+  if (process.env.FREE_ONLY_BETA === 'true') return null
   try {
     const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN ?? ''
     if (!MAPBOX_TOKEN) return null

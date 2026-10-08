@@ -64,7 +64,7 @@ function SunScoutPlaceholder({
         n={sectionNumber}
         topic="SunScout"
         question={question}
-        verdict="Modeling · Phase 2"
+        verdict="Sunlight data unavailable"
         tone="caution"
       />
 
@@ -87,13 +87,13 @@ function SunScoutPlaceholder({
         </div>
 
         <div className="col" style={{ gap: 8, maxWidth: 560 }}>
-          <Chip>Coming Phase 2</Chip>
+          <Chip>Data unavailable</Chip>
           <h4 className="serif" style={{ fontSize: 24 }}>
-            Solar path analysis — shipping Q3 2026.
+            Solar path analysis is unavailable for this report.
           </h4>
           <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-            SunScout uses NASA NREL sun-path data to show peak sun hours by season and window
-            orientation. Available once address geocoding is confirmed for this property.
+            SunScout needs reliable property coordinates and a successful sun-path calculation. This
+            report has no model result, so it cannot assess the property's sunlight.
           </p>
         </div>
       </div>

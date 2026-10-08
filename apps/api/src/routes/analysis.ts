@@ -48,6 +48,7 @@ import { ensureGuestId, readGuestId, guestLimitEnabled } from '../lib/guestSessi
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
+import { personalOwnershipCost } from '../services/personalOwnershipCost'
 import { getNearbyDistances } from '../services/googlePlacesService'
 import { getNeighbourhoodStats } from '../services/statsCanService'
 import { getComparableSalesWithProvenance } from '../services/comparableSalesService'
@@ -689,6 +690,20 @@ export async function runAnalysisPipeline(
     rentHigh: rentalForCalc.high,
     walkScore: walkScore?.walk ?? null,
     transitScore: walkScore?.transit ?? null,
+    monthlyOwnershipCost:
+      mode === 'personal'
+        ? personalOwnershipCost({
+            price: listing.price ?? 0,
+            mortgageMonthly: pyData.metrics.mortgage_payment_monthly,
+            annualTaxes:
+              listing.annualTaxes != null && listing.annualTaxes > 0
+                ? listing.annualTaxes
+                : annualTaxesForCalc,
+            condoFeeMonthly: listing.condoFeeMonthly ?? 0,
+            sqft: listing.sqft,
+            yearBuilt: listing.yearBuilt,
+          })
+        : undefined,
   }
 
   const narrative = await generateNarrative(narrativeInput)

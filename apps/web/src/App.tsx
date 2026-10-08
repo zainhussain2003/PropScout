@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { useTier } from './hooks/useTier'
@@ -37,6 +37,11 @@ import './styles/hybrid-surfaces.css'
 import { RouteScroll } from './components/shared/RouteScroll'
 import { HybridUtilityShell } from './components/hybrid/HybridUtilityShell'
 import { BETA_FREE_ACCESS } from './constants/tiers'
+
+const DevHpiPage =
+  import.meta.env.DEV && import.meta.env.VITE_DEV_HPI_BENCHMARKS === 'true'
+    ? lazy(() => import('./pages/DevHpiPage').then((module) => ({ default: module.DevHpiPage })))
+    : null
 
 function AppInner(): JSX.Element {
   const { tier, status: tierStatus, refresh: refreshTier } = useTier()
@@ -85,6 +90,16 @@ function AppInner(): JSX.Element {
         <RouteScroll />
         <TierUnavailableNotice />
         <Routes>
+          {DevHpiPage && (
+            <Route
+              path="/dev/hpi"
+              element={
+                <Suspense fallback={<p>Loading…</p>}>
+                  <DevHpiPage />
+                </Suspense>
+              }
+            />
+          )}
           <Route path="/" element={<LandingPage />} />
           <Route path="/analyzing" element={<AnalyzingPage />} />
           <Route

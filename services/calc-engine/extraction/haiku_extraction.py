@@ -179,6 +179,11 @@ async def extract_flags_with_haiku(
     Returns:
         Dict mapping each flag_id to its extracted result dict.
     """
+    if os.environ.get("FREE_ONLY_BETA") == "true":
+        if raise_on_failure:
+            raise HaikuExtractionError("AI extraction is disabled for the free beta")
+        return _empty_flags()
+
     if not description or not description.strip():
         return _empty_flags()
 

@@ -4,9 +4,11 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { shimToPersonalProperty } from './reportShims'
+import { shimToPersonalProperty, shimToPersonalNeighbourhood } from './reportShims'
 import type { Analysis } from '../types/analysis'
 import type { Listing } from '../types/property'
+import { computeMonthlyCost } from '../data/personalBuyerData'
+import { personalOwnershipCost } from '../../../api/src/services/personalOwnershipCost'
 
 const LISTING: Listing = {
   id: 'l1',
@@ -48,6 +50,50 @@ const BASE: Analysis = {
 }
 
 describe('shimToPersonalProperty — financing', () => {
+  it.each([null, 1970, 1990, 2019])(
+    'keeps narrative and displayed cost models aligned for build year %s',
+    (yearBuilt) => {
+      const listing = { ...LISTING, yearBuilt }
+      const property = shimToPersonalProperty(listing, BASE)
+      const monthly = computeMonthlyCost(property, {
+        downPct: property.defaultDownPct,
+        rate: property.defaultRate,
+        amort: property.defaultAmort,
+      })
+      expect(
+        personalOwnershipCost({
+          price: property.price,
+          mortgageMonthly: monthly.mortgage,
+          annualTaxes: property.annualTaxes,
+          condoFeeMonthly: property.condoFeeMonthly,
+          sqft: listing.sqft,
+          yearBuilt,
+        })
+      ).toBeCloseTo(monthly.total, 8)
+    }
+  )
+  it('shows a visitor-confirmed zero parking count while retaining unknown legacy zero', () => {
+    expect(
+      shimToPersonalProperty({ ...LISTING, parkingSpots: 0, enteredFields: ['parkingSpots'] }, BASE)
+        .parking
+    ).toBe('0 spots')
+    expect(shimToPersonalProperty({ ...LISTING, parkingSpots: 0 }, BASE).parking).toContain(
+      'not provided'
+    )
+  })
+  it('keeps missing mobility absent and preserves a measured zero', () => {
+    expect(shimToPersonalNeighbourhood(BASE)).toMatchObject({
+      walkScore: null,
+      transitScore: null,
+      bikeScore: null,
+    })
+    expect(
+      shimToPersonalNeighbourhood({
+        ...BASE,
+        walkScore: { walk: 0, transit: null, bike: 65, description: '', fetchedAt: '' },
+      })
+    ).toMatchObject({ walkScore: 0, transitScore: null, bikeScore: 65 })
+  })
   it('reports the rate, down payment and amortization the analysis used', () => {
     const analysis: Analysis = {
       ...BASE,

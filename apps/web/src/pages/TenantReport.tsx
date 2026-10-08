@@ -638,8 +638,12 @@ function CostBreakdownSection({ lines }: { lines: TenantCostLine[] }): JSX.Eleme
             What will it <em>really</em> cost?
           </>
         }
-        verdict={`Save ${fmtCAD(annualSavings)}/yr at target`}
-        tone="pass"
+        verdict={
+          annualSavings > 0
+            ? `Save ${fmtCAD(annualSavings)}/yr at target`
+            : 'Estimated costs at asking rent'
+        }
+        tone={annualSavings > 0 ? 'pass' : 'caution'}
       />
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -654,7 +658,9 @@ function CostBreakdownSection({ lines }: { lines: TenantCostLine[] }): JSX.Eleme
             alignItems: 'center',
           }}
         >
-          {(['Line item', 'At asking', 'At target ↓'] as const).map((h, i) => (
+          {(
+            ['Line item', 'At asking', annualSavings > 0 ? 'At target ↓' : 'At asking'] as const
+          ).map((h, i) => (
             <span
               key={h}
               className="mono"
@@ -761,7 +767,10 @@ function CostBreakdownSection({ lines }: { lines: TenantCostLine[] }): JSX.Eleme
               {fmtCAD(totalTgt)}
             </span>
             <span className="mono" style={{ fontSize: 10, color: 'var(--pass)' }}>
-              /mo · save {fmtCAD(monthlySavings)}
+              /mo
+              {monthlySavings > 0
+                ? ` · save ${fmtCAD(monthlySavings)}`
+                : ' · no rent concession modelled'}
             </span>
           </div>
         </div>
@@ -1538,7 +1547,7 @@ export function TenantReport({
               scan === 'clean'
                 ? "No red or amber flags surfaced from this listing's description — a clean scan, not a guarantee. Still confirm the specifics in person."
                 : scan === 'no_text'
-                  ? 'This rental was entered by address, so there is no listing description to check. Nothing here has been scanned; confirm the specifics in person.'
+                  ? 'There is no listing description to check. Nothing here has been scanned; confirm the specifics in person.'
                   : `${SCAN_NOTE[scan as Exclude<ScanState, 'flagged'>]} Confirm the specifics in person.`
             }
           />
@@ -1590,7 +1599,11 @@ export function TenantReport({
                     Should you <em>negotiate</em>?
                   </>
                 }
-                note="No comparable rents or listing flags to build a negotiation case yet — confirm the unit's specifics with the landlord."
+                note={
+                  realAnalysis!.rentalComps
+                    ? 'The asking rent is at or below the observed comparable-range low. The available evidence does not support a lower rent target — confirm the lease terms before signing.'
+                    : "No comparable rents or listing flags to build a negotiation case yet — confirm the unit's specifics with the landlord."
+                }
               />
             )
           }
@@ -1653,18 +1666,32 @@ export function TenantReport({
                   sub: realAnalysis.walkScore.description,
                   tone: realAnalysis.walkScore.walk >= 70 ? 'pass' : 'caution',
                 },
-                {
-                  label: 'Transit Score',
-                  val: realAnalysis.walkScore.transit ?? 0,
-                  sub: 'Public transit',
-                  tone: (realAnalysis.walkScore.transit ?? 0) >= 50 ? 'pass' : 'caution',
-                },
-                {
-                  label: 'Bike Score',
-                  val: realAnalysis.walkScore.bike ?? 0,
-                  sub: 'Bikeable',
-                  tone: (realAnalysis.walkScore.bike ?? 0) >= 50 ? 'pass' : 'caution',
-                },
+                ...(realAnalysis.walkScore.transit != null
+                  ? [
+                      {
+                        label: 'Transit Score',
+                        val: realAnalysis.walkScore.transit,
+                        sub: 'Public transit',
+                        tone:
+                          realAnalysis.walkScore.transit >= 50
+                            ? ('pass' as const)
+                            : ('caution' as const),
+                      },
+                    ]
+                  : []),
+                ...(realAnalysis.walkScore.bike != null
+                  ? [
+                      {
+                        label: 'Bike Score',
+                        val: realAnalysis.walkScore.bike,
+                        sub: 'Bikeable',
+                        tone:
+                          realAnalysis.walkScore.bike >= 50
+                            ? ('pass' as const)
+                            : ('caution' as const),
+                      },
+                    ]
+                  : []),
               ]
             : // Real mode with no Walk Score (API key missing / lookup failed):
               // show an honest empty, never the CHARLES fixture scores.

@@ -16,6 +16,9 @@ export async function getWalkScore(
   lat: number,
   lng: number
 ): Promise<WalkScoreResult | null> {
+  // The free licence forbids retaining scores in saved reports. Keep beta
+  // snapshots empty until a storage licence or transient display is available.
+  if (process.env.FREE_ONLY_BETA === 'true') return null
   try {
     const WALKSCORE_API_KEY = process.env.WALKSCORE_API_KEY ?? ''
 

@@ -13,7 +13,28 @@ from extraction.haiku_extraction import (
     _strip_markdown,
     _FLAG_IDS,
     extract_flags_with_haiku,
+    HaikuExtractionError,
 )
+
+
+@pytest.mark.asyncio
+async def test_free_beta_does_not_create_paid_client(monkeypatch):
+    monkeypatch.setenv("FREE_ONLY_BETA", "true")
+    with patch("extraction.haiku_extraction._get_client") as get_client:
+        assert await extract_flags_with_haiku("A basement apartment") == _empty_flags()
+        get_client.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_free_beta_reports_ai_scan_unavailable(monkeypatch):
+    monkeypatch.setenv("FREE_ONLY_BETA", "true")
+    with patch("extraction.haiku_extraction._get_client") as get_client:
+        with pytest.raises(HaikuExtractionError, match="disabled"):
+            await extract_flags_with_haiku(
+                "A basement apartment", raise_on_failure=True
+            )
+        get_client.assert_not_called()
+
 
 # ── Unit tests — pure helpers ─────────────────────────────────────────────────
 

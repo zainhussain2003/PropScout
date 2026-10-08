@@ -127,6 +127,19 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
     async (req, reply) => {
       try {
         const { url } = req.body
+        const source = new URL(url)
+        if (
+          !['https:', 'http:'].includes(source.protocol) ||
+          !['realtor.ca', 'www.realtor.ca'].includes(source.hostname.toLowerCase()) ||
+          source.username ||
+          source.password ||
+          source.port ||
+          !/^\/real-estate\/\d+(?:\/|$)/i.test(source.pathname)
+        ) {
+          return reply
+            .status(400)
+            .send({ error: 'Use a Realtor.ca property listing URL, or enter the address instead.' })
+        }
 
         // Step 1 — call the Python scraper. The scrape is slow (ScraperAPI ~25s +
         // retries), so give it a generous explicit timeout — otherwise the request
@@ -278,6 +291,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           // The scraper yields null when the "Total parking spaces" label is
           // absent; keep that distinction rather than storing 0 (D-072).
           parkingSpots: scraped.parking_spaces ?? null,
+          parkingSpotsKnown: scraped.parking_spaces != null,
           condoFeeMonthly: scraped.condo_fee_monthly,
           condoFeeKnown: scraped.condo_fee_known,
           annualTaxes: hasUsableAnnualTaxes ? scraped.annual_taxes : null,

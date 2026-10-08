@@ -17,6 +17,44 @@ beforeEach(() => {
   jest.clearAllMocks()
 })
 
+it('makes no paid extraction call in free-only beta mode', async () => {
+  process.env.FREE_ONLY_BETA = 'true'
+  try {
+    expect(await extractListingFlags('A finished lower level apartment.')).toEqual({})
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
+  } finally {
+    delete process.env.FREE_ONLY_BETA
+  }
+})
+
+describe('tenant concession boundaries', () => {
+  it.each([1800, 1900])('does not suggest raising an asking rent of %s', async (askingRent) => {
+    const result = await generateNarrative({
+      mode: 'tenant',
+      tier: 'free',
+      address: 'Synthetic QA',
+      askingRent,
+      rentLow: 1900,
+      rentMid: 2000,
+      compCount: 8,
+    })
+    expect(result).toContain('does not support a lower rent target')
+    expect(result).not.toContain('negotiation reference')
+  })
+  it('caps a supported reference at asking when asking is below the median', async () => {
+    const result = await generateNarrative({
+      mode: 'tenant',
+      tier: 'free',
+      address: 'Synthetic QA',
+      askingRent: 1950,
+      rentLow: 1900,
+      rentMid: 2000,
+      compCount: 8,
+    })
+    expect(result).toContain('$1,900 to $1,950/month negotiation reference')
+  })
+})
+
 describe('extractListingFlags', () => {
   it('valid description with clear signals → flags parsed correctly, confidence and evidence present', async () => {
     const flags = {
@@ -136,7 +174,7 @@ describe('generateNarrative', () => {
     expect(result).toContain('walk score 88 and transit score 72')
   })
 
-  it('tenant mode uses the supplied median as the only negotiation reference', async () => {
+  it('tenant mode anchors the concession inside the supplied range and below asking', async () => {
     const result = await generateNarrative({
       mode: 'tenant',
       tier: 'pro',
@@ -154,7 +192,7 @@ describe('generateNarrative', () => {
 
     expect(result).toContain('$2,150/month')
     expect(result).toContain('$2,000 market median from 14 comparable rentals')
-    expect(result).toContain('Use the supplied market median of $2,000/month')
+    expect(result).toContain('$1,900 to $2,000/month negotiation reference')
     expect(mockMessagesCreate).not.toHaveBeenCalled()
   })
 

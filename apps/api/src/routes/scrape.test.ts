@@ -64,6 +64,33 @@ afterEach(async () => {
 })
 
 describe('POST /scrape', () => {
+  it('preserves confirmed zero parking in the report snapshot', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, parking_spaces: 0 }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: ONTARIO_FIXTURE.url },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(
+      'mock-listing-id',
+      expect.any(String),
+      expect.objectContaining({ parkingSpots: 0, parkingSpotsKnown: true })
+    )
+  })
+  it.each([
+    'https://example.com/real-estate/12345/test',
+    'https://realtor.ca.example.com/real-estate/12345/test',
+    'https://www.realtor.ca/realtors/12345',
+    'https://user:pass@www.realtor.ca/real-estate/12345/test',
+  ])('rejects unsupported URL %s before contacting a provider', async (url) => {
+    const res = await app.inject({ method: 'POST', url: '/', payload: { url } })
+    expect(res.statusCode).toBe(400)
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(saveListing).not.toHaveBeenCalled()
+  })
   it('Ontario listing → saveListing called, createPendingAnalysis called, response contains token and listing', async () => {
     mockFetch.mockResolvedValueOnce(makeFetchResponse(ONTARIO_FIXTURE, 200))
 

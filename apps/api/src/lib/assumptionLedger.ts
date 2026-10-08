@@ -19,6 +19,7 @@ import { RENT_TO_PRICE_MONTHLY } from '../constants/valuation'
 import { MARKET_DEMAND } from '../constants/thresholds'
 import { CMHC_VACANCY_SURVEY } from '../constants/cmhcVacancy'
 import type { MarketDemandObservation } from './marketDemand'
+import { personalMaintenanceRate } from '../services/personalOwnershipCost'
 
 /** The engine's echo of what it applied (models/schemas.py AssumptionsAppliedOutput). */
 export interface EngineAssumptions {
@@ -429,11 +430,14 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
     rows.push({
       key: 'maintenance',
       label: 'Maintenance reserve',
-      value: `${pct(engine.maintenance_rate, 1)} of value`,
+      value: `${pct(input.mode === 'personal' ? personalMaintenanceRate(listing.yearBuilt) : engine.maintenance_rate, 1)} of value`,
       basis: 'default',
       source: PROPSCOUT_DEFAULT,
       asOf: null,
-      method: `Annual reserve by build year — ${MAINTENANCE_BAND[engine.maintenance_basis] ?? engine.maintenance_basis}. In-unit repairs only for a condo.`,
+      method:
+        input.mode === 'personal'
+          ? 'Personal ownership-cost model: 0.5% for 2010 or later, 1.0% for 1980–2009, 1.5% for older or unknown build years. Estimated reserve; confirm actual costs.'
+          : `Annual reserve by build year — ${MAINTENANCE_BAND[engine.maintenance_basis] ?? engine.maintenance_basis}. In-unit repairs only for a condo.`,
     })
   }
 

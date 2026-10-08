@@ -126,15 +126,52 @@ describe('shimToTenantListingData — score suppression', () => {
 
 describe('live tenant report facts', () => {
   it('keeps the negotiation target inside the observed comparable range', () => {
-    const negotiation = shimToTenantNegotiation(LISTING, baseAnalysis(COMPS))
-    const listingData = shimToTenantListingData(LISTING, baseAnalysis(COMPS))
-    const costLines = shimToTenantCostLines(LISTING, baseAnalysis(COMPS))
+    // An above-market ask provides room for the observed-range concession.
+    const listing = { ...LISTING, rentMonthly: 3100 }
+    const negotiation = shimToTenantNegotiation(listing, baseAnalysis(COMPS))
+    const listingData = shimToTenantListingData(listing, baseAnalysis(COMPS))
+    const costLines = shimToTenantCostLines(listing, baseAnalysis(COMPS))
 
     expect(negotiation.targetLow).toBe(COMPS.low)
     expect(negotiation.targetHigh).toBe(COMPS.mid)
     expect(listingData.targetLow).toBe(COMPS.low)
     expect(costLines.find((line) => line.k === 'Rent')?.target).toBe(COMPS.low)
     expect(negotiation.suggestedMessage).toContain(`propose $${COMPS.low.toLocaleString()}/mo`)
+  })
+
+  it.each([2500, 2600])('does not suggest increasing an asking rent of %s', (rentMonthly) => {
+    const listing = { ...LISTING, rentMonthly }
+    const analysis = baseAnalysis(COMPS)
+    expect(shimToTenantNegotiation(listing, analysis)).toMatchObject({
+      targetLow: 0,
+      targetHigh: 0,
+      hasLeverage: false,
+      suggestedMessage: '',
+    })
+    expect(shimToTenantListingData(listing, analysis).targetHigh).toBe(0)
+    expect(shimToTenantCostLines(listing, analysis)[0]).toMatchObject({
+      asking: rentMonthly,
+      target: rentMonthly,
+    })
+  })
+
+  it('caps the target band at asking when asking lies between the low and median', () => {
+    const listing = { ...LISTING, rentMonthly: 2750 }
+    expect(shimToTenantNegotiation(listing, baseAnalysis(COMPS))).toMatchObject({
+      targetLow: 2600,
+      targetHigh: 2750,
+    })
+  })
+
+  it('can raise flagged lease questions without proposing a rent increase', () => {
+    const analysis = baseAnalysis(COMPS)
+    analysis.riskFlags = [
+      { id: 'unverified_bedroom', label: 'Unverified bedroom', severity: 'red' },
+    ]
+    const negotiation = shimToTenantNegotiation(LISTING, analysis)
+    expect(negotiation.hasLeverage).toBe(true)
+    expect(negotiation.suggestedMessage).toContain('unverified bedroom')
+    expect(negotiation.suggestedMessage).not.toContain('propose $')
   })
 
   it('does not claim that a scraped parking space is included in rent', () => {

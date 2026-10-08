@@ -91,6 +91,7 @@ function classifyBoard(name: string): School['board'] {
  * Returns at most 20 schools (Google's per-page max), sorted by distance.
  */
 export async function getNearbySchools(lat: number, lng: number): Promise<School[]> {
+  if (process.env.FREE_ONLY_BETA === 'true') return []
   const key = process.env.GOOGLE_PLACES_KEY
   if (!key) {
     console.warn('getNearbySchools: GOOGLE_PLACES_KEY is not set — returning []')
@@ -248,6 +249,7 @@ async function nearestPlace(
  * that return nothing are simply omitted (the UI shows "unavailable" then).
  */
 export async function getNearbyDistances(lat: number, lng: number): Promise<NearbyDistance[]> {
+  if (process.env.FREE_ONLY_BETA === 'true') return []
   const key = process.env.GOOGLE_PLACES_KEY
   if (!key) {
     console.warn('getNearbyDistances: GOOGLE_PLACES_KEY is not set — returning []')

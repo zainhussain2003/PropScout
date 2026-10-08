@@ -81,7 +81,7 @@ function resetDb(): void {
 // ── Scraper + calc engine fetch mocks ───────────────────────────────────────
 
 const SCRAPED_LISTING = {
-  url: 'https://www.realtor.ca/real-estate/integration-test/buttermill-ave',
+  url: 'https://www.realtor.ca/real-estate/90000001/synthetic-qa-integration-buttermill-ave',
   address: '5702 Buttermill Ave, Vaughan, ON L4K 0J2',
   price: 729900,
   beds: 3,
