@@ -20,6 +20,28 @@ const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173'
 // holding the request open forever.
 const PAGE_LOAD_TIMEOUT_MS = 60_000
 
+// The free host also runs Node and Python. Keep only one Chrome process alive,
+// including its shutdown, and bound the waiting work to avoid memory exhaustion.
+let rendering = false
+const waiting: Array<() => void> = []
+const MAX_WAITING = 2
+
+async function acquireRenderer(): Promise<boolean> {
+  if (rendering) {
+    if (waiting.length >= MAX_WAITING) return false
+    await new Promise<void>((resolve) => waiting.push(resolve))
+  } else {
+    rendering = true
+  }
+  return true
+}
+
+function releaseRenderer(): void {
+  const next = waiting.shift()
+  if (next) next()
+  else rendering = false
+}
+
 /**
  * Build the branded footer template shown on every PDF page.
  * Exported for unit testing — Puppeteer requires inline styles here.
@@ -74,6 +96,7 @@ export async function generateReportPdf(
     listing: import('../types/property').Listing
   }
 ): Promise<Buffer | null> {
+  if (!(await acquireRenderer())) return null
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null
   try {
     browser = await puppeteer.launch({
@@ -110,5 +133,6 @@ export async function generateReportPdf(
     return null
   } finally {
     await browser?.close().catch(() => {})
+    releaseRenderer()
   }
 }

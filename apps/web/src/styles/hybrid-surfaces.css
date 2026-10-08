@@ -376,6 +376,7 @@ html[data-design='hybrid'] .hy-dialog-backdrop button[aria-label='Close'] {
   }
   html[data-design='hybrid'] .hy-property-grid :is(.scorecard, .report-side-score) {
     --surface: #fff;
+    --bg-elev: #eaf0f1;
     --ink: #172b35;
     --ink-2: #354b56;
     --muted: #52636c;
