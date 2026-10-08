@@ -9,7 +9,7 @@ import cookie from '@fastify/cookie'
 import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
 import { corsOrigins } from './corsOrigins'
-import { buildInfo } from './lib/buildInfo'
+import { registerHealthRoute } from './routes/health'
 import { devHpiEnabled } from './services/devHpiService'
 
 const fastify = Fastify({
@@ -90,9 +90,7 @@ async function main(): Promise<void> {
     await fastify.register(import('./routes/devHpi'), { prefix: '/dev/hpi' })
   }
 
-  fastify.get('/health', async (_req, _reply) => {
-    return { status: 'ok', ts: new Date().toISOString(), ...buildInfo() }
-  })
+  registerHealthRoute(fastify)
 
   // ── Start ───────────────────────────────────────────────────────────────────
 
