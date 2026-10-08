@@ -1264,6 +1264,11 @@ Rental listing scrapers (Rentals.ca, Kijiji, PadMapper): publicly listed data wi
 
 Generated via Puppeteer — headless Chrome renders the web report HTML and captures it as a PDF. The PDF always matches the web report exactly. No separate PDF template to maintain.
 
+The single-instance beta host serializes Chrome rendering, including shutdown,
+and accepts at most two waiting exports. Excess requests receive the existing
+retryable PDF error. Source-ledger column widths apply only to its four-column
+table; other report tables retain their own columns at printable width.
+
 ### Pages by report type
 
 **Report A — Investment purchase (8 pages)**

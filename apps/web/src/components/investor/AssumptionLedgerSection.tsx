@@ -76,6 +76,7 @@ export function AssumptionLedgerSection({
       <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 20 }}>
         <div style={{ overflowX: 'auto' }}>
           <table
+            className="assumption-ledger"
             style={{
               width: '100%',
               borderCollapse: 'collapse',

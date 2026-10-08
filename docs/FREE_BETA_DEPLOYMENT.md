@@ -42,11 +42,13 @@ The owner specifically approved free Render account creation, Render terms and
 transmission of the existing Supabase service key and ScraperAPI key, with no
 payment method. Account creation completed; the workspace billing page showed
 no card on file, no pending charges and zero services. The build pipeline spend
-limit was $0. The web-service form is prepared with Free compute and the beta
-branch, but no service has been deployed and no keys have been transferred.
-The prepared Dockerfile is still local and needs coordinator publication.
+limit was $0. On October 8, under the recorded one-release exception, the
+published beta branch was deployed on Render Free at
+`https://propscout-free-beta.onrender.com`. Only the two approved keys were
+transferred. Real HPI remains disabled and absent from the build.
 Do not copy a whole `.env` file or unrelated credentials to a new host.
-Frontend configuration must have `VITE_MAPBOX_TOKEN` empty and HPI disabled;
+Frontend configuration must set `VITE_FREE_ONLY_BETA=true`, which ignores even
+an existing Mapbox token and blocks its browser transport, with HPI disabled;
 `VITE_API_URL` changes only after the new backend smoke checks pass.
 
 ## Data and feature boundaries
@@ -80,12 +82,17 @@ guest-attribution columns absent. The existing migrations are:
 
 Prepare these through the release coordinator, inspect their backfill/index
 effects and confirm backup/rollback before application. Neither migration was
-applied in this preparation pass. Old-schema compatibility does not establish
+applied in the October 6 preparation pass. Both were applied on October 8
+under the specific release exception, after backing up the original analyses
+and verifying unchanged original fields. New hosted reports persist complete
+status and guest attribution; signed-in claiming remains outside this test scope.
+Old-schema compatibility alone does not establish
 job-state persistence or guest claiming on the deployed database.
 
 The current repository rules reserve commit creation and promotion to the
 coordinator. No candidate commit, push, merge or release is claimed for these
-local files. An owner-authorized release exception must be recorded explicitly
+initial local preparation. The October 8 owner exception is recorded in
+`docs/BETA_RELEASE_EXCEPTION.md`. An owner-authorized release exception must be recorded explicitly
 if release will precede the deferred independent review.
 
 After a candidate is accepted: build the free container; prove cold start,

@@ -1032,40 +1032,59 @@ body::-webkit-scrollbar-thumb {
 
   /* A source ledger can span pages. Keep each row intact and repeat its
      headings, rather than moving the entire table away from its section. */
-  .tr-section:has(> .card > div > table) .card,
-  .tr-section:has(> .card > div > table) .card > div {
+  .tr-section .card:has(table),
+  .tr-section .card:has(table) > div {
     break-inside: auto;
     overflow: visible !important;
   }
-  .tr-section:has(> .card > div > table) table {
+  .tr-section table {
+    min-width: 0 !important;
+    font-size: 10.5px !important;
+  }
+  .tr-section table thead {
+    display: table-header-group;
+  }
+  .tr-section table tr {
+    break-inside: avoid;
+  }
+  .tr-section table :is(th, td) {
+    padding: 6px !important;
+    white-space: normal !important;
+  }
+  .tr-section:has(> .card > div > table.assumption-ledger) .card,
+  .tr-section:has(> .card > div > table.assumption-ledger) .card > div {
+    break-inside: auto;
+    overflow: visible !important;
+  }
+  .tr-section:has(> .card > div > table.assumption-ledger) table {
     table-layout: fixed;
     min-width: 0 !important;
     font-size: 11.5px !important;
   }
-  .tr-section:has(> .card > div > table) thead {
+  .tr-section:has(> .card > div > table.assumption-ledger) thead {
     display: table-header-group;
   }
-  .tr-section:has(> .card > div > table) tr {
+  .tr-section:has(> .card > div > table.assumption-ledger) tr {
     break-inside: avoid;
   }
-  .tr-section:has(> .card > div > table) :is(th, td) {
+  .tr-section:has(> .card > div > table.assumption-ledger) :is(th, td) {
     padding: 8px !important;
     white-space: normal !important;
     overflow-wrap: anywhere;
   }
-  .tr-section:has(> .card > div > table) th:nth-child(1) {
+  .tr-section:has(> .card > div > table.assumption-ledger) th:nth-child(1) {
     width: 21%;
   }
-  .tr-section:has(> .card > div > table) th:nth-child(2) {
+  .tr-section:has(> .card > div > table.assumption-ledger) th:nth-child(2) {
     width: 18%;
   }
-  .tr-section:has(> .card > div > table) th:nth-child(3) {
+  .tr-section:has(> .card > div > table.assumption-ledger) th:nth-child(3) {
     width: 17%;
   }
-  .tr-section:has(> .card > div > table) th:nth-child(4) {
+  .tr-section:has(> .card > div > table.assumption-ledger) th:nth-child(4) {
     width: 44%;
   }
-  .tr-section:has(> .card > div > table) td:nth-child(3) span {
+  .tr-section:has(> .card > div > table.assumption-ledger) td:nth-child(3) span {
     font-size: 8px !important;
     padding: 2px 4px !important;
   }

@@ -5846,6 +5846,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             style="overflow-x: auto;"
           >
             <table
+              class="assumption-ledger"
               style="width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px;"
             >
               <thead>

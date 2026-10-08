@@ -4316,10 +4316,16 @@ verdicts, calculations, school/census records and rental comparisons remain.
 with Python on loopback behind Node; retain Vercel and Supabase. The container
 must still pass Linux, memory, PDF concurrency and cold-start checks. New-host
 terms and secret transmission received specific owner confirmation. The account
-was created, with no card on file, no pending charges, zero services and a $0
-build-pipeline spend limit observed. The Free service form is prepared, but the
-local Dockerfile still needs coordinator publication. No keys were transferred
-and no service was deployed. Existing Railway
+was created, with no card on file, no pending charges and a $0 build-pipeline
+spend limit observed. On October 8 the owner approved a one-release exception
+to publish and deploy before Claude review. Render Free now serves the API;
+only the approved Supabase service key and ScraperAPI key were transferred.
+Four Realtor.ca and four address-entry hosted pipelines passed. The two
+existing analyses status/guest migrations were applied after a private backup,
+with original-field preservation confirmed. All four individual hosted PDFs
+exported; a two-export concurrency failure led to serializing Chrome lifetimes
+with a bounded queue. Retesting and the public frontend switch remain release
+gates. See `docs/BETA_RELEASE_EXCEPTION.md`. Existing Railway
 Hobby and Mapbox cannot be assumed to enforce zero overage. See
 `docs/FREE_BETA_DEPLOYMENT.md`. No public HPI data or sample sale values are added.
 
