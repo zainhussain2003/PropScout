@@ -127,6 +127,19 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
     async (req, reply) => {
       try {
         const { url } = req.body
+        const source = new URL(url)
+        if (
+          !['https:', 'http:'].includes(source.protocol) ||
+          !['realtor.ca', 'www.realtor.ca'].includes(source.hostname.toLowerCase()) ||
+          source.username ||
+          source.password ||
+          source.port ||
+          !/^\/real-estate\/\d+(?:\/|$)/i.test(source.pathname)
+        ) {
+          return reply
+            .status(400)
+            .send({ error: 'Use a Realtor.ca property listing URL, or enter the address instead.' })
+        }
 
         // Step 1 — call the Python scraper. The scrape is slow (ScraperAPI ~25s +
         // retries), so give it a generous explicit timeout — otherwise the request
@@ -230,8 +243,23 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           scraped.price <= RENT_BOUNDS.MAX_MONTHLY
             ? scraped.price
             : null
+        const salePrice =
+          listingType === 'for-sale' && scraped.price > 0 && scraped.price <= 100_000_000
+            ? scraped.price
+            : null
 
         const missingFields: string[] = []
+        if (listingType === 'for-sale' && salePrice === null) missingFields.push('price')
+        const bedsMissing =
+          scraped.beds == null ||
+          scraped.beds_known === false ||
+          (scraped.beds === 0 && scraped.beds_known !== true)
+        const bathsMissing =
+          scraped.baths == null ||
+          scraped.baths_known === false ||
+          (scraped.baths === 0 && scraped.baths_known !== true)
+        if (bedsMissing) missingFields.push('beds')
+        if (bathsMissing) missingFields.push('baths')
         if (scraped.sqft == null) missingFields.push('sqft')
         const hasUsableAnnualTaxes =
           scraped.taxes_known && scraped.annual_taxes != null && scraped.annual_taxes > 0
@@ -248,21 +276,22 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
           city: extractCity(scraped.address),
           province: 'ON',
           postalCode,
-          price: listingType === 'for-sale' ? scraped.price : null,
+          price: salePrice,
           rentMonthly,
           // A count the page did not carry is null (D-072); a count it did
           // carry is a fact even when it is 0 — a studio (D-092). An older
           // scraper build sends no flag, and then the D-072 rule applies alone.
-          beds: scraped.beds_known === false ? null : scraped.beds,
-          baths: scraped.baths_known === false ? null : scraped.baths,
+          beds: bedsMissing ? null : scraped.beds,
+          baths: bathsMissing ? null : scraped.baths,
           bedsKnown: scraped.beds_known,
           bathsKnown: scraped.baths_known,
           sqft: scraped.sqft,
           propertyType: mapPropertyType(scraped.property_type, scraped.building_type),
-          yearBuilt: scraped.year_built,
+          yearBuilt: scraped.year_built_known ? scraped.year_built : null,
           // The scraper yields null when the "Total parking spaces" label is
           // absent; keep that distinction rather than storing 0 (D-072).
           parkingSpots: scraped.parking_spaces ?? null,
+          parkingSpotsKnown: scraped.parking_spaces != null,
           condoFeeMonthly: scraped.condo_fee_monthly,
           condoFeeKnown: scraped.condo_fee_known,
           annualTaxes: hasUsableAnnualTaxes ? scraped.annual_taxes : null,
@@ -274,7 +303,7 @@ async function scrapeRoutes(fastify: FastifyInstance): Promise<void> {
         // Step 5 — write to Supabase
         const listingId = await saveListing(listing, 'realtor_ca')
         const token = randomUUID()
-        await createPendingAnalysis(listingId, token)
+        await createPendingAnalysis(listingId, token, listing)
 
         // Step 6 — return response
         if (scraperFailed) {

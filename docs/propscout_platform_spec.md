@@ -94,6 +94,12 @@ For Zillow.ca: listing type is in the page metadata and price field format.
 
 ### Pricing tiers
 
+**Current public beta (2026-10-03, D-126):** all implemented report features are free,
+including unlimited analyses in all four modes, full verdicts, and PDF exports. New
+subscriptions are paused. Existing subscribers retain billing-portal access. This does not
+make planned features available. The paid launch description and matrix below are historical
+roadmap context until the owner makes a new monetization decision.
+
 **Launch implementation (2026-09-23, D-125) supersedes the roadmap below:** offer Free and
 Investor Pro at CAD $10/month only. Annual, Professional and Team purchases are deferred.
 Free includes the existing monthly quota, unlimited tenant reports, financial scenarios,
@@ -191,7 +197,7 @@ Running investment analysis...
 Building evidence-based verdict...
 ```
 
-Each confirmed field appears as it's extracted. Fields not found appear as amber "enter manually" prompts. The analysis waits for any required missing fields (condo fee for condos, taxes if absent) before running.
+Each confirmed field appears as it's extracted. Fields not found appear as amber "enter manually" prompts. The analysis waits for the asking amount and bedroom count. Under D-127, missing tax uses the clearly labelled city-rate estimate from D-053/D-054. An unstated condo fee remains unknown; affected cost calculations use $0 for that component and show a caution rather than claiming the listing stated a zero fee.
 
 Time targets: Urban Ontario under 10 seconds. Smaller cities up to 25 seconds.
 
@@ -903,6 +909,12 @@ If either scraper fails or required fields are missing:
 - Scraper-sourced fields labelled "auto-filled" in UI; manual fields labelled "user-entered"
 - This distinction carries through to the PDF footer
 
+When a scrape is partial, review every extracted numeric fact before choosing a report mode.
+The visitor can correct a fact or supply a missing value; missing optional facts remain unknown.
+Corrections travel with the report trigger and are saved in that report's listing snapshot,
+including the names of visitor-entered fields. The shared scraped listing row remains unchanged.
+The report and its PDF identify both the listing source and the visitor-entered corrections.
+
 **Rental comps scraper — nightly scheduled job**
 
 Sources: Rentals.ca, Kijiji (long-term rental category — the unfiltered feed plus its house and townhouse Unit Type feeds, D-120), PadMapper
@@ -1251,6 +1263,11 @@ Rental listing scrapers (Rentals.ca, Kijiji, PadMapper): publicly listed data wi
 ## 14. PDF export spec
 
 Generated via Puppeteer — headless Chrome renders the web report HTML and captures it as a PDF. The PDF always matches the web report exactly. No separate PDF template to maintain.
+
+The single-instance beta host serializes Chrome rendering, including shutdown,
+and accepts at most two waiting exports. Excess requests receive the existing
+retryable PDF error. Source-ledger column widths apply only to its four-column
+table; other report tables retain their own columns at printable width.
 
 ### Pages by report type
 

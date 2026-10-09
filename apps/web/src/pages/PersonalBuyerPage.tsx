@@ -473,7 +473,11 @@ function PersonalVerdictHero({
     return (
       <section className="container" style={{ marginTop: 24, marginBottom: 16 }}>
         <TruncatedVerdict
-          firstParagraph={narrative ? narrative.split('. ')[0] + '.' : PB_FIRST_PARA}
+          firstParagraph={
+            narrative
+              ? narrative.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '') + '.'
+              : PB_FIRST_PARA
+          }
           eyebrow="PropScout · home buyer verdict"
           onUnlock={() => openUpgradeModal('verdict')}
         />
@@ -557,7 +561,7 @@ function PersonalVerdictHero({
           }
         >
           {narrative ? (
-            narrative.split('. ')[0] + '.'
+            narrative.split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '') + '.'
           ) : isReal ? (
             // Live report whose narrative failed — never show fixture prose
             // about a different property (copy-honesty rule).
@@ -644,15 +648,15 @@ function PersonalVerdictHero({
               {/* Copy-honesty: only claim sources we actually have. */}
               <span className="row gap-6">
                 <Icon name="flag" size={12} />
-                Comparable sales · no source yet (value estimated)
+                Comparable sales · availability shown below
               </span>
               <span className="row gap-6">
                 <Icon name="flag" size={12} />
-                School data · pending dataset load
+                School data · coverage shown below
               </span>
               <span className="row gap-6">
                 <Icon name="check" size={12} />
-                Walk/Transit via Walk Score
+                Mobility data · availability shown below
               </span>
             </>
           ) : (
@@ -795,11 +799,13 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
           </>
         }
         verdict={
-          neigh.walkSub
-            ? `${neigh.walkSub} · Transit ${neigh.transitScore}`
-            : 'Quiet · GO-connected'
+          mobilityItems.every((s) => s.val == null)
+            ? 'Mobility data unavailable'
+            : [neigh.walkSub, neigh.transitScore != null ? `Transit ${neigh.transitScore}` : null]
+                .filter(Boolean)
+                .join(' · ') || 'Partial mobility data'
         }
-        tone={neigh.walkScore >= 70 ? 'pass' : 'caution'}
+        tone={neigh.walkScore != null && neigh.walkScore >= 70 ? 'pass' : 'caution'}
       />
 
       <div
@@ -824,12 +830,12 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
               Mobility scores
             </div>
             <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-              via Walk Score · Mapbox
+              {mobilityItems.some((s) => s.val != null) ? 'via Walk Score' : 'Not available'}
             </span>
           </div>
 
           {mobilityItems.map((s) => {
-            const tone = s.val >= 70 ? 'pass' : 'caution'
+            const tone = s.val != null && s.val >= 70 ? 'pass' : 'caution'
             const color = tone === 'pass' ? 'var(--pass)' : 'var(--caution)'
             return (
               <div key={s.label} className="col gap-8">
@@ -841,27 +847,35 @@ function NeighbourhoodSection({ neigh }: NeighbourhoodSectionProps): JSX.Element
                     {s.label}
                   </span>
                   <span className="serif tabular" style={{ fontSize: 26, lineHeight: 1, color }}>
-                    {s.val}
-                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>/100</span>
+                    {s.val == null ? (
+                      <span style={{ fontSize: 14, color: 'var(--muted)' }}>Unavailable</span>
+                    ) : (
+                      <>
+                        {s.val}
+                        <span style={{ fontSize: 12, color: 'var(--muted)' }}>/100</span>
+                      </>
+                    )}
                   </span>
                 </div>
-                <div
-                  style={{
-                    height: 6,
-                    borderRadius: 999,
-                    background: 'var(--line)',
-                    overflow: 'hidden',
-                  }}
-                >
+                {s.val != null && (
                   <div
                     style={{
-                      width: `${s.val}%`,
-                      height: '100%',
-                      background: color,
+                      height: 6,
                       borderRadius: 999,
+                      background: 'var(--line)',
+                      overflow: 'hidden',
                     }}
-                  />
-                </div>
+                  >
+                    <div
+                      style={{
+                        width: `${s.val}%`,
+                        height: '100%',
+                        background: color,
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                )}
                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>{s.sub}</span>
               </div>
             )
@@ -1218,10 +1232,10 @@ function RisksSection({
                 emptyScan === 'clean'
                   ? 'No risk language found in the listing text'
                   : emptyScan === 'no_text'
-                    ? 'No listing text to check — entered by address'
+                    ? 'No listing description available to check'
                     : emptyScan === 'failed'
                       ? 'The listing text could not be scanned'
-                      : 'Only the pattern scan ran — AI read failed'
+                      : 'Only the pattern scan ran — AI read unavailable'
               }
               detail={
                 emptyScan === 'clean'

@@ -122,7 +122,7 @@ export function STRPlaceholderSection({ listing }: STRPlaceholderSectionProps): 
           </div>
 
           <h3 className="serif" style={{ fontSize: 24 }}>
-            AirDNA revenue modeling — shipping Q3 2026.
+            Short-term rental revenue data is not connected.
           </h3>
 
           <p
@@ -132,9 +132,9 @@ export function STRPlaceholderSection({ listing }: STRPlaceholderSectionProps): 
               lineHeight: 1.55,
             }}
           >
-            We're integrating AirDNA to project nightly rates, occupancy, seasonality, and net
-            revenue for this exact unit against true STR comparables. Until then, the LTR baseline
-            shown above is your reference.
+            Nightly rates, occupancy, seasonality, and short-term rental revenue are unavailable for
+            this unit. Use the long-term rental baseline above and verify any short-term rental
+            assumptions separately.
           </p>
 
           <p className="mono" style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>

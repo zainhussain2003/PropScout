@@ -43,11 +43,12 @@ import {
 } from '../services/supabaseService'
 import { resolveUser } from '../lib/requireUser'
 import { startOfNextMonth } from '../lib/billingMonth'
-import { FREE_TIER, GUEST } from '../constants/tiers'
+import { betaFreeAccess, FREE_TIER, GUEST } from '../constants/tiers'
 import { ensureGuestId, readGuestId, guestLimitEnabled } from '../lib/guestSession'
 import { generateNarrative, type NarrativeInput } from '../services/anthropicService'
 import { geocodeAddress } from '../services/mapboxService'
 import { getWalkScore } from '../services/walkScoreService'
+import { personalOwnershipCost } from '../services/personalOwnershipCost'
 import { getNearbyDistances } from '../services/googlePlacesService'
 import { getNeighbourhoodStats } from '../services/statsCanService'
 import { getComparableSalesWithProvenance } from '../services/comparableSalesService'
@@ -67,6 +68,7 @@ import { estimateValueFromRent } from '../constants/marketCapRates'
 import { applyValidationErrorHandler, analysisTriggerBody } from '../lib/requestSchemas'
 import { withSchoolWalkTimes } from '../lib/schoolWalkTimes'
 import { buildRentControl } from '../lib/rentControl'
+import { applyManualListingFields, type ManualListingFields } from '../lib/manualListingFields'
 
 const CALC_ENGINE_URL = process.env.CALC_ENGINE_URL ?? 'http://localhost:8000'
 
@@ -688,6 +690,20 @@ export async function runAnalysisPipeline(
     rentHigh: rentalForCalc.high,
     walkScore: walkScore?.walk ?? null,
     transitScore: walkScore?.transit ?? null,
+    monthlyOwnershipCost:
+      mode === 'personal'
+        ? personalOwnershipCost({
+            price: listing.price ?? 0,
+            mortgageMonthly: pyData.metrics.mortgage_payment_monthly,
+            annualTaxes:
+              listing.annualTaxes != null && listing.annualTaxes > 0
+                ? listing.annualTaxes
+                : annualTaxesForCalc,
+            condoFeeMonthly: listing.condoFeeMonthly ?? 0,
+            sqft: listing.sqft,
+            yearBuilt: listing.yearBuilt,
+          })
+        : undefined,
   }
 
   const narrative = await generateNarrative(narrativeInput)
@@ -709,6 +725,7 @@ export async function runAnalysisPipeline(
       condoFeeMonthly: listing.condoFeeMonthly,
       condoFeeKnown: listing.condoFeeKnown,
       yearBuilt: listing.yearBuilt,
+      enteredFields: listing.enteredFields,
       postalCode: listing.postalCode,
     },
     rentControl,
@@ -808,140 +825,166 @@ export async function runAnalysisPipeline(
 async function analysisRoutes(fastify: FastifyInstance): Promise<void> {
   applyValidationErrorHandler(fastify)
 
-  fastify.post<{ Body: { token?: string; mode?: string } }>(
-    '/',
-    { schema: { body: analysisTriggerBody } },
-    async (req, reply) => {
-      const { token, mode: modeRaw } = req.body ?? {}
+  fastify.post<{
+    Body: { token?: string; mode?: string; manualListingFields?: ManualListingFields }
+  }>('/', { schema: { body: analysisTriggerBody } }, async (req, reply) => {
+    const { token, mode: modeRaw, manualListingFields } = req.body ?? {}
 
-      // Step 1 — validate input
-      if (!token) {
+    // Step 1 — validate input
+    if (!token) {
+      return reply
+        .code(400)
+        .send(makeError('MISSING_TOKEN', 'A token is required to run analysis.'))
+    }
+
+    if (!modeRaw || !VALID_MODES.includes(modeRaw)) {
+      return reply
+        .code(400)
+        .send(
+          makeError('INVALID_MODE', 'Mode must be one of: investor, personal, tenant, landlord.')
+        )
+    }
+
+    const mode = modeRaw as ReportMode
+    // Whether THIS request holds the in-flight mark. A request answered 202
+    // because another one holds it must not release the other's mark.
+    let holdsInFlight = false
+
+    try {
+      // Step 2 — look up listing
+      const sourceListing = await getListingByToken(token)
+      if (!sourceListing) {
+        return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
+      }
+      if (
+        (sourceListing.listingType === 'for-rent' && manualListingFields?.price !== undefined) ||
+        (sourceListing.listingType === 'for-sale' && manualListingFields?.rentMonthly !== undefined)
+      ) {
         return reply
           .code(400)
-          .send(makeError('MISSING_TOKEN', 'A token is required to run analysis.'))
+          .send(makeError('INVALID_LISTING_FIELDS', 'Asking amount does not match this listing.'))
       }
+      const listing = applyManualListingFields(sourceListing, manualListingFields)
 
-      if (!modeRaw || !VALID_MODES.includes(modeRaw)) {
+      // Step 2a — idempotency by token (audit J-11). A finished analysis is
+      // returned as it was computed; one that is running here is not started
+      // again. Both answers come before the quota check, because a report
+      // the person already has, or already started, is not a new analysis —
+      // and a re-check would refuse the owner's own tenth run.
+      if (inFlight.has(token)) {
+        return reply
+          .code(202)
+          .send({ token, status: 'processing', message: 'Analysis is already running.' })
+      }
+      if ((await getAnalysisStatus(token)) === 'complete') {
+        const stored = await getAnalysisByToken(token)
+        if (stored != null) {
+          return reply.send({
+            token,
+            analysis: await reportForViewer(req, stored.analysis),
+            cached: true,
+          })
+        }
+      }
+      // The review form is a client convenience, not an entitlement to run the
+      // calculator with missing facts. A copied analyzing URL or cleared browser
+      // storage can reach this route without its visitor corrections (D-127).
+      const askingAmount = listing.listingType === 'for-rent' ? listing.rentMonthly : listing.price
+      // Older scraped rows use zero for an absent count. A visitor-entered zero
+      // is a valid studio, but an unconfirmed source zero still needs review.
+      const bedroomsMissing =
+        listing.beds == null ||
+        (listing.beds === 0 &&
+          listing.bedsKnown !== true &&
+          !listing.enteredFields?.includes('beds'))
+      if (askingAmount == null || askingAmount <= 0 || bedroomsMissing) {
         return reply
           .code(400)
           .send(
-            makeError('INVALID_MODE', 'Mode must be one of: investor, personal, tenant, landlord.')
+            makeError(
+              'MISSING_LISTING_FIELDS',
+              'Review the listing and enter its asking amount and bedroom count before running a report.'
+            )
           )
       }
+      inFlight.add(token)
+      holdsInFlight = true
 
-      const mode = modeRaw as ReportMode
-      // Whether THIS request holds the in-flight mark. A request answered 202
-      // because another one holds it must not release the other's mark.
-      let holdsInFlight = false
-
-      try {
-        // Step 2 — look up listing
-        const listing = await getListingByToken(token)
-        if (!listing) {
-          return reply.code(404).send(makeError('NOT_FOUND', 'Analysis not found or has expired.'))
-        }
-
-        // Step 2a — idempotency by token (audit J-11). A finished analysis is
-        // returned as it was computed; one that is running here is not started
-        // again. Both answers come before the quota check, because a report
-        // the person already has, or already started, is not a new analysis —
-        // and a re-check would refuse the owner's own tenth run.
-        if (inFlight.has(token)) {
-          return reply
-            .code(202)
-            .send({ token, status: 'processing', message: 'Analysis is already running.' })
-        }
-        if ((await getAnalysisStatus(token)) === 'complete') {
-          const stored = await getAnalysisByToken(token)
-          if (stored != null) {
-            return reply.send({
-              token,
-              analysis: await reportForViewer(req, stored.analysis),
-              cached: true,
+      // Step 2b — attribute the analysis and enforce the free-tier quota.
+      //
+      // Signed-in users send their session; guests send nothing. An invalid
+      // token is refused rather than downgraded to guest, because silently
+      // running unattributed would make the report un-ownable (D-065) and
+      // uncounted, and the client only sends a token it believes is current.
+      //
+      // The check runs before the pipeline (which costs money) and the claim
+      // runs before it too, so a run that dies mid-way is still counted —
+      // the quota is on analyses started, not finished. Tenant mode is
+      // exempt (spec §4). A guest gets one (D-116): the server issues a
+      // visitor cookie, counts analyses against it, and — when the wall is
+      // switched on — refuses the second until they sign in.
+      const auth = await resolveUser(req)
+      if (!auth.ok && auth.reason === 'invalid') {
+        return reply
+          .code(401)
+          .send(makeError('UNAUTHORIZED', 'Your session has expired — sign in again.'))
+      }
+      if (auth.ok) {
+        await upsertUser(auth.userId, auth.email)
+        const user = betaFreeAccess() ? null : await getUserById(auth.userId)
+        const tier = user?.tier ?? 'free'
+        const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
+        if (!betaFreeAccess() && tier === 'free' && !exempt) {
+          const used = await getMonthlyAnalysisCount(auth.userId)
+          if (used >= FREE_TIER.MONTHLY_ANALYSIS_LIMIT) {
+            return reply.code(402).send({
+              ...makeError(
+                'FREE_LIMIT_REACHED',
+                `You've used all ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} free analyses this month.`
+              ),
+              used,
+              limit: FREE_TIER.MONTHLY_ANALYSIS_LIMIT,
+              resetsAt: startOfNextMonth().toISOString(),
             })
           }
         }
-        inFlight.add(token)
-        holdsInFlight = true
-
-        // Step 2b — attribute the analysis and enforce the free-tier quota.
-        //
-        // Signed-in users send their session; guests send nothing. An invalid
-        // token is refused rather than downgraded to guest, because silently
-        // running unattributed would make the report un-ownable (D-065) and
-        // uncounted, and the client only sends a token it believes is current.
-        //
-        // The check runs before the pipeline (which costs money) and the claim
-        // runs before it too, so a run that dies mid-way is still counted —
-        // the quota is on analyses started, not finished. Tenant mode is
-        // exempt (spec §4). A guest gets one (D-116): the server issues a
-        // visitor cookie, counts analyses against it, and — when the wall is
-        // switched on — refuses the second until they sign in.
-        const auth = await resolveUser(req)
-        if (!auth.ok && auth.reason === 'invalid') {
-          return reply
-            .code(401)
-            .send(makeError('UNAUTHORIZED', 'Your session has expired — sign in again.'))
-        }
-        if (auth.ok) {
-          await upsertUser(auth.userId, auth.email)
-          const user = await getUserById(auth.userId)
-          const tier = user?.tier ?? 'free'
-          const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
-          if (tier === 'free' && !exempt) {
-            const used = await getMonthlyAnalysisCount(auth.userId)
-            if (used >= FREE_TIER.MONTHLY_ANALYSIS_LIMIT) {
-              return reply.code(402).send({
-                ...makeError(
-                  'FREE_LIMIT_REACHED',
-                  `You've used all ${FREE_TIER.MONTHLY_ANALYSIS_LIMIT} free analyses this month.`
-                ),
-                used,
-                limit: FREE_TIER.MONTHLY_ANALYSIS_LIMIT,
-                resetsAt: startOfNextMonth().toISOString(),
-              })
-            }
+        await claimAnalysisForUser(token, auth.userId, mode)
+        // A visitor who ran reports before signing in keeps them (D-116).
+        const priorGuestId = readGuestId(req)
+        if (priorGuestId != null) await claimGuestAnalyses(priorGuestId, auth.userId)
+      } else {
+        const guestId = ensureGuestId(req, reply)
+        const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
+        if (!betaFreeAccess() && !exempt && guestLimitEnabled()) {
+          // null = the column is not applied yet; the wall cannot count, so it lets through.
+          const used = await countGuestAnalyses(guestId)
+          if (used != null && used >= GUEST.FREE_ANALYSES) {
+            return reply.code(402).send({
+              ...makeError(
+                'GUEST_LIMIT_REACHED',
+                'Your free report is used — sign in to run another. Your reports come with you.'
+              ),
+              used,
+              limit: GUEST.FREE_ANALYSES,
+            })
           }
-          await claimAnalysisForUser(token, auth.userId, mode)
-          // A visitor who ran reports before signing in keeps them (D-116).
-          const priorGuestId = readGuestId(req)
-          if (priorGuestId != null) await claimGuestAnalyses(priorGuestId, auth.userId)
-        } else {
-          const guestId = ensureGuestId(req, reply)
-          const exempt = (FREE_TIER.QUOTA_EXEMPT_MODES as readonly string[]).includes(mode)
-          if (!exempt && guestLimitEnabled()) {
-            // null = the column is not applied yet; the wall cannot count, so it lets through.
-            const used = await countGuestAnalyses(guestId)
-            if (used != null && used >= GUEST.FREE_ANALYSES) {
-              return reply.code(402).send({
-                ...makeError(
-                  'GUEST_LIMIT_REACHED',
-                  'Your free report is used — sign in to run another. Your reports come with you.'
-                ),
-                used,
-                limit: GUEST.FREE_ANALYSES,
-              })
-            }
-          }
-          await markAnalysisGuest(token, guestId)
         }
-
-        const result = await runAnalysisPipeline(fastify, { token, mode, listing })
-        if (!result.ok) {
-          return reply.code(result.status).send(makeError(result.code, result.message))
-        }
-        return reply.send({ token, analysis: await reportForViewer(req, result.analysis) })
-      } catch (err) {
-        fastify.log.error({ err }, 'Unexpected error in POST /analysis')
-        await updateAnalysisStatus(token, 'failed', 'INTERNAL_ERROR').catch(() => {})
-        return reply
-          .code(500)
-          .send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
-      } finally {
-        if (holdsInFlight) inFlight.delete(token)
+        await markAnalysisGuest(token, guestId)
       }
+
+      const result = await runAnalysisPipeline(fastify, { token, mode, listing })
+      if (!result.ok) {
+        return reply.code(result.status).send(makeError(result.code, result.message))
+      }
+      return reply.send({ token, analysis: await reportForViewer(req, result.analysis) })
+    } catch (err) {
+      fastify.log.error({ err }, 'Unexpected error in POST /analysis')
+      await updateAnalysisStatus(token, 'failed', 'INTERNAL_ERROR').catch(() => {})
+      return reply.code(500).send(makeError('INTERNAL_ERROR', 'Something went wrong — try again.'))
+    } finally {
+      if (holdsInFlight) inFlight.delete(token)
     }
-  )
+  })
 }
 
 export default analysisRoutes

@@ -25,8 +25,8 @@ export function StripeCancelledPage(): JSX.Element {
         tone="caution"
         eyebrow="Checkout cancelled"
         headline="No charge was made."
-        body="You cancelled before completing checkout. Your free plan is still active."
-        primary={{ label: 'Try again', onClick: () => navigate('/account?view=plan') }}
+        body="You cancelled before completing checkout. Every available report feature is free during beta."
+        primary={{ label: 'Explore free beta', onClick: () => navigate('/') }}
         secondary={{ label: 'Back to my account', onClick: () => navigate('/account') }}
       />
     </div>

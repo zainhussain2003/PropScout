@@ -34,6 +34,7 @@ export interface RentalCompsSectionProps {
   } | null
   /** The rent the report is evaluating against the range. */
   askingRent: number
+  rentLabel?: string
   /** True when askingRent is the price-based proxy (no comps, no listed rent) — D-101. */
   rentIsProxy?: boolean
   /** Subject coordinates — with them, comps that carry a position are mapped (D-109). */
@@ -43,6 +44,7 @@ export interface RentalCompsSectionProps {
 export function RentalCompsSection({
   comps,
   askingRent,
+  rentLabel,
   rentIsProxy = false,
   mapCenter = null,
 }: RentalCompsSectionProps): JSX.Element | null {
@@ -136,7 +138,7 @@ export function RentalCompsSection({
             {confidence.charAt(0).toUpperCase() + confidence.slice(1)} confidence
           </span>
         </div>
-        <RentalCompsBar low={low} mid={mid} high={high} ask={askingRent} />
+        <RentalCompsBar low={low} mid={mid} high={high} ask={askingRent} rentLabel={rentLabel} />
       </div>
 
       {/* The comps themselves (D-099): the rows after outlier removal,

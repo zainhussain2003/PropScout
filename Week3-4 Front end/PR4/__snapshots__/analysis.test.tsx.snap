@@ -1958,7 +1958,7 @@ exports[`PropertyHero > matches snapshot 1`] = `
           class="mono"
           style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
         >
-          No listing photos · report built from the address
+          No listing photos available
         </div>
       </div>
       <div

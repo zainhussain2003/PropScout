@@ -17,6 +17,21 @@ import {
 import { routeMinutes } from './mapboxService'
 
 jest.mock('./mapboxService', () => ({ routeMinutes: jest.fn() }))
+
+it('makes no metered Places calls in free-only beta mode', async () => {
+  process.env.FREE_ONLY_BETA = 'true'
+  const previousFetch = global.fetch
+  const fetch = jest.fn()
+  global.fetch = fetch
+  try {
+    expect(await getNearbySchools(43.7, -79.4)).toEqual([])
+    expect(await getNearbyDistances(43.7, -79.4)).toEqual([])
+    expect(fetch).not.toHaveBeenCalled()
+  } finally {
+    global.fetch = previousFetch
+    delete process.env.FREE_ONLY_BETA
+  }
+})
 const mockRoute = jest.mocked(routeMinutes)
 
 const mockFetch = jest.fn()

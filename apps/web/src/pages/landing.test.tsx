@@ -15,9 +15,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup, within, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { LandingPage } from './LandingPage'
+import { ApiRequestError } from '../lib/services/analysisService'
 
 // Mock useNavigate to avoid actual navigation in tests
 const mockNavigate = vi.fn()
@@ -191,6 +192,59 @@ describe('LandingPage', () => {
     })
   })
 
+  it('offers the address path when a listing scrape fails', async () => {
+    scrapeUrl.mockRejectedValueOnce(
+      new ApiRequestError('SCRAPER_FAILED', 'Could not read that listing.', 422)
+    )
+    renderLanding()
+    const input = screen.getByLabelText(/Listing link or property address/i)
+    fireEvent.change(input, {
+      target: { value: 'https://www.realtor.ca/real-estate/99999999/1-somewhere-st-toronto' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /^Analyze$/i }))
+
+    const recovery = await screen.findByRole('button', { name: 'Enter address instead' })
+    fireEvent.click(recovery)
+    expect(input).toHaveValue('')
+    expect(input).toHaveFocus()
+    expect(screen.queryByText(/Could not read that listing/i)).not.toBeInTheDocument()
+  })
+
+  it('reviews a partial scrape and uses the visitor-entered asking rent', async () => {
+    scrapeUrl.mockResolvedValueOnce({
+      token: 'partial-token',
+      scraperFailed: true,
+      missingFields: ['rent_monthly'],
+      listing: {
+        listingType: 'for-rent',
+        address: '28 Charles Street East, Toronto, ON M4Y 1T1',
+        price: null,
+        rentMonthly: null,
+        beds: 1,
+        baths: 1,
+        sqft: null,
+      },
+    })
+    renderLanding()
+    fireEvent.change(screen.getByLabelText(/Listing link or property address/i), {
+      target: { value: 'https://www.realtor.ca/real-estate/99999999/28-charles-st-toronto' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /^Analyze$/i }))
+
+    expect(await screen.findByText('Check the listing facts')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Not found — enter manually if known').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to report' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('monthly asking rent')
+    fireEvent.change(screen.getByLabelText('Monthly asking rent'), { target: { value: '2400' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to report' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('$2,400/mo')).toBeInTheDocument()
+    expect(window.sessionStorage.getItem('propscout.manual-listing.partial-token')).toContain(
+      '2400'
+    )
+  })
+
   it('dismisses the error when "Dismiss" is clicked', async () => {
     renderLanding()
     const input = screen.getByPlaceholderText(/listing link or address/i)
@@ -210,44 +264,22 @@ describe('LandingPage', () => {
     expect(matches.length).toBeGreaterThan(0)
   })
 
-  /** The nav has its own "Start free"; the pricing card's is inside #pricing. */
-  function pricingButton(name: RegExp): HTMLElement {
+  it('pricing: offers all shipped features free in beta and never starts checkout', () => {
+    renderLanding()
     const pricing = document.querySelector('#pricing') as HTMLElement
-    return within(pricing).getByRole('button', { name })
-  }
-
-  it('pricing: "Start free" opens sign-in when signed out and goes to the account when signed in', () => {
-    renderLanding()
-    fireEvent.click(pricingButton(/^Start free$/i))
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    cleanup()
-
-    useAuthMock.mockReturnValue({ session: { access_token: 'jwt' } as never, loading: false })
-    renderLanding()
-    fireEvent.click(pricingButton(/^Start free$/i))
-    expect(mockNavigate).toHaveBeenCalledWith('/account')
-  })
-
-  it('pricing: a paid CTA starts checkout for that tier when signed in, and shows the API answer', async () => {
-    useAuthMock.mockReturnValue({ session: { access_token: 'jwt' } as never, loading: false })
-    startCheckout.mockRejectedValue(new Error('Paid plans are not open yet.'))
-    renderLanding()
-    fireEvent.click(pricingButton(/^Go Pro$/i))
-    expect(startCheckout).toHaveBeenCalledWith('pro', 'jwt')
-    expect(await screen.findByText(/Paid plans are not open yet/i)).toBeInTheDocument()
-  })
-
-  it('pricing: a paid CTA opens sign-in when signed out instead of doing nothing', () => {
-    renderLanding()
-    fireEvent.click(pricingButton(/^Go Pro$/i))
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(pricing).toHaveTextContent('Every available report feature is free')
+    expect(pricing).toHaveTextContent('Unlimited reports')
+    expect(pricing).toHaveTextContent('Branded PDF export')
+    expect(
+      within(pricing).queryByRole('button', { name: /Go Pro|Upgrade/i })
+    ).not.toBeInTheDocument()
     expect(startCheckout).not.toHaveBeenCalled()
   })
 
-  it('pricing offers only delivered Free and Pro features', () => {
+  it('pricing does not offer unfinished features as available', () => {
     renderLanding()
     const pricing = document.querySelector('#pricing') as HTMLElement
-    expect(pricing).not.toHaveTextContent(/PLANNED|Professional|Team|Portfolio tracker/)
+    expect(pricing).not.toHaveTextContent(/PLANNED|Professional|Team/)
     expect(pricing).toHaveTextContent('Branded PDF export')
   })
 
@@ -264,7 +296,7 @@ describe('LandingPage', () => {
 
   it('renders the Pricing section', () => {
     renderLanding()
-    expect(screen.getByText(/pricing · cad/i)).toBeInTheDocument()
+    expect(screen.getByText(/public beta/i)).toBeInTheDocument()
   })
 
   it('renders the FAQ section heading', () => {
@@ -314,10 +346,10 @@ describe('LandingPage', () => {
     expect(screen.getByText(/province-specific/i)).toBeInTheDocument()
   })
 
-  it('does not offer annual billing before annual checkout is supported', () => {
+  it('does not offer annual or monthly billing during beta', () => {
     renderLanding()
     expect(screen.queryByRole('button', { name: /yearly/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/Monthly billing/)).toBeInTheDocument()
+    expect(screen.queryByText(/Monthly billing/)).not.toBeInTheDocument()
   })
 
   it('renders the Footer', () => {

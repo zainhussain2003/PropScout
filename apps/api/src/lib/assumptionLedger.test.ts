@@ -61,6 +61,23 @@ function entry(input: LedgerInput, key: string): AssumptionEntry {
 }
 
 describe('buildAssumptionLedger', () => {
+  it.each([
+    [null, '1.5%'],
+    [1975, '1.5%'],
+    [1990, '1.0%'],
+    [2018, '0.5%'],
+  ] as const)('personal ledger reflects its cost model for year %s', (yearBuilt, value) => {
+    const input = base({ mode: 'personal', listing: { ...base().listing, yearBuilt } })
+    expect(entry(input, 'maintenance').value).toBe(`${value} of value`)
+    expect(entry(input, 'maintenance').method).toContain('Personal ownership-cost model')
+  })
+  it('credits visitor corrections rather than attributing them to the source listing', () => {
+    const input = base({
+      listing: { ...base().listing, enteredFields: ['annualTaxes', 'condoFeeMonthly'] },
+    })
+    expect(entry(input, 'property_tax').source).toBe('You entered it')
+    expect(entry(input, 'condo_fee').source).toBe('You entered it')
+  })
   it('a live Bank of Canada rate is published, with its fetch date', () => {
     const e = entry(base(), 'mortgage_rate')
     expect(e.basis).toBe('published')

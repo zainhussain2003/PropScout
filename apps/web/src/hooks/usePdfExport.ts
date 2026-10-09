@@ -1,20 +1,18 @@
 /**
- * usePdfExport — Pro-gated PDF download for a live report (spec §14).
+ * usePdfExport — PDF download for a live report (spec §14, D-126).
  *
- * Gating order:
- *   free tier            → opens the 'pdf' UpgradeModal (no request made)
- *   no live token (demo) → no-op (nothing to render server-side)
- *   pro+ with a token    → fetches GET /analysis/:token/pdf with the Supabase
- *                          session and triggers a browser download
+ * During beta, a live report token is enough to download without sign-in.
+ * Demo routes have no live token and cannot export. The legacy paid mode
+ * still checks tier and Supabase session.
  *
- * The API re-checks the tier server-side; an UPGRADE_REQUIRED response also
- * opens the modal (covers a stale local tier).
+ * The API checks entitlement in paid mode; UPGRADE_REQUIRED opens its modal.
  */
 
 import { useCallback, useState } from 'react'
 import { usePaywall } from '../components/paywall/PaywallContext'
 import { getSession } from '../lib/services/authService'
 import { downloadReportPdf, ReportPdfError } from '../lib/services/reportService'
+import { BETA_FREE_ACCESS } from '../constants/tiers'
 
 interface PdfExport {
   /** Click handler for PDF buttons — safe to call in any tier/state. */
@@ -28,7 +26,7 @@ interface PdfExport {
 export function usePdfExport(token: string | null | undefined): PdfExport {
   const { tier, openUpgradeModal } = usePaywall()
   const [exporting, setExporting] = useState(false)
-  const isLocked = tier === 'free'
+  const isLocked = !BETA_FREE_ACCESS && tier === 'free'
 
   const exportPdf = useCallback(() => {
     if (isLocked) {
@@ -39,13 +37,13 @@ export function usePdfExport(token: string | null | undefined): PdfExport {
     void (async () => {
       setExporting(true)
       try {
-        const session = await getSession()
-        if (!session?.access_token) {
+        const session = BETA_FREE_ACCESS ? null : await getSession()
+        if (!BETA_FREE_ACCESS && !session?.access_token) {
           // Signed out — the API would 401; route through the upgrade/sign-in flow
           openUpgradeModal('pdf')
           return
         }
-        await downloadReportPdf(token, session.access_token)
+        await downloadReportPdf(token, session?.access_token)
       } catch (err) {
         if (err instanceof ReportPdfError && err.code === 'UPGRADE_REQUIRED') {
           openUpgradeModal('pdf')

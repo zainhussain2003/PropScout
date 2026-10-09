@@ -59,7 +59,7 @@ function LandingNav({ dark, onToggleDark, onSignIn }: LandingNavProps): JSX.Elem
           <a href="#how">How it works</a>
           <a href="#reports">Reports</a>
           <a href="#sunscout">SunScout</a>
-          <a href="#pricing">Pricing</a>
+          <a href="#pricing">Free beta</a>
           <a href="#faq">FAQ</a>
         </nav>
 

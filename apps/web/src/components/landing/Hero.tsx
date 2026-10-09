@@ -2,7 +2,7 @@
  * Landing page — split out of pages/LandingPage.tsx (J-04, D-093).
  */
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Icon } from '../shared/Icon'
 import { ModeModal, type ListingPreviewData } from '../shared/ModeModal'
 import { validateUrl } from '../../lib/validateUrl'
@@ -11,11 +11,13 @@ import {
   lookupAddress,
   startFromAddress,
   scrapeUrl,
+  rememberManualListingFields,
   ApiRequestError,
   type AddressLookupResult,
 } from '../../lib/services/analysisService'
 import { AddressDetailsCard, type AddressDetailsValue } from '../shared/AddressDetailsCard'
-import { countLabel, NOT_PROVIDED } from '../../lib/listingFacts'
+import { PartialListingReview } from '../shared/PartialListingReview'
+import { bedBathLabel } from '../../lib/listingFacts'
 import type { Listing } from '../../types/property'
 import { clampStr } from './landingHelpers'
 import { ShowcaseDealScore } from './ShowcaseDealScore'
@@ -35,6 +37,7 @@ interface HeroProps {
 
 export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   const hybrid = useAppDesign() === 'hybrid'
+  const inputRef = useRef<HTMLInputElement>(null)
   const [sampleIdx, setSampleIdx] = useState(0)
   // Starts EMPTY. This used to be seeded with SAMPLE_LISTINGS[0].url, which put a
   // real (submittable) value in the primary input on first paint: the field looked
@@ -48,9 +51,12 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [manualRecovery, setManualRecovery] = useState(false)
   const [listing, setListing] = useState<Listing | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [partialListing, setPartialListing] = useState(false)
+  const [partialMissingFields, setPartialMissingFields] = useState<string[]>([])
   // A resolved address awaiting the few details only the user has (price, beds).
   const [addressResult, setAddressResult] = useState<AddressLookupResult | null>(null)
 
@@ -82,6 +88,9 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
       onOpenModal({ ...sample.preview, sourceUrl: url })
       return
     }
+
+    setManualRecovery(false)
+    setPartialListing(false)
 
     // One field, two kinds of input. Decide which before sending, so someone who
     // typed a perfectly good address is never told "that doesn't look like a
@@ -131,13 +140,19 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
 
     setLoading(true)
     setError(null)
+    setManualRecovery(false)
 
     void (async () => {
       try {
         const result = await scrapeUrl(url)
         setToken(result.token)
         setListing(result.listing)
-        setShowModal(true)
+        if (result.scraperFailed) {
+          setPartialMissingFields(result.missingFields ?? [])
+          setPartialListing(true)
+        } else {
+          setShowModal(true)
+        }
       } catch (err) {
         if (err instanceof ApiRequestError) {
           if (err.code === 'PROVINCE_NOT_SUPPORTED') {
@@ -145,9 +160,13 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               "PropScout is currently Ontario-only. We'll notify you when we expand to your area."
             )
           } else if (err.code === 'SCRAPER_FAILED') {
+            setManualRecovery(true)
             setError(
-              'Could not read that listing — check the URL and try again, or enter the details manually.'
+              'Could not read that listing — check the URL and try again, or enter its street address instead.'
             )
+          } else if (err.code === 'SCRAPER_UNAVAILABLE') {
+            setManualRecovery(true)
+            setError(err.message)
           } else {
             // The API's error shape carries a message written for end users
             // (see apps/api/src/types/api.ts). Prefer it over a generic string —
@@ -171,9 +190,13 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
         address: listing.address,
         price:
           listing.listingType === 'for-sale'
-            ? `$${(listing.price ?? 0).toLocaleString()}`
-            : `$${(listing.rentMonthly ?? 0).toLocaleString()}/mo`,
-        beds: `${countLabel(listing.beds, 'bed', { fallback: `${NOT_PROVIDED} beds` })} · ${countLabel(listing.baths, 'bath', { fallback: `${NOT_PROVIDED} baths` })}`,
+            ? listing.price != null && listing.price > 0
+              ? `$${listing.price.toLocaleString()}`
+              : 'Asking price not provided'
+            : listing.rentMonthly != null && listing.rentMonthly > 0
+              ? `$${listing.rentMonthly.toLocaleString()}/mo`
+              : 'Asking rent not provided',
+        beds: bedBathLabel(listing),
         sqft: listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : '—',
       }
     : null
@@ -332,9 +355,13 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               >
                 <Icon name="link" size={18} />
                 <input
+                  ref={inputRef}
                   value={url}
                   onChange={(e) => {
                     setUrl(e.target.value)
+                    setError(null)
+                    setManualRecovery(false)
+                    setPartialListing(false)
                     // A finished sample preview must not follow the next input:
                     // with the stage left at 'done', any URL typed after "Try
                     // one of ours" opened the DEMO report instead of scraping
@@ -551,6 +578,41 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
               </div>
             )}
 
+            {partialListing && listing != null && token != null && (
+              <PartialListingReview
+                listing={listing}
+                missingFields={partialMissingFields}
+                onConfirm={(fields) => {
+                  try {
+                    rememberManualListingFields(token, fields)
+                    setListing({
+                      ...listing,
+                      ...fields,
+                      bedsKnown: fields.beds !== undefined ? true : listing.bedsKnown,
+                      bathsKnown: fields.baths !== undefined ? true : listing.bathsKnown,
+                      condoFeeKnown:
+                        fields.condoFeeMonthly !== undefined ? true : listing.condoFeeKnown,
+                      enteredFields: [
+                        ...new Set([...(listing.enteredFields ?? []), ...Object.keys(fields)]),
+                      ],
+                    })
+                    setPartialListing(false)
+                    setShowModal(true)
+                  } catch {
+                    setError(
+                      'Could not save your corrections in this browser — check storage settings and try again.'
+                    )
+                  }
+                }}
+                onBack={() => {
+                  setPartialListing(false)
+                  setPartialMissingFields([])
+                  setListing(null)
+                  setToken(null)
+                }}
+              />
+            )}
+
             {/* Status: error — URL validation failure or scrape API error */}
             {(stage === 'error' || error !== null) && (
               <div
@@ -574,12 +636,29 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                   <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
                     {stage === 'error' ? errorMsg : error}
                   </div>
+                  {manualRecovery && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => {
+                        setUrl('')
+                        setStage('idle')
+                        setError(null)
+                        setManualRecovery(false)
+                        inputRef.current?.focus()
+                      }}
+                      style={{ alignSelf: 'flex-start', padding: '6px 12px', fontSize: 12 }}
+                    >
+                      Enter address instead
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => {
                     setStage('idle')
                     setErrorMsg('')
                     setError(null)
+                    setManualRecovery(false)
                   }}
                   className="btn btn-ghost"
                   style={{ flexShrink: 0, padding: '6px 12px', fontSize: 12 }}
@@ -686,9 +765,9 @@ export function Hero({ onOpenModal, onSignIn }: HeroProps): JSX.Element {
                       'Statistics Canada',
                       'Bank of Canada',
                       'EQAO',
-                      'Fraser Institute',
-                      'Walk Score',
-                      'Mapbox',
+                      ...(import.meta.env.VITE_FREE_ONLY_BETA === 'true'
+                        ? ['OpenStreetMap']
+                        : ['Walk Score', 'Mapbox']),
                       'NREL · SPA',
                     ].map((n) => (
                       <span

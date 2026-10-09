@@ -31,10 +31,10 @@ describe('TierUnavailableNotice', () => {
     }
   })
 
-  it('says the plan could not be confirmed, and that nothing changed', () => {
+  it('says billing status is unavailable while beta access remains free', () => {
     renderWith('unavailable')
-    expect(screen.getByRole('status')).toHaveTextContent(/couldn.t confirm your plan/)
-    expect(screen.getByRole('status')).toHaveTextContent(/nothing about your account has changed/)
+    expect(screen.getByRole('status')).toHaveTextContent(/could not confirm your billing status/)
+    expect(screen.getByRole('status')).toHaveTextContent(/Beta report features remain free/)
   })
 
   it('retries on request', () => {

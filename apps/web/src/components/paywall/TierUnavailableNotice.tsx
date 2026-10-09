@@ -10,6 +10,7 @@
 
 import { usePaywall } from './PaywallContext'
 import { Icon } from '../shared/Icon'
+import { BETA_FREE_ACCESS } from '../../constants/tiers'
 
 export function TierUnavailableNotice(): JSX.Element | null {
   const { tierStatus, refreshTier } = usePaywall()
@@ -35,8 +36,14 @@ export function TierUnavailableNotice(): JSX.Element | null {
     >
       <span className="row gap-8" style={{ alignItems: 'center' }}>
         <Icon name="flag" size={14} />
-        We couldn&rsquo;t confirm your plan just now. Paid features may look locked until we can
-        &mdash; nothing about your account has changed.
+        {BETA_FREE_ACCESS ? (
+          'We could not confirm your billing status just now. Beta report features remain free.'
+        ) : (
+          <>
+            We couldn&rsquo;t confirm your plan just now. Paid features may look locked until we can
+            &mdash; nothing about your account has changed.
+          </>
+        )}
       </span>
       {refreshTier != null && (
         <button className="btn btn-ghost" onClick={refreshTier} style={{ padding: '6px 12px' }}>

@@ -11,7 +11,12 @@ export interface BuildInfo {
 }
 
 export function buildInfo(env: NodeJS.ProcessEnv = process.env): BuildInfo {
-  const raw = env.RAILWAY_GIT_COMMIT_SHA ?? env.GIT_COMMIT_SHA ?? env.SOURCE_COMMIT ?? null
+  const raw =
+    env.RAILWAY_GIT_COMMIT_SHA ??
+    env.RENDER_GIT_COMMIT ??
+    env.GIT_COMMIT_SHA ??
+    env.SOURCE_COMMIT ??
+    null
   const commit = raw != null && /^[0-9a-f]{7,40}$/i.test(raw.trim()) ? raw.trim() : null
   return { commit, shortCommit: commit ? commit.slice(0, 7) : null }
 }

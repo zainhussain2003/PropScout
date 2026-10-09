@@ -111,9 +111,9 @@ export interface PersonalDistanceRow {
 }
 
 export interface PersonalNeighbourhood {
-  walkScore: number
-  transitScore: number
-  bikeScore: number
+  walkScore: number | null
+  transitScore: number | null
+  bikeScore: number | null
   walkSub: string
   transitSub: string
   bikeSub: string

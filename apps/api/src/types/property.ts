@@ -56,10 +56,14 @@ export interface Listing {
   propertyType: PropertyType
   yearBuilt: number | null
   parkingSpots: number | null
+  /** True when the source explicitly supplied the parking count, including zero. */
+  parkingSpotsKnown?: boolean
   condoFeeMonthly: number | null
   condoFeeKnown: boolean
   annualTaxes: number | null
   description: string | null
   photos: string[]
   scrapedAt: string
+  /** Fields corrected or supplied by the visitor for this report snapshot. */
+  enteredFields?: string[]
 }

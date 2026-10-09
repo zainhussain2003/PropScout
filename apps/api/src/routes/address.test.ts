@@ -213,6 +213,21 @@ describe('POST /address/start — unknown counts stay unknown', () => {
     expect(saved().beds).toBe(2)
   })
 
+  it('preserves a user-entered studio count with the pending report', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/start',
+      payload: { ...base, beds: 0 },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(saved()).toMatchObject({ beds: 0, bedsKnown: true })
+    expect(mockCreatePending).toHaveBeenCalledWith(
+      'listing-1',
+      expect.any(String),
+      expect.objectContaining({ beds: 0, bedsKnown: true })
+    )
+  })
+
   it('stores parking as null — the form never asks', async () => {
     await app.inject({ method: 'POST', url: '/start', payload: base })
     expect(saved().parkingSpots).toBeNull()

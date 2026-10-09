@@ -82,6 +82,21 @@ describe('listingProvenance', () => {
       asOf: '2026-09-14T00:00:00Z',
     })
   })
+
+  it('keeps a scraped source while identifying facts corrected by the visitor', () => {
+    const source = listingProvenance({
+      url: 'https://www.realtor.ca/real-estate/1/x',
+      scrapedAt: '2026-09-14T00:00:00Z',
+      enteredFields: ['rentMonthly', 'sqft'],
+    })
+    expect(source).toMatchObject({
+      kind: 'listing',
+      source: 'realtor.ca',
+      enteredFields: ['rentMonthly', 'sqft'],
+    })
+    expect(askingProvenance(source, 'rent')).toMatchObject({ kind: 'entered' })
+    expect(askingProvenance(source, 'price')).toMatchObject({ kind: 'listing' })
+  })
 })
 
 describe('priceProvenance', () => {

@@ -16,7 +16,7 @@ export function FAQSection(): JSX.Element {
     },
     {
       q: 'Where do your rental comps come from?',
-      a: 'A nightly scrape of Rentals.ca, Kijiji, and PadMapper. We dedupe, geocode, and timestamp every record. The time-series database accumulates from day one — after six months, it exists nowhere else in Canada.',
+      a: 'Available asking-rent records can come from Rentals.ca, Kijiji, and PadMapper. Source coverage changes, so each report shows the records it used, their dates, and the confidence of the comparison. When suitable comps are unavailable, the report labels its fallback estimate.',
     },
     {
       q: 'How is the verdict produced?',
@@ -24,7 +24,7 @@ export function FAQSection(): JSX.Element {
     },
     {
       q: 'Can I export to PDF?',
-      a: 'Yes — Pro includes branded PDF export of the report, including the full verdict. Custom white-label branding is not available. Shared links follow the viewer’s plan; use the exported PDF to share the complete paid report.',
+      a: 'Yes. Branded PDF export of a live report, including the full verdict, is free during beta. Custom white-label branding is not available.',
     },
     {
       q: 'Do you support short-term rentals?',

@@ -68,7 +68,7 @@ export function LocationCommuteSection({
               Mobility scores
             </span>
             <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
-              via Walk Score · Mapbox
+              {mobilityScores.length > 0 ? 'via Walk Score' : 'Not available'}
             </span>
           </div>
 

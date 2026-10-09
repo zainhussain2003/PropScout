@@ -27,9 +27,18 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.MAPBOX_TOKEN
+  delete process.env.FREE_ONLY_BETA
 })
 
 describe('geocodeAddress', () => {
+  it('does not call a metered geocoder in free-only beta mode', async () => {
+    process.env.FREE_ONLY_BETA = 'true'
+    expect(await geocodeAddress('123 Main St, Toronto, ON')).toBeNull()
+    expect(
+      await routeMinutes('walking', { lat: 43.6, lng: -79.3 }, { lat: 43.7, lng: -79.4 })
+    ).toBeNull()
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
   it('valid address → returns correct lat, lng, formattedAddress (lng/lat not swapped)', async () => {
     mockFetch.mockResolvedValueOnce(makeFetchResponse(VALID_RESPONSE, 200))
 

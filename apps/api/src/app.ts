@@ -9,10 +9,13 @@ import cookie from '@fastify/cookie'
 import rateLimit from '@fastify/rate-limit'
 import type { FastifyRequest } from 'fastify'
 import { corsOrigins } from './corsOrigins'
-import { buildInfo } from './lib/buildInfo'
+import { registerHealthRoute } from './routes/health'
+import { devHpiEnabled } from './services/devHpiService'
+import { renderProxyTrust } from './proxyTrust'
 
 const fastify = Fastify({
   logger: true,
+  trustProxy: process.env.RENDER === 'true' ? renderProxyTrust : false,
   // The largest legitimate body is an address-start payload of a dozen
   // scalars. Fastify's default is 1 MiB; nothing here needs a hundredth of it
   // (audit API-04).
@@ -85,16 +88,18 @@ async function main(): Promise<void> {
 
   await fastify.register(import('./routes/waitlist'), { prefix: '/waitlist' })
 
-  fastify.get('/health', async (_req, _reply) => {
-    return { status: 'ok', ts: new Date().toISOString(), ...buildInfo() }
-  })
+  if (devHpiEnabled()) {
+    await fastify.register(import('./routes/devHpi'), { prefix: '/dev/hpi' })
+  }
+
+  registerHealthRoute(fastify)
 
   // ── Start ───────────────────────────────────────────────────────────────────
 
   const PORT = Number(process.env.PORT ?? 3001)
 
   try {
-    await fastify.listen({ port: PORT, host: '0.0.0.0' })
+    await fastify.listen({ port: PORT, host: devHpiEnabled() ? '127.0.0.1' : '0.0.0.0' })
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)

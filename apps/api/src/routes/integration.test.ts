@@ -81,7 +81,7 @@ function resetDb(): void {
 // ── Scraper + calc engine fetch mocks ───────────────────────────────────────
 
 const SCRAPED_LISTING = {
-  url: 'https://www.realtor.ca/real-estate/integration-test/buttermill-ave',
+  url: 'https://www.realtor.ca/real-estate/90000001/synthetic-qa-integration-buttermill-ave',
   address: '5702 Buttermill Ave, Vaughan, ON L4K 0J2',
   price: 729900,
   beds: 3,
@@ -294,7 +294,11 @@ describe('PR9 integration — scrape → analyze → fetch roundtrip', () => {
     const { token } = scrapeBody
 
     // Pending analysis row was created
-    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(expect.any(String), token)
+    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(
+      expect.any(String),
+      token,
+      expect.objectContaining({ address: expect.stringContaining('Buttermill') })
+    )
     expect(db.get(token)).toBeDefined()
     expect(db.get(token)?.analysis).toBeNull()
 

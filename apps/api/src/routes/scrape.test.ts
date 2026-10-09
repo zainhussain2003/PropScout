@@ -64,6 +64,33 @@ afterEach(async () => {
 })
 
 describe('POST /scrape', () => {
+  it('preserves confirmed zero parking in the report snapshot', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, parking_spaces: 0 }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: ONTARIO_FIXTURE.url },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(
+      'mock-listing-id',
+      expect.any(String),
+      expect.objectContaining({ parkingSpots: 0, parkingSpotsKnown: true })
+    )
+  })
+  it.each([
+    'https://example.com/real-estate/12345/test',
+    'https://realtor.ca.example.com/real-estate/12345/test',
+    'https://www.realtor.ca/realtors/12345',
+    'https://user:pass@www.realtor.ca/real-estate/12345/test',
+  ])('rejects unsupported URL %s before contacting a provider', async (url) => {
+    const res = await app.inject({ method: 'POST', url: '/', payload: { url } })
+    expect(res.statusCode).toBe(400)
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(saveListing).not.toHaveBeenCalled()
+  })
   it('Ontario listing → saveListing called, createPendingAnalysis called, response contains token and listing', async () => {
     mockFetch.mockResolvedValueOnce(makeFetchResponse(ONTARIO_FIXTURE, 200))
 
@@ -81,7 +108,11 @@ describe('POST /scrape', () => {
     expect(body.scraperFailed).toBeUndefined()
 
     expect(mockSaveListing).toHaveBeenCalledTimes(1)
-    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith('mock-listing-id', expect.any(String))
+    expect(mockCreatePendingAnalysis).toHaveBeenCalledWith(
+      'mock-listing-id',
+      expect.any(String),
+      expect.objectContaining({ beds: 2, url: expect.stringContaining('realtor.ca') })
+    )
   })
 
   it('normalizes a Realtor.ca neighbourhood suffix to the municipality', async () => {
@@ -124,6 +155,40 @@ describe('POST /scrape', () => {
     expect(body.listing.annualTaxes).toBeNull()
     expect(body.scraperFailed).toBe(true)
     expect(body.missingFields).toContain('annual_taxes')
+  })
+
+  it('sends an unconfirmed legacy zero-bedroom scrape to listing review', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, beds: 0, beds_known: undefined }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: ONTARIO_FIXTURE.url },
+    })
+    const body = res.json() as {
+      listing: { beds: number | null }
+      scraperFailed: boolean
+      missingFields: string[]
+    }
+    expect(res.statusCode).toBe(200)
+    expect(body.listing.beds).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('beds')
+  })
+
+  it('keeps a confirmed zero-bedroom studio from a current scraper', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, beds: 0, beds_known: true }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: ONTARIO_FIXTURE.url },
+    })
+    const body = res.json() as { listing: { beds: number; bedsKnown: boolean } }
+    expect(res.statusCode).toBe(200)
+    expect(body.listing).toMatchObject({ beds: 0, bedsKnown: true })
   })
 
   it('Non-Ontario address → returns PROVINCE_NOT_SUPPORTED with province BC, saveListing never called', async () => {
@@ -271,6 +336,45 @@ describe('POST /scrape - for-rent rent bounds', () => {
     expect(body.listing.rentMonthly).toBeNull()
     expect(body.scraperFailed).toBe(true)
     expect(body.missingFields).toContain('rent_monthly')
+  })
+})
+
+describe('POST /scrape - sale facts requiring review', () => {
+  it('routes a missing asking price to review instead of scoring zero', async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ ...ONTARIO_FIXTURE, price: 0 }, 200))
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+    const body = JSON.parse(res.body) as {
+      listing: { price: number | null }
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+    expect(body.listing.price).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toContain('price')
+  })
+
+  it('routes unstated bedroom and bathroom counts to review', async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse({ ...ONTARIO_FIXTURE, beds_known: false, baths_known: false }, 200)
+    )
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { url: 'https://www.realtor.ca/real-estate/12345/test' },
+    })
+    const body = JSON.parse(res.body) as {
+      listing: { beds: number | null; baths: number | null }
+      scraperFailed?: boolean
+      missingFields?: string[]
+    }
+    expect(body.listing.beds).toBeNull()
+    expect(body.listing.baths).toBeNull()
+    expect(body.scraperFailed).toBe(true)
+    expect(body.missingFields).toEqual(expect.arrayContaining(['beds', 'baths']))
   })
 })
 

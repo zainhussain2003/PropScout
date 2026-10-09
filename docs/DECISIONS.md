@@ -4206,3 +4206,129 @@ April 2026 high-value bands for one/two single-family residences. The frontend G
 uses 39% and includes $150 monthly heating, matching the calculation engine's assumptions.
 It is labelled a screen, not a mortgage approval. Sample reports disclose demonstration data;
 known demo arithmetic, navigation and mobile layout inconsistencies are corrected.
+
+### D-126 · Public beta gives everyone access to all shipped features
+
+**Owner decision, 2026-10-03.** During public beta, all implemented report modes and features
+are free. There is no signed-in monthly analysis quota, guest report allowance, narrative
+truncation, or PDF subscription gate. A report's token remains its viewing capability, so a
+visitor with a live report link may download its PDF. Existing authentication and report-owner
+checks for edits remain in place. Rate limits and other abuse controls remain in place.
+
+The landing page must advertise the current free beta rather than paid plans. New Stripe
+checkout sessions are paused server-side. The billing portal and webhook remain available
+for existing subscriptions; this change does not cancel any existing subscriber or change
+production billing configuration. Saved report libraries, portfolio tracking, white-label
+exports, and other unbuilt features remain unavailable. D-125 and the §4 paid matrix are
+historical plans, superseded for the beta offer. Reintroducing paid access requires a new
+owner decision and end-to-end verification before exposing checkout again.
+
+### D-127 · Partial listings require asking amount and bedrooms; missing costs stay explicit
+
+**Beta product decision, 2026-10-04.** A partially read listing is reviewed before a report mode
+is chosen. The visitor must provide the asking price or rent and bedroom count if absent. They
+may correct any extracted numeric fact. Missing tax uses the city-rate estimate established by
+D-053/D-054 and is labelled as estimated. An unstated condo fee remains unknown: the calculator
+uses $0 for that component and shows the `condo_fee_unknown` caution on affected cost reports.
+The report must not present that $0 as a stated fee. Visitors can still assess location, rent
+positioning, and other evidence while they verify the fee; cost-based conclusions require that
+follow-up. This resolves the older §5 sentence that required tax and condo-fee entry before any
+analysis while preserving the field-level provenance rule in §11.2.
+
+### D-128 · MLS® HPI is private development data until separately authorized
+
+**Owner request, 2026-10-05.** Use only CREA's official HPI tool download for local
+development testing. Keep the workbook, ZIP and imported database outside Git checkouts.
+Commit only code and synthetic tests. Shared screenshots/previews must use synthetic
+values. The development feature defaults off, cannot run in production, and does not
+feed listing FMV, report verdicts or rental estimates. Market benchmarks are contextual
+monthly observations, not property appraisals. Missing values remain unavailable.
+
+The owner approved CREA download terms for private testing on 2026-10-05. The
+September 2026 monthly workbook adapter and local database/API/display walkthrough
+are verified. The non-seasonally-adjusted workbook supplies levels; change percentages
+are derived from exact HPI month lags and labelled accordingly. Future layouts must
+pass validation. This decision does not authorize publication of real values,
+deployment, production database migrations or any spending.
+
+---
+
+### D-129 · Keep report advice inside supplied evidence (2026-10-06)
+
+**Accepted by owner.** The owner authorized corrections after the local four-mode
+walkthrough found contradictory labels, narrative inputs, printed layout, an
+above-asking tenant offer, and absent mobility rendered as measured zero.
+
+**Chosen.** Refine D-047: a tenant concession starts at the observed range low
+only when asking is higher than that low. Its upper bound is capped at asking.
+When asking is at or below the low, hide the dollar target and model costs at
+asking; listing flags may still support lease questions. Narrative advice uses
+the same bounds. Missing mobility remains null; a measured zero remains zero.
+Personal narratives receive the default itemised ownership-cost total, including
+utilities and the age-dependent maintenance reserve. Landlord rent comparisons
+mark the actual asking rent. Missing photos or sunlight model outputs are labelled
+as unavailable without guessing the entry path or promising a future release.
+
+**Initial verification boundary.** Real Realtor.ca retrieval was reported by the
+owner as working in earlier use; fresh retrieval and market-feed checks were
+initially deferred. The owner subsequently authorized these checks on October 6.
+
+**October 6 follow-up.** Two fresh Realtor.ca listings (30371949 and 30368873)
+were retrieved through the existing scraper allowance without new charges. Their
+captured responses and a read-only snapshot of relevant current rental, school
+and census records completed local pipelines and PDF exports in all four modes.
+The observed feed timestamps reached October 5–6; this confirms those records,
+not the health of every scheduled job or coverage of every market. Real Ontario
+sold comparables remained unavailable in the provider check. External mobility,
+paid narrative generation and actual Mapbox transport were not verified; the
+local walkthrough used independently checked OSM coordinates. Production and
+authentication were excluded. Private evidence is retained outside Git.
+
+Follow-up corrections preserve a scraper-confirmed zero parking count separately
+from unknown legacy values, label an investor's modelled rent as estimated rent,
+and defer summary source-availability labels to the detailed report sections.
+These corrections implement the owner's request to reconcile report evidence;
+they do not introduce inferred measurements. Exact-candidate review and release
+remain separate requirements.
+
+---
+
+### D-130 · Prepare a free-only beta deployment profile (2026-10-06)
+
+**Owner direction.** The owner assigned beta deployment responsibility while
+retaining the no-new-spending requirement and previously delegating product,
+development and QA decisions. This records the local preparation, not a release.
+
+**Chosen.** Add an opt-in Nominatim geocoder with identifying contact, one
+upstream request per 1.1 seconds, a five-caller queue, bounded caching and strict
+Canadian building/street/city/postal-district checks. Deploy only one instance.
+An ambiguous or mismatched location remains unavailable. Relevance 1 for this
+provider means our identity gate passed, not a measured confidence score.
+
+The free-only profile blocks optional metered Mapbox, Google Places and Haiku
+calls. A live Walk Score call succeeded with the existing key, but the provider's
+free terms prohibit storing scores, so saved beta reports keep these unavailable.
+Their absence is not a zero measurement. Risk copy describes the unavailable AI
+read without mistaking a pattern-only scan for a completed AI check. Deterministic
+verdicts, calculations, school/census records and rental comparisons remain.
+
+**Hosting proposal.** Prepare one Render Free Docker instance, no payment method,
+with Python on loopback behind Node; retain Vercel and Supabase. The container
+must still pass Linux, memory, PDF concurrency and cold-start checks. New-host
+terms and secret transmission received specific owner confirmation. The account
+was created, with no card on file, no pending charges and a $0 build-pipeline
+spend limit observed. On October 8 the owner approved a one-release exception
+to publish and deploy before Claude review. Render Free now serves the API;
+only the approved Supabase service key and ScraperAPI key were transferred.
+Four Realtor.ca and four address-entry hosted pipelines passed. The two
+existing analyses status/guest migrations were applied after a private backup,
+with original-field preservation confirmed. All four individual hosted PDFs
+exported; a two-export concurrency failure led to serializing Chrome lifetimes
+with a bounded queue. Retesting and the public frontend switch remain release
+gates. See `docs/BETA_RELEASE_EXCEPTION.md`. Existing Railway
+Hobby and Mapbox cannot be assumed to enforce zero overage. See
+`docs/FREE_BETA_DEPLOYMENT.md`. No public HPI data or sample sale values are added.
+
+**Additional QA correction.** Personal Sources now uses the same age-dependent
+maintenance reserve as its cost breakdown and narrative, including 1.5% for an
+unknown build year. The investor engine's separate reserve is unchanged.

@@ -82,13 +82,19 @@ function splitAddress(address: string, city: string, province: string): [string,
 
 function buildChips(listing: Listing): string[] {
   const chips: string[] = []
-  chips.push(`${bareCount(listing.beds)} bed`)
-  chips.push(`${bareCount(listing.baths)} bath`)
+  chips.push(`${bareCount(listing.beds, listing.bedsKnown)} bed`)
+  chips.push(`${bareCount(listing.baths, listing.bathsKnown)} bath`)
   if (listing.sqft) chips.push(`${listing.sqft.toLocaleString('en-CA')} sqft`)
   if (listing.yearBuilt) chips.push(`Built ${listing.yearBuilt}`)
   const pt = listing.propertyType
   if (pt && pt !== 'unknown') chips.push(pt.charAt(0).toUpperCase() + pt.slice(1))
-  if (knownCount(listing.parkingSpots) != null) chips.push(`${listing.parkingSpots} parking`)
+  if (
+    knownCount(
+      listing.parkingSpots,
+      listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+    ) != null
+  )
+    chips.push(`${listing.parkingSpots} parking`)
   if (listing.condoFeeKnown && listing.condoFeeMonthly != null && listing.condoFeeMonthly > 0) {
     chips.push(`$${listing.condoFeeMonthly}/mo condo fee`)
   }
@@ -129,10 +135,13 @@ function toListingData(listing: Listing, analysis: Analysis): ListingData {
     propertyType: listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1),
     // PropertyHero renders "{beds} bed · {baths} bath" / "{parking} parking" —
     // these carry the bare numbers (was "2 bed bed · 2 bath bath", live 2026-07-02)
-    beds: bareCount(listing.beds),
-    baths: bareCount(listing.baths),
+    beds: bareCount(listing.beds, listing.bedsKnown),
+    baths: bareCount(listing.baths, listing.bathsKnown),
     sqft: listing.sqft ?? 0,
-    parking: bareCount(listing.parkingSpots),
+    parking: bareCount(
+      listing.parkingSpots,
+      listing.parkingSpotsKnown || listing.enteredFields?.includes('parkingSpots')
+    ),
     yearBuilt,
     // Conservative boolean for the checklist copy; the real answer is the
     // tri-state on the analysis, rendered by RentControlNote (D-113).
@@ -249,7 +258,8 @@ function NotFoundState(): JSX.Element {
           Report not found
         </h3>
         <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-          This report has expired or does not exist. Shared reports are available for 30 days.
+          This report has expired or does not exist. Guest links last 30 days; reports claimed after
+          sign-in have no expiry.
         </p>
       </div>
       <a href="/" className="btn btn-primary">
@@ -724,7 +734,8 @@ function InvestorReportContent({
       )}
       <RentalCompsSection
         comps={analysis.rentalComps}
-        askingRent={listingData.rentEstimate}
+        askingRent={listing.rentMonthly ?? listingData.rentEstimate}
+        rentLabel={listing.rentMonthly == null ? 'Estimated rent' : 'Asking rent'}
         rentIsProxy={listingData.rentIsProxy}
         mapCenter={analysis.coordinates ?? null}
       />
@@ -938,7 +949,7 @@ export function ReportPage({
             />
           )}
 
-          <div className="container" style={{ paddingTop: 32, paddingBottom: 16 }}>
+          <div className="container print-hidden" style={{ paddingTop: 32, paddingBottom: 16 }}>
             <div
               className="card row"
               style={{
@@ -950,7 +961,7 @@ export function ReportPage({
               }}
             >
               <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                Share this report · expires in 30 days
+                Share this report · guest links last 30 days; signed-in reports have no expiry
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button
@@ -977,7 +988,7 @@ export function ReportPage({
             </div>
           </div>
 
-          <div className="container" style={{ paddingBottom: 48 }}>
+          <div className="container print-hidden" style={{ paddingBottom: 48 }}>
             <div
               className="card col"
               style={{ padding: 32, alignItems: 'center', textAlign: 'center', gap: 16 }}

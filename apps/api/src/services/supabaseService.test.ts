@@ -33,8 +33,11 @@ import {
   saveListing,
   getMonthlyAnalysisCount,
   claimAnalysisForUser,
+  claimGuestAnalyses,
   getAnalysisStatus,
   updateAnalysisStatus,
+  createPendingAnalysis,
+  getListingByToken,
   SCHOOL_CATCHMENT_NOTE,
 } from './supabaseService'
 import type { Analysis } from '../types/analysis'
@@ -60,6 +63,7 @@ interface QueryChain {
   lte: jest.Mock
   ilike: jest.Mock
   single: jest.Mock
+  maybeSingle: jest.Mock
   update: jest.Mock
   is: jest.Mock
   not: jest.Mock
@@ -77,6 +81,7 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
     lte: jest.fn(),
     ilike: jest.fn(),
     single: jest.fn(),
+    maybeSingle: jest.fn(),
     update: jest.fn(),
     is: jest.fn(),
     not: jest.fn(),
@@ -95,6 +100,7 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
       'lte',
       'ilike',
       'single',
+      'maybeSingle',
       'update',
       'is',
       'not',
@@ -104,6 +110,40 @@ function makeQueryChain(resolution: ChainResolution): QueryChain {
   })
   return chain
 }
+
+describe('pending listing snapshots', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('keeps a confirmed studio marker with the pending token', async () => {
+    const chain = makeQueryChain({ data: null, error: null })
+    mockFrom.mockReturnValue(chain)
+    const studio = makeListing({ beds: 0, bedsKnown: true })
+    await createPendingAnalysis('listing-uuid', 'token-uuid', studio)
+    expect(chain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        listing_id: 'listing-uuid',
+        market_data: {
+          listingSnapshot: expect.objectContaining({
+            id: 'listing-uuid',
+            beds: 0,
+            bedsKnown: true,
+          }),
+        },
+      })
+    )
+  })
+
+  it('returns the pending snapshot rather than a shared listing row', async () => {
+    const studio = makeListing({ id: 'listing-uuid', beds: 0, bedsKnown: true })
+    const chain = makeQueryChain({
+      data: { market_data: { listingSnapshot: studio }, listings: null },
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+    expect(await getListingByToken('token-uuid')).toEqual(studio)
+    expect(chain.select).toHaveBeenCalledWith('market_data, listings(*)')
+  })
+})
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
 
@@ -1303,7 +1343,11 @@ describe('claimAnalysisForUser — attribution', () => {
     await claimAnalysisForUser('tok-1', 'user-1', 'investor')
 
     expect(mockFrom).toHaveBeenCalledWith('analyses')
-    expect(chain.update).toHaveBeenCalledWith({ user_id: 'user-1', report_mode: 'investment' })
+    expect(chain.update).toHaveBeenCalledWith({
+      user_id: 'user-1',
+      report_mode: 'investment',
+      share_expires_at: null,
+    })
     expect(chain.eq).toHaveBeenCalledWith('share_token', 'tok-1')
     // A share link is not a transfer of ownership: only an unowned row is
     // claimed. Without this, re-triggering someone else's token would steal
@@ -1318,6 +1362,17 @@ describe('claimAnalysisForUser — attribution', () => {
     await expect(claimAnalysisForUser('tok-1', 'user-1', 'tenant')).rejects.toThrow(
       'claimAnalysisForUser failed: nope'
     )
+  })
+})
+
+describe('claimGuestAnalyses — link expiry', () => {
+  it('clears the guest expiry when reports are claimed on sign-in', async () => {
+    const chain = makeQueryChain({ data: [{ id: 'analysis-1' }], error: null })
+    mockFrom.mockReturnValue(chain)
+    expect(await claimGuestAnalyses('guest-1', 'user-1')).toBe(1)
+    expect(chain.update).toHaveBeenCalledWith({ user_id: 'user-1', share_expires_at: null })
+    expect(chain.eq).toHaveBeenCalledWith('guest_id', 'guest-1')
+    expect(chain.is).toHaveBeenCalledWith('user_id', null)
   })
 })
 

@@ -35,6 +35,13 @@ export function MethodologyPage(): JSX.Element {
         </p>
         <h2 id="sources">Sources, freshness and gaps</h2>
         <p>
+          Location data ©{' '}
+          <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>. Address
+          lookup may use Nominatim. Ambiguous addresses need a more precise input. Routed travel
+          times and mobility scores may be unavailable during the free beta; missing data is not a
+          measured zero.
+        </p>
+        <p>
           Rental estimates use available asking-rent comparables. Asking prices are not proof of
           signed leases. Read each report's sample count, confidence and Sources section before
           relying on the range. Sparse or stale observations limit the conclusion.

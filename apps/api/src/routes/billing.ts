@@ -24,6 +24,7 @@ import {
 import { getUserById, upsertUser } from '../services/supabaseService'
 import { getSupabase } from '../services/supabaseService'
 import { applyValidationErrorHandler, billingCheckoutBody } from '../lib/requestSchemas'
+import { betaFreeAccess } from '../constants/tiers'
 
 interface BillingCheckoutBody {
   tier: 'pro' | 'professional' | 'team'
@@ -41,6 +42,16 @@ async function billingRoutes(fastify: FastifyInstance): Promise<void> {
     '/checkout',
     { schema: { body: billingCheckoutBody } },
     async (req, reply) => {
+      if (betaFreeAccess()) {
+        return reply
+          .status(503)
+          .send(
+            makeError(
+              'BETA_FREE',
+              'All available features are free during beta. New subscriptions are paused.'
+            ) as never
+          )
+      }
       const authHeader = req.headers.authorization
       if (!authHeader?.startsWith('Bearer ')) {
         return reply.status(401).send(makeError('UNAUTHORIZED', 'Authentication required') as never)

@@ -395,6 +395,12 @@ exports[`InvestorReport page — snapshot > matches error-state snapshot 1`] = `
                 Help
               </a>
               <a
+                href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+              >
+                Send beta feedback
+              </a>
+              <a
                 href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
@@ -1544,7 +1550,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 class="mono"
                 style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);"
               >
-                No listing photos · report built from the address
+                No listing photos available
               </div>
             </div>
             <div
@@ -5198,7 +5204,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
           <span
             class="verdict-pill caution"
           >
-            Modeling · Phase 2
+            Sunlight data unavailable
           </span>
         </div>
         <div
@@ -5236,18 +5242,18 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             <span
               class="chip"
             >
-              Coming Phase 2
+              Data unavailable
             </span>
             <h4
               class="serif"
               style="font-size: 24px;"
             >
-              Solar path analysis — shipping Q3 2026.
+              Solar path analysis is unavailable for this report.
             </h4>
             <p
               style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
             >
-              SunScout uses NASA NREL sun-path data to show peak sun hours by season and window orientation. Available once address geocoding is confirmed for this property.
+              SunScout needs reliable property coordinates and a successful sun-path calculation. This report has no model result, so it cannot assess the property's sunlight.
             </p>
           </div>
         </div>
@@ -5325,12 +5331,12 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
               class="serif"
               style="font-size: 24px;"
             >
-              AirDNA revenue modeling — shipping Q3 2026.
+              Short-term rental revenue data is not connected.
             </h3>
             <p
               style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
             >
-              We're integrating AirDNA to project nightly rates, occupancy, seasonality, and net revenue for this exact unit against true STR comparables. Until then, the LTR baseline shown above is your reference.
+              Nightly rates, occupancy, seasonality, and short-term rental revenue are unavailable for this unit. Use the long-term rental baseline above and verify any short-term rental assumptions separately.
             </p>
             <p
               class="mono"
@@ -5840,6 +5846,7 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
             style="overflow-x: auto;"
           >
             <table
+              class="assumption-ledger"
               style="width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px;"
             >
               <thead>
@@ -6557,6 +6564,12 @@ exports[`InvestorReport page — snapshot > matches loaded-state snapshot (Vaugh
                 Help
               </a>
               <a
+                href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+              >
+                Send beta feedback
+              </a>
+              <a
                 href="/methodology#calculations"
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
@@ -6978,6 +6991,12 @@ exports[`InvestorReport page — snapshot > matches loading-state snapshot 1`] =
                 style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
               >
                 Help
+              </a>
+              <a
+                href="mailto:support@propscout.ca?subject=PropScout%20beta%20feedback"
+                style="color: color-mix(in oklab, var(--bg) 85%, transparent); font-size: 14px;"
+              >
+                Send beta feedback
               </a>
               <a
                 href="/methodology#calculations"

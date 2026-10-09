@@ -9,6 +9,12 @@ import { RentalCompsSection } from './RentalCompsSection'
 const BAND = { low: 2700, mid: 2900, high: 3200, compCount: 8, confidence: 'medium' as const }
 
 describe('RentalCompsSection — comp rows', () => {
+  it('identifies an estimated subject rent without calling it an asking rent', () => {
+    render(<RentalCompsSection askingRent={2900} comps={BAND} rentLabel="Estimated rent" />)
+    expect(screen.getByText('Estimated rent')).toBeInTheDocument()
+    expect(screen.queryByText('Asking rent')).not.toBeInTheDocument()
+    expect(screen.getByText('· estimate')).toBeInTheDocument()
+  })
   it('lists each comp with rent, size, area, distance, source and date', () => {
     render(
       <RentalCompsSection

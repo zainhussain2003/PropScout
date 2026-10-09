@@ -16,8 +16,8 @@ export function CoverageSection(): JSX.Element {
     },
     {
       icon: 'map' as const,
-      t: 'Live rental comps',
-      d: 'Nightly scrape of Rentals.ca, Kijiji and PadMapper. Same FSA, ±1 bedroom, last 90 days. Outliers removed. Confidence shown.',
+      t: 'Rental comps with context',
+      d: 'Available nearby asking-rent records are filtered for relevance. The report shows their sources, dates, count, and confidence; coverage varies by area.',
     },
     {
       icon: 'chart' as const,
@@ -37,7 +37,7 @@ export function CoverageSection(): JSX.Element {
     {
       icon: 'doc' as const,
       t: 'Share or export',
-      d: 'Branded PDF and a 30-day shareable link. Your clients see the verdict without seeing the seams.',
+      d: 'Export a live report as a PDF or share its link. Guest links expire after 30 days; signed-in links do not.',
     },
   ]
 
@@ -48,10 +48,10 @@ export function CoverageSection(): JSX.Element {
           tag="Inside the report"
           title={<>Every assumption in the report is listed with its source, date, and method.</>}
         >
-          Rental comps scraped nightly from Rentals.ca, Kijiji, and PadMapper. Rates from the Bank
-          of Canada feed. Schools from EQAO. Walkability from Walk Score. The last section of every
-          report is a ledger of what the numbers rest on — and when one is a PropScout default with
-          no source behind it, it says so.
+          Available rental comps show their sources and dates. Rates from the Bank of Canada feed.
+          Schools from EQAO. Unavailable mobility scores are labelled as unavailable. The last
+          section of every report is a ledger of what the numbers rest on — and when one is a
+          PropScout default with no source behind it, it says so.
         </SectionHeader>
 
         <div

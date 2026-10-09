@@ -1699,12 +1699,12 @@ exports[`STRPlaceholderSection > matches snapshot 1`] = `
         class="serif"
         style="font-size: 24px;"
       >
-        AirDNA revenue modeling — shipping Q3 2026.
+        Short-term rental revenue data is not connected.
       </h3>
       <p
         style="font-size: 14px; color: var(--ink-2); line-height: 1.55;"
       >
-        We're integrating AirDNA to project nightly rates, occupancy, seasonality, and net revenue for this exact unit against true STR comparables. Until then, the LTR baseline shown above is your reference.
+        Nightly rates, occupancy, seasonality, and short-term rental revenue are unavailable for this unit. Use the long-term rental baseline above and verify any short-term rental assumptions separately.
       </p>
       <p
         class="mono"

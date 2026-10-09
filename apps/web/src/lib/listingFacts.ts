@@ -58,9 +58,9 @@ export function bedroomLabel(
 export function countLabel(
   n: number | null | undefined,
   noun: string,
-  opts: { plural?: string; fallback?: string } = {}
+  opts: { plural?: string; fallback?: string; known?: boolean } = {}
 ): string {
-  const k = knownCount(n)
+  const k = knownCount(n, opts.known)
   if (k == null) return opts.fallback ?? NOT_PROVIDED
   const word = k === 1 ? noun : (opts.plural ?? `${noun}s`)
   return `${k} ${word}`

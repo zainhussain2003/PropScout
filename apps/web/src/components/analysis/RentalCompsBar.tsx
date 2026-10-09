@@ -28,6 +28,7 @@ interface RentalCompsBarProps {
   mid: number
   high: number
   ask: number
+  rentLabel?: string
   /** Optional 12-mo trend / DOM / vacancy strip below the bar. */
   context?: MarketContext
 }
@@ -36,7 +37,14 @@ function fmtDollar(n: number): string {
   return '$' + n.toLocaleString('en-CA')
 }
 
-export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarProps): JSX.Element {
+export function RentalCompsBar({
+  low,
+  mid,
+  high,
+  ask,
+  context,
+  rentLabel = 'Asking rent',
+}: RentalCompsBarProps): JSX.Element {
   // Position ask as a fraction of the bar width [0, 1], clamped
   const range = high - low
   const raw = range === 0 ? 0.5 : (ask - low) / range
@@ -69,7 +77,7 @@ export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarP
               color: 'var(--muted)',
             }}
           >
-            Asking rent
+            {rentLabel}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
             <span
@@ -189,7 +197,7 @@ export function RentalCompsBar({ low, mid, high, ask, context }: RentalCompsBarP
             <span
               style={{ color: 'color-mix(in oklab, var(--bg) 55%, transparent)', marginLeft: 6 }}
             >
-              · ask
+              {rentLabel === 'Asking rent' ? '· ask' : '· estimate'}
             </span>
             <div
               style={{

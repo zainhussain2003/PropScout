@@ -206,8 +206,14 @@ describe('StripeWelcomePage', () => {
   it('directs users to Account for their verified plan without claiming activation', () => {
     wrap(<StripeWelcomePage />)
     expect(screen.getByRole('heading', { name: 'Check your plan in Account.' })).toBeInTheDocument()
-    expect(screen.getByText('Visit Account to see your verified plan and available features.')).toBeInTheDocument()
-    expect(screen.queryByText(/You're a Pro now|Welcome to Investor Pro|all unlocked/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Visit Account to see your verified plan. All available report features are free during beta.'
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/You're a Pro now|Welcome to Investor Pro|all unlocked/i)
+    ).not.toBeInTheDocument()
   })
 
   it('does not promise deferred portfolio tracking or SunScout 3D', () => {
@@ -225,7 +231,7 @@ describe('StripeWelcomePage', () => {
           <Route path="/welcome-to-pro" element={<StripeWelcomePage />} />
           <Route path="*" element={<ActionDestination />} />
         </Routes>
-      </MemoryRouter>,
+      </MemoryRouter>
     )
     fireEvent.click(screen.getByRole('button', { name: label }))
     expect(screen.getByTestId('action-destination').textContent).toBe(destination)

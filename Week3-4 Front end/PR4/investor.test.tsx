@@ -645,9 +645,10 @@ describe('STRPlaceholderSection', () => {
     expect(screen.getByText('Coming Phase 2')).toBeInTheDocument()
   })
 
-  it('shows "AirDNA revenue modeling" placeholder text', () => {
+  it('states that short-term rental revenue data is not connected', () => {
     render(<STRPlaceholderSection listing={VAUGHAN_LISTING} />)
-    expect(screen.getByText(/AirDNA revenue modeling/i)).toBeInTheDocument()
+    expect(screen.getByText(/Short-term rental revenue data is not connected/i)).toBeInTheDocument()
+    expect(screen.queryByText(/shipping Q3 2026/i)).not.toBeInTheDocument()
   })
 
   it('shows Vaughan STR rule "Permitted with registration"', () => {

@@ -62,7 +62,25 @@ export const tokenFlagParams = {
 
 export const analysisTriggerBody = {
   type: 'object',
-  properties: { token: SHARE_TOKEN, mode: SHORT_STRING },
+  properties: {
+    token: SHARE_TOKEN,
+    mode: SHORT_STRING,
+    manualListingFields: {
+      type: 'object',
+      properties: {
+        price: { type: 'number', exclusiveMinimum: 0, maximum: 100000000 },
+        rentMonthly: { type: 'number', exclusiveMinimum: 0, maximum: 100000 },
+        beds: { type: 'integer', minimum: 0, maximum: 30 },
+        baths: { type: 'number', minimum: 0, maximum: 30 },
+        sqft: { type: 'number', exclusiveMinimum: 0, maximum: 100000 },
+        annualTaxes: { type: 'number', exclusiveMinimum: 0, maximum: 1000000 },
+        yearBuilt: { type: 'integer', minimum: 1800, maximum: 2100 },
+        condoFeeMonthly: { type: 'number', minimum: 0, maximum: 100000 },
+        parkingSpots: { type: 'integer', minimum: 0, maximum: 100 },
+      },
+      additionalProperties: false,
+    },
+  },
   additionalProperties: false,
 } as const
 

@@ -25,7 +25,7 @@ export function StripeWelcomePage(): JSX.Element {
         tone="pass"
         eyebrow="Your plan"
         headline="Check your plan in Account."
-        body="Visit Account to see your verified plan and available features."
+        body="Visit Account to see your verified plan. All available report features are free during beta."
         primary={{ label: 'Start analyzing', onClick: () => navigate('/') }}
         secondary={{ label: 'View my plan', onClick: () => navigate('/account?view=plan') }}
       />

@@ -635,6 +635,8 @@ export interface ListingData {
     source: string | null
     /** ISO time the page was scraped / the details were entered. */
     asOf: string | null
+    /** Facts replaced or supplied by the person after a partial scrape. */
+    enteredFields?: string[]
   }
   /** The landlord's mortgage balance when they own it (D-108); 0 = outright; null = purchase case. */
   ownerMortgageBalance?: number | null

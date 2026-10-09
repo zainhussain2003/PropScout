@@ -132,12 +132,12 @@ export function ReportShowcase(): JSX.Element {
             </div>
           </div>
           <div className="row gap-12">
-            <button className="btn btn-ghost">
-              <Icon name="link" size={14} /> Share link
-            </button>
-            <button className="btn btn-primary">
-              Save report <Icon name="arrow" size={14} />
-            </button>
+            <a className="btn btn-ghost" href="#hero">
+              <Icon name="link" size={14} /> Analyze a listing
+            </a>
+            <a className="btn btn-primary" href="/tenant-report">
+              Open sample report <Icon name="arrow" size={14} />
+            </a>
           </div>
         </div>
 

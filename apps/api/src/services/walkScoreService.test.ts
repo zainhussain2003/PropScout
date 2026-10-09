@@ -25,9 +25,15 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.WALKSCORE_API_KEY
+  delete process.env.FREE_ONLY_BETA
 })
 
 describe('getWalkScore', () => {
+  it('does not fetch scores for storage in free-only beta reports', async () => {
+    process.env.FREE_ONLY_BETA = 'true'
+    expect(await getWalkScore('123 Main St, Toronto, ON', 43.6, -79.3)).toBeNull()
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
   it('full response → all three scores mapped correctly, description populated', async () => {
     mockFetch.mockResolvedValueOnce(makeFetchResponse(FULL_RESPONSE, 200))
 

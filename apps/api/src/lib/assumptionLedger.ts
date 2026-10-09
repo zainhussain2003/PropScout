@@ -19,6 +19,7 @@ import { RENT_TO_PRICE_MONTHLY } from '../constants/valuation'
 import { MARKET_DEMAND } from '../constants/thresholds'
 import { CMHC_VACANCY_SURVEY } from '../constants/cmhcVacancy'
 import type { MarketDemandObservation } from './marketDemand'
+import { personalMaintenanceRate } from '../services/personalOwnershipCost'
 
 /** The engine's echo of what it applied (models/schemas.py AssumptionsAppliedOutput). */
 export interface EngineAssumptions {
@@ -63,6 +64,7 @@ export interface LedgerInput {
     condoFeeMonthly: number | null
     condoFeeKnown: boolean
     yearBuilt: number | null
+    enteredFields?: string[]
     /** For the demand rows' FSA note (D-105). */
     postalCode?: string | null
   }
@@ -210,6 +212,7 @@ const MAINTENANCE_BAND: Record<string, string> = {
 export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
   const { mode, listing, engine, rate, comps } = input
   const rows: AssumptionEntry[] = []
+  const entered = new Set(listing.enteredFields ?? [])
   // A landlord report scored on the landlord's own value is a purchase model
   // too (D-107); before a value is entered it is an operating view.
   const purchase =
@@ -237,9 +240,11 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       label: 'Rent',
       value: `${cad(input.rentMid)}/mo`,
       basis: 'observed',
-      source: 'The listing',
+      source: entered.has('rentMonthly') ? 'You entered it' : 'The listing',
       asOf: input.createdAt,
-      method: 'The asking rent as listed; no comparable rentals were found to test it against.',
+      method: entered.has('rentMonthly')
+        ? 'The asking rent you entered after reviewing the listing; no comparable rentals were found to test it against.'
+        : 'The asking rent as listed; no comparable rentals were found to test it against.',
     })
   } else {
     rows.push({
@@ -389,9 +394,11 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       label: 'Property tax',
       value: `${cad(input.annualTaxesUsed)}/yr`,
       basis: 'observed',
-      source: 'The listing',
+      source: entered.has('annualTaxes') ? 'You entered it' : 'The listing',
       asOf: input.createdAt,
-      method: 'As published on the listing.',
+      method: entered.has('annualTaxes')
+        ? 'As entered after reviewing the listing.'
+        : 'As published on the listing.',
     })
   }
 
@@ -401,9 +408,11 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
       label: 'Condo fee',
       value: `${cad(listing.condoFeeMonthly)}/mo`,
       basis: 'observed',
-      source: 'The listing',
+      source: entered.has('condoFeeMonthly') ? 'You entered it' : 'The listing',
       asOf: input.createdAt,
-      method: 'As published on the listing.',
+      method: entered.has('condoFeeMonthly')
+        ? 'As entered after reviewing the listing.'
+        : 'As published on the listing.',
     })
   }
 
@@ -421,11 +430,14 @@ export function buildAssumptionLedger(input: LedgerInput): AssumptionEntry[] {
     rows.push({
       key: 'maintenance',
       label: 'Maintenance reserve',
-      value: `${pct(engine.maintenance_rate, 1)} of value`,
+      value: `${pct(input.mode === 'personal' ? personalMaintenanceRate(listing.yearBuilt) : engine.maintenance_rate, 1)} of value`,
       basis: 'default',
       source: PROPSCOUT_DEFAULT,
       asOf: null,
-      method: `Annual reserve by build year — ${MAINTENANCE_BAND[engine.maintenance_basis] ?? engine.maintenance_basis}. In-unit repairs only for a condo.`,
+      method:
+        input.mode === 'personal'
+          ? 'Personal ownership-cost model: 0.5% for 2010 or later, 1.0% for 1980–2009, 1.5% for older or unknown build years. Estimated reserve; confirm actual costs.'
+          : `Annual reserve by build year — ${MAINTENANCE_BAND[engine.maintenance_basis] ?? engine.maintenance_basis}. In-unit repairs only for a condo.`,
     })
   }
 

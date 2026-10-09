@@ -21,6 +21,13 @@ import type { Analysis, SchoolsResult } from '../types/analysis'
 import type { Listing } from '../types/property'
 import type { ApiError } from '../types/api'
 
+beforeEach(() => {
+  process.env.BETA_FREE_ACCESS = 'false'
+})
+afterAll(() => {
+  delete process.env.BETA_FREE_ACCESS
+})
+
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
 jest.mock('../services/supabaseService')
@@ -215,6 +222,75 @@ describe('POST / — analysis orchestrator', () => {
     expect(metrics.cashFlowMonthly).toBe(-1833)
     expect(metrics.capRate).toBe(0.025)
     expect(body.analysis.dealScore?.verdict).toBe('hard_pass')
+  })
+
+  it('uses visitor corrections only in this report snapshot, preserving the source listing', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        token: 'test-token',
+        mode: 'investor',
+        manualListingFields: { price: 715000, sqft: 1120 },
+      },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const savedListing = mockSaveAnalysis.mock.calls[0]?.[2] as Listing
+    expect(savedListing.price).toBe(715000)
+    expect(savedListing.sqft).toBe(1120)
+    expect(savedListing.enteredFields).toEqual(['price', 'sqft'])
+    expect(LISTING_FIXTURE.price).toBe(729900)
+    expect(LISTING_FIXTURE.enteredFields).toBeUndefined()
+  })
+
+  it('refuses a rent correction on a sale listing', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        token: 'test-token',
+        mode: 'investor',
+        manualListingFields: { rentMonthly: 2500 },
+      },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(mockSaveAnalysis).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['sale asking price', { price: null }],
+    ['rental asking rent', { listingType: 'for-rent' as const, price: null, rentMonthly: null }],
+    ['bedroom count', { beds: null }],
+    ['unconfirmed zero bedrooms', { beds: 0, bedsKnown: false }],
+  ])('requires the missing %s before starting a report', async (_label, missing) => {
+    mockGetListingByToken.mockResolvedValue({ ...LISTING_FIXTURE, ...missing })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('MISSING_LISTING_FIELDS')
+    expect(mockSaveAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('accepts visitor corrections for required facts without changing the source listing', async () => {
+    const partial = { ...LISTING_FIXTURE, price: null, beds: null }
+    mockGetListingByToken.mockResolvedValue(partial)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        token: 'test-token',
+        mode: 'investor',
+        manualListingFields: { price: 715000, beds: 0 },
+      },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockSaveAnalysis.mock.calls[0]?.[2]).toMatchObject({ price: 715000, beds: 0 })
+    expect(partial.price).toBeNull()
+    expect(partial.beds).toBeNull()
   })
 
   // ── Test 1b ────────────────────────────────────────────────────────────────
@@ -594,8 +670,8 @@ describe('POST / - rent plausibility bounds', () => {
     await app.close()
   })
 
-  it('for-rent listing with no rent and no price -> 422 RENT_OUT_OF_BOUNDS, never reaches the calc engine', async () => {
-    // Fallback rent computes to $0 - previously this proceeded to score garbage.
+  it('for-rent listing with no rent stops for visitor review before the calc engine', async () => {
+    // D-127 requires the visitor to supply the asking rent before analysis.
     mockGetListingByToken.mockResolvedValue({
       ...LISTING_FIXTURE,
       listingType: 'for-rent',
@@ -609,14 +685,10 @@ describe('POST / - rent plausibility bounds', () => {
       payload: { token: 'test-token', mode: 'tenant' },
     })
 
-    expect(res.statusCode).toBe(422)
+    expect(res.statusCode).toBe(400)
     const body = res.json() as ApiError
-    expect(body.code).toBe('RENT_OUT_OF_BOUNDS')
-    expect(mockUpdateAnalysisStatus).toHaveBeenCalledWith(
-      'test-token',
-      'failed',
-      'RENT_OUT_OF_BOUNDS'
-    )
+    expect(body.code).toBe('MISSING_LISTING_FIELDS')
+    expect(mockUpdateAnalysisStatus).not.toHaveBeenCalled()
     const fetchMock = global.fetch as jest.Mock
     expect(fetchMock).not.toHaveBeenCalled()
   })
@@ -1123,6 +1195,22 @@ describe('POST / — free-tier quota and attribution', () => {
     expect(mockSaveAnalysis).not.toHaveBeenCalled()
   })
 
+  it('allows a signed-in free beta user past the former monthly quota', async () => {
+    process.env.BETA_FREE_ACCESS = 'true'
+    signedInAs(USER_ID)
+    userOnTier('free')
+    mockMonthlyCount.mockResolvedValue(10)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: AUTH,
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockMonthlyCount).not.toHaveBeenCalled()
+    expect(mockClaim).toHaveBeenCalledWith('test-token', USER_ID, 'investor')
+  })
+
   it('allows the 10th analysis (the limit is inclusive of the count, not the index)', async () => {
     signedInAs(USER_ID)
     userOnTier('free')
@@ -1329,6 +1417,21 @@ describe('POST / — guest allowance (D-116)', () => {
     expect(body.limit).toBe(1)
     expect(global.fetch).not.toHaveBeenCalled()
     expect(mockMarkGuest).not.toHaveBeenCalled()
+  })
+
+  it('allows beta guests to run reports even if the legacy guest wall is enabled', async () => {
+    process.env.BETA_FREE_ACCESS = 'true'
+    process.env.GUEST_ANALYSIS_LIMIT_ENABLED = 'true'
+    mockCountGuest.mockResolvedValue(1)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/',
+      headers: { cookie: `ps_guest=${GUEST_ID}` },
+      payload: { token: 'test-token', mode: 'investor' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mockCountGuest).not.toHaveBeenCalled()
+    expect(mockMarkGuest).toHaveBeenCalled()
   })
 
   it('with the wall on, the first analysis runs and tenant mode is always exempt', async () => {

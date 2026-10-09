@@ -22,10 +22,17 @@ import type { ApiError } from '../types/api'
 
 jest.mock('../services/supabaseService')
 
-import { getAnalysisStatus, getAnalysisByToken } from '../services/supabaseService'
+import {
+  getAnalysisStatus,
+  getAnalysisByToken,
+  getAnalysisGuestId,
+  countGuestAnalyses,
+} from '../services/supabaseService'
 
 const mockGetAnalysisStatus = jest.mocked(getAnalysisStatus)
 const mockGetAnalysisByToken = jest.mocked(getAnalysisByToken)
+const mockGetAnalysisGuestId = jest.mocked(getAnalysisGuestId)
+const mockCountGuestAnalyses = jest.mocked(countGuestAnalyses)
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -193,6 +200,31 @@ describe('GET /:token — analysis polling', () => {
     expect(body.analysis.dealScore?.verdict).toBe('hard_pass')
     expect(body.listing.address).toBe(LISTING_FIXTURE.address)
     expect(mockGetAnalysisByToken).toHaveBeenCalledWith(COMPLETE_TOKEN)
+  })
+
+  it('does not advertise a guest limit during free beta even if the legacy flag is on', async () => {
+    process.env.BETA_FREE_ACCESS = 'true'
+    process.env.GUEST_ANALYSIS_LIMIT_ENABLED = 'true'
+    const guestId = '5f438f11-5c26-4471-9bf3-2d61e8b55e33'
+    mockGetAnalysisStatus.mockResolvedValue('complete')
+    mockGetAnalysisByToken.mockResolvedValue({
+      analysis: ANALYSIS_FIXTURE,
+      listing: LISTING_FIXTURE,
+    })
+    mockGetAnalysisGuestId.mockResolvedValue(guestId)
+    mockCountGuestAnalyses.mockResolvedValue(1)
+    try {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/${COMPLETE_TOKEN}`,
+        headers: { cookie: `ps_guest=${guestId}` },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().guest).toMatchObject({ limitEnabled: false })
+    } finally {
+      delete process.env.BETA_FREE_ACCESS
+      delete process.env.GUEST_ANALYSIS_LIMIT_ENABLED
+    }
   })
 
   // ── Test 5 ─────────────────────────────────────────────────────────────────

@@ -31,15 +31,15 @@ export const SCAN_VERDICT: Record<Exclude<ScanState, 'flagged'>, string> = {
 /** One sentence for the empty state of a flags section. */
 export const SCAN_NOTE: Record<Exclude<ScanState, 'flagged'>, string> = {
   no_text:
-    'This property was entered by address, so there is no listing description to scan. Nothing here has been checked for risk language.',
+    'There is no listing description to scan. Nothing here has been checked for risk language.',
   failed:
     'The listing description could not be scanned — the check did not run. Treat this section as unchecked, not clean; try again later.',
   partial:
-    'Only the pattern scan ran; the AI read of the description failed. No pattern flags fired, but wording a pattern would miss has not been checked.',
+    'Only the pattern scan ran; the AI read of the description was unavailable. No pattern flags fired, but wording a pattern would miss has not been checked.',
   clean:
     'No risk language was found in the listing description. This wording scan is not an inspection or a clean bill of health.',
 }
 
 /** Note shown above flags when they came from a partial scan. */
 export const PARTIAL_SCAN_WITH_FLAGS =
-  'Only the pattern scan ran; the AI read of the description failed. Flags below are from patterns alone.'
+  'Only the pattern scan ran; the AI read of the description was unavailable. Flags below are from patterns alone.'

@@ -19,6 +19,7 @@
  */
 
 import { createClient, type SupabaseClient, type Session } from '@supabase/supabase-js'
+import { rememberAuthReturnPath } from '../authReturn'
 
 type AnonClient = SupabaseClient<never, 'public', never>
 let _client: AnonClient | null = null
@@ -64,6 +65,7 @@ function getClient(): AnonClient | null {
 export async function signInWithEmail(email: string): Promise<{ error: string | null }> {
   const client = getClient()
   if (client == null) return { error: AUTH_UNAVAILABLE }
+  rememberAuthReturnPath()
   const { error } = await client.auth
     .signInWithOtp({
       email: email.trim(),
@@ -92,6 +94,7 @@ export async function signInWithEmail(email: string): Promise<{ error: string | 
 export async function signInWithGoogle(): Promise<{ error: string | null }> {
   const client = getClient()
   if (client == null) return { error: AUTH_UNAVAILABLE }
+  rememberAuthReturnPath()
   const { error } = await client.auth
     .signInWithOAuth({
       provider: 'google',
@@ -132,6 +135,23 @@ export async function getSession(): Promise<Session | null> {
   } catch (err) {
     console.error('[authService] getSession failed', err)
     return null
+  }
+}
+
+/** Sync the account and claim reports tied to this browser's guest cookie. */
+export async function syncAccountAfterSignIn(accessToken: string): Promise<void> {
+  const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 8_000)
+  try {
+    const response = await fetch(`${baseUrl}/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      credentials: 'include',
+      signal: controller.signal,
+    })
+    if (!response.ok) throw new Error('Could not sync account after sign-in')
+  } finally {
+    window.clearTimeout(timeout)
   }
 }
 

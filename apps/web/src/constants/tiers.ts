@@ -1,5 +1,8 @@
 import type { Tier } from '../types/user'
 
+/** Shipped features are available without payment during the public beta. */
+export const BETA_FREE_ACCESS = true
+
 export const TIER_NAMES: Record<Tier, string> = {
   free: 'Free',
   pro: 'Investor Pro',

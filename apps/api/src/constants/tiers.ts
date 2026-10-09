@@ -10,6 +10,11 @@ export const FREE_TIER = {
   QUOTA_EXEMPT_MODES: ['tenant'],
 } as const
 
+/** Public beta is free by default. The explicit off switch retains paid-mode regression coverage. */
+export function betaFreeAccess(): boolean {
+  return process.env.BETA_FREE_ACCESS !== 'false'
+}
+
 /**
  * The guest allowance (D-116, spec §5): one anonymous analysis, then sign in.
  * Tenant mode stays exempt (spec §4). Enforcement is behind
