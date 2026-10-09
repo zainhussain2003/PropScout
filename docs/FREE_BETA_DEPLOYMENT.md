@@ -60,9 +60,10 @@ an existing Mapbox token and blocks its browser transport, with HPI disabled;
   postal district identity checks reject mismatches and ambiguous results.
 - Source attribution is available via the existing footer's Data sources link.
   Privacy identifies the address disclosure to Nominatim.
-- Render's observed ingress connects over loopback. On Render only, trust the
-  immediate loopback peer for forwarded visitor identity, retaining the existing
-  per-visitor rate limit and rejecting arbitrary peers/earlier chain entries.
+- Render's observed ingress uses a loopback sidecar and one private 10/8 hop.
+  On Render only, validate those two hops for forwarded visitor identity,
+  retaining the existing per-visitor rate limit and rejecting arbitrary peers
+  and earlier chain entries.
   Reference: https://render.com/articles/how-render-handles-ddos-attacks.
 - `FREE_ONLY_BETA=true` blocks Mapbox geocoding/directions, Google Places, stored
   Walk Score and Haiku extraction calls. Nominatim still supplies coordinates;

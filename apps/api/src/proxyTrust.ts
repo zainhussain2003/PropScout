@@ -1,7 +1,8 @@
-/** Render's observed ingress connects over loopback. Trust only that immediate
- * peer so rate limits use the nearest forwarded client, never arbitrary peers
- * or a client-supplied address further to the left in the forwarding chain.
+/** Render's observed ingress uses a loopback sidecar and one private ingress
+ * hop. Validate both addresses and stop before the first public client, never
+ * trusting arbitrary peers or earlier client-supplied forwarding entries.
  */
 export function renderProxyTrust(address: string, hop: number): boolean {
-  return hop === 0 && ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address)
+  if (hop === 0) return ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address)
+  return hop === 1 && /^(?:::ffff:)?10\.(?:\d{1,3}\.){2}\d{1,3}$/.test(address)
 }

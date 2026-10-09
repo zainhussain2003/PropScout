@@ -3,12 +3,16 @@ import rateLimit from '@fastify/rate-limit'
 import { renderProxyTrust } from './proxyTrust'
 
 describe('Render ingress identity', () => {
-  it('trusts only the immediate observed loopback peer', () => {
+  it('validates the two observed proxy addresses and their positions', () => {
     expect(renderProxyTrust('127.0.0.1', 0)).toBe(true)
     expect(renderProxyTrust('::1', 0)).toBe(true)
     expect(renderProxyTrust('::ffff:127.0.0.1', 0)).toBe(true)
     expect(renderProxyTrust('127.0.0.1', 1)).toBe(false)
     expect(renderProxyTrust('198.51.100.9', 0)).toBe(false)
+    expect(renderProxyTrust('10.1.2.3', 0)).toBe(false)
+    expect(renderProxyTrust('10.1.2.3', 1)).toBe(true)
+    expect(renderProxyTrust('10.1.2.3', 2)).toBe(false)
+    expect(renderProxyTrust('198.51.100.9', 1)).toBe(false)
   })
 
   it('ignores spoofed forwarding from untrusted peers and earlier chain entries', async () => {
@@ -23,7 +27,7 @@ describe('Render ingress identity', () => {
     const proxied = await app.inject({
       url: '/identity',
       remoteAddress: '127.0.0.1',
-      headers: { 'x-forwarded-for': '203.0.113.4, 198.51.100.9' },
+      headers: { 'x-forwarded-for': '203.0.113.4, 198.51.100.9, 10.1.2.3' },
     })
     expect(proxied.json()).toEqual({ ip: '198.51.100.9' })
     await app.close()
@@ -34,7 +38,11 @@ describe('Render ingress identity', () => {
     await app.register(rateLimit, { max: 2, timeWindow: '1 minute' })
     app.get('/report', async () => ({ ok: true }))
     const request = async (ip: string): Promise<{ statusCode: number }> =>
-      app.inject({ url: '/report', remoteAddress: '127.0.0.1', headers: { 'x-forwarded-for': ip } })
+      app.inject({
+        url: '/report',
+        remoteAddress: '127.0.0.1',
+        headers: { 'x-forwarded-for': `${ip}, 10.1.2.3` },
+      })
     expect((await request('198.51.100.1')).statusCode).toBe(200)
     expect((await request('198.51.100.1')).statusCode).toBe(200)
     expect((await request('198.51.100.1')).statusCode).toBe(429)
